@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Assembly is hard because it's not decomposable
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 29 Aug 2010 22:07:07 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-29T18:07:07-04:00">
+                    <meta itemprop="dateModified" content="2010-08-29T18:07:07-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-29T22:07:07+00:00">Aug 29</time>
+                    <h2 itemprop="title">
+                        Assembly is hard because it's not decomposable
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/e036c047412b3854">
+                        <blockquote>
+                            <div>
+                                <p>
+                                    (with Adina Howe, Jason Pell, Rosangela Canino-Koning, and Arend Hintze).
+                                </p>
+                                <div>
+                                    <h1>
+                                        <a name="introduction" id="introduction">Introduction</a>
+                                    </h1>
+                                    <p>
+                                        A few weeks ago I blogged a bit about a k-mer filtering system, khmer, that we were using to reduce metagenomic data to a more tractable size by throwing out error-prone reads (see <a href="http://ivory.idyll.org/blog/jul-10/kmer-filtering.html">A memory efficient way to remote low-abundance k-mers from large DNA data sets</a>). No sooner had we tried that, than did we realize that we were probably primarily throwing away good, if low-abundance data (see <a href="http://ivory.idyll.org/blog/jul-10/illumina-read-phenomenology">Illumina reads and their features</a>). No matter: we couldn't assemble the original data sets anyway, so we had to get rid of <em>some</em> of it, right?
+                                    </p>
+                                    <p>
+                                        The subject of this blog post is not on how to best throw away data. (I'll address that in a few weeks.) Instead, it's on why we have to throw away data in the first place. More precisely,
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="why-is-assembly-hard" id="why-is-assembly-hard">Why is assembly hard?</a>
+                                    </h1>
+                                    <p>
+                                        First, some background. Imagine you have some long-ish strings (1mn - 200 mn in length), composed of only the letters A, C, G, and T, and you want to know what the sequence of the strings is. You can't actually read the sequences directly; they're too physically small. But you <em>can</em> randomly retrieve short subsequences ~100-1000 letters in length from the original long sequences. You don't know where they're from on the original sequence, or even which of the original sequences they're from. And the process of retrieval is error-prone, so you can't even trust the exact sequence you get. But you <em>do</em> know that, by and large, the short sequences are mostly correct; and (the most important bit) that you can get as many of these short sequences as you want, within $$ limitations.
+                                    </p>
+                                    <p>
+                                        From this kind of information you want to reconstruct the original sequences.
+                                    </p>
+                                    <p>
+                                        This is a basic description of the process of shotgun sequencing, in which you take DNA, shred it, and then sequence from it randomly -- many, many times. And it lays out the basic problem of assembly, too: you want to figure out how to reconstruct the original sequences from the little subsequences that you actually have.
+                                    </p>
+                                    <p>
+                                        If you are a computer scientist, you can probably already think of some basic ways to proceed. For example, you could do an all-by-all comparison of the short sequences, lay out which ones overlap and how, build a map of the overlaps, and try to build a tiling path that maximizes the connectivity of your map. Voila! Some approximation of the original sequences results! This approach is known as the overlap-layout-consensus approach, where at the end you produce a consensus view of the original sequence based on all the reads you have.
+                                    </p>
+                                    <p>
+                                        If you are a computer scientist or someone who programs for a living, you will also immediately recognize this as a rilly rilly <strong>hard</strong> problem! Forget biological peccadilloes; just doing this efficiently for large collections of sequences is computationally quite difficult. In particular, the all-by-all comparison is brutal: the number of comparisons scales as N**2 with the number of sequences N, so even if it's relatively efficient to compare two sequences, the problem behaves poorly as your data set grows. Plus, building a map of the overlaps is <em>another</em> hard problem: holding all that information in memory requires (yep!) O(N**2) memory, which is not cheap.
+                                    </p>
+                                    <p>
+                                        Is there any easy way to break down the problem? After all, big computers aren't cheap, but small computers are; so if you could split the problem into many smaller chunks, you could imagine using a grid or Beowulf approach, and just buying lots and lots of cheap hardware to scale.
+                                    </p>
+                                    <p>
+                                        Alas, the problem isn't easy to subdivide. It's easy to see why, if you think about the nature of the original sequences. Here's a little diagram; suppose, for example, that you have four subsequences all derived from one original sequence:
+                                    </p>
+                                    <pre>
+(orig) atggaccagatgagagcatgagccatggacggatcatggaaaacggttaaaaggggcatgg
+
+(1)    atggaccagatgagagca
+(2)                 gagcatgagccatggacggatc
+(3)                                  ggatcatggaaaacggttaaaa
+(4)                                                  ttaaaaggggcatgg
+</pre>
+                                    <p>
+                                        If the layout above is the only way that subsequences 1-4 overlap and can assemble, then to decompose the overlap problem across multiple computers would involve sending (1) and (2) to one computer, and (3) and (4) to another, assembling them there, and then taking the results and composing them on a shared node. Unfortunately, to do this efficiently currently requires that you know that 1 and 2 overlap, and that 3 and 4 overlap -- which is basically the problem that you already need to solve!
+                                    </p>
+                                    <p>
+                                        As I understand it -- I'm not a computer scientist unless you look at my letterhead -- there is simply no efficient way to decompose the overlap-layout-consensus assembly algorithm without either assuming something about the structure of the data, and/or introducing errors. (If you disagree, I'd appreciate either a reference or an implementation; thanks ;)
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="the-second-or-possibly-third-generation-of-assemblers" id="the-second-or-possibly-third-generation-of-assemblers">The second, or possibly third, generation of assemblers</a>
+                                    </h1>
+                                    <p>
+                                        OK, but computer scientists and computational biologists aren't dumb, and they like to tackle hard problems, and frankly this is an incredibly important problem to solve (for all sorts of reasons that you'll have to trust me on for now). Moreover, N^2 scaling is simply unacceptable!
+                                    </p>
+                                    <p>
+                                        Newer assemblers use a de Bruijn graph approach. Essentially, this involves breaking the subsequences down into fixed-length words of length k, and constructing an overlap graph. For example, taking the sequences above,:
+                                    </p>
+                                    <pre>
+(orig) atggaccagatgagagcatgagccatggacggatcatggaaaacggttaaaaggggcatgg
+
+(1)    atggaccagatgagagca
+(2)                 gagcatgagccatggacggatc
+(3)                                  ggatcatggaaaacggttaaaa
+(4)                                                  ttaaaaggggcatgg
+</pre>
+                                    <p>
+                                        you would break the original sequences down into words of length (say) 5, yielding:
+                                    </p>
+                                    <pre>
+atgga   gatga   catga   atgga   atcat   aaacg    aaagg
+ tggac   atgag   atgag   tggac   tcatg   aacgg    aaggg
+  ggacc   tgaga   tgagc   ggacg   catgg   acggt    agggg
+   gacca   gagag   gagcc   gacgg   atgga   cggtt    ggggc
+    accag   agagc   agcca   acgga   tggaa   ggtta    gggca
+     ccaga   gagca   gccat   cggat   ggaaa   gttaa    ggcat
+      cagat   agcat   ccatg   ggatc   gaaaa   ttaaa    gcatg
+       agatg   gcatg   catgg   gatca   aaaac   taaaa    catgg
+                                                aaaag
+</pre>
+                                    <p>
+                                        The overlaps between k-mers now implicitly give you a <em>graph</em> connecting each k-mer to all overlapping k-mers; and if you can find a path that traverses every node in this graph once, you will have your original contig.
+                                    </p>
+                                    <p>
+                                        Note that this actually <em>works</em>, although of course k must be much bigger than 5 in practice, and there are all sorts of cute tricks you must play to do a good job of disentangling complicated graphs.
+                                    </p>
+                                    <p>
+                                        Why is this an advantage over the overlap/layout/consensus approach that we looked at first? I'm not sure I've identified all the reasons, but there are at least two very important ones.
+                                    </p>
+                                    <p>
+                                        First, memory usage. While your memory usage for finding overlaps grows &gt; O(N) with the overlap approach (with sparse matrices it should be N log N, I think?), the de Bruijn graph approach consumes only as much memory as you need to represent each new k-mer (so, with the number of novel k-mers) as well as the connections between them (which can be implicitly represented if you have efficient k-mer lookup). For large, deeply sequenced data sets this is going to be a <em>huge</em> savings: there are only three billion bases in the human genome, and probably only two billion unique k-mers of length 32 -- so if you can store k-mers efficiently (hint: you can) then the de Bruijn graph approach is really great.
+                                    </p>
+                                    <p>
+                                        Second, k-mers and k-mer overlaps can be stored and queried efficiently -- you just use a hash table or a trie structure. For example, you can store all 4**17 k-mers of length 17 as 34-bit offsets in a hash table (2 bits per DNA base), or you can use a branching trie structure to store arbitrarily long k-mers (see <a href="http://www.ncbi.nlm.nih.gov/pubmed/18976482">tallymer</a>). Hash tables are be efficient (if big) representations for densely occupied k-mer spaces, while tries will be efficient for sparsely occupied k-mer spaces. Arbitrary length sequences are comparatively difficult to store and query.
+                                    </p>
+                                    <p>
+                                        The de Bruijn graph approach is what Velvet, ABySS, and SOAPdenovo use, and it seems to work well.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="so-what-s-the-problem" id="so-what-s-the-problem">So what's the problem?</a>
+                                    </h1>
+                                    <p>
+                                        Scaling. Scaling is the problem.
+                                    </p>
+                                    <p>
+                                        Well, that and the sequencing companies and the biologists.
+                                    </p>
+                                    <p>
+                                        Let me explain. Sequencing companies are producing newer and bigger and better machines, that produce more and more sequence, every week. The Illumina GA2 produces 10-100 Gb of sequence per run now. The <a href="http://pathogenomics.bham.ac.uk/blog/2010/08/hiseq-2000-not-such-a-lame-name-after-all/">HiSeq 2000 is going to produce even more enormous amounts of sequence</a> as soon as we get one. And more, lots more, is on the way.
+                                    </p>
+                                    <p>
+                                        This wouldn't be a problem if biologists would just stick to the exciting <em>old</em> problems, like resequencing humans and doing transcriptomes etc. But noooo, biologists see these juicy new sequencers and think -- hey! I could sequence <em>populations</em> of organisms! Or, like, 30 new organisms at once! Or 30 transcriptomes at once! And it will be cheap! (And we'll have someone else do the bioinformatics, which is easy, right? Right?)
+                                    </p>
+                                    <p>
+                                        So the sequencing companies are producing newer and cheaper and faster sequencing machines, and the biologists are using them to tackle ever more exciting and novel and challenging biological questions, and ... guess what? Our existing tools and approaches don't scale very well.
+                                    </p>
+                                    <p>
+                                        For one very specific example, the de Bruijn graph approach breaks down completely if you are sequencing endlessly diverse populations, as we seem to be doing in metagenomics. If you have some high abundance organisms, and a lot more low abundance organisms, and you sequence the organism soup to some arbitrary level, the novel k-mers will swamp your assembler, and to no end -- because those k-mers are never going to assemble to anything big without more sequencing. In which case you've compounded your swamping problem in an attempt to solve your earlier problem.
+                                    </p>
+                                    <p>
+                                        Similar things happen with wild population sequencing, where you get new and diverse sequences every time you look at a new animal; humans, even with their relatively low diversity, are one fine example.
+                                    </p>
+                                    <p>
+                                        OK, so this is the problem to solve, and I think it's a really big problem. It's not decomposable so it can't be made to scale well, and we're already at the limit of our existing compute infrastructure for the data we already have. (See <a href="http://ivory.idyll.org/blog/jul-10/computation-for-terabase-metagenomics.html">Terabase metagenomics -- the computational side</a> and <a href="http://ivory.idyll.org/blog/may-10/grim-future-for-sequencing-centers.html">grim future for sequencing centers</a>.) And as we try to inch the boundaries along, the sequencing companies are producing new and bigger machines to give us new and bigger amounts of data.
+                                    </p>
+                                    <p>
+                                        Are there any solutions? No really good ones, unfortunately. The solution du jour (see <a href="http://www.nature.com/nature/journal/v464/n7285/full/nature08821.html">MetaHIT methods</a> and my earlier blog posts) is to throw away low abundance data that you figure won't assemble, and/or subdivide the sequences by abundance, in the expectation that similar abundance sequences will come from the same original genome. These are basically approximation heuristics, hoping to reduce the data in such a way that the assembler can deal with it. The hope is that the assembler can do a not-terribly-bad-job of assembly based on the known structure of the population.
+                                    </p>
+                                    <p>
+                                        Moreover, the throwing-away-data solution won't scale very well; soon enough you'll be throwing away not just 90% of the data, but 99% of the data, just to get a tractable data set.
+                                    </p>
+                                    <p>
+                                        We are doomed, doomed I say! Clearly we should give up.
+                                    </p>
+                                    <p>
+                                        Anyway, this concludes part one of a series of blog posts on assembly. In part two, I plan to talk a bit about paired-end sequencing and repeat sequences.
+                                    </p>
+                                    <p>
+                                        --titus
+                                    </p>
+                                    <p>
+                                        p.s. An excellent assembly algorithm reference: <a href="http://www.ncbi.nlm.nih.gov/pubmed/20211242">Miller, Koren, and Sutton, Genomics, 2010</a>.
+                                    </p>
+                                </div>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ivory.idyll.org/blog/aug-10/assembly-part-i">http://ivory.idyll.org/blog/aug-10/assembly-part-i</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

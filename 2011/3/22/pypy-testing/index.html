@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            PyPy testing
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 23 Mar 2011 03:41:40 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-22T23:41:40-04:00">
+                    <meta itemprop="dateModified" content="2011-03-22T23:41:40-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-23T03:41:40+00:00">Mar 23</time>
+                    <h2 itemprop="title">
+                        PyPy testing
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/6380c95732931638">
+                        <blockquote>
+                            <p>
+                                After reading Bob Ippolito’s excellent&nbsp;<a href="http://bob.pythonmac.org/archives/2011/03/17/playing-with-pypy/">Playing with PyPy</a> I was inspired to try PyPy out myself. I heard a ton of buzz coming out of PyCon that PyPy is wicked fast and wicked awesome. I wanted to take a look, and Bob’s instructions were a perfectly made intro.
+                            </p>
+                            <p>
+                                A lot of the work I do is with strings (as you can see in my picloud testing from last year). I built a little test of PyPy vs Python2.6 vs Python 2.6 + Pyrex + C-Extension to see how things were going. After following the instructions I have PyPy 1.4.1, and OSX 10.6.6′s built in Python 2.6. My test case is pretty simple – compute the DoubleMetaphone representations of 94,293 names from the Census. First gather the data:
+                            </p>
+                            <pre>
+curl -O http://www.census.gov/genealogy/names/dist.all.last;
+curl -O http://www.census.gov/genealogy/names/dist.female.first;
+curl -O http://www.census.gov/genealogy/names/dist.male.first;
+</pre>
+                            <p>
+                                So, now we setup our test code. All it does is loop through those 3 files we just downloaded of names, grabs the name from each line, computes &nbsp;the double metaphone values, and appends them to to a list.
+                            </p>
+                            <p>
+                                I’m using two implementations of the&nbsp;<a href="http://en.wikipedia.org/wiki/Metaphone#Double_Metaphone">DoubleMetaphone</a> algorithm. First is <a href="https://bitbucket.org/yougov/fuzzy">Fuzzy</a>, a library&nbsp;<a href="http://jamwt.com">Jamie</a> developed at Polimetrix that uses Pyrex to wrap the&nbsp;<a href="http://www.cpan.org/modules/by-authors/id/MAURICE/Text-DoubleMetaphone-0.07.readme">C implementation by Maurice Aubrey</a>. The other version is&nbsp;<a href="http://www.atomodo.com/code/double-metaphone/metaphone.py/view">Andrew Collin’s pure python one</a>. For simplicity we’re going to call that atomodo.py after his domain.
+                            </p>
+                            <pre>
+pip install Fuzzy
+curl http://www.atomodo.com/code/double-metaphone/metaphone.py/at_download/file &gt; atomodo.py
+</pre>
+                            <p>
+                                My test.py:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> <span style="color:#dc143c">sys</span>
+ 
+<span style="color:#ff7700;font-weight:bold">if</span> <span style="color:#dc143c">sys</span>.<span style="color:black">argv</span><span style="color:black">[</span><span style="color:#ff4500">1</span><span style="color:black">]</span> == <span style="color:#483d8b">'atomodo'</span>:
+        <span style="color:#ff7700;font-weight:bold">import</span> atomodo
+        dmeta = atomodo.<span style="color:black">dm</span>
+<span style="color:#ff7700;font-weight:bold">elif</span> <span style="color:#dc143c">sys</span>.<span style="color:black">argv</span><span style="color:black">[</span><span style="color:#ff4500">1</span><span style="color:black">]</span> == <span style="color:#483d8b">'fuzzy'</span>:
+        <span style="color:#ff7700;font-weight:bold">import</span> fuzzy
+        dmeta = fuzzy.<span style="color:black">DMetaphone</span><span style="color:black">(</span><span style="color:black">)</span>
+ 
+files = <span style="color:black">[</span><span style="color:#483d8b">'dist.all.last'</span>, <span style="color:#483d8b">'dist.male.first'</span>, <span style="color:#483d8b">'dist.female.first'</span><span style="color:black">]</span>
+output = <span style="color:black">[</span><span style="color:black">]</span>
+<span style="color:#ff7700;font-weight:bold">for</span> <span style="color:#008000">file</span> <span style="color:#ff7700;font-weight:bold">in</span> files:
+        fh = <span style="color:#008000">open</span><span style="color:black">(</span><span style="color:#008000">file</span><span style="color:black">)</span>
+        <span style="color:#ff7700;font-weight:bold">for</span> row <span style="color:#ff7700;font-weight:bold">in</span> fh:
+                name = row<span style="color:black">[</span>:<span style="color:#ff4500">15</span><span style="color:black">]</span>.<span style="color:black">strip</span><span style="color:black">(</span><span style="color:black">)</span>
+                x = dmeta<span style="color:black">(</span>name<span style="color:black">)</span>
+                output.<span style="color:black">append</span><span style="color:black">(</span>x<span style="color:black">)</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                <span style="font-family:Consolas, Monaco, 'Courier New', Courier, monospace;font-size:12px;line-height:18px;white-space:pre">(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time pypy test.py atomodo</span>
+                            </p>
+                            <pre>
+real       0m3.098s
+user    0m3.034s
+sys     0m0.055s
+(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time python2.6 test.py atomodo # CPython
+
+real    0m2.425s
+user    0m2.390s
+sys     0m0.032s
+(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time python2.6 test.py fuzzy
+
+real    0m0.390s
+user    0m0.357s
+sys     0m0.032s
+</pre>
+                            <p>
+                                The results pretty well speak for themselves. C + Cython destroys the other two. Plain jane CPython is slightly faster than PyPy.&nbsp;<em>Aside, but I ran all this with PYPY_GC_NURSERY=716K to help PyPy out. On my system that seemed like a sane default after running his script. I ran it with no PYPY_GC_NURSERY and the results were a bit slower across the board. In this case pypy was 3.180s without a GC_NURSERY value.</em>
+                            </p>
+                            <p>
+                                <img src="http://chart.apis.google.com/chart?chxl=0:%7CPyPy%7CCPython%7CC+%2B+Cython&amp;chxp=0,0.5,1.5,2.5&amp;chxr=0,0,3%7C1,0,3.5&amp;chxt=x,y&amp;chbh=a,5,10&amp;chs=400x250&amp;cht=bvg&amp;chco=FF9900&amp;chds=0,3.5&amp;chd=t:3.034,2.425,0.39&amp;chtt=Total+User+Seconds+(smaller+is+better)" alt="Total User Seconds (smaller is better)" width="400" height="250">
+                            </p>
+                            <p>
+                                &nbsp;
+                            </p>
+                            <hr>
+                            <p>
+                                I decided to play around a little further at this point, to see if PyPy’s JIT would do better with more iterations. I tried two variations with different results for PyPy. In <a href="http://a.libpa.st/vSYEP">Variation A</a> I loop the entire thing 10 times, inserting the loop above output = [], so the list is reset each time. In other words this is a loose loop, it opens the files 10 times, etc. The results are pretty interesting!
+                            </p>
+                            <pre>
+(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time pypy test.py atomodo
+
+real    0m19.907s
+user    0m19.734s
+sys     0m0.145s
+(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time python2.6 test.py atomodo
+
+real    0m24.615s
+user    0m24.450s
+sys     0m0.160s
+(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time python2.6 test.py fuzzy
+
+real    0m3.753s
+user    0m3.608s
+sys     0m0.143s
+</pre>
+                            <p>
+                                <img src="http://chart.apis.google.com/chart?chxl=0:%7CPyPy%7CCPython%7CC+%2B+Cython&amp;chxp=0,0.5,1.5,2.5&amp;chxr=0,0,3%7C1,0,35&amp;chxt=x,y&amp;chbh=a,5,10&amp;chs=400x250&amp;cht=bvg&amp;chco=3366CC&amp;chds=0,35&amp;chd=t:19.734,24.450,3.753&amp;chtt=Total+User+Seconds+(smaller+is+better)+Variation+A" alt="Total User Seconds (smaller is better) Variation A" width="400" height="250">
+                            </p>
+                            <p>
+                                <a href="http://a.libpa.st/awYKK">Variation B</a> repeats just the double metaphone calculation 10 times, by wrapping <span style="font-family:fixed-width">x = dmeta(name)</span>. This does less work overall, because it doesn’t reopen the files, doesn’t have to iterate over them or substring + strip. PyPy does even better, comparatively.
+                            </p>
+                            <pre>
+(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time pypy test.py atomodo
+
+real    0m16.610s
+user    0m16.511s
+sys     0m0.083s
+(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time python2.6 test.py atomodo
+
+real    0m23.929s
+user    0m23.855s
+sys     0m0.067s
+(pypy-1.4.1-osx64)kotai:perftesting chmullig$ time python2.6 test.py fuzzy
+
+real    0m2.526s
+user    0m2.484s
+sys     0m0.041s
+</pre>
+                            <p>
+                                <img src="http://chart.apis.google.com/chart?chxl=0:%7CPyPy%7CCPython%7CC+%2B+Cython&amp;chxp=0,0.5,1.5,2.5&amp;chxr=0,0,3%7C1,0,35&amp;chxt=x,y&amp;chbh=a,5,10&amp;chs=400x250&amp;cht=bvg&amp;chco=AA0033&amp;chds=0,35&amp;chd=t:16.511,23.855,2.383&amp;chtt=Total+User+Seconds+(smaller+is+better)+Variation+B" alt="Total User Seconds (smaller is better)+Variation+B" width="400" height="250">
+                            </p>
+                            <hr>
+                            <p>
+                                So where does that leave us? Well if things scale perfectly the original times * 10 should be about the same as Variation A, and Variation B should be a tiny bit smaller (because it’s doing less work). However reality is always more confusing than we’d hope.
+                            </p>
+                            <p>
+                                <img src="http://chart.apis.google.com/chart?chxl=0:%7CPyPy%7CCPython%7CC+%2B+Cython&amp;chxp=0,0.5,1.5,2.5&amp;chxr=0,0,3%7C1,0,35&amp;chxt=x,y&amp;chbh=a,5,10&amp;chs=520x270&amp;cht=bvg&amp;chco=FF9900,3366CC,AA0033&amp;chds=0,35,0,35,0,35&amp;chd=t:30.34,24.25,3.9%7C19.734,24.45,3.753%7C16.511,23.855,2.383&amp;chdl=Original+*+10%7CVariation+A%7CVariation+B&amp;chdlp=b&amp;chtt=Comparison%3A+User+Seconds+(smaller+is+better)" alt="Comparison: User Seconds (smaller is better)" width="520" height="270">
+                            </p>
+                            <p>
+                                CPython running atomodo is quite consistent. The CPython+fuzzy is pretty darn fast and consistent too, seemingly getting more of an advantage from B than CPython+Atomodo. PyPy is crazy though. I would expect A and B to be faster than the original because JIT can work its magic more. However I was surprised by how much, and further surprised by how much B was faster than A. I guess the cache is very short lived or something?
+                            </p>
+                            <p>
+                                Admittedly this test is flawed in 200 different ways. However it’s interesting to see where PyPy might be faster (very, very, very repetitive code; one pass calls dmeta(name) 94,293 times). I also know I’ll keep looking for C extensions.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://chmullig.com/2011/03/pypy-testing/">http://chmullig.com/2011/03/pypy-testing/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

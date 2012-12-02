@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The Cloud is not a Silver Bullet
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 25 Apr 2011 19:32:39 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-25T15:32:39-04:00">
+                    <meta itemprop="dateModified" content="2011-04-25T15:32:39-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-25T19:32:39+00:00">Apr 25</time>
+                    <h2 itemprop="title">
+                        The Cloud is not a Silver Bullet
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c725cf5de65a02f9">
+                        <blockquote>
+                            <p>
+                                There has been much&nbsp;brouhaha&nbsp;over the recent EBS outage. I say EBS to be specific as this, despite the sensationalistic headlines, was not an AWS or EC2 outage. RDS was also affected as it is built on top of the EBS product. As has been reported just about everywhere, the outage affected many large websites that are built on top of AWS. Much of the banter was mainly around how the “AWS outage” had “brought down” these sites, which couldn’t be further from the truth. What brought down these services was poor architectural choices combined with a lack of understanding of the unique characteristics of cloud infrastructure.
+                            </p>
+                            <p>
+                                Our friends at <a href="http://don.blogs.smugmug.com/2011/04/24/how-smugmug-survived-the-amazonpocalypse/">Twilio</a> and <a href="http://don.blogs.smugmug.com/2011/04/24/how-smugmug-survived-the-amazonpocalypse/">SmugMug</a>, along with SimpleGeo, were able to happily weather the storm without significant issues. Why were we able to survive the storm while others were not? It’s simple; anyone who’s spent a lot of time talking with the fine folks at AWS or researching the EBS product would know that it has a number of drawbacks:
+                            </p>
+                            <ul>
+                                <li>EBS volumes are not anywhere near as fault tolerant as S3. S3 has 11 9’s of durability. EBS volumes are no more or less durable than a simple <a href="http://en.wikipedia.org/wiki/Standard_RAID_levels#RAID_1">RAID1</a>.
+                                </li>
+                                <li>EBS volumes increase network IO to and from your instance to some degree and can degrade or interfere with other network services on a given instance.
+                                </li>
+                                <li>EBS volumes lack the IO characteristics that many IO-bound services require. I’ve heard insane stories of people doing RAID0 across dozens of EBS volumes to get the IO performance they’re looking for. At SimpleGeo, we RAID0 the ephemeral drives and split data across multiple ephemeral RAID0 volumes to get the IO we’re looking for.
+                                </li>
+                            </ul>
+                            <p>
+                                This doesn’t mean that you should avoid EBS or that EBS is a bad product. Quite the contrary. I think EBS is a pretty fucking cool product when you consider the features and simplicity of it. What it <em>does</em> mean is that you need to know it’s weaknesses in order to properly build a solution on top of it.
+                            </p>
+                            <p>
+                                I think the largest surprise of the EBS outage, and one that no doubt will be reviewed in depth by the engineers at AWS, was that an EBS problem in one AZ was able to degrade services in other AZs. My general understanding is that the issue arose when EBS in one AZ got confused about possible network outages and started replicating degraded EBS volumes around the downed AZ. In a very degenerate case, when EBS can’t find any peers in their home AZ, they attempted to reach across other AZs to replicate data to other peers. This led to EBS being totally unavailable in the originally problematic AZ and degrading network-based services in other AZs as this degenerate case was triggered.
+                            </p>
+                            <p>
+                                All this being said, what is so shocking about this banter is that startups around the globe were essentially blaming a hard drive manufacturer for taking down their sites. I don’t believe I’ve ever heard of a startup blaming NetApp or Seagate for an outage in their hosted environments. People building on the cloud shouldn’t get a pass for poor architectural decisions that put too much emphasis on, essentially, network attached RAID1 storage saving their asses in an outage.
+                            </p>
+                            <p>
+                                Which brings me to my main point: <strong>the cloud is not a silver bullet.</strong> S3, EC2, EBS, ELB, et al have their strengths and weaknesses, just like any piece of hardware you’d buy from a traditionally enterprise vendor. Additionally, the cloud has wholly unique architectural characteristics. What I mean by this is that the tools AWS provides you need to be assembled and leveraged in unique ways that differ, sometimes greatly, to how you’d build a system if you were building out your own datacenter.
+                            </p>
+                            <p>
+                                The #1 characteristic that people fail over and over to recognize is that the cloud is <em>entirely ephemeral</em>. Everything from EBS, to EC2, to EBS volumes could vaporize in an instant. If you are not building your system with this in mind, you’ve already lost.&nbsp;When you’re dealing with an environment like this, which by the way most large hosted services deal with, your architecture needs to exhibit a few key characteristics:
+                            </p>
+                            <ul>
+                                <li>Everything needs to be automated. Spinning up new instances, expanding your clusters, backups, restoring from backups, metrics, monitoring, configurations, deployments, etc. should all be automated.
+                                </li>
+                                <li>You must build share-nothing services that span AZs at a minimum. Preferably your services should span regions as well, which is technically more difficult to implement, but will increase your availability by an order of magnitude.
+                                </li>
+                                <li>An avoidance of relying on ACID services. It’s not that you can’t run MySQL, PostgreSQL, etc. on the cloud, but the ephemeral and distributed nature of the cloud make this a much more difficult feature to sustain.
+                                </li>
+                                <li>Data must be replicated across multiple types of storage. If you run MySQL on top of RDS, you should be replicating to slaves on EBS, RDS multi-AZ slaves, ephemeral drives, etc. Additionally, snapshots and backups should span regions. This allows entire components to disappear and you to either continue to operate or restore quickly even if a major AWS service is down.
+                                </li>
+                                <li>Application-level replication strategies. To truly go multi-region, or to span across cloud services, you’ll very likely have to build replication strategies into your application rather than relying those inherent in your storage systems.
+                                </li>
+                            </ul>
+                            <p>
+                                Many people point out that Amazon’s SLA for it’s AWS products is “only” 99.9% What they fail to recognize is those are <em>per-AZ</em> numbers. You can compound your 9’s in a positive manner by spanning multiple AZs. This means that the simple act of spanning two AZs takes you from 99.9% uptime on EC2 to 99.9999% If you went to three AZs, with an appropriate share-nothing architecture, you’d be looking at a theoretical 99.9999999% uptime. That’s 0.03 seconds of downtime a year.
+                            </p>
+                            <p>
+                                This all being said, I think it is fair to give Amazon a hard time for a couple of things. Personally, I think the majority of the backlash this outage caused was driven by a few factors:
+                            </p>
+                            <ol>
+                                <li>Amazon and the AWS team need to more clearly communicate, and reinforce that communication, about the&nbsp;fallibility&nbsp;of each of their services. For too long, Amazon has let the myth run rampant that the cloud is a magic silver bullet and it’s time to pull back on that messaging. I don’t think Amazon has done this with malice, rather they’re a victim of their own success. The reality is that people <em>are</em> building fantastic systems with outrageously impressive redundancy on top of AWS, but it’s not being clearly articulated that these systems are due to a combination of great tools and great architecture – not magic cloud pixy dust.
+                                </li>
+                                <li>Amazon’s community outreach and education needs to be much stronger than it is. They should have a small army of AWS specialists preaching proper cloud architecture at every hackathon, developer day, and conference.
+                                </li>
+                                <li>A lot more effort needs to go into documenting proper cloud architecture. The cloud has changed the game. There are new tools and, as a result, new ways of building systems in the cloud. Case studies, diagrams, approved tools, etc. should all be highlighted, documented, and preached about accordingly.
+                                </li>
+                            </ol>
+                            <p>
+                                So what have we learned? The cloud isn’t a silver bullet. You still have to build proper redundancy into your systems and applications. And, most importantly, you, not Amazon, is ultimately responsible for your system’s uptime.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://stu.mp/2011/04/the-cloud-is-not-a-silver-bullet.html">http://stu.mp/2011/04/the-cloud-is-not-a-silver-bullet.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

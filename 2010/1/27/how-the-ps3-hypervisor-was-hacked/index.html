@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How the PS3 hypervisor was hacked
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 27 Jan 2010 09:59:31 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-27T04:59:31-04:00">
+                    <meta itemprop="dateModified" content="2010-01-27T04:59:31-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-27T08:59:31+00:00">Jan 27</time>
+                    <h2 itemprop="title">
+                        How the PS3 hypervisor was hacked
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/2eb5b62ede6059bb">
+                        <blockquote>
+                            <p>
+                                <a href="http://iphonejtag.blogspot.com/">George Hotz</a>, previously known as an <a href="http://theiphonewiki.com/">iPhone hacker</a>, announced that he <a href="http://geohotps3.blogspot.com/2010/01/hello-hypervisor-im-geohot.html">hacked the Playstation 3</a> and then provided <a href="http://geohotps3.blogspot.com/2010/01/heres-your-silver-platter.html">exploit details</a>. Various articles have been written about this but none of them appear to have analyzed the actual code. Because of the various conflicting reports, here is some more analysis to help understand the exploit.
+                            </p>
+                            <p>
+                                The PS3, like the Xbox360, depends on a hypervisor for security enforcement. Unlike the 360, the PS3 allows users to run ordinary Linux if they wish, but it still runs under management by the hypervisor. The hypervisor does not allow the Linux kernel to access various devices, such as the GPU. If a way was found to compromise the hypervisor, direct access to the hardware is possible, and other less privileged code could be monitored and controlled by the attacker.
+                            </p>
+                            <p>
+                                Hacking the hypervisor is <a href="http://www.edepot.com/playstation3.html#PS3_Security">not the only step</a> required to run pirated games. Each game has an encryption key stored in an area of the disc called <a href="http://en.wikipedia.org/wiki/ROM_Mark">ROM Mark</a>. The drive firmware reads this key and supplies it to the hypervisor to use to decrypt the game during loading. The hypervisor would need to be subverted to reveal this key for each game. Another approach would be to compromise the Blu-ray drive firmware or skip extracting the keys and just slave the decryption code in order to decrypt each game. After this, any software protection measures in the game would need to be disabled. It is unknown what self-protection measures might be lurking beneath the encryption of a given game. Some authors might trust in the encryption alone, others might implement something like <a href="http://en.wikipedia.org/wiki/SecuROM">SecuROM</a>.
+                            </p>
+                            <p>
+                                The hypervisor code runs on both the main CPU (PPE) and one of its seven Cell coprocessors (SPE). The SPE thread seems to be launched in isolation mode, where access to its private code and data memory is blocked, even from the hypervisor.&nbsp; The root hardware keys used to decrypt the bootloader and then hypervisor are present only in the hardware, possibly through the use of <a href="http://en.wikipedia.org/wiki/EFUSE">eFUSE</a>s. This could also mean that each Cell processor has some unique keys, and decryption does not depend on a single global root key (unlike <a href="http://www.eurogamer.net/articles/digitalfoundry-ps3hacked-article">some articles</a> that claim there is a single, global root key).
+                            </p>
+                            <p>
+                                George’s hack compromises the hypervisor after booting Linux via the “OtherOS” feature. He has used the exploit to add arbitrary read/write RAM access functions and dump the hypervisor. Access to lv1 is a necessary first step in order to mount other attacks against the drive firmware or games.
+                            </p>
+                            <p>
+                                His approach is clever and is known as a “<a href="http://rdist.root.org/2007/05/07/glitch-attacks-revealed/">glitching attack</a>“. This kind of hardware attack involves sending a carefully-timed voltage pulse in order to cause the hardware to misbehave in some useful way. It has <a href="http://rdist.root.org/2007/05/07/glitch-attacks-revealed/">long been used</a> by smart card hackers to unlock cards. Typically, hackers would time the pulse to target a loop termination condition, causing a loop to continue forever and dump contents of the secret ROM to an accessible bus. The clock line is often glitched but some data lines are also a useful target. The pulse timing does not always have to be precise since hardware is designed to tolerate some out-of-spec conditions and the attack can usually be repeated many times until it succeeds.
+                            </p>
+                            <p>
+                                George connected an FPGA to a single line on his PS3’s memory bus. He programmed the chip with very simple logic: send a 40 ns pulse via the output pin when triggered by a pushbutton. This can be done with a few lines of Verilog. While the length of the pulse is relatively short (but still about 100 memory clock cycles of the PS3), the triggering is extremely imprecise. However, he used software to setup the RAM to give a higher likelihood of success than it would first appear.
+                            </p>
+                            <p>
+                                His goal was to compromise the hashed page table (HTAB) in order to get read/write access to the main segment, which maps all memory including the hypervisor. The exploit is a Linux kernel module that calls various system calls in the hypervisor dealing with memory management. It allocates, deallocates, and then tries to use the deallocated memory as the HTAB for a virtual segment. If the glitch successfully desynchronizes the hypervisor from the actual state of the RAM, it will allow the attacker to overwrite the active HTAB and thus control access to any memory region. Let’s break this down some more.
+                            </p>
+                            <p>
+                                The first step is to allocate a buffer. The exploit then requests that the hypervisor create lots of duplicate HTAB mappings pointing to this buffer. Any one of these mappings can be used to read or write to the buffer, which is fine since the kernel owns it. In Unix terms, think of these as multiple file handles to a single temporary file. Any file handle can be closed, but as long as one open file handle remains, the file’s data can still be accessed.
+                            </p>
+                            <p>
+                                The next step is to deallocate the buffer without first releasing all the mappings to it. This is ok since the hypervisor will go through and destroy each mapping before it returns. Immediately after calling lv1_release_memory(), the exploit prints a message for the user to press the glitching trigger button. Because there are so many HTAB mappings to this buffer, the user has a decent chance of triggering the glitch while the hypervisor is deallocating a mapping. The glitch probably prevents one or more of the hypervisor’s write cycles from hitting memory. These writes were intended to deallocate each mapping, but if they fail, the mapping remains intact.
+                            </p>
+                            <p>
+                                At this point, the hypervisor has an HTAB with one or more read/write mappings pointing to a buffer it has deallocated. Thus, the kernel no longer owns that buffer and supposedly cannot write to it. However, the kernel still has one or more valid mappings pointing to the buffer and can actually modify its contents. But this is not yet useful since it’s just empty memory.
+                            </p>
+                            <p>
+                                The exploit then creates a virtual segment and checks to see if the associated HTAB is located in a region spanning the freed buffer’s address. If not, it keeps creating virtual segments until one does. Now, the user has the ability to write directly to this HTAB instead of the hypervisor having exclusive control of it. The exploit writes some HTAB entries that will give it full access to the main segment, which maps all of memory. Once the hypervisor switches to this virtual segment, the attacker now controls all of memory and thus the hypervisor itself. The exploit installs two syscalls that give direct read/write access to any memory address, then returns back to the kernel.
+                            </p>
+                            <p>
+                                It is quite possible someone will package this attack into a modchip since the glitch, while somewhat narrow, does not need to be very precisely timed. With a microcontroller and a little analog circuitry for the pulse, this could be quite reliable. However, it is more likely that a software bug will be found after reverse-engineering the dumped hypervisor and that is what will be deployed for use by the masses.
+                            </p>
+                            <p>
+                                Sony appears to have done a great job with the security of the PS3. It all hangs together well, with no obvious weak points. However, the low level access given to guest OS kernels means that any bug in the hypervisor is likely to be accessible to attacker code due to the broad API it offers. One simple fix would be to read back the state of each mapping after changing it. If the write failed for some reason, the hypervisor would see this and halt.
+                            </p>
+                            <p>
+                                It will be interesting to see how Sony responds with future updates to prevent this kind of attack.
+                            </p>
+                            <p>
+                                [Edit: corrected the description of virtual segment allocation based on a comment by geohot.]
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/rdist.wordpress.com/503/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/rdist.wordpress.com/503/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/rdist.wordpress.com/503/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/rdist.wordpress.com/503/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/rdist.wordpress.com/503/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/rdist.wordpress.com/503/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/rdist.wordpress.com/503/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/rdist.wordpress.com/503/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/rdist.wordpress.com/503/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/rdist.wordpress.com/503/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=rdist.root.org&amp;blog=893473&amp;post=503&amp;subd=rdist&amp;ref=&amp;feed=1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://rdist.root.org/2010/01/27/how-the-ps3-hypervisor-was-hacked/">http://rdist.root.org/2010/01/27/how-the-ps3-hypervisor-was-hacked/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

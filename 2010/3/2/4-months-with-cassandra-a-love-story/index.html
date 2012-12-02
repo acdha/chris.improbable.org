@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            4 Months with Cassandra, a love story
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 02 Mar 2010 11:08:05 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-02T06:08:05-04:00">
+                    <meta itemprop="dateModified" content="2010-03-02T06:08:05-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-02T10:08:05+00:00">Mar 02</time>
+                    <h2 itemprop="title">
+                        4 Months with Cassandra, a love story
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/8defd2af555c878b">
+                        <blockquote>
+                            <img src="https://www.cloudkick.com/site_media/images/cassandra_logo.png">
+                            <p>
+                                <i>Update: Cloudkick has released two Cassandra monitors for column family and thread pool stats. Read the <a href="https://support.cloudkick.com/Cassandra_Checks" title="Cassandra checks support wiki">Cassandra checks support wiki</a> for full details.</i>
+                            </p>
+                            <p>
+                                At Cloudkick we track a ton of metrics about our customer's servers and it's quite a challenge to store such massive amounts of data. Early on, we made the decision to avoid using tools like RRDTool, so we could provide a more holistic look at infrastructure. We had two firm requirements: we wanted to show trends on a macro-level and to have very low latency so our users would never wait for graphs to build. We initially used PostgreSQL, but as we added billions of rows, the performance quickly degraded. We used cron jobs that would roll up the data on intervals to trade storage for throughput and lower latency. With clever partitioning, we were able to stretch the system to a certain point, but beyond that we faced issues of needing a much bigger machine and faster rotational disks to accommodate our business requirements; that's when started looking at other solutions.
+                            </p>
+                            <p>
+                                We evaluated many of the <a href="http://www.vineetgupta.com/2010/01/nosql-databases-part-1-landscape.html">NoSQL options</a> but in the end, we chose <a href="http://incubator.apache.org/cassandra/">Apache Cassandra</a> because it provided many advantages for our use-cases.
+                            </p>
+                            <h2>
+                                Advantages of Cassandra
+                            </h2>
+                            <h3>
+                                Linear scalability
+                            </h3>
+                            <p>
+                                To meet our requirements, we needed a fast solution that allowed us to easily throw cloud servers at the problem. Specifically, we needed to achieve thousands of writes per second. Cassandra's architecture, being based on <a href="http://s3.amazonaws.com/AllThingsDistributed/sosp/amazon-dynamo-sosp2007.pdf">Amazon's Dynamo</a>, could cope with our write load and make it easy to add more nodes to an existing cluster.
+                            </p>
+                            <h3>
+                                Massive write performance
+                            </h3>
+                            <p>
+                                Write performance in Cassandra is excellent. The internals are specifically geared towards a heavy-write system. It writes to a memory table and a serial commit log, and every so often the memory table is flushed to disk in what the <a href="http://labs.google.com/papers/bigtable.html">Big Table paper</a> describes as a sorted strings table, often called an SSTable — an immutable data structure. There is a lot more happening behind the scenes, but the performance characteristics are clear: there is nothing slow in the write path. The Cassandra wiki page on <a href="http://wiki.apache.org/cassandra/ArchitectureInternals">Architecture Internals</a> provides more details.
+                            </p>
+                            <h3>
+                                Low operational costs
+                            </h3>
+                            <p>
+                                Traditional sharding and replication with databases like MySQL and PostgreSQL have been shown to work even on the largest scale websites — but come at a large operational cost. Setting up replication for MySQL can be done quickly, but there are many issues you need to be aware of, such as slave replication lag. Sharding can be done once you reach write throughput limits, but you are almost always stuck writing your own sharding layer to fit how your data is created and operationally, it takes a lot of time to set everything up correctly. We skipped that step all together and added a couple hooks to make our data aggregation service siphon to both PostgreSQL and Cassandra for the initial integration.
+                            </p>
+                            <h2>
+                                Cassandra at Cloudkick
+                            </h2>
+                            <p>
+                                Cassandra has some unique terminology which may be unfamiliar. Please refer to the <a href="http://wiki.apache.org/cassandra/DataModel">Data Model wiki page</a> for an explanation of terms.
+                            </p>
+                            <p>
+                                The data model is much less complex than a traditional SQL RDMS system. In the real world, this typically equates to denormalization of data. A great example of that is in <a href="http://about.digg.com/blog/looking-future-cassandra">Digg's blog post</a> on their use of Cassandra. Our data model is a little bit different in that it doesn't really need to be denormalized since it's inherently simple.
+                            </p>
+                            <p>
+                                Cloudkick's primary use of Cassandra is for storing monitoring data of different metrics, checked by our system. This equates down to a very simple model for us. To store all the monitoring information that Cloudkick collects, it only requires a few Column Families. In our system, we have three big classes of data we store:
+                            </p>
+                            <ul>
+                                <li>Metrics (numerics and text)
+                                </li>
+                                <li>Rolled up data
+                                </li>
+                                <li>Statuses at time slices
+                                </li>
+                            </ul>
+                            <p>
+                                Of these different classes of data, all are "indexed" by timestamp.
+                            </p>
+                            <p>
+                                Here's a Column Family declaration as it would appear in storage-conf.xml:
+                            </p>
+                            <pre>
+&lt;ColumnFamily CompareWith="LongType"
+                    Name="NumericArchive" /&gt;
+</pre>
+                            <p>
+                                This particular Column Family stores every single original point of data in the system. The LongType declaration specifies that the column names are 8-byte values that determine the order of the columns. It's analogous to choosing a primary key in a database, except in Cassandra you only get a couple "indexes" for free. Some people say Cassandra is a 4 or 5 level hash, depending on how you configure the column family. The pseudo-hash is below:
+                            </p><code>[KeySpace][CF][Key][Column]</code> or <code>[KeySpace][CF][Key][SuperColumn][SubColumn]</code>
+                            <p>
+                                You can also do range queries on one or two levels depending on the Partitioner you pick. With the Order Preserving Partitioner, you can perform a range_slice which can give you a slice of the keys and a slice of the columns. This is pretty powerful since it gives you a full cross-section of the data with a single call. However, we use the random partitioner which only allows access to a range query from a column level. In Python-land, we store each metric with the typical Thrift call. Storing the column names is as simple as using the <a href="http://docs.python.org/library/struct.html">struct module</a> (!Q is an 8-byte value in network order).
+                            </p>
+                            <pre>
+import struct
+name = struct.pack('!Q', long_ts)
+</pre>
+                            <p>
+                                This snippet of code simply converts the time stamp to a value so it's ready to insert values into the system. It's important to keep the long column names in network order as that's what the Cassandra Java process expects. For the curious, Thrift takes care of byte order for values that are explicitly typed as a value; however, since this is just a byte stream, it has no knowledge of the type of values and therefore doesn't reorder them.
+                            </p>
+                            <p>
+                                Reading the values in Python is much of the same. If I wanted values for a time slice between '2009-09-01' and '2009-09-03', I could use the following:
+                            </p>
+                            <pre>
+t1 = int(time.mktime(datetime(2009,9,1).timetuple()))
+t2 = int(time.mktime(datetime(2009,9,3).timetuple()))
+client.get_slice('MonitorApp', '', ColumnParent(column_family='NumericArchive'), SlicePredicate(slice_range=SliceRange(start=t1, end=t2)), ONE)
+</pre>
+                            <p>
+                                Another interesting bit of Cloudkick technology is how we roll values up into different time slices. To keep querying fast, a mechanism like this is necessary.
+                            </p>
+                            <p>
+                                We keep track of the following roll-up intervals:
+                            </p>
+                            <ul>
+                                <li>5 m
+                                </li>
+                                <li>20 m
+                                </li>
+                                <li>30 m
+                                </li>
+                                <li>60 m
+                                </li>
+                                <li>4 hr
+                                </li>
+                                <li>12 hr
+                                </li>
+                                <li>1 day
+                                </li>
+                            </ul>
+                            <p>
+                                For instance, if you want to look over the "month" time period, there's a good chance that you don't want to look at 5 minute intervals. If you looked at the 5 minute intervals over a month, for one series you could potentially see 8640 points of data. (<code>12 five minute intervals * 24 hours * 30 days</code>) This is obviously too much data, so you would look at something more manageable, like the one-hour or four-hour intervals, which would be 720 or 180 points, respectively. In each point, we also store additional information so the column definition looks like this:
+                            </p>
+                            <pre>
+&lt;ColumnFamily CompareWith="LongType" Name="Rollup60m" ColumnType="Super" CompareSubcolumnsWith="BytesType" /&gt;
+</pre>
+                            <p>
+                                This declaration is different than the NumericArchive declaration because it is a SuperColumn. If you remember the hash example above, we have now added another layer which we can leverage. In the NumericArchive section we only stored the native point. Since we're combining multiple points into one data point, there's more data for us to store. So for the sub-columns, we store some simple key-value pairs. Notice that it's sorted by BytesType which does a string comparison, this part is less interesting for us since we typically only retrieve either all the sub-columns or none at all.
+                            </p>
+                            <p>
+                                The different key-value pairs we store, with regard to the Rollup columns, are:
+                            </p>
+                            <ul>
+                                <li>average - the average of all the points over the interval
+                                </li>
+                                <li>count - the number of points accumulated in the interval
+                                </li>
+                                <li>derivative - the change in value over the change in time (great for counters or gauges like bandwidth)
+                                </li>
+                            </ul>
+                            <p>
+                                We still get the sorted values with another level of a hash, which is useful as we can then retrieve the derivative and average all in one query.
+                            </p>
+                            <h3>
+                                Hybrid NoSQL
+                            </h3>
+                            <p>
+                                Cloudkick still uses traditional SQL systems for much of our data — data like our user accounts are stored in a standard master/slave MySQL setup. We even keep data that references keys in Cassandra in MySQL so we can quickly write a Django view that queries metadata about a monitoring check using the Django ORM, but still use Cassandra for the bulk of the data about that check. We'll likely keep moving more data into Cassandra as we need to, but for some data the ability to write arbitrary SQL queries is still very useful.
+                            </p>
+                            <h2>
+                                Administration and operational issues
+                            </h2>
+                            <h3>
+                                nodetool, previously known as nodeprobe
+                            </h3>
+                            <p>
+                                Cassandra includes a utility called <code>nodetool</code>, previously called <code>nodeprobe</code>. This utility lets you do common adminstrative tasks on your cluster, like checking if a node is up, decommissioning a node, or triggering a compaction. The Cassandra wiki page on <a href="http://wiki.apache.org/cassandra/NodeProbe">nodetool</a> provides more details.
+                            </p>
+                            <h3>
+                                Major compactions
+                            </h3>
+                            <p>
+                                Because SSTables are never modified on-disk, only replaced, you need to do a major compaction in order to reclaim all of your disk space if you delete or modify a row.
+                            </p><img src="https://www.cloudkick.com/site_media/images/cassandra-compaction-1.png">
+                            <p>
+                                You <em>do</em> need to keep a watch of your disk-space growth and make sure to trigger a major compaction periodically. Ideally, when your system is under lower load.
+                            </p>
+                            <h3>
+                                Tombstones
+                            </h3>
+                            <p>
+                                Because Cassandra is a distributed database, deleting rows can be complicated. Jonathan Ellis' <a href="http://spyced.blogspot.com/2010/02/distributed-deletes-in-cassandra.html">recent blog post</a> does a fantastic job explaining how distributed deletes and tombstones can affect maintenance and administration.
+                            </p>
+                            <h3>
+                                Random / Order Preserving Partitioner
+                            </h3>
+                            <p>
+                                Choosing tokens for each node is a major part of a Cassandra deployment. The token selection decides which node stores the data in Cassandra. If you're using the Order Preserving Paritioner, you must be very careful about how you pick tokens, because with bad ones your data will be lopsided, with signifigantly more being stored on a small number of nodes. If you know how your keys are generated, you need to partition them as evenly as possible. If you don't need to do ranged-based queries, we'd suggest using the Random Partitioner. The Cassandra Wiki contains more information on <a href="http://wiki.apache.org/cassandra/StorageConfiguration#Partitioner">configuring the partitioner</a>.
+                            </p>
+                            <h3>
+                                Client reconnection
+                            </h3>
+                            <p>
+                                Our original client would try a single Cassandra node and throw an exception if it was unable to connect. This might make sense if you're used to a data storage system like MySQL where, if the master is down, you can't do much. In Cassandra's case, you want to make sure you try to query multiple nodes before giving up — so make your clients try a list of servers before quitting.
+                            </p>
+                            <h3>
+                                Thrift issues
+                            </h3>
+                            <p>
+                                Since Cassandra uses <a href="http://incubator.apache.org/thrift/">Apache Thrift</a> as the default RPC mechanism, exposing the Thrift layer to any non-controlled data can be dangerous. We use firewalls on our nodes to make sure our Thrift ports are only exposed to a very small set of machines, because even just telneting into the port and typing "hello" can cause the JVM to OOM. This is discussed in the <a href="https://issues.apache.org/jira/browse/THRIFT-601">THRIFT-601</a> issue report. In Cassandra trunk, <a href="http://hadoop.apache.org/avro/">Apache Avro</a> is available as an alternative communication method, and shouldn't suffer from these types of issues.
+                            </p>
+                            <h2>
+                                What's missing?
+                            </h2>
+                            <p>
+                                There are many features we would like to see in Cassandra itself, but most of those (like <a href="http://issues.apache.org/jira/browse/CASSANDRA-674">compressed SSTables</a>) are already being tackled by the developers.
+                            </p>
+                            <p>
+                                We ran into many problems with the Ordered Partitioner, and it would be nice for certain data models if this partitioner would work in a more automated fashion.
+                            </p>
+                            <p>
+                                We also believe Cassandra would benefit from integration with existing open source projects. For example, a Django ORM layer would instantly expose Cassandra to many more developers. Right now, everyone using Cassandra is building custom systems to communicate with it, but with a little work, many more projects could be "Cassandra Enabled."
+                            </p>
+                            <h2>
+                                Cassandra community
+                            </h2>
+                            <p>
+                                The Cassandra community recently graduated to a top-level project at the <a href="http://www.apache.org/">Apache Software Foundation</a>. Through the hard work of all its committers and contributors, the project has come a long way in a very short amount of time. The open community model is yielding an increasingly impressive data storage system, which is being used by many companies around the world.
+                            </p>
+                            <p>
+                                Cassandra is quickly approaching its next iteration of version 0.6. New features include: row-level caching, support for Hadoop/MapReduce, authenticated connections, new statistics exposed over JMX, per-keyspace replication factors, and a new batch_mutate method. The pace of innovation in the project is impressive and we're eager to upgrade.
+                            </p>
+                            <p>
+                                We'd would like to sincerely thank all the users, contributors and developers who have made Apache Cassandra such a successful project!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.cloudkick.com/blog/2010/mar/02/4_months_with_cassandra/">http://www.cloudkick.com/blog/2010/mar/02/4_months_with_cassandra/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Comparing the Ruby/PHP/Python C Interpreters
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 13 Mar 2010 16:14:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-13T09:26:00-04:00">
+                    <meta itemprop="dateModified" content="2010-03-13T09:26:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-13T13:26:00+00:00">Mar 13</time>
+                    <h2 itemprop="title">
+                        Comparing the Ruby/PHP/Python C Interpreters
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/8eba8028403c9ec9">
+                        <blockquote>
+                            The other day I went poking around the Ruby and PHP interpreters (the current stable versions). I hadn't looked inside PHP since the 4.x series and Ruby I had never checked out. Like CPython the internals of both PHP and Ruby look something like their resulting language, but in C. For each interpreter I just compiled it and looked at how core types and extension types were implemented.<br>
+                            <h4>
+                                Ruby 1.9.1
+                            </h4><br>
+                            Ruby-the-language has lots of syntax and its core types are just as extensible at run time as classes written in ruby (you can monkey patch core types). The compile was clean and runs with -Wall, generating just a couple warnings. All the unit tests passed. The grammar is implemented with lex/yacc and the resulting parse.c file took 10 minutes to compile on my 1.5GHz machine. Did I mention the grammar is big?<br>
+                            <br>
+                            There is no difference between ruby core types and extension types written in C. That is mostly true in python but ruby goes all the way. The C-struct that holds information about the ruby type has a hash map that contains all the type's methods - and I mean all of them. Here is the interface for adding a __add__ method (cBignum is the core integer type)<br>
+                            <br>
+                            rb_define_method(rb_cBignum, "+", rb_big_plus, 1);<br>
+                            <br>
+                            The "+" is the not-so-magic name for the addition operator. The type's hash uses "+" as a key that points to the value of the addition function. That is a beautiful interface compared to CPython, where you have to put the __add__ method in the right place in a struct[1]. As an optimization the "hash" is actually a list if the number of methods is small; method strings are interned and assigned a number - I'm not sure why this is faster than just keeping the hashkey on the string and always using a dict, but I assume someone benchmarked it.<br>
+                            <br>
+                            <h4>
+                                PHP 5.2.13
+                            </h4><br>
+                            [NB, I should have looked at the 5.3.x release but the 5.2.13 release was at the top of the homepage when I went looking]<br>
+                            <br>
+                            I hadn't looked at PHP since the 4.x series (see my <a href="http://jackdied.blogspot.com/2008/01/in-beginning.html">why I started using Python</a> post). PHP has added some nice features since then, like namespaces, but the interpreter looks much the same. The compile uses a custom wrapper around gcc and is very spammy: a dozen -I include directories on each line for hundreds of C files. It does not use -Wall by default so if you want really really spammy turn that on. After compiling PHP I ran the unit tests and 7 failed[2]. All 7 had to do with bad conversions between signed and unsigned numbers (a negative signed int is a positive unsigned int). This is a production release so those failures are not confidence inspiring.<br>
+                            <br>
+                            Like PHP-the-language the C interpreter makes a big distinction between core types and extension types. The core types are int, string, and list/hash (a hybrid). The C-struct is a union that has is either an integer, string, list/hash, or "resource" (everything else). Extension types can't do operator overloading so the interpreter has if/else clauses for handling the core types. Methods are added by registering them by resource number in a global registry.<br>
+                            <br>
+                            Objects get passed around in the core as pointers to pointers, and sometimes as pointers to pointers to pointers. I'm not sure why, but this can't be good for speed.<br>
+                            <br>
+                            <h4>
+                                Python 2.5+ 3.x
+                            </h4><br>
+                            <br>
+                            I'll lump all releases of Python after 2.5 together because the internals are very similar. The AST (abstract syntax tree) that the byte compiler uses was rewritten and simplified for the 2.5 release and there haven't been any big changes to the internals since then. The 3.x releases made some big simplifications, but they still use the same framework.<br>
+                            <br>
+                            Like Ruby, Python compiles cleanly and uses -Wall, generating few warnings. The test suite passes. Python doesn't make a distinction between core types and extension types: if you copied Objects/dictobject.c and renamed it "mydict" [insert dict joke here] you could ship it as a module and "import mydict". The only difference is that the byte compiler knows that when you type "d = {}" you mean "d = dict()".<br>
+                            <br>
+                            The C-struct for python types is a bit more complicated than the ruby one. It has specific slots for all the magic methods like __add__ instead of keeping them in a hash map like it does for pure-python classes. Like PHP the execution loop does have some if/elses for core types like integer, but unlike PHP this is just a speed hack and not a requirement (I assume Ruby does something similar).<br>
+                            <br>
+                            <h4>
+                                Conclusion
+                            </h4><br>
+                            <br>
+                            So there you have it. All three interpreters look much like their parent language once you get under the hood. I'd mention the perl interpreter too but it's been years since I dove into that one; but guess what? It looks like perl.<br>
+                            <br>
+                            [1] python-dev has several threads about adding a similar simple interface. Someone just has to do the work (at PyCon Hastings said he's exploring it).<br>
+                            [2] I downloaded PHP 5.3.2 and the 7 test failures I saw are fixed, but I get 9 new and different failures.<br>
+                            <br>
+                            PS, blogger hates H4 tags. Why the extra newline?
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/2781337673308296390-4065210428607463783?l=jackdied.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://jackdied.blogspot.com/2010/03/comparing-rubyphppython-c-interpreters.html">http://jackdied.blogspot.com/2010/03/comparing-rubyphppython-c-interpreters.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

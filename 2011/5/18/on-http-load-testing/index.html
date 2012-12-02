@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            On HTTP Load Testing
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 18 May 2011 13:17:19 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-05-18T09:17:19-04:00">
+                    <meta itemprop="dateModified" content="2011-05-18T09:17:19-04:00"><time class="date" itemprop="datePublished" datetime="2011-05-18T13:17:19+00:00">May 18</time>
+                    <h2 itemprop="title">
+                        On HTTP Load Testing
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/98fc974833f057ac">
+                        <p class="annotation">
+                            Should be required reading, especially for anyone doing "my favorite tool can beat up yours" blog posts
+                        </p>
+                        <blockquote>
+                            <p>
+                                A lot of people seem to be talking about and performing load tests on HTTP servers, perhaps because there’s a lot more choice of servers these days.
+                            </p>
+                            <p>
+                                That’s great, but I see a lot of the same mistakes being made, making the conclusions doubtful at best. Having spent a fair amount of time benchmarking high-performance proxy caches and origin servers for my day job, here are a few things that I think are important to keep in mind.
+                            </p>
+                            <p>
+                                It’s not the final word, but hopefully it’ll help start a discussion.
+                            </p>
+                            <h3>
+                                0. Consistency.
+                            </h3>
+                            <p>
+                                The most important thing to get right is to test the same time, every time. Any changes in the system — whether its an OS upgrade or another app running and stealing bandwidth or CPU — can affect your test results, so you need to be aggressive about nailing down the test environment.
+                            </p>
+                            <p>
+                                While it’s tempting to say that the way to achieve this is to run everything on VMs, I’m not convinced that adding another layer of abstraction (as well as more processes running on the host OS) is going to lead to more consistent results. Because of this, dedicated hardware is best. Failing that, just run all of the tests you can in one session, and make it clear that comparisons between different sessions don’t work.
+                            </p>
+                            <h3>
+                                1. One Machine, One Job.
+                            </h3>
+                            <p>
+                                The most common mistake I see people making is benchmarking a server on the same box where the load is generated. This doesn’t just put your results out a little bit, it makes them completely unreliable, because the load generator’s “steal” of resources varies depending on how the server handles the load, which depends on resource availability.
+                            </p>
+                            <p>
+                                The best way to maintain consistency is to have dedicated, separate hardware for the test subject and load generator, and to test on a closed network. This isn’t very expensive; you don’t need the latest-and-greatest to compare apples to apples, it just has to be consistent.
+                            </p>
+                            <p>
+                                So, if you see someone saying that they benchmarked on localhost, or if they fail to say how many boxes they used to generate and serve the load, ignore the results; at best they’ll only be a basic indication, and at the worst the’ll be very misleading.
+                            </p>
+                            <h3>
+                                2. Check the Network.
+                            </h3>
+                            <p>
+                                Before each test, you need to understand how much capacity your network has, so that you’ll know when it’s limiting your test, rather than the server your’e testing.
+                            </p>
+                            <p>
+                                One way to do this is with <a href="http://iperf.sourceforge.net/">iperf</a>:
+                            </p>
+                            <pre>
+qa1:~&gt; iperf -c qa2
+------------------------------------------------------------
+Client connecting to qa2, TCP port 5001
+TCP window size: 16.0 KByte (default)
+------------------------------------------------------------
+[  3] local 192.168.1.106 port 56014 connected with 192.168.1.107 port 5001
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0-10.0 sec  1.10 GBytes   943 Mbits/sec
+</pre>
+                            <p>
+                                … which shows that I have about 943 Mbits a second available on my Gigabit network (it’s not 1,000 because of TCP overheads).
+                            </p>
+                            <p>
+                                Once you know the bandwidth available, you need to make sure that it isn’t a limiting factor. There are a number of ways to do this, but the easiest is to use a tool that keeps track of the traffic in use. For example, httperf shows bandwidth use like this:
+                            </p>
+                            <pre>
+Net I/O: 23399.7 KB/s (191.7*10^6 bps)
+</pre>
+                            <p>
+                                … which tells me that I’m only using about 192 Mbits of my Gigabit in this test.
+                            </p>
+                            <p>
+                                Keep in mind that the numbers you see from a load generation tool are not going to include the overhead of TCP, and if your load varies throughout the test, it can burst higher than the average. Also, sheer bandwidth isn’t the whole story — for example, if you’re using cheap NICs or switches (you are using a switch, right?), they can be swamped by the sheer number of network segments flying around.
+                            </p>
+                            <p>
+                                <img src="http://www.mnot.net/blog/Screen%20shot%202011-05-17%20at%203.51.46%20PM.png" height="183" width="204" border="0" hspace="4" vspace="4" alt="Screen Shot 2011-05-17 At 3.51.46 Pm">
+                            </p>
+                            <p>
+                                For all of these reasons and more, it’s a good idea to make sure your tests don’t get very close to the available bandwidth you measure; instead, make sure the bandwidth used doesn’t exceed a proportion of it (e.g., 2/3). Monitoring your network (both the interfaces and the switch) for errors and peak rates is also a good idea.
+                            </p>
+                            <h3>
+                                3. Remove OS Limitations.
+                            </h3>
+                            <p>
+                                Likewise, you need to make sure that the operating system doesn’t impose artificial limits on your server’s performance.
+                            </p>
+                            <p>
+                                TCP tuning is somewhat important here, but it’ll affect all test subjects equally. The important thing is to make sure that your server doesn’t run out of file descriptors.
+                            </p>
+                            <h3>
+                                4. Don’t Test the Client.
+                            </h3>
+                            <p>
+                                Modern, high-performance servers make it very easy to mistake limitations in your load generator for the capacity of the server you’re testing. So, check to make sure your client box isn’t maxed out on CPU, and if there’s any doubt whatsoever, use more than one load generation box to double-check your numbers (<a href="http://www.xenoclast.org/autobench/">autobench</a> makes this relatively painless).
+                            </p>
+                            <p>
+                                It also helps to assure that your load generation hardware is better than the server hardware you’re testing; e.g., I generate load with a four-core i5-750 box, and run the server on a slower, two-core i3-350 box, often only using one of the cores.
+                            </p>
+                            <p>
+                                Another factor to be mindful of is client-side errors, especially running out of <a href="http://en.wikipedia.org/wiki/Ephemeral_port">ephemeral ports</a>. There are lots of strategies for this, from expanding the port range on your box, to setting up multiple interfaces on the box and making sure that the client uses them (sometimes tricker than it sounds). You can also tune the TIME_WAIT period (as long as it’s ONLY a test box!), or just use HTTP persistent connections and aggressive client-side timeouts to make sure your connection rate doesn’t exceed available ports.
+                            </p>
+                            <p>
+                                One of the things I like about httperf is that it gives a summary of errors at the end of the run:
+                            </p>
+                            <pre>
+Errors: total 0 client-timo 0 socket-timo 0 connrefused 0 connreset 0
+Errors: fd-unavail 0 addrunavail 0 ftab-full 0 other 0
+</pre>
+                            <p>
+                                Here, the server-originated issues are on the first line (such as the request timing out due to the server exceeding the <code>--timeout</code> option, or when it refuses or resets a connection), and the client-side errors (like running out of file descriptors or addresses) on the second line.
+                            </p>
+                            <p>
+                                This helps you know when the test itself is faulty.
+                            </p>
+                            <h3>
+                                5. Overload is not Capacity.
+                            </h3>
+                            <p>
+                                Many — if not most — load generation tools will by default throw as much load as they can at a server, and report that number back.
+                            </p>
+                            <p>
+                                This is great for finding out how your server reacts to overload — an important thing to know — but it doesn’t really show the capacity of your server. That’s because pretty much every server loses some capacity once you throw more work at it than it can handle.
+                            </p>
+                            <p>
+                                A better way to get an idea of capacity is to test your server at progressively higher loads, until it reaches capacity and then backs off; you should be able to graph it as a curve that peaks and then backs off. How much it backs off will indicate how well your server deals with overload.
+                            </p>
+                            <p>
+                                <a href="http://www.xenoclast.org/autobench/">autobench</a> is one way to do this with httperf; it allows you to specify a range of rates to test at, so that you can generate graphs like this:
+                            </p>
+                            <p>
+                                <img src="http://www.mnot.net/blog/apache-worker.jpg" height="400" width="505" border="0" hspace="4" vspace="4" alt="Apache-Worker">
+                            </p>
+                            <p>
+                                Here, you can see that, for the smallest response size, the server peaks at 16,000 responses/second, but quickly drops down to 14,000 responses/second under overload (with a corresponding jump up to about 60ms response latency). Other response sizes don’t drop as much when overloaded, but you can see the error bars pop up, which shows it struggling.
+                            </p>
+                            <h3>
+                                6. Thirty Seconds isn’t a Test.
+                            </h3>
+                            <p>
+                                It takes a while for the various layers of buffers and caches in the applications, OS and network stacks to stabilise, so a 30 second test can be very misleading. If you’re going to release numbers, test for at least three minutes, preferably more like five or ten.
+                            </p>
+                            <h3>
+                                7. Do More than Hello World.
+                            </h3>
+                            <p>
+                                Finding out how quickly your implementation can serve a 4-byte response body is an interested but extremely limited look at how it performs. What happens when the response body is 4k — or 100k — is often much more interesting, and more representative of how it’ll handle real-life load.
+                            </p>
+                            <p>
+                                Another thing to look at is how it handles load with a large number — say, 10,000 — of outstanding idle persistent connections (opened with a separate tool). A decent, modern server shouldn’t be bothered by this, but it causes issues more often than you’d think.
+                            </p>
+                            <p>
+                                These are just two examples, of course.
+                            </p>
+                            <h3>
+                                8. Not Just Averages.
+                            </h3>
+                            <p>
+                                If someone tells you that a server does 1,000 responses a second with an average latency of 5ms, that’s great. But what if some of those responses took 100ms? They can still achieve that average. What if for 10% of the test period, the server was only able to achieve 500 responses a second, because it was doing garbage collection?
+                            </p>
+                            <p>
+                                Averages are quick indicators, nothing more. Timelines and histograms contain a lot of critical information that they omit. If your testing tool doesn’t provide this information, find one that does (or submit a patch, if it’s Open Source).
+                            </p>
+                            <p>
+                                Here’s what httperf shows:
+                            </p>
+                            <pre>
+Total: connections 180000 requests 180000 replies 180000 test-duration 179.901 s
+
+Connection rate: 1000.0 conn/s (99.9 ms/conn, &lt;=2 concurrent connections)
+Connection time [ms]: min 0.4 avg 0.5 max 12.9 median 0.5 stddev 0.4
+Connection time [ms]: connect 0.1
+Connection length [replies/conn]: 1.000
+
+Request rate: 1000.0 req/s (.9 ms/req)
+Request size [B]: 79.0
+
+Reply rate [replies/s]: min 999.1 avg 1000.0 max 1000.2 stddev 0.1 (35 samples)
+Reply time [ms]: response 0.4 transfer 0.0
+Reply size [B]: header 385.0 content 1176.0 footer 0.0 (total 1561.0)
+Reply status: 1xx=0 2xx=0 3xx=0 4xx=1800 5xx=0
+</pre>
+                            <p>
+                                Here, you can see not only the average response rates, but also a min, max and standard deviation. Likewise for connection time.
+                            </p>
+                            <h3>
+                                9. Publish it All.
+                            </h3>
+                            <p>
+                                A result given without enough information to reproduce it is at best a useless statement that requires people to take it on faith (a bad idea), and at worst an intentional effort to mislead. Publish your results with all of the context of the test; not only the hardware you used, but also OS versions and configurations, network setup (with iperf results), server and load generator versions and configuration, workload used, and source code if necessary.
+                            </p>
+                            <p>
+                                Ideally, this would take the form of a repository (e.g., on <a href="https://github.com/">github</a>) that allows anyone to reproduce your results (for their hardware) with as little overhead as possible.
+                            </p>
+                            <h3>
+                                10. Try Different Tools.
+                            </h3>
+                            <p>
+                                If you got this far, you might think I’m championing httperf and autobench over other tools. While I’d like to have a single singing, dancing test tool, httperf is unfortunately not it; for modern servers, it’s simply too slow, mostly because it doesn’t implement an event loop. While that’s fine for testing PHP apps that can do 50 or 500 requests a second, it’s completely inadequate for testing modern Web servers that can do multiple tens of thousands of requests a second without breaking a sweat.
+                            </p>
+                            <p>
+                                Additionally, if you just use one tool, there’s a chance that there’s a weird interaction between the client and server which disadvantages some implementations more than others. For example, some tools don’t do persistent connections in a way that works well with some servers, causing their numbers to dip.
+                            </p>
+                            <p>
+                                What I do like about httperf is covered above; its focus on statistics, error reporting and customisable load rate makes it a great way to really get to know your server, rather than just throw a lot of load at it. What I’m hoping is that other load testing tools will take notice and start giving the same level of information.
+                            </p>
+                            <p>
+                                Another tool I’ve been using recently is <a href="http://www.joedog.org/index/siege-home">siege</a>; it doesn’t have quite the same information available as httperf, but it does pretty well, and goes wicked fast.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.mnot.net/blog/2011/05/18/http_benchmark_rules">http://www.mnot.net/blog/2011/05/18/http_benchmark_rules</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

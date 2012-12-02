@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Lessons From a Cloud Failure: It’s Not Amazon, It’s You
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 25 Apr 2011 20:04:24 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-25T16:04:24-04:00">
+                    <meta itemprop="dateModified" content="2011-04-25T16:04:24-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-25T20:04:24+00:00">Apr 25</time>
+                    <h2 itemprop="title">
+                        Lessons From a Cloud Failure: It’s Not Amazon, It’s You
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/b8fd886733bd355d">
+                        <p class="annotation">
+                            It turns out that clouds are magic pixie dust. Who knew?<br>
+                            <br>
+                            (and I'll second Don MacAskill's comment about outages: I wonder how many of the people who are freaking and setting up their own servers in-house have thought about what they're gaining versus, say, simply using more than one AWS region)
+                        </p>
+                        <blockquote>
+                            <div style="width:310px">
+                                <a href="http://www.webmonkey.com/wp-content/uploads/2011/04/chaosmonkey1.jpg"><img src="http://www.webmonkey.com/wp-content/uploads/2011/04/chaosmonkey1.jpg" alt="" title="chaosmonkey" width="300" height="228"></a>
+                                <p>
+                                    Chaos Monkey will eat your cloud
+                                </p>
+                            </div>Amazon’s cloud hosted Web Services experienced a catastrophic failure last week, knocking hundreds of sites off the web. Some developers saw the AWS outage as a warning about what happens when we rely too much on the cloud. But the real failure of Amazon’s downtime is not AWS, but the sites that use it.
+                            <p>
+                                The problem for those sites that were brought down by the AWS outage is sites’ own failure to implement the one key design principle of the cloud — design with failure in mind.
+                            </p>
+                            <p>
+                                That’s not to say that Amazon didn’t fail rather spectacularly, taking out huge sites like Quora, Reddit, FourSquare and Everyblock, but as Paul Smith of Everyblock admits, while Amazon bears some of the responsibility, <a href="http://blog.everyblock.com/2011/apr/22/sitepostmortem/">Everyblock failed as well</a>:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Frankly, we screwed up. AWS explicitly advises that developers should design a site’s architecture so that it is resilient to occasional failures and outages such as what occurred yesterday, and we did not follow that advice
+                                </p>
+                            </blockquote>
+                            <p>
+                                But perhaps the most instructive lesson comes from those sites that were not affected, notably Netflix, SimpleGeo and SmugMug. Netflix published a look at how it uses AWS last year and, by all appearances, those lessons served the company well since Netflix remained unaffected by the recent outage.
+                            </p>
+                            <p>
+                                Among Netflix’s suggestions is to <a href="http://techblog.netflix.com/2010/12/5-lessons-weve-learned-using-aws.html">always design for failure</a>: “we’ve sometimes referred to the Netflix software architecture in AWS as our Rambo Architecture. Each system has to be able to succeed, no matter what, even all on its own.”
+                            </p>
+                            <p>
+                                To ensure that each system can stand on its own, Netflix uses something it calls the Chaos Monkey (no relation). The Chaos Monkey is a set of scripts that run through Netflix’s AWS process and randomly shuts them down to ensure that the rest of the system is able to keep running. Think of it as a system where the parts are greater than the whole.
+                            </p>
+                            <p>
+                                The photo sharing site SmugMug has also detailed its <a href="http://don.blogs.smugmug.com/2011/04/24/how-smugmug-survived-the-amazonpocalypse/">approach to designing for failure</a> and why SmugMug was largely unaffected by the recent AWS outage. SmugMug’s Co-Founder and CEO, Don MacAskill, echos Netflix’s redundancy mantra, writing, “each component (EC2 instance, etc) should be able to die without affecting the whole system as much as possible. Your product or design may make that hard or impossible to do 100% — but I promise large portions of your system can be designed that way.”
+                            </p>
+                            <p>
+                                MacAskill also has strong words for those who think the recent AWS outage is a good argument for sticking with your own datacenter: “[SmugMug's] datacenter related outages have all been far worse… we’re working hard to get our remaining services out of our control and into Amazon’s.”
+                            </p>
+                            <p>
+                                “Cloud computing is just a tool, writes MacAskill, “some companies, like Netflix and SimpleGeo, likely understand the tool better.”
+                            </p>
+                            <p>
+                                If you’d like to learn more about how designing for cloud services differs from traditional datacenter setups, check out this <a href="http://broadcast.oreilly.com/2011/04/the-aws-outage-the-clouds-shining-moment.html">excellent post on O’Reilly</a>. Also, be sure to read <a href="http://techblog.netflix.com/2010/12/5-lessons-weve-learned-using-aws.html">Netflix’s advice</a> and learn from Everyblock’s downtime by following the guidelines in <a href="http://aws.amazon.com/documentation/">Amazon’s own documentation</a>.
+                            </p>
+                            <p>
+                                <em>Monkey Photo: <a href="http://www.flickr.com/photos/dannyboyster/60371673/">DBoy</a>/Flickr/CC</em> (technically not a monkey)
+                            </p>
+                            <p>
+                                <strong>See Also:</strong><br>
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://www.webmonkey.com/2011/02/amazon-s3-storage-now-handles-entire-websites/">Amazon S3 Storage Now Handles Entire Websites</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.webmonkey.com/2011/03/amazons-new-cloud-drive-your-music-everywhere-you-go/">Amazon’s New ‘Cloud Drive’: Your Music, Everywhere You Go</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.webmonkey.com/2010/05/googles-new-cloud-storage-service-takes-on-amazon-s3/">Google’s New Cloud Storage Service Takes on Amazon S3</a>
+                                </li>
+                            </ul>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.webmonkey.com/2011/04/lessons-from-a-cloud-failure-its-not-amazon-its-you/">http://www.webmonkey.com/2011/04/lessons-from-a-cloud-failure-its-not-amazon-its-you/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

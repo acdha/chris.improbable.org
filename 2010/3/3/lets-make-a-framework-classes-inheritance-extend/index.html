@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Let's Make a Framework: Classes, Inheritance, Extend
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 04 Mar 2010 00:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-03T19:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-03-03T19:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-03T23:00:00+00:00">Mar 03</time>
+                    <h2 itemprop="title">
+                        Let's Make a Framework: Classes, Inheritance, Extend
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7c1f4b3bc198c551">
+                        <blockquote>
+                            <p>
+                                Not all JavaScript frameworks provide classes. <a href="http://javascript.crockford.com">Douglas Crockford</a> discusses the <em>classical object model</em> in <a href="http://javascript.crockford.com/inheritance.html">Classical Inheritance in JavaScript</a>. It’s an excellent discussion of ways to implement inheritance in JavaScript. Later, he wrote <a href="http://javascript.crockford.com/prototypal.html">Prototypal Inheritance in JavaScript</a> in which he basically concludes prototypal inheritance is a strong enough approach without the classical object model.
+                            </p>
+                            <p>
+                                So why do JavaScript libraries provide tools for OO programming? The reasons vary depending on the author. Some people like to ape an object model from their favourite language. <a href="http://prototypejs.org/">Prototype</a> is heavily Ruby inspired, and provides <a href="http://prototypejs.org/api/class">Class</a> which can be useful for organising your own code. In fact, Prototype uses <code>Class</code> internally.
+                            </p>
+                            <p>
+                                In this article I’m going to explain prototypal inheritance and OO, and start to create a class for OO in JavaScript. This will be used by our framework, <a href="http://github.com/alexyoung/turing.js">turing.js</a>.
+                            </p>
+                            <h3>
+                                Objects and Classes vs. Prototype Classes
+                            </h3>
+                            <p>
+                                Objects are… everything, so some languages attempt to treat everything as an object. That means a number is an object, a string is an object, a class definition is an object, an instantiated class is an object. The distinction between classes an objects is interesting — these languages treat classes as objects, and use a more basic object model to implement classes. Remember: it’s <em>object oriented programming</em> not <em>class oriented</em>.
+                            </p>
+                            <p>
+                                So does that mean JavaScript really needs classical classes? If you’re a Java or Ruby programmer you might be surprised to find JavaScript doesn’t have a <code>class</code> keyword. That’s OK though! We can build our own features if we need them.
+                            </p>
+                            <h3>
+                                Prototype Classes
+                            </h3>
+                            <p>
+                                Prototype classes look like this:
+                            </p>
+                            <div>
+                                <pre>
+<span>function</span> <span>Vector</span><span>(</span><span>x</span><span>,</span> <span>y</span><span>)</span> <span>{</span>
+  <span>this</span><span>.</span><span>x</span> <span>=</span> <span>x</span><span>;</span>
+  <span>this</span><span>.</span><span>y</span> <span>=</span> <span>y</span><span>;</span>
+<span>}</span>
+
+<span>Vector</span><span>.</span><span>prototype</span><span>.</span><span>toString</span> <span>=</span> <span>function</span><span>()</span> <span>{</span>
+  <span>return</span> <span>'x: '</span> <span>+</span> <span>this</span><span>.</span><span>x</span> <span>+</span> <span>', y: '</span> <span>+</span> <span>this</span><span>.</span><span>y</span><span>;</span>
+<span>}</span>
+
+<span>v</span> <span>=</span> <span>new</span> <span>Vector</span><span>(</span><span>1</span><span>,</span> <span>2</span><span>);</span>
+<span>// x: 1, y: 2 </span>
+</pre>
+                            </div>
+                            <p>
+                                If you’re not used to JavaScript’s object model, the first few lines might look strange. I’ve defined a function called <code>Vector</code>, then said <code>new Vector()</code>. The reason this works is that <code>new</code> creates a new object and then runs the function <code>Vector</code>, with <code>this</code> set to the new object.
+                            </p>
+                            <p>
+                                The <code>prototype</code> property is where you define instance methods. This approach means that if you instantiate a vector, then add new methods to the <code>prototype</code> property, the old vectors will get the new methods. Isn’t that amazing?
+                            </p>
+                            <div>
+                                <pre>
+<span>Vector</span><span>.</span><span>prototype</span><span>.</span><span>add</span> <span>=</span> <span>function</span><span>(</span><span>vector</span><span>)</span> <span>{</span>
+  <span>this</span><span>.</span><span>x</span> <span>+=</span> <span>vector</span><span>.</span><span>x</span><span>;</span>
+  <span>this</span><span>.</span><span>y</span> <span>+=</span> <span>vector</span><span>.</span><span>y</span><span>;</span>
+  <span>return</span> <span>this</span><span>;</span>
+<span>}</span>
+
+<span>v</span><span>.</span><span>add</span><span>(</span><span>new</span> <span>Vector</span><span>(</span><span>5</span><span>,</span> <span>5</span><span>));</span>
+<span>// x: 6, y: 7</span>
+</pre>
+                            </div>
+                            <h3>
+                                Prototypal Inheritance
+                            </h3>
+                            <p>
+                                There’s no formal way of implementing inheritance in JavaScript. If we wanted to make a <code>Point</code> class by inheriting from <code>Vector</code>, it could look like this:
+                            </p>
+                            <div>
+                                <pre>
+<span>function</span> <span>Point</span><span>(</span><span>x</span><span>,</span> <span>y</span><span>,</span> <span>colour</span><span>)</span> <span>{</span>
+  <span>Vector</span><span>.</span><span>apply</span><span>(</span><span>this</span><span>,</span> <span>arguments</span><span>);</span>
+  <span>this</span><span>.</span><span>colour</span> <span>=</span> <span>colour</span><span>;</span>
+<span>}</span>
+
+<span>Point</span><span>.</span><span>prototype</span> <span>=</span> <span>new</span> <span>Vector</span><span>;</span>
+<span>Point</span><span>.</span><span>prototype</span><span>.</span><span>constructor</span> <span>=</span> <span>Point</span><span>;</span>
+
+<span>p</span> <span>=</span> <span>new</span> <span>Point</span><span>(</span><span>1</span><span>,</span> <span>2</span><span>,</span> <span>'red'</span><span>);</span>
+<span>p</span><span>.</span><span>colour</span><span>;</span>
+<span>// red</span>
+<span>p</span><span>.</span><span>x</span><span>;</span>
+<span>// 1</span>
+</pre>
+                            </div>
+                            <p>
+                                By using <code>apply</code>, <code>Point</code> can call <code>Vector</code>‘s constructor. You might be wondering where <code>prototype.constructor</code> comes from. This is a property that allows you to specify the function that creates the object’s prototype.
+                            </p>
+                            <p>
+                                When creating your own objects, you also get some methods for free that descend from <code>Object</code>. Examples of these include <code>toString</code> and <code>hasOwnProperty</code>:
+                            </p>
+                            <div>
+                                <pre>
+<span>p</span><span>.</span><span>hasOwnProperty</span><span>(</span><span>'colour'</span><span>);</span>
+<span>// true</span>
+</pre>
+                            </div>
+                            <h3>
+                                Prototypal vs. Classical
+                            </h3>
+                            <p>
+                                There are multiple patterns for handling prototypal inheritance. For this reason it’s useful to abstract it, and offer extra features beyond what JavaScript has as standard. Defining an <span>API</span> for classes keeps code simpler and makes it easer for people to navigate your code.
+                            </p>
+                            <p>
+                                The fact that JavaScript’s object model splits up portions of a class can be visually noisy. It might be attractive to wrap entire classes up in a definite start and end. Since this is a <em>teaching framework</em>, wrapping up classes in discrete and readable chunks might be beneficial.
+                            </p>
+                            <h3>
+                                A Class Model Implementation Design
+                            </h3>
+                            <p>
+                                The previous example in <a href="http://prototypejs.org/">Prototype</a> looks like this:
+                            </p>
+                            <div>
+                                <pre>
+<span>Vector</span> <span>=</span> <span>Class</span><span>.</span><span>create</span><span>({</span>
+  <span>initialize</span><span>:</span> <span>function</span><span>(</span><span>x</span><span>,</span> <span>y</span><span>)</span> <span>{</span>
+    <span>this</span><span>.</span><span>x</span> <span>=</span> <span>x</span><span>;</span>
+    <span>this</span><span>.</span><span>y</span> <span>=</span> <span>y</span><span>;</span>
+  <span>}</span><span>,</span>
+
+  <span>toString</span><span>:</span> <span>function</span><span>()</span> <span>{</span>
+    <span>return</span> <span>'x: '</span> <span>+</span> <span>this</span><span>.</span><span>x</span> <span>+</span> <span>', y: '</span> <span>+</span> <span>this</span><span>.</span><span>y</span><span>;</span>
+  <span>}</span>
+<span>});</span>
+
+<span>Point</span> <span>=</span> <span>Class</span><span>.</span><span>create</span><span>(</span><span>Vector</span><span>,</span> <span>{</span>
+  <span>initialize</span><span>:</span> <span>function</span><span>(</span><span>$super</span><span>,</span> <span>x</span><span>,</span> <span>y</span><span>,</span> <span>colour</span><span>)</span> <span>{</span>
+    <span>$super</span><span>(</span><span>x</span><span>,</span> <span>y</span><span>);</span>
+    <span>this</span><span>.</span><span>colour</span> <span>=</span> <span>colour</span><span>;</span>
+  <span>}</span>
+<span>});</span>
+</pre>
+                            </div>
+                            <p>
+                                Let’s create a simplified version of this that we can extend in the future. We’ll need the following:
+                            </p>
+                            <ol>
+                                <li>The ability to extend classes with new methods by copying them
+                                </li>
+                                <li>Class creation: use of <code>apply</code> and <code>prototype.constructor</code> to run the constructors
+                                </li>
+                                <li>The ability to determine if a parent class is being passed for inheritance
+                                </li>
+                                <li>Mixins
+                                </li>
+                            </ol>
+                            <h3>
+                                Extend
+                            </h3>
+                            <p>
+                                You’ll find <code>extend</code> littered through Prototype. All it does is copies methods from one <code>prototype</code> to another. This is a good way to really see how prototypes can be manipulated — it’s as simple as you think it is.
+                            </p>
+                            <p>
+                                The essence of <code>extend</code> is this:
+                            </p>
+                            <div>
+                                <pre>
+<span>for</span> <span>(</span><span>var</span> <span>property</span> <span>in</span> <span>source</span><span>)</span>
+  <span>destination</span><span>[</span><span>property</span><span>]</span> <span>=</span> <span>source</span><span>[</span><span>property</span><span>];</span>
+</pre>
+                            </div>
+                            <h3>
+                                Class Creation
+                            </h3>
+                            <p>
+                                A <code>create</code> method will be used to create new classes. It will need to handle some setup to make inheritance possible, much like the examples above.
+                            </p>
+                            <div>
+                                <pre>
+<span>// This would be defined in our "oo" namespace</span>
+<span>create</span><span>:</span> <span>function</span><span>(</span><span>methods</span><span>)</span> <span>{</span>
+  <span>var</span> <span>klass</span> <span>=</span> <span>function</span><span>()</span> <span>{</span> <span>this</span><span>.</span><span>initialize</span><span>.</span><span>apply</span><span>(</span><span>this</span><span>,</span> <span>arguments</span><span>);</span> <span>};</span>
+
+  <span>// Copy the passed in methods</span>
+  <span>extend</span><span>(</span><span>klass</span><span>.</span><span>prototype</span><span>,</span> <span>methods</span><span>);</span>
+
+  <span>// Set the constructor</span>
+  <span>klass</span><span>.</span><span>prototype</span><span>.</span><span>constructor</span> <span>=</span> <span>klass</span><span>;</span>
+
+  <span>// If there's no initialize method, set an empty one</span>
+  <span>if</span> <span>(</span><span>!</span><span>klass</span><span>.</span><span>prototype</span><span>.</span><span>initialize</span><span>)</span>
+    <span>klass</span><span>.</span><span>prototype</span><span>.</span><span>initialize</span> <span>=</span> <span>function</span><span>(){};</span>
+
+  <span>return</span> <span>klass</span><span>;</span>
+<span>}</span>
+</pre>
+                            </div>
+                            <h3>
+                                Get the Code
+                            </h3>
+                            <p>
+                                I’ve already created a basic OO class for turing in <a href="http://github.com/alexyoung/turing.js/blob/master/turing.oo.js">turing.oo.js</a>. You can read it and experiment with it now.
+                            </p>
+                            <p>
+                                I’ll continue this part next Thursday!
+                            </p><img src="http://feeds.feedburner.com/~r/dailyjs/~4/2sF0kkY0KdE" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dailyjs.com/2010/03/04/framework-part-2-oo/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+dailyjs+%28DailyJS%29">http://dailyjs.com/2010/03/04/framework-part-2-oo/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+dailyjs+%28DailyJS%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

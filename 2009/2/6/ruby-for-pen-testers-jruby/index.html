@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Ruby for Pen-Testers: JRuby
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 06 Feb 2009 19:28:48 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-06T14:28:48-04:00">
+                    <meta itemprop="dateModified" content="2009-02-06T14:28:48-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-06T18:28:48+00:00">Feb 06</time>
+                    <h2 itemprop="title">
+                        Ruby for Pen-Testers: JRuby
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/68315b3bca689478">
+                        <blockquote>
+                            <p>
+                                <img src="http://www.matasano.com/log/wp-content/uploads/2009/01/coffee.jpg" alt="">
+                            </p>
+                            <p>
+                                This post is part of an informal series discussing the Ruby programming language for various tasks related to penetration testing. Many of us at Matasano do a lot of our coding in Ruby. We like using it when we need to write our own tools (which we do frequently) because it helps us rapidly get off the ground doing all kinds of bespoke things that would be more tedious and time-consuming (or even impossible) using off-the-shelf tools. Go ahead! Call us fanboys (and girls!!!). We can live with it. We want to share some practical tips based on our experiences in this realm.
+                            </p>
+                            <p>
+                                Recently, Timur Duehr and I had the opportunity to look at a rather large third-party product based mostly on Java/J2EE. Timur had been focusing mostly on the web front ends, but had already identified a lot of Java enterprise components and asked me my thoughts about writing some custom security testing tools for them. We’d&nbsp; been using ‘jad’ (our <a href="http://www.kpdus.com/jad.html">java decompiler of choice</a>) to decompile some of the classes we had access to and we were already sifting through Java code getting a sense of things. One of us (I honestly don’t remember who) piped up and said, “I wonder if we could use <a href="http://jruby.codehaus.org/">JRuby</a> to hook into this stuff.”
+                            </p>
+                            <p>
+                                In the past when I’ve found myself doing security testing on Java-based targets, I usually “go with the flow” for the target and may develop some of my custom tools in Java when I need to. But, I definitely don’t code in Java “just for fun”. This is because frankly, Java just really isn’t fun to code in. So, even though neither of us had really done much with JRuby before this point, Timur and I didn’t spend much time debating this, and we quickly decided to give JRuby a try and see how far it got us. The idea now seems like a no-brainer in retrospect. I’m happy to say that it was a great experience. I just wish I’d started doing this a lot earlier.
+                            </p>
+                            <p>
+                                Here’s some of the basic rationale and a few short code examples to highlight things.
+                            </p>
+                            <p>
+                                First and foremost: we have tons of ruby code laying around for common tasks that we were able to leverage using JRuby, most of which works just fine since it’s “native ruby” (or.. MRI, the Matz Ruby Interpreter)&nbsp; Avoiding the use of too many third-party C library extensions pays off big-time here. All together, I’ve written way too many incarnations of little utility function libraries in a variety of languages over the years. I’m done for a while… I don’t want to again if I can avoid it. ‘Nuff said.
+                            </p>
+                            <p>
+                                But beyond that, JRuby really shines on its own in several ways. Aside from just MRI integration, it sports truly seamless Java integration. Here’s a simple “hello world” using ‘jirb’, the JRuby equivalent to the interactive ruby shell.
+                            </p>
+                            <blockquote>
+                                <pre>
+$ <strong>jirb</strong>
+&gt;&gt; <strong>java.lang.System.out.println "Hello, ruby!"</strong>
+Hello, ruby!
+=&gt; nil
+</pre>
+                            </blockquote>
+                            <p>
+                                “Whoopie” right? Well here’s a slightly more interesting example messing around with Java Serialization from jirb.
+                            </p>
+                            <blockquote>
+                                <pre>
+$ <strong>jirb</strong>
+&gt;&gt; <strong>saved_time = Time.now</strong>
+=&gt; Thu Feb 05 20:21:27 -0600 2009
+&gt;&gt; <strong>saved_time.class</strong>
+=&gt; Time
+&gt;&gt; <strong>fos = java.io.FileOutputStream.new "saved_time.ser"</strong>
+=&gt; #&lt;Java::JavaIo::FileOutputStream:...&gt;
+&gt;&gt; <strong>oos = java.io.ObjectOutputStream.new fos</strong>
+=&gt; #&lt;Java::JavaIo::ObjectOutputStream:...&gt;
+&gt;&gt; <strong>oos.writeObject saved_time</strong>
+=&gt; nil
+&gt;&gt; <strong>oos.close</strong>
+=&gt; nil
+</pre>
+                            </blockquote>
+                            <p>
+                                So we just created a ruby Time object containing the current time and saved it to a file using Java serialization methods very much the same way a pure Java program would be written. It’s interesting to note that we created a *Ruby* Time object, not a Java one. Somehow everything worked just fine. So, obviously now we want to restore it back right?
+                            </p>
+                            <blockquote>
+                                <pre>
+$ <strong>jirb</strong>
+&gt;&gt; <strong>fis = java.io.FileInputStream.new "saved_time.ser"</strong>
+=&gt; #&lt;Java::JavaIo::FileInputStream:...&gt;
+&gt;&gt; <strong>ois = java.io.ObjectInputStream.new fis</strong>
+=&gt; #&lt;Java::JavaIo::ObjectInputStream:...&gt;
+&gt;&gt; <strong>restored_time = ois.readObject</strong>
+=&gt; #&lt;Java::JavaUtil::Date:...&gt;
+&gt;&gt; <strong>ois.close</strong>
+=&gt; nil
+&gt;&gt; <strong>Time.now.to_s</strong>
+=&gt; "Thu Feb 05 20:25:41 -0600 2009"
+&gt;&gt; <strong>restored_time.to_s</strong>
+=&gt; "Thu Feb 05 20:21:27 CST 2009"
+&gt;&gt; <strong>restored_time.class</strong>
+=&gt; Java::JavaUtil::Date
+</pre>
+                            </blockquote>
+                            <p>
+                                Notice at the end that the ‘restored_time’ object is actually of a Java type now (java.util.Date or Java::JavaUtil::Date to ruby’s namespace). What happened here? JRuby’s automatic type conversion took over as the object was serialized to the ‘saved_time.ser’ file. When we restored it, that’s how it came back to us in Ruby via the JVM.
+                            </p>
+                            <p>
+                                Next, (and this is where things begin to get interesting for pen-testing) if you want to hook into a third party ‘jar’ or ‘class’ file and mess around with it, it’s very straightforward. JRuby loads classes automatically using the same classloader rules as Java. If you need to do so explicitely it’s as simple as ‘require “/path/to/whatever.jar”’ or ‘require “/path/to/SomeClass” (which pulls in SomeClass.class).
+                            </p>
+                            <p>
+                                Getting back to pen-testing: The app Timur and I were looking at had several components using <a href="http://java.sun.com/j2se/1.3/docs/guide/rmi/spec/rmiTOC.html">Java Remote Method Invocation (JRMI</a>) as a communication protocol behind the scenes. This included “thick client” components using JRMI to talk back to central management servers for things like administration and system monitoring as well as some of the servers using it to communicate with each other between tiers. RMI actually uses Java Serialization to transfer objects across the network under the hood (see… I was going somewhere with that). RMI is basically CORBA for Java. RMI has been around for a while, too — it’s at least 10+ years old.
+                            </p>
+                            <p>
+                                We run into JRMI frequently enough in both custom in-house developed apps as well as third-party Java/J2EE based enterprise products out there these days. RMI is yucky stuff from a security standpoint. Gotta be blunt here: whenever a technology empowers people to shovel business logic around the network without really thinking about security (because it’s totally abstracted from the process)… you get yucky stuff.
+                            </p>
+                            <p>
+                                RMI is one of those things for which, from a pen-testing standpoint, very few tools exist. Frankly, RMI probably gets overlooked and glossed over a lot because of this misinterpreted “obscurity”. One security tool comes to mind that did anything with RMI. It’s been a while since I used Nessus, but I <a href="http://www.nessus.org/plugins/index.php?view=single&amp;id=22227">recall it pulling down RMI registry listings</a> when it identified an RMI registry server. So to kick off, <a href="http://github.com/emonti/jruby_jrmi_toys/blob/dfa68087bf86559e49396331acf285c1daab54c7/rmiscan.rb">here’s a basic RMI port scanner written in JRuby</a> that does basically the same thing I remember Nessus doing. It looks for RMI endpoints on remote ports, then attempts to list the registry for endpoint names if an RMI registry server is on that port.
+                            </p>
+                            <p>
+                                Here’s the relevant bits of code that do the registry listing:
+                            </p>
+                            <blockquote>
+                                <pre>
+include Java
+import java.rmi.Naming
+...
+</pre>
+                                <pre>
+rmi = Naming.list("//#{host}:#{port}")
+puts "** Found RMI Registry at: //#{host}:#{port}"
+rmi.each {|x| puts "  " + x}
+</pre>
+                            </blockquote>
+                            <p>
+                                Lets try this out against a basic RMI example. <a href="http://github.com/emonti/jruby_jrmi_toys/blob/dfa68087bf86559e49396331acf285c1daab54c7/hello_rmi.tgz">Here is one</a> I whipped up and expanded slightly from <a href="http://www.eg.bucknell.edu/~cs379/DistributedSystems/rmi_tut.html">this Sun tutorial</a>.
+                            </p>
+                            <blockquote>
+                                <pre>
+$ <strong>rmiregistry &amp;</strong>
+$ <strong>java HelloServer &amp;</strong>
+Hello Server is ready.
+$ <strong>./rmiscan.rb localhost 1099</strong>
+** Found a possible RMI endpoint at //localhost:1099
+** Found RMI Registry at: //localhost:1099
+  //localhost:1099/Hello
+</pre>
+                            </blockquote>
+                            <p>
+                                Listing endpoints is about as far as Nessus went, as I recall. “Whoopie” right? How about actually identifying the methods exported via those endpoints? … and then calling them? Note, I’m not knocking Nessus here, there’s reasons why it doesn’t go much further than this, as we’ll see later.
+                            </p>
+                            <p>
+                                Ok so sure, you could probably code something up pretty quick in Java. This is what people have done historically when testing RMI-based applications. But then you’d be coding in Java…
+                            </p>
+                            <p>
+                                … cut to …
+                            </p>
+                            <blockquote>
+                                <p>
+                                    … somewhere far away, a kitten named “<a title="Aww... she looks like a panda" href="http://www.firstclasscats.de/kitten%20bilder/rogenstein/Panda1.jpg">Panda</a>” tragically strangles herself to death while playing adorably with her ball of yarn …
+                                </p>
+                            </blockquote>
+                            <p>
+                                … cut to …
+                            </p>
+                            <blockquote>
+                                <p>
+                                    You don’t realize it yet, at least not fully, but your “inner happy” has just died a little bit at this very same moment.
+                                </p>
+                                <p>
+                                    This is because you’re just 5 lines into writing your “quick proof of concept”… in Java… and you’ve stopped to ponder whether it would be better to refactor your “quick proof of concept” as a HelloScroobalizer factory before you compile and oh… which methods should be protected…
+                                </p>
+                            </blockquote>
+                            <p>
+                                Oh, the humanity.
+                            </p>
+                            <p>
+                                Instead, write a POC in JRuby! Seriously! If not for yourself, then at least <a href="http://www.colinfahey.com/funny_images/kitten_running_away_from_domo_kun_creatures_of_japan_nhk_television.jpg">think of the kittens</a>! In-fact, <a href="http://github.com/emonti/jruby_jrmi_toys/blob/dfa68087bf86559e49396331acf285c1daab54c7/rmiquery.rb">here’s an example of just such a tool</a>.
+                            </p>
+                            <p>
+                                (Again, the code we care about is below):
+                            </p>
+                            <blockquote>
+                                <pre>
+include Java
+import java.rmi.Naming
+#...
+registry = Naming.lookup(regurl)
+registry.list.each do |remote_name|
+  puts "RMI Interface Found: #{remote_name}"
+  begin
+    remote = registry.lookup(remote_name)
+    puts "  #{remote}"
+    remote.java_class.declared_instance_methods.each do |meth|
+      puts "    #{meth.to_s}"
+    end
+  rescue
+    puts "     **ERROR** #{$!}"
+  end
+  puts
+end
+</pre>
+                            </blockquote>
+                            <p>
+                                Running this tool, we get:
+                            </p>
+                            <blockquote>
+                                <pre>
+$ <strong>./rmiquery.rb //127.0.0.1:1099</strong>
+
+RMI Interface Found: Hello
+     **ERROR** java.rmi.UnmarshalException:
+        error unmarshalling return; nested exception is:
+        java.lang.ClassNotFoundException: Hello_Stub
+        (no security manager: RMI class loader disabled)
+</pre>
+                            </blockquote>
+                            <p>
+                                Oops… what just happened? Well, RMI uses Java serialization, remember? So this means that in order for RMI to do its deserializing thing on the client, we need our client’s JVM to be able to instantiate the relevant interface classes exported by the remote RMI server. Actually, what the error is really telling us is that it the JVM doesn’t have the interface class definition, and our RMI security manager (the one we didn’t specify in our project so the default took over) wouldn’t let the class loader dynamically look for one on the network. I’ll um… just… copy this over for now.
+                            </p>
+                            <blockquote>
+                                <pre>
+$ <strong>cp ~/jstuff/rmi_samples/hello_world/HelloInterface.class .</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                This isn’t JRuby’s doing, it’s the same for Java. RMI just works this way. We’re supposed to have, at a minimum, the class files with the object’s interface in order to interact with it fully on the remote RMI server. JRMI does support <a href="http://java.sun.com/j2se/1.3/docs/guide/rmi/spec/rmi-server7.html">dynamic network class loading mechanisms</a> over the network. But, in practice, most apps just include the necessary ‘.jar’ files somewhere in the local class loader library path. This is where pen-testers and bad guys will find them too. I like to think people do the simple thing because of some sense of automatic self-preservation kicking in when hearing things like “dynamic network class loading” and “RMI class-loading over HTTP <a href="http://www.fitc.unc.edu.ar/javadev/rmi/specissues.html#11">uses a hard-coded URL</a>”. But, in the end, the classes usually aren’t that hard to get either way and having access to the necessary interface classes is the only “security requirement” most JRMI apps enforce on their clients.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <em style="font-size:10px">Since we’re on this tangent: some pretty <a href="http://video.google.com/videoplay?docid=1673714450539106400&amp;hl=en">interesting security research work</a> was recently presented by <a href="http://aboulton.blogspot.com/2008/10/owasp-nyc.html">Adam Boulton</a> (formerly of Corsaire) on fully enumerating RMI interfaces and calling their methods starting with no class definitions at all. Despite some cloaked caveats in Adam’s presentation (“oh… and… there’s this apparently random 64-bit number you need to know, but don’t worry about that.”) his attack really does help drive home how insecure most JRMI implementations probably are. Unfortunately, it looks like the tools he wrote in Java will not be published any time soon. On that note, I’ll say that in Adam’s video, he used a pretty hands-on process in the later steps of his presentation. Not knocking his work, but using a dynamic scripting language like ruby for the same thing might raise some exciting possibilities for automation and even dynamic class generation. But I’ll leave this as an exercise for the reader for now.</em>
+                                </p>
+                            </blockquote>
+                            <p>
+                                So anyway, with the HelloInterface.class in hand, we run the same command again: (quick note, the Java class loader rules kick in now and load the file automatically from the current directory)
+                            </p>
+                            <blockquote>
+                                <pre>
+$ <strong>./rmiquery.rb //127.0.0.1:1099</strong>
+RMI Interface Found: Hello
+  Proxy[HelloInterface,RemoteObjectInvocationHandler[UnicastRef ... ]]
+</pre>
+                            </blockquote>
+                            <blockquote>
+                                <pre>
+<span>    public final java.lang.String $Proxy1.say() throws java.rmi.RemoteException
+    public final int $Proxy1.getCacheSize() throws java.rmi.RemoteException
+    public final void $Proxy1.setCacheSize(int) throws java.rmi.RemoteException
+    public final int $Proxy1.hashCode()
+    public final boolean $Proxy1.equals(java.lang.Object)
+    public final java.lang.String $Proxy1.toString()
+    public final int $Proxy1.add(int,int) throws java.rmi.RemoteException</span>
+</pre>
+                            </blockquote>
+                            <p>
+                                There we go. This time our tool produced prototypes for all the methods exported via the “//127.0.0.1:1099/Hello” endpoint. Now, finally, lets call some of them from jirb. It’s incredibly straightforward… I can see why people would want to use this JRMI stuff in their products:
+                            </p>
+                            <blockquote>
+                                <pre>
+$ <strong>jirb</strong>
+&gt;&gt; <strong>registry = java.rmi.Naming.lookup("//localhost:1099")</strong>
+=&gt; #&lt;Java::SunRmiRegistry::RegistryImpl_Stub: ... &gt;
+&gt;&gt; <strong>remote = registry.lookup("Hello")</strong>
+=&gt; #&lt;#&lt;Class:01xd16868&gt;:0x1d929f ... &gt;
+&gt;&gt; <strong>remote.say</strong>
+=&gt; "Hello, ruby! (via RMI)!"
+&gt;&gt; <strong>remote.add(1,2)</strong>
+=&gt; 3
+&gt;&gt; <strong>remote.getCacheSize</strong>
+=&gt; 200
+&gt;&gt; <strong>remote.setCacheSize 8000</strong>
+=&gt; nil
+&gt;&gt; <strong>remote.getCacheSize</strong>
+=&gt; 8000
+</pre>
+                            </blockquote>
+                            <p>
+                                So there you have it. Just a scratch on the surface of what you can do with JRuby, but not too shabby. We’ve identified Java-based remote procedure services, enumerated them, and interacted with them them by invoking remote methods, all without having to touch a line of actual Java code. If you’re like me, and too much Java makes you cranky, give JRuby a shot next time you run into something where you need to dig into Java technologies! You’ll probably spend less time coding and go home with more findings (to your kittens who miss you!)
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.matasano.com/log/1399/ruby-for-pen-testers-jruby/">http://www.matasano.com/log/1399/ruby-for-pen-testers-jruby/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

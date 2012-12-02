@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Apache ZooKeeper: the making of
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 23 Mar 2009 17:35:32 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-03-23T13:35:32-04:00">
+                    <meta itemprop="dateModified" content="2009-03-23T13:35:32-04:00"><time class="date" itemprop="datePublished" datetime="2009-03-23T17:35:32+00:00">Mar 23</time>
+                    <h2 itemprop="title">
+                        Apache ZooKeeper: the making of
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/730c900e313564ad">
+                        <blockquote>
+                            <p>
+                                After working for a long time on many different distributed systems, you learn to appreciate how complicated the littlest things can become. For example, when running an application on a local machine, changing configuration of an application involves clicking on a gui or, at worst, editing a file and restarting the app. However, distributed applications run on different machines and need to see configuration changes and react to them. To make matters worse, machines may be temporarily down or partitioned from the network. Not only do these outages make things hard to configure, but they also make application health no longer a choice between dead or alive; you also have mostly alive or dead and the dreaded half dead. Robust distributed applications also have the ability to incorporate new machines or decommission machines on the fly. Partial failures together with elastic machine ensembles mean that even the configuration of the distributed application should be dynamic. To make matters worse theoretical results such as the FLP proof (consensus is impossible with asynchronous systems and even one failure) and the CAP theorem (strong Consistency, high Availability, and Partition-tolerance: pick two, you can't get all three) mean that some compromises must be made.
+                            </p>
+                            <p>
+                                As we were working with the different systems here at Yahoo, we had some very general requirements of distributed applications in this context. First, applications need "ground truth"; they need an oracle, or service, that they can just believe without second guessing. Second, the service needs to be as simple as possible, both to decrease the likelihood of bugs and make it as easy to understand as possible. Third, the service needs to have good performance so that applications can use the service extensively. If a developer goes to the trouble of integrating the service into their application, they should be able to make full use of it.
+                            </p>
+                            <p>
+                                We designed <a href="http://hadoop.apache.org/zookeeper">ZooKeeper</a> to meet these requirements. (We already had a few distributed systems projects with animal names, and the term zoo conjures up a sense of chaos that tend to prevail in large systems.) Our background in distributed file systems motivated a hierarchal namespace and file system like model. That same background gave us insight into some of the features of file systems that are particularly hard to implement. (rename is the worst!) We also thought that such a model would make it familiar to new developers since the file API is one of the earliest learned. We added a couple of things such as the ability to set watches, callbacks, that will trigger on specific changes to files and ephemeral files which disappear if the client that created them disconnects (on purpose or due to failure) from ZooKeeper.
+                            </p>
+                            <p>
+                                For reliability, we needed the service to be provided by a cluster of servers. We have lots of clients and need high performance so we allow a client to connect to any active server in the cluster. Since our initial target applications were very read dominant, we wanted read requests to be serviced by replicas without having to coordinate with other replicas. We also didn't want to use locks for updates, both for the detrimental impact on performance, but also for the complications locks make on implementation. So, we order all update requests and guarantee that all replicas see the same order of updates. In the end all update requests are totally ordered and all reads are ordered with respect to update requests. Of course, there are plenty of other details, but these were our key choices.
+                            </p>
+                            <p>
+                                Our decision to focus on ordering turned out to be key to moving from a dynamic configuration service to a full fledged coordination service. We had shown our production partners that things like configuration, leader election, group membership, and server status could all be done easily with ZooKeeper, but after hearing about a service from Google called Chubby they became convinced that the needed locks. We looked at adding a lock method to our service, but we could not get it to fit nicely into our design. Our implementation was completely wait-free, and adding a blocking method would require a complete redesign. Soon we realized that by taking advantage of ordering and watches we could implement efficient locks at the client. This lead us to start documenting some higher level primitives that can be implemented by clients without modifying the ZooKeeper server at all. We call them <a href="http://hadoop.apache.org/zookeeper/docs/current/recipes.html">recipes</a>. Once we got started, we realized we could do all sorts of coordination primitives like read-write locks, preemptable locks, queues, barriers, etc. As an interesting postscript, the group that initially requested the locks ended up not needing them after all.
+                            </p>
+                            <p>
+                                ZooKeeper's adoption into production was faster than we expected or could handle. The first group we pitched the idea to immediately adopted it for their next project. Eventually we stopped pitching ZooKeeper, because we needed to focus on implementation and we were getting too much interest. We had written a prototype implementation, but the code base that is now ZooKeeper was implemented from scratch in a period of three months by a single developer. Our initial users gave a lot of feedback and help get through a lot of the early bugs (thanks Mark and Zeke!). Of course there have been many bugs that have been fixed since then and our developer base has grown to four. By the end of the first year of ZooKeeper's development we open sourced it using SourceForge. A few months after that we became an Apache subproject under Hadoop.
+                            </p>
+                            <p>
+                                There are still plenty of things to do: partitioned namespace, more performance enhancements, higher level client primitives, etc. So do you have a distributed system? (Yes, an application that runs on two machines counts!) Want to make the world a better place? Want to save humanity from utter chaos? Join the <a href="http://hadoop.apache.org/zookeeper/mailing_lists.html">discussion</a>! <a href="http://wiki.apache.org/hadoop/ZooKeeper/HowToContribute">Contributions</a> welcome!
+                            </p>
+                            <p>
+                                Benjamin Reed<br>
+                                Yahoo! Research<br>
+                                Apache ZooKeeper Committer
+                            </p>
+                            <div>
+                                <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=vlU5Qd_K5v8:umUdWcYBYBQ:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=vlU5Qd_K5v8:umUdWcYBYBQ:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?i=vlU5Qd_K5v8:umUdWcYBYBQ:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=vlU5Qd_K5v8:umUdWcYBYBQ:qj6IDK7rITs"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=qj6IDK7rITs" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=vlU5Qd_K5v8:umUdWcYBYBQ:PhkjNP4BSzk"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=PhkjNP4BSzk" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=vlU5Qd_K5v8:umUdWcYBYBQ:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?i=vlU5Qd_K5v8:umUdWcYBYBQ:F7zBnMyn0Lo" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/YDNHadoop/~4/vlU5Qd_K5v8" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://feeds.developer.yahoo.net/~r/YDNHadoop/~3/vlU5Qd_K5v8/apache_zookeeper_the_making_of.html">http://feeds.developer.yahoo.net/~r/YDNHadoop/~3/vlU5Qd_K5v8/apache_zookeeper_the_making_of.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

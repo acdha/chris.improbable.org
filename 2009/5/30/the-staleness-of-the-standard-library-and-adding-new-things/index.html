@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The staleness of the standard library and adding new things
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 30 May 2009 23:02:21 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-05-30T16:37:00-04:00">
+                    <meta itemprop="dateModified" content="2009-05-30T16:37:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-05-30T20:37:00+00:00">May 30</time>
+                    <h2 itemprop="title">
+                        The staleness of the standard library and adding new things
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/9bece4a9ba2d0552">
+                        <blockquote>
+                            If you happen to follow certain members of python-dev on <a href="http://twitter.com/">Twitter</a> you may have noticed a discussion going on over <a href="http://www.zedshaw.com/">Zed Shaw's</a> "<a href="http://www.zedshaw.com/blog/2009-05-29.html">Curing Python's Neglect</a>" post about inconsistencies in the language and the standard library, focusing mostly on the latter. This caused some people to say Zed should be <a href="http://www.lindbergd.info">lindberg'd</a> (link is currently down) for complaining about the state of Python's standard library without offering solutions. This then led to Zed <a href="http://zedshaw.com/blog/2009-05-30.html">responding</a> about how there is a double-standard for accepting changes between Python committers and everyone else which has led to crap making it into the standard library.<br>
+                            <br>
+                            There seems to be a misunderstanding here that I don't think is isolated to Zed (and thus this post is not meant to be picking specifically on Zed, he just happened to spark the discussion) involving Python's history and how things operate over on python-dev that I would like to clear up.<br>
+                            <br>
+                            I want to start off by acknowleding the fact that the standard library is far from perfect. There are modules in there that are of subpar quality when compared to other parts of the standard library. And even those that are in there and are considered good can have some inconsistencies in their APIs that can make them enfuriating to use on occasion. There is work that could stand to happen to clean up some things.<br>
+                            <br>
+                            Today, to get something added to the standard library, we ask that the code be considered best-of-breed by the community, that the developer promise to maintain the code, and that the maintenance happen within Python's development process and not outside of it. There can be a PEP involved depending on how large the code is and how much of a fight there is to get the code included. And of course this is all dependent on whether the core developers believe the module has enough widespread usefulness to warrant adding it to the standard library.<br>
+                            <br>
+                            But historically these requirements are a recent turn of events. I would say that these requirements for inclusion into the standard library did not start to be seriously enforced until some time during the Python 2.5 development cycle which started in November 2004 and ended in September 2006. If you look at the standard library a lot of it predates 2.5 by several releases. If you look at the modules that Zed said could use some improvements you will notice that none of them were added to the standard library recently (or even in the standard library as Zed mistakenly thought that setuptools and easy_install were):<br>
+                            <ul>
+                                <li>os: 1992 (I don't even know what release that is)<br>
+                                </li>
+                                <li>time: 1990 (less than a year after Python's creation!)<br>
+                                </li>
+                                <li>datetime: 2.3<br>
+                                </li>
+                                <li>email: 2.2
+                                </li>
+                            </ul>My point is that if you look at a module in the standard library and it seems a little stale and that the API could have possibly used some more public vetting then it probably could have but was accepted anyway. People need to realize that Python was started by Guido to scratch an itch and just happened to turn into this massively popular programming language. Python's popularity took off starting shortly after the first PyCon in 2003, IMO. But because the growth was organic python-dev did not realize how much more careful we had to be with standard library inclusions until a few years later. Back before we instituted more stringent acceptance requirements things were added simply if people offered up the code, were willing to maintain it, and python-dev thought it would be useful.<br>
+                            <br>
+                            But admittedly, even today some modules get to short-circuit the acceptance process. Importlib is a perfect example of this as I didn't have to put it out there for a year to make sure people thought it was best-of-breed. I didn't have to write up a PEP to vet the API. The only thing I had going for me was a known need for what importlib provides. Otherwise the code went in because I wanted it to go in and I happen to be in a position where I can make that simply happen.<br>
+                            <br>
+                            But I skipped the steps only because of other things I did. I skipped the year-long acceptance by the community as I was targetting Python 3.0 which was not released as final yet. I also blogged extensively about importlib and its API so it was at least discussed publicly somewhere. There were several core developers I talked with about the API and who also watched every commit I made with interest and provided feedback. I talked with people at PyCon about this stuff. There is a reason I spent <span style="font-weight:bold">years</span> working on importlib.<br>
+                            <br>
+                            But importlib is an exception, not the rule. If my bootstrapping goal did not exist importlib would have existed externally for at least a year before I tried to bring it into the standard library. And if I had gotten any realistic pushback from python-dev I would have waited for inclusion, but thankfully I didn't receive any. And trust me when I say that people on python-dev are quite happy to share their opinion if they think something is a bad idea. While people who have proven themselves do get to skip some steps, don't think that they get to do whatever they want to the standard library.<br>
+                            <br>
+                            With all of this in mind, how should modules get fixed? If an API is truly deemed poor and in need of a replacement it can either grow a new API next to the old one or we introduce a new module to make the old module obsolete. Doing the former is nice for stupid little API mistakes, but does require working properly with the pre-existing module which might be a hinderance.<br>
+                            <br>
+                            Adding a new module breaks cleanly from the old module, allowing a new API to exist from scratch. But this has the issue of being a much larger burden for support as there will simply be more code. There are possible stability issues, etc. Even if code has existed out in the public for a year does not guarantee top-notch quality.<br>
+                            <br>
+                            And of course this all assumes that an API is actually fundamentally broken. Minor issues can be overlooked in the name of prior knowledge. When we add something to python-dev we are essentially asking every Python developer out there to learn about this new code and consider using it which is quite the mental burden if you have been using the older API for years. And it is also possible that you are in a minority in thinking it is broken.<br>
+                            <br>
+                            This is all rather complicated and nuanced. Coming up with a solution that pleases everyone is impossible. But python-dev continues to try to do its best and hopefully that does please most people.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/20144447-7690183959399092578?l=sayspy.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/CoderWhoSaysPy/~4/w1kW2JE4Kj8" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://sayspy.blogspot.com/2009/05/staleness-of-standard-library-and.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+CoderWhoSaysPy+%28Coder+Who+Says+Py%29">http://sayspy.blogspot.com/2009/05/staleness-of-standard-library-and.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+CoderWhoSaysPy+%28Coder+Who+Says+Py%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Stupid: A Metalanguage For Cryptography
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 24 Jan 2010 19:32:32 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-24T14:32:32-04:00">
+                    <meta itemprop="dateModified" content="2010-01-24T14:32:32-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-24T18:32:32+00:00">Jan 24</time>
+                    <h2 itemprop="title">
+                        Stupid: A Metalanguage For Cryptography
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/6cd1cd6f10556141">
+                        <blockquote>
+                            <p>
+                                Various threads lately have got me thinking about implementing cryptography and cryptographic protocols. As I have mentioned before, this is hard. But obviously the task itself is the same every time, by its very nature – if I want to interoperate with others, then I must implement effectively the same algorithm as them. So why do we ever implement anything more than once? There are various reasons, varying as to their level of bogosity. Here’s a few
+                            </p>
+                            <ul>
+                                <li>Trust: “I don’t want to trust anyone else’s code”. This, in my view is mostly bogus. If you don’t trust others to write your crypto, then you’ve got some pretty big problems on your hands…
+                                    <ul>
+                                        <li>You’re likely to be using some pretty heavyweight stuff like SSL and/or X.509, and reimplementing those is a seriously major job. Are you really going to do that?
+                                        </li>
+                                        <li>Unless you are also a cryptographer, then you’re trusting the guys that designed the crypto you’re implementing anyway.
+                                        </li>
+                                        <li>Ditto protocol desginer.
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>Languages: an implementation in Java isn’t going to work so well in Python. And although its true that you can plug C implementations into almost everything, there are legitimate and not-so-legitimate reasons for not wanting to do so…
+                                    <ul>
+                                        <li>You don’t trust native code: see above.
+                                        </li>
+                                        <li>It makes your distribution hard to build and/or use and tricky to install.
+                                        </li>
+                                        <li>You are running on a platform that doesn’t allow native code, for example, a web hosting company, or <a href="http://www.appspot.com/">Google’s App Engine</a>.
+                                        </li>
+                                        <li>Native code has buffer overflows and MyFavouriteLanguage doesn’t: true, but probably the least of your worries, given all the other things that you can get wrong, at least if the native code is widely used and well tested.
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>Efficiency: you are not in the long tail of users who’s transactions per second is measured in fractions. In this case, you may well want specialised implementations that exploit every ounce of power in your platform.
+                                </li>
+                            </ul>
+                            <p>
+                                Of these, reimplementation for efficiency clearly needs a completely hand-crafted effort. Trust issues are, in my view, largely bogus, but if you really want to go that way, be my guest. So what does that leave? People who want it in their chosen language, are quite happy to have someone else implement it and are not in need of the most efficient implementation ever. However, they would like correctness!
+                            </p>
+                            <p>
+                                This line of thinking let me spend the weekend implementing a prototype of a language I call “Stupid”. The idea is to create a language that will permit the details of cryptography and cryptographic protocols to be specified unambiguously, down to the bits and bytes, and then compile that language into the language of your choice. Because we want absolute clarity, Stupid does not want to be like advanced languages, like OCaml and Haskell, or even C, where there’s all sorts of implicit type conversions and undefined behaviour going on – it wants it to be crystal clear to the programmer (or reviewer) exactly what is happening at every stage. This also aids the process of compiling into the target language, of course. So, the size of everything wants to be measured in bits, not vague things like “long” or “size_t”. Bits need to be in known places (for example, big-endian). Operations need to take known inputs and produce known outputs. Sign extension and the like do not want to happen magically. Overflow and underflow should be errors, unless you specifically stated that they were not, and so on.
+                            </p>
+                            <p>
+                                To that end, I wrote just enough compiler to take as input a strawman Stupid grammar sufficient to do SHA-256, and produce various languages as output, in order to get a feel for what such a language might look like, and how hard it would be to implement.
+                            </p>
+                            <p>
+                                The result is: you can do something rough in a weekend <img src="http://www.links.org/wp-includes/images/smilies/icon_smile.gif" alt=":-)">
+                            </p>
+                            <p>
+                                Very rough – but it seems clear to me that proceeding down this road with more care would be very useful indeed. We could write all the cryptographic primitives in Stupid, write relatively simple language plugins for each target language and we’d have substantially improved the crypto world. So, without further ado, what does my proto-Stupid look like? Well, here’s SHA-256, slightly simplified (it only processes one block, I was going cross-eyed before I got round to multiple blocks). Note, I haven’t tested this yet, but I am confident that it implements (or can be easily extended to implement) everything needed to make it work – and the C output the first language plugin produces builds just fine with <code>gcc -Wall -Werror</code>. I will test it soon, and generate another language, just to prove the point. In case the code makes your eyes glaze over, see below for some comments on it…<br>
+                                <code><br>
+                                "This code adapted from Wikipedia pseudocode";</code>
+                            </p>
+                            <p>
+                                "Note 2: All constants in this pseudo code are in big endian";
+                            </p>
+                            <p>
+                                "Initialize variables";<br>
+                                "(first 32 bits of the fractional parts of the square roots of the first 8 primes 2..19):";<br>
+                                uint32 h0 = 0x6a09e667;<br>
+                                uint32 h1 = 0xbb67ae85;<br>
+                                uint32 h2 = 0x3c6ef372;<br>
+                                uint32 h3 = 0xa54ff53a;<br>
+                                uint32 h4 = 0x510e527f;<br>
+                                uint32 h5 = 0x9b05688c;<br>
+                                uint32 h6 = 0x1f83d9ab;<br>
+                                uint32 h7 = 0x5be0cd19;
+                            </p>
+                            <p>
+                                "Initialize table of round constants";<br>
+                                "(first 32 bits of the fractional parts of the cube roots of the first 64 primes 2..311):";<br>
+                                array(uint32, 64) k =<br>
+                                (0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,<br>
+                                0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,<br>
+                                0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,<br>
+                                0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,<br>
+                                0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,<br>
+                                0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,<br>
+                                0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,<br>
+                                0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,<br>
+                                0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,<br>
+                                0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,<br>
+                                0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,<br>
+                                0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,<br>
+                                0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,<br>
+                                0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,<br>
+                                0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,<br>
+                                0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2);
+                            </p>
+                            <p>
+                                "For now, dummy in the message instead of declaring a function wrapper";<br>
+                                "Also, for now, allow enough room in the input for padding, etc, to simplify the loop";<br>
+                                uint32 message_bits = 123;<br>
+                                array(uint8, 64) message =<br>
+                                (0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,<br>
+                                0x0f, 0xed, 0xcb, 0xa9, 0x87, 0x65, 0x43, 0x21);<br>
+                                uint32 pad_byte = 0;<br>
+                                uint32 pad_bit = 0;<br>
+                                uint32 tmp = 0;<br>
+                                uint32 tmp2 = 0;<br>
+                                array(uint32, 16) w = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);<br>
+                                uint32 i = 0;<br>
+                                uint32 s0 = 0;<br>
+                                uint32 s1 = 0;<br>
+                                uint32 a = 0;<br>
+                                uint32 b = 0;<br>
+                                uint32 c = 0;<br>
+                                uint32 d = 0;<br>
+                                uint32 e = 0;<br>
+                                uint32 f = 0;<br>
+                                uint32 g = 0;<br>
+                                uint32 h = 0;<br>
+                                uint32 maj = 0;<br>
+                                uint32 t1 = 0;<br>
+                                uint32 t2 = 0;<br>
+                                uint32 ch = 0;
+                            </p>
+                            <p>
+                                "Pre-processing:";<br>
+                                "append the bit '1' to the message";
+                            </p>
+                            <p>
+                                "note that we're using a 32-bit length for now";<br>
+                                "all the op32, op8 etc are _without_ wrap (where applicable) - i.e. wrap is an error";<br>
+                                "they also require left and right to both be the correct type and size";<br>
+                                "also, we have no precedence, it is up to you to bracket things";<br>
+                                "rshift is with zero padding";
+                            </p>
+                            <p>
+                                pad_bit = 7 minus32 (message_bits mod32 8);<br>
+                                pad_byte = (message_bits plus32 1) rshift32 8;<br>
+                                message[pad_byte] = message[pad_byte] or8 (1 lshift8 pad_bit);
+                            </p>
+                            <p>
+                                "append k bits '0', where k is the minimum number &gt;= 0 such that the<br>
+                                resulting message length (in bits) is congruent to 448 (mod 512)";
+                            </p>
+                            <p>
+                                "eq32 and friends return a boolean value (which is not even a bit)";
+                            </p>
+                            <p>
+                                if (pad_bit eq32 0) {<br>
+                                pad_bit = 7;<br>
+                                pad_byte = pad_byte plus32 1;<br>
+                                } else {<br>
+                                pad_bit = pad_bit minus32 1;<br>
+                                }
+                            </p>
+                            <p>
+                                "bor is like C || (i.e. RHS is only executed if LHS is false)";
+                            </p>
+                            <p>
+                                "448/8 = 56";<br>
+                                while (((pad_byte mod32 512) ne32 56) bor (pad_bit ne32 7)) {<br>
+                                message[pad_byte] = message[pad_byte] and8 (not8 (1 lshift8 pad_bit));<br>
+                                if (pad_bit eq32 0) {<br>
+                                pad_bit = 7;<br>
+                                pad_byte = pad_byte plus32 1;<br>
+                                } else {<br>
+                                pad_bit = pad_bit minus32 1;<br>
+                                }<br>
+                                }
+                            </p>
+                            <p>
+                                "append length of message (before pre-processing), in bits, as 64-bit big-endian integer";
+                            </p>
+                            <p>
+                                message[pad_byte] = 0;<br>
+                                message[pad_byte plus32 1] = 0;<br>
+                                message[pad_byte plus32 2] = 0;<br>
+                                message[pad_byte plus32 3] = 0;
+                            </p>
+                            <p>
+                                message[pad_byte plus32 7] = mask32to8 message_bits;<br>
+                                tmp = message_bits rshift32 8;<br>
+                                message[pad_byte plus32 6] = mask32to8 message_bits;<br>
+                                tmp = message_bits rshift32 8;<br>
+                                message[pad_byte plus32 5] = mask32to8 message_bits;<br>
+                                tmp = message_bits rshift32 8;<br>
+                                message[pad_byte plus32 4] = mask32to8 message_bits;
+                            </p>
+                            <p>
+                                "for each chunk (we only have one, so don't bother with the loop for now)";
+                            </p>
+                            <p>
+                                " break chunk into sixteen 32-bit big-endian words w[0..15]";<br>
+                                tmp = 0;<br>
+                                while(tmp ne32 16) {<br>
+                                tmp2 = tmp lshift32 2;<br>
+                                w[tmp] = ((widen8to32 message[tmp2]) lshift32 24)<br>
+                                plus32 ((widen8to32 message[tmp2 plus32 1]) lshift32 16)<br>
+                                plus32 ((widen8to32 message[tmp2 plus32 2]) lshift32 <img src="http://www.links.org/wp-includes/images/smilies/icon_cool.gif" alt="8)"><br>
+                                plus32 (widen8to32 message[tmp2 plus32 3]);<br>
+                                tmp = tmp plus32 1;<br>
+                                }
+                            </p>
+                            <p>
+                                " Extend the sixteen 32-bit words into sixty-four 32-bit words";<br>
+                                i = 16;<br>
+                                while(i ne32 64) {<br>
+                                s0 = (w[i minus32 15] rrotate32 7) xor32 (w[i minus32 15] rrotate32 18) xor32 (w[i minus32 15] rshift32 3);<br>
+                                s1 = (w[i minus32 2] rrotate32 17) xor32 (w[i minus32 2] rrotate32 19) xor32 (w[i minus32 2] rshift32 10);<br>
+                                w[i] = w[i minus32 16] plus32 s0 plus32 w[i minus32 7] plus32 s1;<br>
+                                }
+                            </p>
+                            <p>
+                                " Initialize hash value for this chunk:";
+                            </p>
+                            <p>
+                                a = h0;<br>
+                                b = h1;<br>
+                                c = h2;<br>
+                                d = h3;<br>
+                                e = h4;<br>
+                                f = h5;<br>
+                                g = h6;<br>
+                                h = h7;
+                            </p>
+                            <p>
+                                " Main loop:";
+                            </p>
+                            <p>
+                                i = 0;<br>
+                                while(i ne32 64) {<br>
+                                s0 = (a rrotate32 2) xor32 (a rrotate32 13) xor32 (a rrotate32 22);<br>
+                                maj = (a and32 b) xor32 (a and32 c) xor32 (b and32 c);<br>
+                                t2 = s0 plus32 maj;<br>
+                                s1 = (e rrotate32 6) xor32 (e rrotate32 11) xor32 (e rrotate32 25);<br>
+                                ch = (e and32 f) xor32 ((not32 e) and32 g);<br>
+                                t1 = h plus32 s1 plus32 ch plus32 k[i] plus32 w[i];<br>
+                                h = g;<br>
+                                g = f;<br>
+                                f = e;<br>
+                                e = d plus32 t1;<br>
+                                d = c;<br>
+                                c = b;<br>
+                                b = a;<br>
+                                a = t1 plus32 t2;<br>
+                                }
+                            </p>
+                            <p>
+                                " Add this chunk's hash to result so far:";
+                            </p>
+                            <p>
+                                h0 = h0 plus32 a;<br>
+                                h1 = h1 plus32 b;<br>
+                                h2 = h2 plus32 c;<br>
+                                h3 = h3 plus32 d;<br>
+                                h4 = h4 plus32 e;<br>
+                                h5 = h5 plus32 f;<br>
+                                h6 = h6 plus32 g;<br>
+                                h7 = h7 plus32 h;
+                            </p>
+                            <p>
+                                "end of outer loop (when we do it)";
+                            </p>
+                            <p>
+                                "Obviously I can also do this part, but right now I am going cross-eyed";<br>
+                                "Produce the final hash value (big-endian):<br>
+                                digest = hash = h0 append h1 append h2 append h3 append h4 append h5 append h6 append h7";
+                            </p>
+                            <p>
+                                Notice that every operator specifies the input and output sizes. For example <code>plus32</code> means add two 32-bit numbers to get a 32-bit result, with wrap being an error (this probably means, by the way, that the last few <code>plus32</code>s should be <code>plus32_with_overflow</code>, since SHA-256 actually expects overflow for these operations). So far we only deal with unsigned quantities; some “overflows” are actually expected when dealing with negative numbers, so that would have to be specified differently. Also, I didn’t deal with the size of constants, because I wasn’t sure about a good notation, though I am leaning towards <code>23_8</code> to mean an 8-bit representation of 23 (subscripted, like in TeX).
+                            </p>
+                            <p>
+                                Because Stupid really is stupid, it should be very easy to write static analysis code for it, enabling checks to be omitted sometimes – for example, the fact that we only subtract 1 from <code>pad_bit</code> if <code>pad_bit</code> is non-zero means that we would not have to check for underflow in that case.
+                            </p>
+                            <p>
+                                Anyway, I’m a bit bemused after writing a lot of rather repetitive code for the compiler, so I think I’ll wait for reactions before commenting further – but it does seem to me that this is a project worth pursuing. The compiler itself, whilst somewhat crude, particularly since it doesn’t yet do most of the checks I suggest should be there, is pretty small and easily understood: less than 1,500 lines of Perl and YAPP. I won’t bore you with the details, but if you want a peek, <a href="http://www.links.org/files/stupid.tgz">here’s a tarball</a>.
+                            </p>
+                            <p>
+                                <a href="http://www.links.org/?p=864&amp;akst_action=share-this" title="E-mail this, post to del.icio.us, etc." rel="nofollow">Share This</a>
+                            </p><img src="http://feeds.feedburner.com/~r/links/ZvUZ/~4/DXnSIUVU5fw" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.links.org/?p=864&amp;utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+links%2FZvUZ+%28Ben+Laurie+Blathering%29">http://www.links.org/?p=864&amp;utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+links%2FZvUZ+%28Ben+Laurie+Blathering%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

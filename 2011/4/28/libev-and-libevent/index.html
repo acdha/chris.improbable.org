@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            libev and libevent
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 28 Apr 2011 10:30:18 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-28T06:30:18-04:00">
+                    <meta itemprop="dateModified" content="2011-04-28T06:30:18-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-28T10:30:18+00:00">Apr 28</time>
+                    <h2 itemprop="title">
+                        libev and libevent
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0c926f74023ee30e">
+                        <blockquote>
+                            <p>
+                                <em>The next version of gevent (<a href="https://bitbucket.org/denis/gevent/">1.0</a>) will use <a href="http://libev.schmorp.de/">libev</a> for the event loop rather than <a href="http://monkey.org/~provos/libevent/">libevent</a> or <a href="http://www.wangafu.net/~nickm/libevent-book/">libevent2</a>. In this post I’ll explain the reasons behind the switch.</em>
+                            </p>
+                            <p>
+                                But first let’s revisit the original reasons for choosing libevent1.4 over libev:
+                            </p>
+                            <ul>
+                                <li>&nbsp;I considered it more popular and more proven
+                                </li>
+                                <li>&nbsp;It’s packaged in Debian (apt-get install libevent libevent-dev)
+                                </li>
+                                <li>&nbsp;It has dns, http and bufferevents
+                                </li>
+                            </ul>
+                            <p>
+                                However, I no longer consider any of this reasons important.
+                            </p>
+                            <p>
+                                First of all, libev has been used in lots of projects since then and underwent lots of scrutiny.
+                            </p>
+                            <p>
+                                Second, most distributions do not package the latest versions of both libraries so the argument that gevent with libevent is easier to install becomes moot. Actually,&nbsp; libev is really easy to embed and that’s what we’re going to do for the next version: put all the dependencies in the release tarball. Hopefully this will reduce the number of build problems people get. This will also remove the number of possible variations of gevent because of different library versions used. There still will be an option to dynamically link against the dependencies, it just won’t be the default.
+                            </p>
+                            <p>
+                                The third argument that libevent has built in support for dns and http still holds. And it is part of what makes gevent cool, but now it’s time to move on.
+                            </p>
+                            <p>
+                                For example, I encountered the following bugs in Libevent’s dns/http implementation:
+                            </p>
+                            <ul>
+                                <li>[dns] random failures and timeouts
+                                </li>
+                                <li>[dns] forking breaks it completely (issue <a href="http://code.google.com/p/gevent/issues/detail?id=2">#2</a>)
+                                </li>
+                                <li>[dns] /etc/resolv.conf is not handled correctly
+                                </li>
+                                <li>[http] data corruption when pipelining (thus pipeline is disabled by default)
+                                </li>
+                                <li>[http] no streaming support
+                                </li>
+                                <li>[http] random failures in client
+                                </li>
+                            </ul>
+                            <p>
+                                I have most experience with libevent1.4 but brief tests and gevent’s test suite show that neither libevent-dns nor libevent-http became solid with the release of libevent2.0.10-stable.
+                            </p>
+                            <p>
+                                Every time I try to fix one of these issues I find the implementation of libevent-dns/libevent-http unreasonably complex for what they do.
+                            </p>
+                            <p>
+                                Some of the complexity seem to spur from the fact that libevent2 tries to be thread-safe and this affects the control flow: instead of executing a callback directly, libevent2 authors have to use deferred queues of callbacks to avoid deadlock. So thread-safety of libevent2 has cost in complexity but no benefits for Python programs.
+                            </p>
+                            <p>
+                                Because libev is just an event loop, we need to replace libevent-dns and libevent-http with something. There’s a port of <a href="http://code.google.com/p/libevhdns/">libevent-dns</a> that works with libev, but there’s no particular reason to use it (other than ease of integration since we already have wrappers for it). I’ve done some experiments with <a href="http://c-ares.haxx.se/">c-ares</a> library (used by curl, among others) and really like the results.
+                            </p>
+                            <p>
+                                The <a href="http://c-ares.haxx.se/">c-ares</a> library is about twice as large as libevent-dns but I find the code to be much easier to follow. Using c-ares + libev fixed all [dns] issues mentioned above. In addition, gevent.socket now also provides “green” versions of getnameinfo and gethostbyaddr.
+                            </p>
+                            <p>
+                                Neither c-ares nor libev are thread-safe which is good there.
+                            </p>
+                            <p>
+                                Now, let’s keep aside libevent’s addons and look at the event loops provided by libev and libevent.
+                            </p>
+                            <h2>
+                                1. Design
+                            </h2>
+                            <p>
+                                In libevent there’s a big multi-functional <a href="http://www.wangafu.net/~nickm/libevent-book/Ref4_event.html#_working_with_events">event</a> class, which is used for
+                            </p>
+                            <ul>
+                                <li>I/O readiness notifications
+                                </li>
+                                <li>timeouts
+                                </li>
+                                <li>signals (by passing signalnum instead of fd and setting the EV_SIGNAL flag)
+                                </li>
+                            </ul>
+                            <p>
+                                The signal handling is an obvious afterthought here, but even I/O notifications and timeouts should be separated, as quite often you only need one of them. Note, that libevent does provides macros (“evtimer_” and “evsignal_”) that imitate “orthogonal” interface but I’m talking about the implementation here.
+                            </p>
+                            <p>
+                                In libev all of the above provided by different, clearly separated “classes” called “watchers”.
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_io_code_is_this_file_descrip">io</a> watcher
+                                </li>
+                                <li>
+                                    <a href="http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_timer_code_relative_and_opti">timer</a> watcher
+                                </li>
+                                <li>
+                                    <a href="http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_signal_code_signal_me_when_a">signal</a> watcher
+                                </li>
+                            </ul>
+                            <p>
+                                There’s a minor difference is that libevent’s events are one-shot by default (unless used with EV_PERSIST flag) and libev’s watchers are “persistent” in libevent parlance – they must be explicitly cleared.
+                            </p>
+                            <p>
+                                There are also watchers without analogs in libevent:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_prepare_code_and_code_ev_che">ev_prepare and ev_check</a> watchers
+                                </li>
+                                <li>
+                                    <a href="http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_child_code_watch_out_for_pro">ev_child</a> watcher
+                                </li>
+                                <li>
+                                    <a href="http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_idle_code_when_you_ve_got_no">ev_idle</a> watcher
+                                </li>
+                            </ul>
+                            <p>
+                                <strong>a) ev_prepare and ev_check watchers</strong>
+                            </p>
+                            <p>
+                                Those unconditionally run the associated callback before and after “poll” call. This is useful for signal handling.
+                            </p>
+                            <p>
+                                The way gevent works is by running the event loop forever in a separate greenlet. One downside of that is that Python cannot execute the signal handlers installed with the standard “signal” module. Of course, there’s signal handling integrated with the event loop, that both libev and libevent provide (exposed as gevent.signal) but that is different from the signal module:
+                            </p>
+                            <ul>
+                                <li>it won’t work if some Python code is busy looping and the event loop is starving, as it gets dispatched by the event loop
+                                </li>
+                                <li>it has different interface and thus not easily monkey patched
+                                </li>
+                                <li>(on Windows) signal module emulates Ctrl-C signal with WINAPI and neither libev nor libevent do that.
+                                </li>
+                            </ul>
+                            <p>
+                                In gevent 0.14, I use ev_prepare to check for Python signals and execute the signal handlers. The end result is that the standard “signal” module now “just works” with gevent. And gevent.signal is also there if you need it.
+                            </p>
+                            <p>
+                                <strong>b) ev_child watcher</strong>
+                            </p>
+                            <p>
+                                This will come handy when implementing gevent.os and gevent.subprocess modules.
+                            </p>
+                            <p>
+                                <strong>c) ev_idle watcher</strong>
+                            </p>
+                            <p>
+                                This executes a callback if the event loop is idle. I think it can be used to integrate other event loops into gevent’s loop (for example, a gui app). I don’t think libevent2 has a way to achieve that – embed another event loop.
+                            </p>
+                            <p>
+                                I also like the names better, that is “loop” rather than “event_base”, “watcher” rather than “event”.
+                            </p>
+                            <p>
+                                <a href="http://home.schmorp.de/">Marc Lehmann</a>, the author of libev also wrote Perl wrappers for libev and a Coroutine library for Perl, which might explain why the libev API is a good fit for wrapping in a high-level language.
+                            </p>
+                            <h2>
+                                2. Implementation
+                            </h2>
+                            <p>
+                                Both libevent and libev support epoll, kqueue, poll, select, solaris event ports.
+                            </p>
+                            <p>
+                                Where libevent is nicer than libev is Windows support.
+                            </p>
+                            <p>
+                                On Windows, libevent accepts Windows handles instead of C runtime file descriptors. Python uses Windows handles too, so gevent happily passes socket’s fileno() to libevent. Libev uses C runtime handles, so we need to <a href="https://bitbucket.org/denis/gevent/changeset/c9bda72ed8bb">convert Windows handles into C runtime</a> handles.
+                            </p>
+                            <p>
+                                Libevent2 also supports IOCP, via&nbsp; <a href="http://www.wangafu.net/%7Enickm/libevent-book/Ref6_bufferevent.html#_bufferevents_concepts_and_basics">asynchronous bufferevents</a>. However this feature is marked as experimental and neither libevent-http nor libevent-dns use it. Gevent does not wrap bufferevents, so gevent 0.13 is not benefiting from IOCP even if compiled with libevent2.
+                            </p>
+                            <p>
+                                Thus, I do not expect performance downgrade on Windows when upgrading from gevent 0.13 to gevent 0.14.
+                            </p>
+                            <p>
+                                Read the <a href="http://groups.google.com/group/gevent/browse_thread/thread/d3021f448fd3419a">discussion</a> on the mailing list that prompted to write this post.
+                            </p>
+                            <p>
+                                Note, that mere switch from libevent to libev is not the only change in gevent 0.14. Rather, the whole core have been redesigned. I plan to make a blog post some time soon about this.
+                            </p>
+                            <p>
+                                Thanks to <a href="http://nichol.as/">Nicholas Piël</a> for corrections.
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/gevent.wordpress.com/413/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/gevent.wordpress.com/413/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/gevent.wordpress.com/413/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/gevent.wordpress.com/413/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/gevent.wordpress.com/413/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/gevent.wordpress.com/413/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/gevent.wordpress.com/413/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/gevent.wordpress.com/413/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/gevent.wordpress.com/413/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/gevent.wordpress.com/413/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/gevent.wordpress.com/413/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/gevent.wordpress.com/413/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/gevent.wordpress.com/413/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/gevent.wordpress.com/413/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=blog.gevent.org&amp;blog=11299917&amp;post=413&amp;subd=gevent&amp;ref=&amp;feed=1" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.gevent.org/2011/04/28/libev-and-libevent/">http://blog.gevent.org/2011/04/28/libev-and-libevent/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

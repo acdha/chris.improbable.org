@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Making browsers faster: Resource Packages
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 17 Nov 2009 03:05:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-16T22:05:00-04:00">
+                    <meta itemprop="dateModified" content="2009-11-16T22:05:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-17T02:05:00+00:00">Nov 17</time>
+                    <h2 itemprop="title">
+                        Making browsers faster: Resource Packages
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/be2852ce21cc5a27">
+                        <blockquote>
+                            <p>
+                                <small>(<a href="http://limi.net/articles/resource-packages">You are encouraged to read this article with its formatting and typography intact, instead of in this RSS reader</a>)</small>
+                            </p>
+                            <h2>
+                                <a>Introduction &amp; Rationale</a>
+                            </h2>
+                            <p>
+                                What if there was a backwards compatible way to transfer all of the resources that are used on every single page in your site — <abbr title="Cascading Style Sheets">CSS</abbr>, <abbr title="JavaScript">JS</abbr>, images, anything else — in a single <abbr title="Hypertext Transfer Protocol">HTTP</abbr> request at the start of the first visit to the page? This is what Resource Package support in browsers will let you do.
+                            </p>
+                            <hr>
+                            <p>
+                                When it comes to browser performance, it’s widely known that a lot of the time is spent waiting for <abbr title="Hypertext Transfer Protocol">HTTP</abbr> requests. You are probably familiar with the issue; a well-known optimization technique is to reduce the number of <abbr title="Hypertext Transfer Protocol">HTTP</abbr> requests that are done for a given web site, since browsers only do 2–6 requests in parallel. This is why techniques like <a href="http://www.alistapart.com/articles/sprites">image spriting</a> exist.
+                            </p>
+                            <p>
+                                There are problems with image spriting, though. In addition to <a href="http://blog.vlad1.com/2009/06/22/to-sprite-or-not-to-sprite/">potentially severe memory penalties</a>, they obfuscate the code — “What is this icon at 704px, exactly?” — and every time you add a new icon, you have to update the sprite file, which adds to the maintenance burden.
+                            </p>
+                            <p>
+                                Some images can’t be sprited (think about YouTube, which easily serves up 40 <abbr title="Joint Photographic Experts Group">JPEG</abbr> thumbnails on a given page), and there’s also other resources like JavaScript <abbr title="and">&amp;</abbr> <abbr title="Cascading Style Sheets">CSS</abbr>, which — while possible to combine — at the very least need one file each. You can see how this quickly saturates the available parallel <abbr title="Hypertext Transfer Protocol">HTTP</abbr> pipelines.
+                            </p>
+                            <p>
+                                Even if bandwidth is getting better, and the internet is getting faster, latency are actually getting worse in a lot of cases. With mobile internet browsing, and to some extent <abbr title="United States">US</abbr> domestic cable internet and <abbr title="Digital Subscriber Line">DSL</abbr>, the round-trip time for a single request can be slow, even if it downloads relatively fast once the transfer starts.
+                            </p>
+                            <p>
+                                While there are lots of workarounds to solve this class of problems, we suggest a standard approach that all browsers makers can easily implement, and that is <em>backwards compatible</em> with browsers that do not support it. We also want a solution that works for all types of resources, not only image bitmaps, and one that doesn’t require any new tools, file types or protocols.
+                            </p>
+                            <h2>
+                                <a>Goals</a>
+                            </h2>
+                            <p>
+                                This proposal has the following goals:
+                            </p>
+                            <ul>
+                                <li>Make it possible to serve all the resources (images, stylesheets, javascript) required by a page in a single <abbr title="Hypertext Transfer Protocol">HTTP</abbr> request, freeing up the other parallel requests to fetch resources that are page-specific.
+                                </li>
+                                <li>Be as simple to implement as possible, so anyone with a passing familiarity with <abbr title="Hypertext Markup Language">HTML</abbr> should be able to perform the optimization.
+                                </li>
+                                <li>Be entirely transparent to browsers that do not support it.
+                                </li>
+                                <li>Avoid retransmission of existing resources.
+                                </li>
+                                <li>Use existing tools that are widely used on all platforms.
+                                </li>
+                                <li>Support the “80% use case” over adding a lot of complexity to the spec.
+                                </li>
+                            </ul>
+                            <h2>
+                                <a>Non-goals</a>
+                            </h2>
+                            <p>
+                                Some explicit non-goals of this proposal:
+                            </p>
+                            <ul>
+                                <li>Invent new file formats
+                                </li>
+                                <li>Invent new compression formats
+                                </li>
+                            </ul>
+                            <h2>
+                                <a>Implementation</a>
+                            </h2>
+                            <p>
+                                Our goal is to be compression-format independent, but the obvious candidates for support are:
+                            </p>
+                            <ul>
+                                <li>
+                                    <code>tar.gz</code>, <abbr title="Also known as">aka.</abbr> <code>.tgz</code> files — <abbr title="Multipurpose Internet Mail Extensions">MIME</abbr> type: <code>application/x-tar-gz</code>
+                                </li>
+                                <li>
+                                    <code>zip</code> files — <abbr title="Multipurpose Internet Mail Extensions">MIME</abbr> type: <code>application/zip</code>
+                                </li>
+                            </ul>
+                            <p>
+                                While both <code>zip</code> and <code>tar.gz</code> files do not have not the most elegant or efficient packing format out there, they have the following very desirable traits:
+                            </p>
+                            <ul>
+                                <li>Easily available reference implementations.
+                                </li>
+                                <li>Can be unpacked even in partial state — which means that we can stream the file, and put <abbr title="Cascading Style Sheets">CSS</abbr> and JavaScript first in the archive, and they will unpacked and made available before the entire file has been downloaded.
+                                </li>
+                                <li>Excellent toolchain support, available on all major platforms, so it’s easy for web developers to use.
+                                </li>
+                            </ul>
+                            <p>
+                                Other formats, like <code>bzip</code> may be more efficient in terms of file size, but they aren’t streamable and can’t be unpacked as partial files — so they are considered unfit for this particular purpose.
+                            </p>
+                            <p>
+                                We propose this markup to signal a zipped resource package:
+                            </p>
+                            <pre>
+&lt;link rel="resource-package" 
+      type="application/zip" 
+      href="site-resources.zip" /&gt;
+</pre>
+                            <p>
+                                The default <abbr title="Multipurpose Internet Mail Extensions">MIME</abbr> type for a resource package will be <code>application/x-tar-gz</code>, and you can omit it in documents where it is valid, like in <abbr title="Hypertext Markup Language 5">HTML5</abbr>, where an equivalent would be:
+                            </p>
+                            <pre>
+&lt;link rel="resource-package" 
+      href="site-resources.tar.gz" /&gt;
+</pre>
+                            <p>
+                                This will tell the browser to download this file first, and use the resources contained in the file instead of the referenced images, style sheets and javascript files — or for that matter, any other file. Browsers should prefer the files in the resource package, and do individual requests for images that are not contained in the package.
+                            </p>
+                            <p>
+                                A given browser will probably block downloading any resources until the lists of files that are available in resource packages have been accounted for — or there may be a way to do opportunistic requests or similar, we leave this up to the browser vendor unless there’s a compelling reason to specify how this should work.
+                            </p>
+                            <p>
+                                Older browsers that do not support resource packages will simply ignore this tag, and fetch the files normally, with one <abbr title="Hypertext Transfer Protocol">HTTP</abbr> request for each.
+                            </p>
+                            <h2>
+                                <a>Path handling</a>
+                            </h2>
+                            <p>
+                                Paths will be rendered relative to where the resource package is located, so you can supply additional directories inside the resource package to mimic existing site structure.
+                            </p>
+                            <p>
+                                The resource package is referenced as follows in a page somewhere on the site <code>www.example.com</code>:
+                            </p>
+                            <pre>
+&lt;link rel="resource-package" 
+      type="application/zip" 
+      href="/static/site-resources.zip" /&gt;
+</pre>
+                            <p>
+                                The Zip file has this internal structure:
+                            </p>
+                            <pre>
+javascript/jquery.js
+css/reset.css
+css/grid.css
+css/main.css
+images/save.png
+images/info.png
+</pre>
+                            <p>
+                                In this example, the resolved path to the <code>main.css</code> file would be <code>http://www.example.com/static/css/main.css</code>. Notice how the path inside the resource package is added to the path where the actual file is located.
+                            </p>
+                            <h2>
+                                <a>File listing using inline HTML</a>
+                            </h2>
+                            <p>
+                                The most efficient way to declare what’s in the resource package without blocking to wait for the first part of it to load, is to do it inline in the resource package <code>&lt;link&gt;</code> tag itself:
+                            </p>
+                            <pre>
+&lt;link rel="resource-package" 
+      type="application/zip" 
+      href="/static/site-resources.zip"
+      content="javascript/jquery.js;
+               css/reset.css;
+               css/grid.css;
+               css/main.css;
+               images/save.png;
+               images/info.png" /&gt;
+</pre>
+                            <p>
+                                The only problem with the above is that it will break validation for existing specifications like <abbr title="Hypertext Markup Language 4">HTML 4</abbr> and <abbr title="Extensible Hypertext Markup Language">XHTML</abbr> 1.x, so we also support an alternate syntax, (ab)using the <code>title</code> attribute to get the same result:
+                            </p>
+                            <pre>
+&lt;link rel="resource-package" 
+      type="application/zip" 
+      href="/static/site-resources.zip"
+      title="javascript/jquery.js;
+             css/reset.css;
+             css/grid.css;
+             css/main.css;
+             images/save.png;
+             images/info.png" /&gt;
+</pre>
+                            <p>
+                                This makes the file work with the existing validators and older standards.
+                            </p>
+                            <h2>
+                                <a>Fallback</a>
+                            </h2>
+                            <p>
+                                There should be no compatibility issues with old browsers, as they will just load the individual files instead of the resource package.
+                            </p>
+                            <p>
+                                Browsers that don’t implement this will seem slow in comparison to other browsers. Luckily, it should be a simple addition to any of the modern browsers.
+                            </p>
+                            <h2>
+                                <a>File listing using a manifest file</a>
+                            </h2>
+                            <p>
+                                You can also give the browser the ability to know what files are in the resource package file without reading the entire file first, by adding a <em>manifest</em> file that can contain this information. This file can be supplied as a separate file (useful if combining with Offline Resources), or as the first file in the file itself. Of course, this will be slower to get than defining the contents inline in the <abbr title="Hypertext Markup Language">HTML</abbr>, but can be easier and cleaner to implement, especially if you're using offline resource support already.
+                            </p>
+                            <p>
+                                Example <code>manifest.txt</code> file:
+                            </p>
+                            <pre>
+javascript/jquery.js
+styles/reset.css
+styles/grid.css
+styles/main.css
+images/save.png
+images/info.png
+</pre>
+                            <ul>
+                                <li>This file <em>must</em> be the first file in the archive.
+                                </li>
+                                <li>This file <em>must</em> be named <code>manifest.txt</code> when supplied as part of the archive.
+                                </li>
+                            </ul>
+                            <p>
+                                If this simple format looks familiar, that’s not a coincidence. Initially, we were looking at using either an <abbr title="Extensible Markup Language">XML</abbr> or <abbr title="JavaScript Object Notation">JSON</abbr> format to specify this, but we believe it’s easier to add a couple of new abilities to the offline resource specification instead. When using resource packages with <a href="https://developer.mozilla.org/En/Offline_resources_in_Firefox">Offline Resources</a> (which are also <a href="http://www.whatwg.org/specs/web-apps/current-work/multipage/offline.html">part of the <abbr title="Hypertext Markup Language 5">HTML5</abbr> spec</a>), we’d like it to be easy to extend the rules, so the offline manifest with resource package support could look like this:
+                            </p>
+                            <pre>
+CACHE: resources=/static/siteresources.zip
+javascript/jquery.js
+styles/reset.css
+styles/grid.css
+styles/main.css
+images/save.png
+images/info.png
+
+# The above section lists the files in siteresources.zip.
+# To start a new section, do:
+CACHE:
+images/outside-package.png
+</pre>
+                            <p>
+                                The only thing we’d need to add to the <abbr title="Hypertext Markup Language 5">HTML5</abbr> offline spec is that it should ignore anything on the same line after <code>CACHE:</code> if it doesn’t know how to handle it. This means that you could potentially put the resource package definitions in your Offline Resources manifest — we would also support doing it the other way around, and put the Offline Resources manifest inside the resource package.
+                            </p>
+                            <p>
+                                This isn’t a requirement for implementing the initial version of resource packages, however — but could be an easy way to add support for it to the offline resource specification. If there’s a better way to do it, let me know.
+                            </p>
+                            <h2>
+                                <a>Duplicate files and override behavior</a>
+                            </h2>
+                            <p>
+                                If a resource is defined twice on the same path — e.g. using multiple resource-packages — the file defined last takes priority. This enables an application with offline mode to synchronize changes without downloading the entire resource package again.
+                            </p>
+                            <p>
+                                For example, on the first sync, the browser sees a resource package like this:
+                            </p>
+                            <pre>
+&lt;link rel="resource-package" href="/documents/offline-0.zip" /&gt;
+</pre>
+                            <p>
+                                <code>offline-0.zip</code> contains:
+                            </p>
+                            <pre>
+manifest.txt 
+doc1.html 
+doc2.html 
+</pre>
+                            <p>
+                                Offline the application would be able to access documents at <code>/documents/doc1.html</code> and <code>/documents/doc2.html</code>.
+                            </p>
+                            <p>
+                                The user then performs another sync and the browser now sees:
+                            </p>
+                            <pre>
+&lt;link rel="resource-package" href="/documents/offline-0.zip" /&gt;
+&lt;link rel="resource-package" href="/documents/offline-1.zip" /&gt;
+</pre>
+                            <p>
+                                <code>offline-1.zip</code> contains:
+                            </p>
+                            <pre>
+manifest.txt 
+doc1.html 
+doc3.html
+</pre>
+                            <p>
+                                <code>doc1.html</code> and <code>doc3.html</code> would now be read from the <code>offline-1.zip</code>, <code>doc2.html</code> would continue to be read from <code>offline-0.zip</code>.
+                            </p>
+                            <p>
+                                Even for use outside of the offline applications space, it allows pages to easily override the site look and feel with section-specific images and styling. A page could serve up:
+                            </p>
+                            <pre>
+&lt;link rel="resource-package" href="/static/main-theme.zip" /&gt;
+&lt;link rel="resource-package" href="/static/section-theme.zip" /&gt;
+</pre>
+                            <p>
+                                Resources in <code>section-theme.zip</code> would take precedence over the content in <code>main-theme.zip</code> — making it easy to do overrides without replacing the entire resource package.
+                            </p>
+                            <h2>
+                                <a>Two simple examples</a>
+                            </h2>
+                            <p>
+                                It’s not hard to see where Resource Packages could be useful in existing sites, two obvious categories would be:
+                            </p>
+                            <dl>
+                                <dt>
+                                    Supply the core layout &amp; functionality of a site
+                                </dt>
+                                <dd>
+                                    Typically, you would ship over all the <abbr title="Cascading Style Sheets">CSS</abbr>, <abbr title="JavaScript">JS</abbr> and images that are used on every page in the site. These could be cached quite aggressively, and even use <a href="http://en.wikipedia.org/wiki/HTTP_ETag">ETags</a> to invalidate the resource package when needed.
+                                </dd>
+                                <dt>
+                                    The thumbnail search result case
+                                </dt>
+                                <dd>
+                                    Consider a <a href="http://www.youtube.com/results?search_query=ninja+cat">typical YouTube search results</a> page. It contains 20-40 thumbnails of videos, and there’s no easy way to add all these images into an image sprite, since the long tail of search results would vary a lot. Resource Packages would let you build a zip of search result thumbnails on the fly, and ship them all over in one <abbr title="Hypertext Transfer Protocol">HTTP</abbr> request. It would require some <abbr title="Central Processing Unit">CPU</abbr> power, but would be much faster for the end-user. This wouldn’t have to be cached, or could be cached on a per-search basis.
+                                </dd>
+                            </dl>
+                            <h2>
+                                <a>Other approaches</a>
+                            </h2>
+                            <p>
+                                There are several other approaches that could solve parts of this problem, but they all have issues with current browsers and graceful degradation and/or are trying to solve a slightly different problem:
+                            </p>
+                            <dl>
+                                <dt>
+                                    <abbr title="Hypertext Transfer Protocol">HTTP</abbr> pipelining
+                                </dt>
+                                <dd>
+                                    This is a more aggressive way of utilizing the <abbr title="Hypertext Transfer Protocol">HTTP</abbr> keep-alive mode, but is not implemented correctly by all web servers. Proxies have a hard time with it, some browsers also do, so it’s not really working unless you want to be aggressive and/or whitelist/blacklist certain servers.
+                                </dd>
+                                <dd>
+                                    It also causes a “head-of-line blocking” issue, where if you request X and Y on the same connection and X is slow, then Y is slowed too.
+                                </dd>
+                                <dt>
+                                    Multipart <abbr title="Multipurpose Internet Mail Extensions">MIME</abbr>
+                                </dt>
+                                <dd>
+                                    Hard for integrators, requires special packing that isn’t trivial to do, and has poor browser support.
+                                </dd>
+                                <dt>
+                                    <abbr title="Java Archive">JAR</abbr> files or anything using data: <abbr title="Uniform Resource Locator">URL</abbr>s
+                                </dt>
+                                <dd>
+                                    No reasonable fallback mode, as the file name is embedded in the href/src link, and browsers that doesn’t support it just won’t render it.
+                                </dd>
+                                <dt>
+                                    <abbr title="Speedy">SPDY</abbr>
+                                </dt>
+                                <dd>
+                                    While this effort from Google aims to make everything faster, it is largely orthogonal to what we’re trying to do with Resource Packages. It also requires you to retrofit both web browsers <em>and</em> web servers to make it work, which means it will take quite a while before this will be in common use. Resource Packages work without any changes to the web server software, and will work as soon as any browser supports it — with no adverse effects to the browsers that don’t.
+                                </dd>
+                            </dl>
+                            <h2>
+                                <a>Additional notes</a>
+                            </h2>
+                            <ul>
+                                <li>The <acronym title="Compressed File">Zip</acronym> format doesn’t have <abbr title="Multipurpose Internet Mail Extensions">MIME</abbr> type support, so this will have to be solved by the browser based on filename extensions or other heuristics. We don’t believe this to be a problem, since browsers already have to do this.
+                                </li>
+                                <li>All the resources in the package will have the same headers (expiry, <a href="http://en.wikipedia.org/wiki/HTTP_ETag">ETags</a>, etc.) as the resource package itself. If you need different expiry dates or other caching settings, you should specify multiple resource files with different cache headers.
+                                </li>
+                                <li>You can specify a charset in the resource package definition. If unspecified, it is assumed that any non-binary files inside are <abbr title="Unicode Transformation Format (8-bit)">UTF-8</abbr>.
+                                </li>
+                            </ul>
+                            <h2>
+                                <a>Next steps</a>
+                            </h2>
+                            <p>
+                                We have sent this out to the major browser vendors for feedback, and we will be implementing this in the next upcoming release of Firefox — which tentatively has the version number 3.7, but this may change.
+                            </p>
+                            <h2>
+                                <a><abbr title="Frequently Asked Questions">FAQ</abbr></a>
+                            </h2>
+                            <dl>
+                                <dt>
+                                    Does zipping up multiple optimized <abbr title="Portable Network Graphics">PNG</abbr>s or other files work with zip? Can it potentially increase file size or lead to a high unpacking <abbr title="Central Processing Unit">CPU</abbr> overhead?
+                                </dt>
+                                <dd>
+                                    Zip automatically chooses the best of deflation or no compression. Images will usually not be compressed, since they already are, text files like <abbr title="Cascading Style Sheets">CSS</abbr>/<abbr title="JavaScript">JS</abbr> will be. In general, <abbr title="Central Processing Unit">CPU</abbr> impact from unzipping is negligible, even on slow devices.
+                                </dd>
+                                <dt>
+                                    How does this affect mobile devices, which have limited <abbr title="Central Processing Unit">CPU</abbr>s?
+                                </dt>
+                                <dd>
+                                    More realistic concerns are cache ability and bandwidth — as well as the latency on mobile networks — and memory. A lot of mobile browsers only keeps things in the browser cache at all if the individual file is something like 20<abbr title="kilobytes">kB</abbr> or less. For returning visitors, you suddenly need to download one large file again, instead of having multiple small files locally.
+                                </dd>
+                                <dd>
+                                    In general, mobile browsers clear their caches quite aggressively — although with the resource package spec, one would hope that they would implement more optimal handling and prioritize caching these, since they more likely to be valuable for browsing performance than another random image/<abbr title="Cascading Style Sheets">CSS</abbr>/<abbr title="JavaScript">JS</abbr> file in a site.
+                                </dd>
+                                <dt>
+                                    How would Resource Packages work with <abbr title="Content Delivery Networks">CDN</abbr>s?
+                                </dt>
+                                <dd>
+                                    There would be no special handling, these mirrors would just carry the resource package file like any other file they are supplying.
+                                </dd>
+                                <dt>
+                                    How would you manage priority in the resource package? It would be useful to decide which files get downloaded first.
+                                </dt>
+                                <dd>
+                                    The priority is managed by the order they are added to the resource package. If you want a specific order, it’s trivial to specify this on the command line, so we aren’t adding any special syntax for this. Also, we have to do it this way to take advantages of the ability to unpack and display resources while the file is still downloading.
+                                </dd>
+                                <dt>
+                                    I worry about reduced parallelism. Lots of sites make heavy use of resource sharding across many hostnames to take advantage of multiple connections. Won’t this be a problem?
+                                </dt>
+                                <dd>
+                                    Sites usually use multiple hostnames to get around per-host connection limits, which are almost entirely a latency issue — not a bandwidth issue. Resource packages make multiple hostnames unnecessary, because it solves the latency issue a different way.
+                                </dd>
+                            </dl>
+                            <h2>
+                                <a>Acknowledgments</a>
+                            </h2>
+                            <ul>
+                                <li>
+                                    <a href="http://www.culater.net/">Mike Solomon</a> from YouTube for encouraging me to propose a solution to this issue.
+                                </li>
+                                <li>
+                                    <a href="http://dbaron.org/">David Baron</a> <abbr title="and">&amp;</abbr> <a href="http://fantasai.inkedblade.net">Elika Etemad</a> from Mozilla for comments on the implementation feasibility, and for helping identify prior art.
+                                </li>
+                                <li>
+                                    <a href="http://blog.vlad1.com">Vladimir Vukićević</a> <abbr title="and">&amp;</abbr> <a href="http://sicking.cc/">Jonas Sicking</a> from Mozilla for help with adapting the Offline Resources standard to handle Resource Packages.
+                                </li>
+                                <li>
+                                    <a href="http://almaer.com">Dion Almaer</a> <abbr title="and">&amp;</abbr> <a href="http://benzilla.galbraiths.org/">Ben Galbraith</a> from Palm, <a href="http://stevesouders.com">Steve Souders</a>, <a href="http://greggman.com/">Gregg Tavares</a> <abbr title="and">&amp;</abbr> <a href="http://alex.dojotoolkit.org/">Alex Russell</a> from Google <abbr title="and">&amp;</abbr> the Chrome team for feedback on the proposal from an implementer’s perspective.
+                                </li>
+                                <li>
+                                    <a href="http://www.benmathews.net/">Ben Mathews</a> from Facebook for feedback on compression formats.
+                                </li>
+                                <li>
+                                    <a href="http://objectvibe.net/blog">Laurence Rowe</a> from <a href="http://www.jarn.com/">Jarn</a> for suggestions on how to handle duplicates/overrides.
+                                </li>
+                            </ul>
+                            <h2>
+                                <a>Improvements &amp; feedback</a>
+                            </h2>
+                            <p>
+                                If you have any suggestions on how to improve this proposal, send me an email at <a href="mailto:limi@mozilla.com">limi@mozilla.com</a> or even better, comment in the open thread over at <a href="http://groups.google.com/group/mozilla.dev.platform/browse_thread/thread/31779262c6b05205">Mozilla’s dev.platform forum</a>. It has been filed as <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=529208">bug #529208</a> in Bugzilla for those of you that want to monitor its progress.
+                            </p>
+                            <hr>
+                            <p style="text-align:center">
+                                Proposal State: Ready for prototype implementation
+                            </p>
+                            <p style="text-align:center">
+                                Revision 7: Feb 22<sup>nd</sup>, 2010 — Added new information on compression formats, both <code>zip</code> and <code>tar.gz</code> files are now part of the spec.
+                            </p>
+                            <p style="text-align:center">
+                                Revision 6: Feb 12<sup>th</sup>, 2010 — Added a defined behavior for what happens when resources are defined twice.
+                            </p>
+                            <p style="text-align:center">
+                                Revision 5: January 10<sup>th</sup>, 2010 — added inline definition of resource package content in a manner that is compatible with <abbr title="Hypertext Markup Language 4">HTML4</abbr>/<abbr title="Extensible Hypertext Markup Language">XHTML</abbr> validators.
+                            </p>
+                            <p style="text-align:center">
+                                Revision 4: Nov 16<sup>th</sup>, 2009 — first published <abbr title="and">&amp;</abbr> widely circulated version, added Offline Resources support
+                            </p>
+                            <p style="text-align:center">
+                                Revision 3: Nov 10<sup>th</sup>, 2009
+                            </p>
+                            <p style="text-align:center">
+                                Revision 2: Sep 1<sup>st</sup>, 2009
+                            </p>
+                            <p style="text-align:center">
+                                Revision 1: Jun 15<sup>th</sup>, 2009
+                            </p><img src="http://feeds.feedburner.com/~r/limi/~4/F9Fm_FrvohQ" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://feeds.limi.net/~r/limi/~3/F9Fm_FrvohQ/resource-packages">http://feeds.limi.net/~r/limi/~3/F9Fm_FrvohQ/resource-packages</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

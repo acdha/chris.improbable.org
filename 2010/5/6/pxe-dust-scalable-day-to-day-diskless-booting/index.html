@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            PXE dust: scalable day-to-day diskless booting
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 06 May 2010 14:28:47 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-06T10:28:47-04:00">
+                    <meta itemprop="dateModified" content="2010-05-06T10:28:47-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-06T14:28:47+00:00">May 06</time>
+                    <h2 itemprop="title">
+                        PXE dust: scalable day-to-day diskless booting
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/d7b90383a709dbc2">
+                        <blockquote>
+                            <p>
+                                If you’re a veteran system administrator, you might remember an era of extremely expensive hard disk storage, when any serious network would have a beefy central file server (probably accessed using the <a href="http://en.wikipedia.org/wiki/Network_File_System_(protocol)">Network File System</a>, NFS) that formed the lifeblood of its operations. It was a well-loved feature as early as Linux kernel <i>2.0</i> that you could actually boot your machine with a root filesystem in NFS and have <a href="http://tldp.org/HOWTO/Diskless-root-NFS-HOWTO.html">no local disk at all</a>. Hardware costs went down, similar machines could share large parts of their system binaries, upgrades could be done without touching anything but the central server—sysadmins loved this.
+                            </p>
+                            <p>
+                                But that was then. Diskless booting these days seems a lot less common, even though the technology still exists. You hear about supercomputer clusters using it, but not the “typical” IT department. What happened?
+                            </p>
+                            <p>
+                                Part of it, I’m sure, is that hard disks became speedier and cheaper more quickly than consumer network technology gained performance. With local disks, it’s still difficult to roll out updates to a hundred or a thousand computers simultaneously, but many groups don’t <i>start</i> with a hundred or a thousand computers, and multicast system re-imaging software like Norton Ghost prevents the hassle from being unbearable enough to force a switch.
+                            </p>
+                            <p>
+                                More important, though, is that after a few years of real innovation, the de facto standard in network booting has been stagnant for over a decade. Back in 1993, when the fastest Ethernet anyone could use transferred a little over a megabyte of data per second and IDE hard drives didn’t go much faster, network card managers were already including boot ROMs on their expansion cards, each following its own proprietary protocol for loading and executing a bootstrap program. A first effort at standardization, Jamie Honan’s <a href="http://etherboot.sourceforge.net/doc/html/devman/tagged.html">“Net Boot Image Proposal”</a>, was informally published that year, and soon enough two open-source projects, <a href="http://etherboot.org/">Etherboot</a> (1995) and <a href="http://netboot.sourceforge.net/">Netboot</a> (1996), were providing generic ROM images with pluggable driver support. (Full disclosure: I’m an Etherboot Project developer.) They took care of downloading and executing a boot file, but that file would have no way of going back to the network for more data unless it had a network card driver built in. These tools thus became rather popular for booting Linux, and largely useless for booting simpler system management utilities that couldn’t afford the maintenance cost of their own network stack and drivers.
+                            </p>
+                            <p>
+                                Around this time, Intel was looking at diskless booting from a more commercial point of view: it made management easier, consolidated resources, avoided leaving sysadmins at the mercy of users who broke their systems thinking themselves experts. They published a <a href="http://download.intel.com/design/archives/wfm/downloads/pxespec.pdf">specification</a> for the <a href="http://en.wikipedia.org/wiki/Preboot_Execution_Environment">Preboot Execution Environment</a> (PXE), as part of a larger initiative called <a href="http://www.intel.com/design/archives/wfm/">Wired for Management</a>. Network cards started replacing their proprietary boot ROMs with PXE, and things looked pretty good; the venerable SYSLINUX bootloader grew a <a href="http://syslinux.zytor.com/wiki/index.php/PXELINUX">PXELINUX</a> variant for PXE-booting Linux, and a number of enterprise system management utilities became available in PXE-bootable form.
+                            </p>
+                            <p>
+                                But, for whatever reason, the standard hasn’t been updated since 1999. It still operates in terms of the ancient <a href="http://en.wikipedia.org/wiki/Real_mode">x86 real mode</a>, only supports UDP and a “slow, simple, and stupid” file transfer protocol called <a href="http://en.wikipedia.org/wiki/Trivial_File_Transfer_Protocol">TFTP</a>, and officially limits boot program size to 32kB. For modern-day applications, this is less than ideal.
+                            </p>
+                            <p>
+                                Luckily for us, the Etherboot Project still exists, and Etherboot’s successor <a href="http://etherboot.org/wiki/index.php/">gPXE</a> has been picking up where Intel left off, and supports a number of more modern protocols. Between that, excellent support in recent Linux kernels for both accessing and serving <a href="http://en.wikipedia.org/wiki/Storage_area_network">SAN</a> disks with high performance, and the flexibility gained by booting with an initial ramdisk, diskless booting is making a big comeback. It’s not even very hard to set up: read on!
+                            </p>
+                            <p>
+                                <b>The general idea</b>
+                            </p>
+                            <p>
+                                <img src="http://blog.ksplice.com/wp-content/uploads/2010/05/pxe-flowchart.png" alt="PXE booting flowchart" width="500">
+                            </p>
+                            <p>
+                                While it can get a lot more complicated to support boot menus and proprietary operating systems, the basic netbooting process these days is pretty straightforward. The PXE firmware (usually burned into ROM on the network card) performs a DHCP request, just like most networked computers do to get an IP address. The DHCP server has been configured to provide additional “options” in its reply, specifying where to find boot files. All PXE stacks support booting from a file (a <i>network bootstrap program</i>, NBP); PXELINUX is the NBP most commonly used for booting Linux. The NBP can call back to the PXE stack to ask it to download more files using TFTP.
+                            </p>
+                            <p>
+                                Alternatively, some PXE stacks (including gPXE) support booting from a networked disk, accessed using a SAN protocol like <a href="http://en.wikipedia.org/wiki/ATA_over_Ethernet">ATA over Ethernet</a> or <a href="http://en.wikipedia.org/wiki/ISCSI">iSCSI</a>. Since it’s running in real mode, the firmware can hook the interrupt table to cause other boot-time programs (like the GRUB bootloader) to see an extra hard disk attached to the system; unbeknownst to these programs, requests to read sectors from that hard disk are actually being routed over the network.
+                            </p>
+                            <p>
+                                If you want to boot a real-mode operating system like DOS, you can stop there; DOS never looks beyond the hooked interrupt, so it never has to know about the network at all. We’re interested in booting Linux, though, and Linux has to manage the network card itself. When the kernel is booted, the PXE firmware becomes inaccessible, so it falls to the initial ramdisk (initrd or initramfs) to establish its own connection to the boot server so it can mount the root filesystem.
+                            </p>
+                            <p>
+                                <b>Setting up the client</b>
+                            </p>
+                            <p>
+                                We’re going to walk through setting up network booting for a group of similar Ubuntu Lucid systems using disk images served over iSCSI. (The instructions should work with Karmic as well.) iSCSI runs on top of a TCP/IP stack, so it’ll work fine within your current network infrastructure. Even over 100Mbps Ethernet, it’s not significantly slower than a local disk boot, and certainly faster than a live CD. <a href="http://www.ksplice.com">Rebooting may be obsolete</a>, but short bootup times are still good to have!
+                            </p>
+                            <p>
+                                You’ll want to start by installing one Ubuntu system and configuring it how you’ll want all of your diskless clients to be configured. There’s room for individual configuration (like setting unique hostnames and maybe passwords) later on, but the more you can do once here, the less you’ll have to do or script for all however-many clients you have. When they’re booted, the clients will find your networked drive just like a real hard drive; it’ll show up as <tt>/dev/sda</tt>, in <tt>/proc/scsi/scsi</tt>, and so forth, so you can pretty much configure them just like any local machine.
+                            </p>
+                            <p>
+                                No matter what site-specific configuration choices you make, there are some steps you’ll need to perform to make the image iSCSI bootable. First, you’ll need to install the iSCSI initiator, which makes the connection to the server housing the boot disk image:
+                            </p>
+                            <pre>
+client# aptitude install open-iscsi
+</pre>
+                            <p>
+                                That connection will need to occur during the earliest stages of bootup, in the scripts on the initial ramdisk. <tt>open-iscsi</tt> can automatically update the initramfs to find and mount the iSCSI device, but it assumes you’ll be setting a bunch of parameters in a configuration file to point it in the right place. It’s quite cumbersome to set this up separately for every node, so I have prepared a <a href="http://etherboot.org/share/oremanj/ubuntu-iscsi-ibft.patch">patch</a> that will make the initramfs automatically set these values based on the “boot firmware table” created by the iSCSI boot firmware from the information provided by your DHCP server. You should apply it now with
+                            </p>
+                            <pre>
+client# wget http://etherboot.org/share/oremanj/ubuntu-iscsi-ibft.patch
+client# patch -p0 -i ubuntu-iscsi-ibft.patch
+patching file /usr/share/initramfs-tools/hooks/iscsi
+patching file /usr/share/initramfs-tools/scripts/local-top/iscsi
+</pre>
+                            <p>
+                                Next, tell the setup scripts you want boot-time iSCSI and regenerate the ramdisk to include your modifications:
+                            </p>
+                            <pre>
+client# touch /etc/iscsi/iscsi.initramfs
+client# update-initramfs -u
+</pre>
+                            <p>
+                                Finally, make sure the clients will get an IP address at boot time, so they can get to their root filesystem:
+                            </p>
+                            <pre>
+client# vi /etc/default/grub
+    [find the GRUB_CMDLINE_LINUX line and add ip=dhcp to it;
+     e.g. GRUB_CMDLINE_LINUX="" becomes GRUB_CMDLINE_LINUX="ip=dhcp"]
+client# update-grub
+</pre>
+                            <p>
+                                <b>Setting up the storage</b>
+                            </p>
+                            <p>
+                                Let’s assume you’ve set up the prototype client as above, and you now have an image of its hard disk in a file somewhere. Because the disk-level utilities we’ll be using don’t know how to deal with files, it’s necessary to create a <a href="http://en.wikipedia.org/wiki/Loop_device">loop device</a> to bridge the two:
+                            </p>
+                            <pre>
+server# losetup -v -f /path/to/ubuntu-image
+Loop device is /dev/loop0
+</pre>
+                            <p>
+                                If you get different output, or if the client disk image you created is already on a “real” block device (e.g. using <a href="http://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)">LVM</a>), replace <tt>/dev/loop0</tt> with that device in the below examples.
+                            </p>
+                            <p>
+                                You may be familiar with the Linux <a href="http://linuxgazette.net/114/kapil.html">device mapper</a>, probably as the backend behind LVM, but there’s a lot more it can do. In particular, it gives us very easy <i>copy-on-write</i> (COW) semantics: you can create multiple overlays on a shared image, such that writes to the overlay get stored separately from the underlying image, reads of areas you’ve written come from the overlay, and reads of areas you’ve not modified come from the underlying image, all transparently. The shared image is not modified, and the overlays are only as large as is necessary to store each one’s changes. Let’s suppose you’ve got some space in <tt>/cow</tt> that you want to use for the overlay images; then you can create five of them named <tt>/cow/overlay-1.img</tt> through <tt>/cow/overlay-5.img</tt> with
+                            </p>
+                            <pre>
+server# for i in $(seq 1 5); do
+&gt; dd if=/dev/zero of=/cow/overlay-$i.img bs=512 count=1 seek=10M
+&gt; done
+</pre>
+                            <p>
+                                (10M blocks * 512 bytes per block = 5GB per overlay; this represents the amount of new data that can be written “on top of” the base image.)
+                            </p>
+                            <p>
+                                Now for the fun part. The aforementioned snapshot functionality is provided by the <tt>dm-snapshot</tt> module; it’s a standard part of the Linux device mapper, but you might not have it loaded if you’ve not used the snapshotting feature before. Rectify that if necessary:
+                            </p>
+                            <pre>
+server# modprobe dm-snapshot
+</pre>
+                            <p>
+                                and set up the copy-on-write like this:
+                            </p>
+                            <pre>
+server# for i in $(seq 1 5); do
+&gt; loopdev=$(losetup -f)
+&gt; losetup $loopdev /cow/overlay-$i.img
+&gt; echo "0 $(blockdev --getsize /dev/loop0) snapshot /dev/loop0 $loopdev p 8" | dmsetup create image-$i
+&gt; done
+</pre>
+                            <p>
+                                This sequence of commands assigns a loopback device to each COW overlay file (to make it look like a normal block device) and creates a bunch of <tt>/dev/mapper/image-<i>n</i></tt> devices from which each client will boot. The <tt>8</tt> in the above line is the “chunk size” in 512-byte blocks, i.e. the size of the modified regions that the overlay device will record. A large chunk size wastes more disk space if you’re only modifying a byte here and there, but may increase performance by lowering the overhead of the COW setup. <tt>p</tt> makes the overlays “persistent”; i.e., all relevant state is stored in the image itself, so it can survive a reboot.
+                            </p>
+                            <p>
+                                You can tear down the overlays with <tt>dmsetup remove</tt>:
+                            </p>
+                            <pre>
+server# for i in $(seq 1 5); do
+&gt; dmsetup remove image-$i
+&gt; done
+</pre>
+                            <p>
+                                It’s generally not safe to modify the base image when there are overlays on top of it. However, if you script the changes (hostname and such) that you need to make in the overlays, it should be pretty easy to just blow away the COW files and regenerate everything when you need to do an upgrade.
+                            </p>
+                            <p>
+                                The loopback device and <tt>dmsetup</tt> configuration need to be performed again after every reboot, but you can reuse the <tt>/cow/overlay-<i>n</i>.img</tt> files.
+                            </p>
+                            <p>
+                                <b>Setting up the server for iSCSI</b>
+                            </p>
+                            <p>
+                                We now have five client images set up to boot over iSCSI; currently they’re all passing reads through to the single prototype client image, but when the clients start writing to their disks they won’t interfere with each other. All that remains is to set up the iSCSI server and actually boot the clients.
+                            </p>
+                            <p>
+                                The iSCSI server we’ll be using is called <tt>ietd</tt>, the <a href="http://iscsitarget.sourceforge.net/">iSCSI Enterprise Target</a> daemon; there are <a href="http://scst.sourceforge.net/comparison.html">several others available</a>, but <tt>ietd</tt> is simple and mature—perfect for our purposes. Install it:
+                            </p>
+                            <pre>
+server# aptitude install iscsitarget
+</pre>
+                            <p>
+                                Next, we need to tell <tt>ietd</tt> where it can find our disk images. The relevant configuration file is <tt>/etc/ietd.conf</tt>; edit it and add lines like the following:
+                            </p>
+                            <pre>
+Target iqn.2008-01.com.ksplice.servertest:client-0
+    Lun 0 Path=/dev/mapper/image-0,Type=blockio
+Target iqn.2008-01.com.ksplice.servertest:client-1
+    Lun 0 Path=/dev/mapper/image-1,Type=blockio
+...
+</pre>
+                            <p>
+                                Each <tt>Target</tt> line names an image that can be mounted over iSCSI, using a hierarchical naming scheme called the “iSCSI Qualified Name” or <a href="http://en.wikipedia.org/wiki/ISCSI#Addressing">IQN</a>. In the example above, the <tt>com.ksplice.servertest</tt> should be replaced with the reverse DNS name of your organization’s domain, and <tt>2008-01</tt> with a year and month as of which that name validly referred to you. The part after the colon determines the specific resource being named; in this case these are the client drives <tt>client-0</tt>, <tt>client-1</tt>, etc. <i>None of this is required</i>—your clients will quite happily boot images introduced as <tt>Target worfle-blarg</tt>—but it’s customary, and useful in managing large setups. The <tt>Lun 0</tt> line specifies a backing store to use for the first SCSI logical unit number of the exported device. (Multi-LUN configurations are outside the scope of this post.)
+                            </p>
+                            <p>
+                                Edit <tt>/etc/default/iscsitarget</tt> and change the one line in that file to:
+                            </p>
+                            <pre>
+ISCSITARGET_ENABLE=true
+</pre>
+                            <p>
+                                You can then start <tt>ietd</tt> with
+                            </p>
+                            <pre>
+server# /etc/init.d/iscsitarget start
+</pre>
+                            <p>
+                                To test that it’s working, you can install <tt>open-iscsi</tt> and ask the server what images it’s serving up:
+                            </p>
+                            <pre>
+server# aptitude install open-iscsi
+server# iscsiadm -m discovery -p localhost -t sendtargets
+[::1]:3260,1 iqn.2008-01.com.ksplice.servertest:client-1
+[::1]:3260,1 iqn.2008-01.com.ksplice.servertest:client-2
+...
+</pre>
+                            <p>
+                                <b>Setting up DHCP</b>
+                            </p>
+                            <p>
+                                The only piece that remains is somehow communicating to your clients what they’ll be booting from; if they’re diskless, they don’t have any way to read that information locally. Luckily, you probably already have a DHCP server set up in your organization, and as we mentioned before, it can hand out boot information just as easily as it can hand out IP addresses. You need to have it supply the <tt>root-path</tt> option (number 17); detailed instructions for ISC dhcpd, the most popular DHCP server, are below.
+                            </p>
+                            <p>
+                                In order to make sure each client gets the right disk, you’ll need to know their MAC addresses; for this demo’s sake, we’ll assume the addresses are <tt>52:54:00:00:00:0<i>n</i></tt> where <tt><i>n</i></tt> is the client number (1 through 5). Then the lines you’ll need to add to <tt>/etc/dhcpd.conf</tt>, inside the <tt>subnet</tt> block corresponding to your network, look like this:
+                            </p>
+                            <pre>
+        host client-1 {
+                hardware ethernet 52:54:00:00:00:01;
+                option root-path "iscsi:192.168.1.90::::iqn.2008-01.com.ksplice.servertest:client-1";
+        }
+
+        host client-2 {
+                hardware ethernet 52:54:00:00:00:02;
+                option root-path "iscsi:192.168.1.90::::iqn.2008-01.com.ksplice.servertest:client-2";
+        }
+        ...
+</pre>
+                            <p>
+                                Replace <tt>192.168.1.90</tt> with the IP address of your iSCSI server. The syntax of the <tt>root-path</tt> option is actually <tt>iscsi:<i>server</i>:<i>protocol</i>:<i>port</i>:<i>lun</i>:<i>iqn</i></tt>, but the middle three fields can be left blank because the defaults (TCP, port 3260, LUN 0) are exactly what we want.
+                            </p>
+                            <p>
+                                <b>Booting the clients</b>
+                            </p>
+                            <p>
+                                If your clients are equipped with particularly high-end, “server” network cards, you can likely boot them now and everything will Just Work. Most network cards, though, don’t contain an iSCSI initiator; they only know how to boot files downloaded using TFTP. To bridge the gap, we’ll be using <a href="http://etherboot.org/wiki/about">gPXE</a>.
+                            </p>
+                            <p>
+                                gPXE is a very flexible open-source boot firmware that implements the PXE standard as well as a number of extensions: you can download files over HTTP, use symbolic DNS names instead of IP addresses, and (most importantly for our purposes) boot off a SAN disk served over iSCSI. You can <a href="http://etherboot.org/wiki/romburning">burn gPXE into your network card</a>, replacing the less-capable PXE firmware, but that’s likely more hassle than you’d like to go to. You can <a href="http://etherboot.org/wiki/removable">start it from a CD or USB key</a>, which is great for testing. For long-term use you probably want to set up <a href="http://etherboot.org/wiki/pxechaining">PXE chainloading</a>; the basic idea is to configure the DHCP server to hand out your root-path when it gets a DHCP request with user class “gPXE”, and the gPXE firmware (in PXE netboot program format) when it gets a request without that user class (coming from your network card’s simple PXE firmware).
+                            </p>
+                            <p>
+                                For now, let’s go the easy-testing route and start gPXE from a CD. Download <a href="http://etherboot.org/share/oremanj/gpxe.iso">this 600kB ISO image</a>, burn it to a CD, and boot one of your client machines using it. It will automatically perform DHCP and boot, yielding output something like the below:
+                            </p>
+                            <pre>
+gPXE 1.0.0+ -- Open Source Boot Firmware -- http://etherboot.org
+Features: AoE HTTP iSCSI DNS TFTP bzImage COMBOOT ELF Multiboot NBI PXE PXEXT
+
+net0: 52:54:00:00:00:01 on PCI00:03.0 (open)
+  [Link:up, TX:0 TXE:0 RX:0 RXE:0]
+DHCP (net0 52:54:00:00:00:01).... ok
+net0: 192.168.1.110/255.255.255.0 gw 192.168.1.54
+Booting from root path "iscsi:192.168.1.90::::iqn.2008-01.com.ksplice.servertest:client-1"
+Registered as BIOS drive 0x80
+Booting from BIOS drive 0x80
+</pre>
+                            <p>
+                                after which, thanks to the client setup peformed earlier, the boot will proceed just like from a local hard disk. You can eject the CD out as soon as you see the gPXE banner; it’s just being used as an oversized ROM chip here.
+                            </p>
+                            <p>
+                                You’ll probably want to boot each client in turn and, at a minimum, set its hostname to something unique. It’s also possible to script this on the server side by using <a href="http://packages.ubuntu.com/hardy/kpartx"><tt>kpartx</tt></a> on the <tt>/dev/mapper/image-<i>n</i></tt> devices, mounting each client’s root partition, and modifying the configuration files therein.
+                            </p>
+                            <p>
+                                That’s it: if you’ve followed these instructions, you now have a basic but complete architecture for network booting a bunch of similar clients. You’ve set up servers to handle iSCSI and DHCP, set up one prototype client from which client disks can be automatically generated, and can easily scale to hosting many more clients just by increasing the number 5 to something larger. (You’d probably want to switch to using LVM logical volumes instead of file-backed loopback devices for performance reasons, though.) The number of clients you can quickly provision is limited only by the capacity of your network. And the next time one of your users decides their computer is an excellent place to stick refrigerator magnets, they won’t be creating any additional headaches for you.
+                            </p>
+                            <hr>
+                            <div>
+                                <h3>
+                                    After you PXE boot, never boot again!
+                                </h3>
+                                <p>
+                                    <a href="http://www.ksplice.com/why">Ksplice Uptrack</a> makes it easy to fix security vulnerabilities and other important bugs without rebooting, so you never have to shut everybody down.
+                                </p>
+                            </div><img src="http://feeds.feedburner.com/~r/Ksplice/~4/hTh6xgz9cOY" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.ksplice.com/2010/05/scalable-day-to-day-diskless-booting/">http://blog.ksplice.com/2010/05/scalable-day-to-day-diskless-booting/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

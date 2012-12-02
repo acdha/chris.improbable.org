@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            A snake which bites its tail: PyPy JITting itself
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 09 Nov 2010 17:55:18 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-09T12:32:00-04:00">
+                    <meta itemprop="dateModified" content="2010-11-09T12:32:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-09T16:32:00+00:00">Nov 09</time>
+                    <h2 itemprop="title">
+                        A snake which bites its tail: PyPy JITting itself
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/3da7d43164d00c71">
+                        <blockquote>
+                            <a href="http://2.bp.blogspot.com/_4gR6Ggu8oHQ/TNmLArIQa0I/AAAAAAAAAKk/S86e8w4lF6g/s1600/pypy.png"><img style="float:right;margin:0 0 10px 10px;width:321px;height:263px" src="http://2.bp.blogspot.com/_4gR6Ggu8oHQ/TNmLArIQa0I/AAAAAAAAAKk/S86e8w4lF6g/s400/pypy.png" border="0" alt=""></a>
+                            <p>
+                                We have to admit: even if we have been writing for years about the fantastic speedups that the PyPy JIT gives, we, the PyPy developers, still don't use it for our daily routine. <strong>Until today</strong> :-).
+                            </p>
+                            <p>
+                                Readers brave enough to run <tt>translate.py</tt> to translate PyPy by themselves surely know that the process takes quite a long time to complete, about a hour on super-fast hardware and even more on average computers. Unfortunately, it happened that <tt>translate.py</tt> was a bad match for our JIT and thus ran much slower on PyPy than on CPython.
+                            </p>
+                            <p>
+                                One of the main reasons is that the PyPy translation toolchain makes heavy use of custom metaclasses, and until few weeks ago metaclasses disabled some of the central optimizations which make PyPy so fast. During the recent <a href="http://morepypy.blogspot.com/2010/10/dusseldorf-sprint-report-2010.html">Düsseldorf sprint</a>, Armin and Carl Friedrich <a href="http://codespeak.net/pipermail/pypy-svn/2010-October/044046.html">fixed</a> this problem and re-enabled all the optimizations even in presence of metaclasses.
+                            </p>
+                            <p>
+                                So, today we decided that it was time to benchmark again PyPy against itself. First, we tried to translate PyPy using CPython as usual, with the following command line (on a machine with an "Intel(R) Xeon(R) CPU W3580 @ 3.33GHz" and 12 GB of RAM, running a 32-bit Ubuntu):
+                            </p>
+                            <pre>
+$ python ./translate.py -Ojit targetpypystandalone --no-allworkingmodules
+
+... lots of output, fractals included ...
+
+[Timer] Timings:
+[Timer] annotate                       ---  252.0 s
+[Timer] rtype_lltype                   ---  199.3 s
+[Timer] pyjitpl_lltype                 ---  565.2 s
+[Timer] backendopt_lltype              ---  217.4 s
+[Timer] stackcheckinsertion_lltype     ---   26.8 s
+[Timer] database_c                     ---  234.4 s
+[Timer] source_c                       ---  480.7 s
+[Timer] compile_c                      ---  258.4 s
+[Timer] ===========================================
+[Timer] Total:                         --- 2234.2 s
+</pre>
+                            <p>
+                                Then, we tried the same command line with PyPy (SVN revision 78903, x86-32 JIT backend, downloaded from the <a href="http://buildbot.pypy.org/nightly/trunk/">nightly build</a> page):
+                            </p>
+                            <pre>
+$ pypy-c-78903 ./translate.py -Ojit targetpypystandalone --no-allworkingmodules
+
+... lots of output, fractals included ...
+
+[Timer] Timings:
+[Timer] annotate                       ---  165.3 s
+[Timer] rtype_lltype                   ---  121.9 s
+[Timer] pyjitpl_lltype                 ---  224.0 s
+[Timer] backendopt_lltype              ---   72.1 s
+[Timer] stackcheckinsertion_lltype     ---    7.0 s
+[Timer] database_c                     ---  104.4 s
+[Timer] source_c                       ---  167.9 s
+[Timer] compile_c                      ---  320.3 s
+[Timer] ===========================================
+[Timer] Total:                         --- 1182.8 s
+</pre>
+                            <p>
+                                Yes, it's not a typo: PyPy is almost <strong>two times faster</strong> than CPython! Moreover, we can see that PyPy is faster in each of the individual steps apart <tt>compile_c</tt>, which consists in just a call to <tt>make</tt> to invoke <tt>gcc</tt>. The slowdown comes from the fact that the Makefile also contains a lot of calls to the <a href="http://codespeak.net/svn/pypy/trunk/pypy/translator/c/gcc/trackgcroot.py">trackgcroot.py</a> script, which happens to perform badly on PyPy but we did not investigate why yet.
+                            </p>
+                            <p>
+                                However, there is also a drawback: on this specific benchmark, PyPy consumes much more memory than CPython. The reason why the command line above contains <tt><span>--no-allworkingmodules</span></tt> is that if we include all the modules the translation crashes when it's complete at 99% because it consumes all the 4GB of memory which is addressable by a 32-bit process.
+                            </p>
+                            <p>
+                                A partial explanation if that so far the assembler generated by the PyPy JIT is immortal, and the memory allocated for it is never reclaimed. This is clearly bad for a program like <tt>translate.py</tt> which is divided into several independent steps, and for which most of the code generated in each step could be safely be thrown away when it's completed.
+                            </p>
+                            <p>
+                                If we switch to 64-bit we can address the whole 12 GB of RAM that we have, and thus translating with all working modules is no longer an issue. This is the time taken with CPython (note that it does not make sense to compare with the 32-bit CPython translation above, because that one does not include all the modules):
+                            </p>
+                            <pre>
+$ python ./translate.py -Ojit
+
+[Timer] Timings:
+[Timer] annotate                       ---  782.7 s
+[Timer] rtype_lltype                   ---  445.2 s
+[Timer] pyjitpl_lltype                 ---  955.8 s
+[Timer] backendopt_lltype              ---  457.0 s
+[Timer] stackcheckinsertion_lltype     ---   63.0 s
+[Timer] database_c                     ---  505.0 s
+[Timer] source_c                       ---  939.4 s
+[Timer] compile_c                      ---  465.1 s
+[Timer] ===========================================
+[Timer] Total:                         --- 4613.2 s
+</pre>
+                            <p>
+                                And this is for PyPy:
+                            </p>
+                            <pre>
+$ pypy-c-78924-64 ./translate.py -Ojit
+
+[Timer] Timings:
+[Timer] annotate                       ---  505.8 s
+[Timer] rtype_lltype                   ---  279.4 s
+[Timer] pyjitpl_lltype                 ---  338.2 s
+[Timer] backendopt_lltype              ---  125.1 s
+[Timer] stackcheckinsertion_lltype     ---   21.7 s
+[Timer] database_c                     ---  187.9 s
+[Timer] source_c                       ---  298.8 s
+[Timer] compile_c                      ---  650.7 s
+[Timer] ===========================================
+[Timer] Total:                         --- 2407.6 s
+</pre>
+                            <p>
+                                The results are comparable with the 32-bit case: PyPy is still almost 2 times faster than CPython. And it also shows that our 64-bit JIT backend is as good as the 32-bit one. Again, the drawback is in the consumed memory: CPython used 2.3 GB while PyPy took 8.3 GB.
+                            </p>
+                            <p>
+                                Overall, the results are impressive: we knew that PyPy can be good at optimizing small benchmarks and even middle-sized programs, but as far as we know this is the first example in which it heavily optimizes a huge, real world application. And, believe us, the PyPy translation toolchain is complex enough to contains all kinds of dirty tricks and black magic that make Python lovable and hard to optimize :-).
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3971202189709462152-5161284681004717142?l=morepypy.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/PyPyStatusBlog/~4/n45mASzMuhY" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://morepypy.blogspot.com/2010/11/snake-which-bites-its-tail-pypy-jitting.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29">http://morepypy.blogspot.com/2010/11/snake-which-bites-its-tail-pypy-jitting.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

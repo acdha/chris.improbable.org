@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Python Thread Deadlock Avoidance
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 20 Nov 2009 23:04:52 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-20T17:50:00-04:00">
+                    <meta itemprop="dateModified" content="2009-11-20T17:50:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-20T21:50:00+00:00">Nov 20</time>
+                    <h2 itemprop="title">
+                        Python Thread Deadlock Avoidance
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/b455e08d1bb8cec7">
+                        <blockquote>
+                            <p>
+                                One danger of writing programs based on threads is the potential for deadlock--a problem that almost invariably shows up if you happen to write thread code that tries to acquire more than one mutex lock at once. For example:<br>
+                            </p>
+                            <blockquote>
+                                <pre>
+a_lock = threading.Lock()
+b_lock = threading.Lock()
+
+def foo():
+    with a_lock:
+         ...
+         with b_lock:
+              # Do something
+              ...
+
+t1 = threading.Thread(target=foo)
+t1.start()
+</pre>
+                            </blockquote>
+                            <p>
+                                Code like that looks innocent enough until you realize that some other thread in the system also has a similar idea about locking--but acquires the locks in a slightly different order:<br>
+                            </p>
+                            <blockquote>
+                                <pre>
+def bar():
+    with b_lock:
+         ...
+         with a_lock:
+              # Do something (maybe)
+              ...
+</pre>
+                            </blockquote>
+                            <p>
+                                Sure, the code might be lucky enough work "most" of the time. However, you will suffer a thousand sorrows if both threads try to acquire those locks at about the same time and you have to figure out why your program is mysteriously nonresponsive.<br>
+                            </p>
+                            <p>
+                                Computer scientists love to spend time thinking about such problems--especially if it means they can make up some diabolical problem about philosophers that they can put on an operating systems exam. However, I'll spare you the details of that.<br>
+                            </p>
+                            <p>
+                                The problem of deadlock is not something that I would normally spend much time thinking about, but I recently saw some material talking about improved thread support in C++0x. For example, <a href="http://www.devx.com/SpecialReports/Article/38883/1954">this article</a> has some details. In particular, it seems that C++0x offers a new locking operation <tt>std::lock()</tt> that can acquire multiple mutex locks all at once while avoiding deadlock. For example:<br>
+                            </p>
+                            <blockquote>
+                                <pre>
+std::unique_lock&lt;std::mutex&gt; lock_a(a.m,std::defer_lock);
+std::unique_lock&lt;std::mutex&gt; lock_b(b.m,std::defer_lock);
+<b>std::lock(lock_a,lock_b);</b>      // Lock both locks
+...
+... do something involving data protected by both locks
+...
+</pre>
+                            </blockquote>
+                            <p>
+                                I don't actually know how C++0x implements its <tt>lock()</tt> operation, but I do know that one way to avoid deadlock is to put some kind of ordering on all of the locks in a program. If you then strictly enforce a policy that all locks have to be acquired in increasing order, you can avoid deadlock. Just as an example, if you had two locks A and B, you could assign a unique number to each lock such as A=1 and B=2. Then, in any part of the program that wanted to acquire both lock A and B, you just make a rule that A always has to be acquired first (because its number is lower). In such a scheme, the thread <tt>bar()</tt> shown earlier would simply be illegal. That <tt>lock()</tt> operation in C++ is almost certainly doing something similar to this--that is, it knows enough about the locks so that they can acquired without deadlock.<br>
+                            </p>
+                            <p>
+                                All of this got me thinking--I wonder how hard it would be to implement the <tt>lock()</tt> operation in Python? Not hard as it turns out. First step is to change the name--given that <tt>acquire()</tt> is the typical method used to acquire a lock, let's just call the operation <tt>acquire()</tt> to make it more clear. You can define <tt>acquire()</tt> as a context-manager and simply order locks according to their <tt>id()</tt> value like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+class acquire(object):
+    def __init__(self,*locks):
+        self.locks = sorted(locks, key=lambda x: id(x))
+    def __enter__(self):
+        for lock in self.locks:
+            lock.acquire()
+    def __exit__(self,ty,val,tb):
+        for lock in reversed(self.locks):
+            lock.release()
+        return False
+</pre>
+                            </blockquote>
+                            <p>
+                                Okay, that was easy enough to do, but does it work? Let's try it on the classic dining philosophers problem (look it up if you need a refresher):
+                            </p>
+                            <blockquote>
+                                <pre>
+import threading
+
+# The philosopher thread
+def philosopher(left, right):
+    while True:
+        with acquire(left,right):
+             print threading.currentThread(), "eating"
+
+# The chopsticks
+NSTICKS = 5
+chopsticks = [threading.Lock() 
+              for n in xrange(NSTICKS)]
+
+# Create all of the philosophers
+phils = [threading.Thread(target=philosopher,
+                          args=(chopsticks[n],chopsticks[(n+1) % NSTICKS]))
+         for n in xrange(NSTICKS)]
+
+# Run all of the philosophers
+for p in phils:
+    p.start()
+</pre>
+                            </blockquote>
+                            <p>
+                                If you try this code, you'll find that the philosophers run all day with no deadlock. Just as an experiment, you can try changing the <tt>philosopher()</tt> implementation to one that acquires the locks separately:
+                            </p>
+                            <blockquote>
+                                <pre>
+def philosopher(left, right):
+    while True:
+        with left:
+             with right:
+                 print threading.currentThread(), "eating"
+</pre>
+                            </blockquote>
+                            <p>
+                                Yep, almost instantaneously deadlock. So, as you can see, our <tt>acquire()</tt> operation seems to be working.
+                            </p>
+                            <p>
+                                There's still one last aspect of this experiment that needs to be addressed. One potential problem with our <tt>acquire()</tt> operation is that it doesn't prevent a user from using it in a nested manner as before. For example, someone might write code like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+with acquire(a_lock,b_lock):
+     ...
+     with acquire(c_lock, d_lock):
+          ...
+</pre>
+                            </blockquote>
+                            <p>
+                                Catching such cases at the time of definition would be difficult (if not impossible). However, we could make the <tt>acquire()</tt> context manager keep a record of all previously acquired locks using a list placed in thread local storage. Here's a new implementation--and just for kicks, I'm going to switch it over to a context manager defined by a generator (mainly because I can and generators are cool):
+                            </p>
+                            <blockquote>
+                                <pre>
+import threading
+from contextlib import contextmanager
+
+local = threading.local()
+@contextmanager
+def acquire(*locks):
+    locks = sorted(locks, key=lambda x: id(x))   
+    acquired = getattr(local,"acquired",[])
+    # Check to make sure we're not violating the order of locks already acquired   
+    if acquired:
+        if max(id(lock) for lock in acquired) &gt;= id(locks[0]):
+            raise RuntimeError("Lock Order Violation")
+    acquired.extend(locks)
+    local.acquired = acquired
+    try:
+        for lock in locks:
+            lock.acquire()
+        yield
+    finally:
+        for lock in reversed(locks):
+            lock.release()
+        del acquired[-len(locks):]
+</pre>
+                            </blockquote>
+                            <p>
+                                If you use this version, you'll find that the philosophers work just fine as before. However, now consider this slightly modified version with the nested acquires:
+                            </p>
+                            <blockquote>
+                                <pre>
+# The philosopher thread                                                                                             
+def philosopher(left, right):
+    while True:
+        with acquire(left):
+            with acquire(right):
+                print threading.currentThread(), "eating"
+</pre>
+                            </blockquote>
+                            <p>
+                                Unlike the previous version that had nested <tt>with</tt> statements and deadlocked, this one runs. However, one of the philosophers crashes with a nasty traceback:
+                            </p>
+                            <blockquote>
+                                <pre>
+Exception in thread Thread-5:
+Traceback (most recent call last):
+  File "/System/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/threading.py", line 522, in __bootstrap_inner
+    self.run()
+  File "/System/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/threading.py", line 477, in run
+    self.__target(*self.__args, **self.__kwargs)
+  File "hier4.py", line 53, in philosopher
+    with acquire(right):
+  File "/System/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/contextlib.py", line 16, in __enter__
+    return self.gen.next()
+  File "hier4.py", line 35, in acquire
+    raise RuntimeError("Lock Order Violation")
+RuntimeError: Lock Order Violation
+</pre>
+                            </blockquote>
+                            <p>
+                                Very good. That's exactly what we wanted.
+                            </p>
+                            <p>
+                                So, what's the moral of this story. First of all, I don't think you should use this as a license to go off and write a bunch of multithreaded code that relies on nested lock acquisitions. Sure, the context manager might catch some potential problems, but it won't change the fact that you'll still want to blow your head off after debugging some other horrible problem that comes up with your overly clever and/or complicated design.<br>
+                            </p>
+                            <p>
+                                I think the main take-away is an appreciation for Python's context-manager feature. There's so much more you can do with a context manager than simply closing a file or releasing an individual lock.
+                            </p>
+                            <p>
+                                Disclaimer: I didn't do a hugely exhaustive internet search to see if anyone else had implemented anything similar to this in Python. If you know of some links to related work, tell me. I'll add them here.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/36456651-84152637118440889?l=www.dabeaz.com%2Fblog%2Fdablog.html" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.dabeaz.com/blog/2009/11/python-thread-deadlock-avoidance_20.html">http://www.dabeaz.com/blog/2009/11/python-thread-deadlock-avoidance_20.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

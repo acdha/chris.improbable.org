@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The Python GIL Visualized
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 06 Jan 2010 13:09:58 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-05T09:18:00-04:00">
+                    <meta itemprop="dateModified" content="2010-01-05T09:18:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-05T13:18:00+00:00">Jan 05</time>
+                    <h2 itemprop="title">
+                        The Python GIL Visualized
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ef3b1a143ef73c48">
+                        <blockquote>
+                            <p>
+                                In preparation for my upcoming PyCON'2010 talk on "Understanding the Python GIL", I've been working on a variety of new material--including some graphical visualization of the GIL behavior described in my earlier <a href="http://www.dabeaz.com/python/GIL.pdf">talk</a>. I'm still experimenting, but check it out.
+                            </p>
+                            <p>
+                                In these graphs, Python interpreter ticks are shown along the X-axis. The two bars indicate two different threads that are executing. White regions indicate times at which a thread is completely idle. Green regions indicate when a thread holds the GIL and is running. Red regions indicate when a thread has been scheduled by the operating system only to awake and find that the GIL is not available (e.g., the infamous "GIL Battle"). For those who don't want to read, here is the legend again in pictures:
+                            </p>
+                            <center>
+                                <br>
+                                <img src="http://www.dabeaz.com/images/GILLegend.png">
+                            </center>
+                            <p>
+                                Okay, now let's look at some threads. First, here is the behavior of running two CPU-bound threads on a single CPU system. As you will observe, the threads nicely alternate with each other after long periods of computation.
+                            </p>
+                            <center>
+                                <img src="http://www.dabeaz.com/images/GIL_1cpu.png">
+                            </center>
+                            <p>
+                                Now, let's go fire up the code on your fancy new dual-core laptop. Yow! Look at all of that GIL contention. Again, all of those red regions indicate times where the operating system has scheduled a Python thread on one of the cores, but it can't run because the thread on the other core is holding it.
+                            </p>
+                            <center>
+                                <img src="http://www.dabeaz.com/images/GIL_2cpu.png">
+                            </center>
+                            <p>
+                                Here's an interesting case that involves an I/O bound thread competing with a CPU-bound thread. In this example, the I/O thread merely echoes UDP packets. Here is the code for that thread.
+                            </p>
+                            <blockquote>
+                                <pre>
+def thread_1(port):
+    s = socket(AF_INET,SOCK_DGRAM)
+    s.bind(("",port))
+    while True:
+        msg, addr = s.recvfrom(1024)
+        s.sendto(msg,addr)
+</pre>
+                            </blockquote>
+                            <p>
+                                The other thread (thread 2) is just mindlessly spinning. This graph shows what happens when you send a UDP message to thread 1.
+                            </p>
+                            <center>
+                                <img src="http://www.dabeaz.com/images/GIL_io.png">
+                            </center>
+                            <p>
+                                As you would expect, most of the time is spent running the CPU-bound thread. However, when I/O is received, there is a flurry of activity that takes place in the I/O thread. Let's zoom in on that region and see what's happening.
+                            </p>
+                            <center>
+                                <img src="http://www.dabeaz.com/images/GIL_ioclose.png">
+                            </center>
+                            <p>
+                                In this graph, you're seeing how difficult it is for the I/O bound to get the GIL in order to perform its small amount of processing. For instance, approximately 17000 interpreter ticks pass between the arrival of the UDP message and successful return of the <tt>s.recvfrom()</tt> call (and notice all of the GIL contention). More that 34000 ticks pass between the execution of <tt>s.sendto()</tt> and looping back to the next <tt>s.recvfrom()</tt> call. Needless to say, this is not the behavior you usually want for I/O bound processing.
+                            </p>
+                            <p>
+                                Anyways, that is all for now. Come to my PyCON talk to see much more. Also check out Antoine Pitrou's work on a <a href="http://mail.python.org/pipermail/python-dev/2009-October/093321.html">new GIL</a>.
+                            </p>
+                            <p>
+                                Note: It is not too late to sign up for my <a href="http://www.dabeaz.com/chicago/concurrent.html">Concurrency Workshop</a> next week (Jan 14-15).
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/36456651-4523567443307976608?l=www.dabeaz.com%2Fblog%2Fdablog.html" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.dabeaz.com/blog/2010/01/python-gil-visualized.html">http://www.dabeaz.com/blog/2010/01/python-gil-visualized.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

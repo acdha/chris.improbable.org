@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Code Review with Gerrit, a mostly visual guide
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 08 Dec 2009 06:45:25 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-12-08T01:45:25-04:00">
+                    <meta itemprop="dateModified" content="2009-12-08T01:45:25-04:00"><time class="date" itemprop="datePublished" datetime="2009-12-08T05:45:25+00:00">Dec 08</time>
+                    <h2 itemprop="title">
+                        Code Review with Gerrit, a mostly visual guide
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/4d4bef6cf5cc4e09">
+                        <blockquote>
+                            <p>
+                                A while ago, when <a href="http://twitter.com/pjthiel">Paul</a>, <a href="http://twitter.com/jasonrubenstein">Jason</a> and I worked together, I became a big fan of code reviews before merging code. It was no surprise really, we were the first to adopt <a href="http://en.wikipedia.org/wiki/Git%20%28software%29">Git</a> at the company and our workflow was quite ad-hoc, the need to federate knowledge within the group meant code reviews were a pretty big deal. At the time, we mostly did code reviews in person by way of "hey, what's this you're doing here?" or by literally sending patch emails with <a href="http://www.kernel.org/pub/software/scm/git/docs/git-format-patch.html">git-format-patch(1)</a> to the team mailing list so all could participate in the discussion about what merits "good code" exhibited versus "less good code." Now that I've left that company and joined another one, I've found myself in another small-team situation, where my teammates place high value on code review. Fortunately this time around better tools exist, namely: <a href="http://code.google.com/p/gerrit/">Gerrit</a>.
+                            </p>
+                            <p>
+                                The history behind Gerrit I'm a bit hazy on, what I do know is that it's primary developer Shawn Pearce (<a href="http://www.linkedin.com/pub/shawn-pearce/0/a93/61">spearce</a>) is one of the Git "inner circle" who contributes heavily to Git itself as well as <a href="http://www.jgit.org/">JGit</a>, a Git implementation in Java which sits underneath Gerrit's internals. What makes Gerrit unique in the land of code review systems is how tightly coupled Gerrit is with Git itself, so much so that you submit changes by <strong>pushing</strong> as if the Gerrit server were "just another Git repo."
+                            </p>
+                            <p>
+                                I recommend building Gerrit from source for now, spearce is planning a proper release of the recent Gerrit developments shortly before Christmas, but who has that kind of patience! To build Gerrit you will need <a href="http://en.wikipedia.org/wiki/Apache%20Maven">Maven</a> and the Sun <a href="http://en.wikipedia.org/wiki/Java%20Development%20Kit">JDK</a> 1.6.
+                            </p>
+                            <h2>
+                                Setting up the Gerrit daemon
+                            </h2>
+                            <p>
+                                First you should clone one of Gerrit's dependencies, followed by Gerrit itself:
+                            </p>
+                            <pre>
+<code>banana% git clone git://android.git.kernel.org/tools/gwtexpui.git
+banana% git clone git://android.git.kernel.org/tools/gerrit.git
+</code>
+</pre>
+                            <p>
+                                Once both clones are complete, you can start by building one and then the other (which might take a while, go grab yourself a coffee, you've earned it):
+                            </p>
+                            <pre>
+<code>banana% (cd gwtexpui &amp;&amp; mvn install)
+banana% cd gerrit &amp;&amp; mvn clean package
+</code>
+</pre>
+                            <p>
+                                After Gerrit has finished building, you'll have a <code>.war</code> file ready to run Gerrit with (<em>note:</em> depending on when you read this article, your path to gerrit.war might have changed). First we'll initialize the directory "/srv/gerrit" as the location where the executing Gerrit daemon will store its logs, data, etc:
+                            </p>
+                            <pre>
+<code>banana% java -jar gerrit-war/target/gerrit-2.0.25-SNAPSHOT.war init -d /srv/gerrit
+*** Gerrit Code Review v2.0.24.2-72-g4c37167
+***
+
+Initialize '/srv/gerrit' [y/n]? y
+
+*** Git Repositories
+***
+
+Location of Git repositories   [git]:
+
+*** SQL Database
+***
+
+Database server type           [H2/?]:
+
+*** User Authentication
+***
+
+Authentication method          [OPENID/?]:
+
+*** Email Delivery
+***
+
+SMTP server hostname           [localhost]:
+SMTP server port               [(default)]:
+SMTP encryption                [NONE/?]:
+SMTP username                  :
+
+*** SSH Daemon
+***
+
+Gerrit SSH listens on address  [*]:
+Gerrit SSH listens on port     [29418]:
+
+Gerrit Code Review is not shipped with Bouncy Castle Crypto v144
+  If available, Gerrit can take advantage of features
+  in the library, but will also function without it.
+Download and install it now [y/n]? y
+Downloading http://www.bouncycastle.org/download/bcprov-jdk16-144.jar ... OK
+Checksum bcprov-jdk16-144.jar OK
+Generating SSH host key ... rsa... dsa... done
+
+*** HTTP Daemon
+***
+
+Behind reverse HTTP proxy (e.g. Apache mod_proxy) [y/n]? n
+Use https:// (SSL)             [y/n]? n
+Gerrit HTTP listens on address [*]:
+Gerrit HTTP listens on port    [8080]: 
+
+Initialized /srv/gerrit
+</code>
+</pre>
+                            <p>
+                                After running through Gerrit's brief wizard, you'll be ready to start Gerrit itself (<em>note:</em> this command will not detach from the terminal, so you might want to start it within screen for now):
+                            </p>
+                            <pre>
+<code>banana% java -jar gerrit-war/target/gerrit-2.0.25-SNAPSHOT.war daemon -d /srv/gerrit
+</code>
+</pre>
+                            <p>
+                                Now that you've reached this point you'll have Gerrit running a web application on port 8080, and listening for SSH connections on port 29418, congratulations! You're most of the way there :)
+                            </p>
+                            <h2>
+                                Creating users and groups
+                            </h2>
+                            <p>
+                                Welcome to Gerrit
+                            </p>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_start.png" rel="lightbox"><img src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_start.png" width="550"></a>
+                            </center>First thing you should do after starting Gerrit up is log in to make sure your user is the administrator, you can do so by clicking the "Register" link in the top right corner which should present you with an openID login dialog
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_openid.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_openid.png"></a>
+                            </center>After logging in with your favorite openID provider, Gerrit will allow you to enter in information about you (SSH key, email address, etc). It's worth noting that the email address is <strong>very</strong> important as Gerrit uses the email address to match your commits to your Gerrit account
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_account_create.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_account_create.png"></a>
+                            </center>When you create your SSH key for Gerrit, it's recommended that you give it a custom entry in <code>~/.ssh/config</code> along the lines of:
+                            <pre>
+<code>Host gerrithost
+    User &lt;you&gt;
+    Port 29418
+    Hostname &lt;gerrithost&gt;
+    IdentityFile &lt;path/to/private/key&gt;
+</code>
+</pre>
+                            <p>
+                                After you click "Continue" at the bottom of the user information page, you will be taken to your dashboard which is where your changes waiting to be reviewed as well as changes waiting to be reviewed <em>by</em> you will be waiting
+                            </p>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_mydashboard.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_mydashboard.png"></a>
+                            </center>
+                            <p>
+                                Now that your account is all set up, let's create a group for "integrators", integrators in Git parlance are those that are responsible for reviewing code and integrating it into the "official" repository (typically integrators are project maintainers or core developers). Be sure to add yourself to the "Integrators" group, we'll use this "Integrators" group later to create more granular permissions on a particular project:
+                            </p>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_creategroup.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_creategroup.png"></a>
+                            </center>
+                            <h2>
+                                Projects in Gerrit
+                            </h2>
+                            <p>
+                                Creating a new project in Gerrit is fairly easy but a little <em>different</em> insofar that there isn't a web UI for doing so but there is a command line one:
+                            </p>
+                            <pre>
+<code>banana% ssh gerrithost gerrit create-project -n &lt;project-name&gt;
+</code>
+</pre>
+                            <p>
+                                For the purposes of my examples moving forward, we'll use a project created in Gerrit for one of the Python modules I maintain, <a href="http://search.twitter.com/search?q=py-yajl">py-yajl</a>. After creating the "py-yajl" project with the command line, I can visit Admin &gt; Projects and select "py-yajl" and edited some of its permissions. Here we'll give "Integrators" the ability to <strong>Verify</strong> changes as well as <strong>Push Branch</strong>.
+                            </p>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_integratoraccess.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_integratoraccess.png"></a>
+                            </center>
+                            <p>
+                                With the py-yajl project all set up in Gerrit, I can return to my Git repository and add a "remote" for Gerrit, and push my master branch to it
+                            </p>
+                            <pre>
+<code>banana% git checkout master
+banana% git remote add gerritrhost ssh://gerrithost/py-yajl.git
+banana% git push gerrithost master
+</code>
+</pre>
+                            <p>
+                                This will give Gerrit a baseline for reviewing changes against and allow it to determine when a change has been merged down. Before getting down to business and starting to commit changes, it's recommended that you install the <a href="http://gerrit.googlecode.com/svn/documentation/2.0/user-changeid.html#creation"><strong>Gerrit Change-Id commit-msg hook documented here</strong></a> which will help Gerrit track changes through rebasing; once that's taken care of, have at it!
+                            </p>
+                            <pre>
+<code>banana% git checkout -b topic-branch
+banana% &lt;work&gt;
+banana% git commit 
+banana% git push gerrithost HEAD:refs/for/master
+</code>
+</pre>
+                            <p>
+                                The last command will push my commit to Gerrit, the command is kind of weird looking so feel free to put it behind a <a href="http://git.or.cz/gitwiki/Aliases">git-alias(1)</a>. After the push is complete however, my changes will be awaiting review in Gerrit
+                            </p>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_openchanges.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_openchanges.png"></a>
+                            </center>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_changeoverview.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_changeoverview.png"></a>
+                            </center>
+                            <p>
+                                At this point, you'd likely wait for another reviewer to come along and either comment your code inline in the side-by-side viewer or otherwise approve the commit bu clicking "Publish Comments"
+                            </p>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_publishcomments.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_publishcomments.png"></a>
+                            </center>
+                            <p>
+                                After comments have been published, the view in My Dashboard has changed to indicate that the change has not only been reviewed but also verified:
+                            </p>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_mydashboard_changesreviewed.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_mydashboard_changesreviewed.png"></a>
+                            </center>
+                            <p>
+                                Upon seeing this, I can return back to my Git repository and feel comfortable merging my code to the master branch:
+                            </p>
+                            <pre>
+<code>banana% git checkout master
+banana% git merge topic-branch
+banana% git push origin master
+banana% git push gerrithost master
+</code>
+</pre>
+                            <p>
+                                The last command is significant again, by pushing the updated master branch to Gerrit, we indicate that the change has been merged, which is also reflected in My Dashboard
+                            </p>
+                            <center>
+                                <a href="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_mydashboard_changesmerged.png" rel="lightbox"><img width="550" src="http://agentdero.cachefly.net/unethicalblogger.com/images/gerrit_mydashboard_changesmerged.png"></a>
+                            </center>
+                            <p>
+                                Tada! You've just had your code reviewed and subsequently integrated into the upstream tree, pat yourself on the back. It's worth noting that while Gerrit is under steady development it <em>is</em> being used by the likes of the Android team, JGit/EGit team and countless others. Gerrit contains a number of nice subtle features, like double-clicking a line inside the side-by-side diff to add a comment to that line specifically, the ability to "star" changes (similar to bookmarking) and a too many others to go into detail in this post.
+                            </p>
+                            <p>
+                                While it may seem like this was a fair amount of set-up to get code reviews going, the payoff can be tremendous, Gerrit facilitates a solid Git-oriented code review process that scales very well with the number of committers and changes. I hope you enjoy it :)
+                            </p><img src="http://feeds.feedburner.com/~r/UnethicalBlogger/~4/Dpx0JpjojDQ" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://unethicalblogger.com/posts/2009/12/code_review_gerrit_mostly_visual_guide/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+UnethicalBlogger+%28unethical+blogger%29">http://unethicalblogger.com/posts/2009/12/code_review_gerrit_mostly_visual_guide/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+UnethicalBlogger+%28unethical+blogger%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

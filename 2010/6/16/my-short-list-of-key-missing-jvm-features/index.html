@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            My Short List of Key Missing JVM Features
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 17 Jun 2010 02:25:09 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-06-16T18:44:00-04:00">
+                    <meta itemprop="dateModified" content="2010-06-16T18:44:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-06-16T22:44:00+00:00">Jun 16</time>
+                    <h2 itemprop="title">
+                        My Short List of Key Missing JVM Features
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ab86314852a1d4d2">
+                        <blockquote>
+                            I mused today on Twitter that there's just a few small things that the JVM/JDK need to become a truly awesome platform for all sorts of development. Since so many people asked for more details, I'm posting a quick list here. There's obviously other things, but these are the ones on my mind today.
+                            <div>
+                                <br>
+                                <div>
+                                    <b>Cold Performance</b>
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    Current JVMs start up pretty fast, and there's changes coming in Hotspot in Java 7 that will make them even better. Usually this comes from combinations of pre-verifying bytecode (or providing verification hints), sharing class data across processes, and run-of-the-mill tweaks to make the loading and linking processes more efficient. But for many apps, this doesn't do anything to solve the biggest startup hit of all: cold execution performance. Because the JVM doesn't save off the jitted products of each run, it must start "cold" every time, running everything in the bytecode interpreter until it gets hot enough to compile. Even on JVMs that don't have an interpreter, the initial cost of compiling everything to not-particularly-optimized assembly also causes a major startup hit (try running command-line stuff on JRockit or J9).
+                                </div>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                There's a few things people have suggested, and they're all hard:
+                            </div>
+                            <div>
+                                <ul>
+                                    <li>Tiered compilation - compile earlier using the fastest-possible, least-optimizing compiler, but decorate the compiled code with appropriate profiling logic to do a better job later. Hotspot in Java 7 may ship a tiered compiler, but there have been some resource setbacks that delayed its development.
+                                    </li>
+                                    <li>Save off compilation or optimization artifacts - this is theoretically possible, but the deeper you go the harder it is to save it. Usually the in-memory results of optimization and compilation depend on the layout of things...in memory. Saving them to disk means you need to scrub out anything that might be different in a new process like memory addresses and class identities. But .NET can do this, though it largely *just* does static compilation. Happy medium?
+                                    </li>
+                                    <li>Keep a JVM process running and toss it new work. We do this in JRuby with the Nailgun library, but it has some problems. First off, it can leave various aspects of the JVM in a dirty state, like system properties and memory footprint. Second, it can't kill off rogue threads that don't terminate, so they can collect over time. And third...it's not actually running at the console, so a lot of console things you'd do normally don't work.
+                                    </li>
+                                </ul>
+                                <div>
+                                    This is probably the biggest unsolvable problem for JRuby right now, and the one we most often have to apologize for. JRuby is fast...at times, very fast...and getting faster every day. But not during the first 5 seconds, and so everyone gets the same bad impression.
+                                </div>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>Better Console/Terminal Support</b>
+                            </div>
+                            <div>
+                                <b><br></b>
+                            </div>
+                            <div>
+                                There's endless blogs out there complaining about how the standard IO streams you get from the JVM are crippled in various ways. You can't select on them, for example, which is the source of a few unfixable bugs in JRuby. You can't pass them along to subprocesses, which is perhaps more a failing of the process-launching APIs in the JDK than standard IO itself. There's no direct terminal support in any of Java's APIs, so people end up yanking in libraries like jline just to support line editing. If the JDK shipped with some nice terminal and process APIs, a lot of the hassles developers have writing command-line tools in Java would melt away.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                There's some light at the end of the tunnel. NIO2, scheduled to be part of Java 7, will bring better process launching APIs (with inherited standard IO streams, if you desire), a broader range of selectable channels, and much more. Hopefully it will be enough.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>Fix the Busted APIs</b>
+                            </div>
+                            <div>
+                                <b><br></b>
+                            </div>
+                            <div>
+                                JDBC is broken. Why? Because you have to register your driver in a global hard-referencing hash, and have to unregister it from the same classloader or it will leak. That means that if you're loading JDBC drivers from within a webapp or EE application, *your entire application remains in memory* because the driver references it and that map references the driver. This is the primary reason why most Java web application servers leak memory on undeploy, and it's another "unfixable" from JRuby's perspective.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Object serialization is broken. Why? Because it plays all sorts of tricks to get your classloader, reflectively access fields (if you're going to reflectively access them anyway, why not just break encapsulation if security allows it), and construct object instances without allowing you the opportunity to initialize them appropriately yourself. You have to provide no-arg constructors, have to un-final fields so they can be set up outside of construction, and heaven forbid you use default serialization: it's dead slow.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Reflection is too slow and there's no way around it. Not only do you end up calling through many extra levels of logic for reflective invocation, you have to box your argument lists, box your numerics, and wrap everything in exception-handling. And it doesn't have to be this way. The invokedynamic work brings along with it method handles, which are fast, direct pointers to methods. This should have been added long ago, but thankfully it's on the way in Java 7. Until then, projects like JRuby will have to continue eating the cost of reflection...or generate method handles by hand. We do both.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Regular expressions are broken. Why? Because simple alternations can blow the Java stack when fed especially large input. The current Sun-created regex implementation recurses for things like alternation, making it easy for it to fail to match on large input. The problem is so bad that we've actually switched regular expression engines in JRuby *four times*, including two implementations we wrote ourselves. Nobody can say we haven't bled for our users.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                And there's numerous other examples. Some are relics of Java 1.0 that never got corrected (because old APIs don't die, they just get deprecated...or ignored). Some are relics of the idea that gigantic monolithic servers hosting dozens of apps (and leaking memory when they undeploy, or else contending for basic resources that separate processes would not) are a good idea, when in actuality running multiple JVMs that each only host one or a few apps works far better. Making a real effort to smooth these bad APIs would go a long way.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>Better Support for Native Libraries and POSIX Features</b>
+                            </div>
+                            <div>
+                                <b><br></b>
+                            </div>
+                            <div>
+                                As of Java 6, there's still no support for working with symlinks and only limited support for setting file permissions. Process launching is absolutely terrible. You can't select on all channels...only on sockets. If you want to use a native library, you have to write JNI code to do it, even though there are libraries like JNA and JFFI in the wild that do an outstanding job of dynamically loading and binding those libraries.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Missing the POSIXy features is basically inexcusable today. Most of the system-level APIs in the JDK are still based on a lowest common denominator somewhere near Windows 95, even though all modern operating systems provide at least a substantial subset of those APIs. NIO2 will bring many improvements, but it's almost certain that some parts of POSIX won't be exposed, either because there's not enough resources to spec out the Java APIs for them or because they end up being too system-specific.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                As for loading native libraries...this is again something that should have been rolled into the JDK a long time ago. Many people will cry foul..."pure Java!" they'll shout...and I agree. But there are times when some functionality simply doesn't exist in a Java library, or doesn't scale well as an out-of-process call. For these times, you just have to use the native library...and the barrier to entry for doing that on the Java platform is just too high. Rolle JNA or JFFI or something similar into the JDK, so we grown-ups can choose when we want to use native code.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>The Punchline</b>
+                            </div>
+                            <div>
+                                <b><br></b>
+                            </div>
+                            <div>
+                                The punchline is that for most of these things, we've solved or worked around them in JRuby...at *great expense*. I'd go so far as to say we've done more to work around the JVM and the JDK's lackings than any other project. We've gone out of our way to improve startup by any means possible. We ship beautiful, solidly-performing libraries for binding native libs without writing a line of C code. We generate a large amount of code at compile and runtime to avoid using reflection as much. We maintain and ship native POSIX layers for a dozen platforms. We've (i.e. one of our champions, Marcin Mielzynski) implemented our own regular expression engine (i.e. a port of Oniguruma). We've pulled every trick in the book to get process launching to work nicely and behave like Ruby users expect. And so on and so forth.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                But it's not sustainable. We can't continue to patch around the JVM and JDK forever, even if we've done a great job so far. Hopefully this will serve as a wake-up call for JVM and JDK implementers around the world: If you don't want the Java platform to be a server-only, large-app-only, long-running-only, headless-only world...it's time to fix these things. I'm standing by to help coordinate those efforts :)
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/20975090-2699943310069285113?l=blog.headius.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.headius.com/2010/06/my-short-list-of-key-missing-jvm.html">http://blog.headius.com/2010/06/my-short-list-of-key-missing-jvm.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

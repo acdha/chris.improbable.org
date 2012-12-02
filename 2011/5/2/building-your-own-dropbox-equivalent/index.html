@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Building Your Own Dropbox Equivalent
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 02 May 2011 15:27:35 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-05-02T11:27:35-04:00">
+                    <meta itemprop="dateModified" content="2011-05-02T11:27:35-04:00"><time class="date" itemprop="datePublished" datetime="2011-05-02T15:27:35+00:00">May 02</time>
+                    <h2 itemprop="title">
+                        Building Your Own Dropbox Equivalent
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/fc8c8a8b3678cb4e">
+                        <blockquote>
+                            <p>
+                                My previous <a href="http://hekafs.org/2011/04/dog-food/">dog food</a> post did generate a couple of requests for more detailed instructions on how to build your own private cloud storage repository, so here goes.
+                            </p>
+                            <p>
+                                First, you need to have a server somewhere that will always be on, or at least on as much of the time as you want to access your cloud storage. I happen to have a server in the <a href="http://www.rackspace.com/cloud/">Rackspace Cloud</a> that I leave running for various purposes at $10/month. If you already have a cloud server or VPS that you’re running somewhere, or a home/work machine, that works fine too.
+                            </p>
+                            <p>
+                                Next, you need to be running GlusterFS on your server and clients. There are already pre-packaged versions available for some Linux distributions, though some are more current than others. For example, Fedora is at 3.1.3 which is pretty close to current, while Ubuntu is at 3.0.5 which is simply too old to be useful. Downloads are also available from <a href="http://download.gluster.com/pub/gluster/glusterfs/LATEST/">Gluster themselves</a> and elsewhere. However, you’re highly likely to run into a problem with many of the pre-packaged versions. Prior to 3.1.4, the servers would not accept connections from non-privileged ports and if you’re using any sort of NAT/tunnel/VPN you’ll probably be assigned just such a port. At least in 3.1.4 they added options to override this misguided code (which doesn’t even check the port’s privilege status the right way BTW) but my choice was to remove it entirely and build my own RPMs. I’ll provide patches and fixed RPMs soon; bug me if I forget. Anyway, install whatever 3.1+ version you want and move on to the next step.
+                            </p>
+                            <p>
+                                At first, you’ll want to create your volumes and start your server-side daemons the “normal” way, something like this.
+                            </p>
+                            <pre>
+# mkfs -t ext4 /dev/sdwhatever
+# mkdir -p /bricks/mycloud
+# mount -o noatime,user_xattr /dev/sdwhatever /bricks/mybrick1
+# gluster volume create mycloud my.external.ip.address:/bricks/mybrick1
+# gluster volume start mycloud
+</pre>
+                            <p>
+                                At this point you would actually be able to mount the “mycloud” volume from any GlusterFS client, unless you have firewall issues (which you often will in a public cloud including Rackspace). Here’s one simple way to get around that, though I actually don’t recommend this method for reasons I’ll get to in a moment.
+                            </p>
+                            <pre>
+# netstat -lpn | grep glusterfsd
+# iptables -I INPUT -p tcp --dport 24009 -j ACCEPT
+</pre>
+                            <p>
+                                24009 is just the port I happened to get. Also, you’d probably want to make the iptables rule more specific to the hosts you use, save it as part of your private config, yadda yadda. However, the reason you probably don’t want to do this is that it provides no security at all. Instead, you’ll want to run this through some sort of tunnel, and in that case you’ll effectively be making a local connection to the server. Here’s how you’d do it with ssh.
+                            </p>
+                            <pre>
+# ssh -L24009:localhost:24009 me@my.cloud.server
+</pre>
+                            <p>
+                                The other part of this is avoiding some of Gluster’s port-mapping silliness. Grab the client-side “volfile” describing the mount from /etc/glusterd/vols/mycloud/mycloud-fuse.vol and copy it to whatever machines you’ll be mounting on. Edit the “protocol/client” part of the copy to look something like this:
+                            </p>
+                            <pre>
+volume mycloud-client-0
+    type protocol/client
+    option remote-host localhost
+    option remote-port 24009
+    option remote-subvolume /bricks/mybrick1
+    option transport-type tcp
+end-volume
+</pre>
+                            <p>
+                                Now your mount command can change something like this.
+                            </p>
+                            <pre>
+# mount -t glusterfs my.cloud.server:mycloud /mnt/mycloud # glusterfs way = wrong
+# mount -f ~/mycloud-fuse.vol /mnt/mycloud # cloudfs way = right
+</pre>
+                            <p>
+                                At this point you have a remotely accessible directory with encrypted communication, but data on the remote server that’s still accessible to anyone who can get into that server. In other words, you’ll have something practically equivalent to most of the cloud-storage offerings out there – including the ones you pay for. What you need, both to preserve your privacy and to comply with many companies’ information-security policies (such as Red Hat’s), is pure client-side encryption. That’s where CloudFS comes in . . . or at least part of it. At this point you need to be a bit of a coder or fairly advanced sysadmin, because I’m going to make you pull <a href="http://git.fedorahosted.org/git/?p=CloudFS.git;a=shortlog;h=refs/heads/aes">the code</a> and build your own RPM. I’ll provide some RPMs shortly; also, note that you specifically want the “aes” branch for now. To make it work for you, you’ll need to edit that client-side volfile again, adding a new “encryption/crypt” stanza at the end like this:
+                            </p>
+                            <pre>
+volume mycloud-crypt
+    type encryption/crypt
+    option key %0123456789abcdef0123456789abcdef
+    subvolumes mycloud-client-0
+end-volume
+</pre>
+                            <p>
+                                The key can be whatever you want, at 128/192/256 bits, and can also be stored in a file (use a first character of “/” instead of “%” in the volfile). One easy way to generate such a key is like this:
+                            </p>
+                            <pre>
+dd if=/dev/urandom bs=16 count=1 | od -tx1 -An | tr -d '\n '
+</pre>
+                            <p>
+                                In any case, the resulting volfile contains nothing but the two stanzas I’ve shown, in that order. All of the “performance” translators which can interfere with proper operation of the encryption code need to be stripped out.
+                            </p>
+                            <p>
+                                At this point you should be able to mount using your custom volfile to have full encryption both on the network and on disk, with all of the keys safely on your own client system(s). Performance might not be all that great for some kinds of operations, but I’m using it myself and it seems adequate for most purposes. Some day I’ll finish the UID-mapping translator so that you can use this from different UIDs on different machines without getting permission errors, and I’ll finish the built-in SSL transport so you can connect directly instead of needing an ssh tunnel. Then it’ll be really cool, but you know what might be even cooler? With GlusterFS 3.2 you could even replicate this data across two different cloud providers, giving you all of that “multi cloud” goodness that has been all the rage since the EBS outage. With CloudFS 1.0 you’ll be able to do it an even better way, with better consistency and decent performance and so on. At that point I’ll seriously start to question the sanity of anyone who’s using some other solution that doesn’t offer the same performance and the same levels of data protection from both accident and intrusion, or which isn’t open-source like everything I’ve talked about.
+                            </p>
+                            <p>
+                                UPDATE: Some people on the <a href="http://news.ycombinator.com/item?id=2509713">Hacker News thread</a> (thanks Jesse) have rightly pointed out that what I’ve described here isn’t really equivalent to Dropbox. Rather, it’s a directly mountable filesystem which I feel is even better. If you really want something equivalent to Dropbox, you’d have to do two things. To get the sync/work-offline functionality, you’d have to set up this plus a second directory and use something like rsync/Unison/lsyncd to sync between them. To get a GUI, there must be a few dozen web apps you can plop onto the server pointing at a local mount of the same volume. Note, though, that you give up some security when you do this because anybody who can get onto the server can bypass encryption by looking in the mount used by the web app. Since the whole point is to have better security than Dropbox, not to repeat their mistakes, I can’t recommend that. The nearest thing I can think of would be to build the encryption pieces directly into the web app (GlusterFS does actually make this possible) but even then the data would still exist transiently in the web app’s memory on the server so it’s not much an improvement. If anybody knows of a good way to have a web UI that does the encryption/decryption entirely on the client side – big blob of JavaScript? – please let us know in the comments. It might be an interesting project, though probably not one I’m interested/qualified to attempt personally.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://cloudfs.org/2011/05/building-your-own-dropbox-equivalent/">http://cloudfs.org/2011/05/building-your-own-dropbox-equivalent/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

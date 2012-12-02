@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            HTTP PubSub: Webhooks &amp; PubSubHubbub
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 29 Jun 2009 16:14:07 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-06-29T12:14:07-04:00">
+                    <meta itemprop="dateModified" content="2009-06-29T12:14:07-04:00"><time class="date" itemprop="datePublished" datetime="2009-06-29T16:14:07+00:00">Jun 29</time>
+                    <h2 itemprop="title">
+                        HTTP PubSub: Webhooks &amp; PubSubHubbub
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ecc887f421ef8e5a">
+                        <blockquote>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/09/webhooks.png">With all the recent buzz about real-time web, surely this is the year <a href="http://xmpp.org/extensions/xep-0060.html">XMPP</a>/<a href="http://jira.amqp.org/confluence/display/AMQP/Advanced+Message+Queuing+Protocol">AMQP</a> Publish-Subscribe (PubSub) makes it to the big leagues! Or maybe not. <a href="http://www.ejabberd.im/">Ejabberd</a> (XMPP), <a href="http://www.rabbitmq.com/">RabbitMQ</a> (AMQP) and other pubsub server implementations have come a long way but they remain cumbersome to setup and maintain, and perhaps more importantly, the clients require special libraries and a steep learning curve. That is not to say that either XMPP or AMQP are doomed for failure, in fact, they will continue to thrive, but there is a great case for a simplified PubSub implementation to cover the ad-hoc cases where a dedicated TCP channel might be an overkill: enter Webhooks.
+                            </p>
+                            <p>
+                                The best part about <a href="http://www.webhooks.org/">Webhooks</a> is that most of us are already familiar with them: callbacks over HTTP. Pioneered by PayPal and Subversion as a way to send real-time notifications to the client, they have found their way into many dozens of products we all use every day. Need pre or post commit hooks for your SVN or Git repository? Both GitHub and SVN support HTTP callbacks. Need a payment alert from PayPal, or an alert when a wiki page is modified? There are webhooks for that too. This simple mechanism allows us to build web services that work together via a simple and ubiquitous protocol we can all understand: HTTP!
+                            </p>
+                            <h4>
+                                <strong>Working with Webhooks</strong>
+                            </h4>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/09/webhook-callback.png">A good way to think about webhooks is as Unix pipes for the web. While PubSub is a great application of the technology, Webhooks allow bidirectional communication, which opens up our possibilities to: publishing notifications, chaining web services to perform complex actions, or allowing external plugins to enter the workflow. All of this functionality is accomplished via simple HTTP queries (both POST and GET), which means no special libraries or servers to make it all happen. In fact, building your own Webhooks powered PubSub server takes <a href="http://github.com/jcapote/watercoolr/blob/125707e211b0a3cb6462ea405bb77aefb1618f8b/watercoolr.rb">less than a hundred lines</a> with the help of Sinatra, as demonstrated by the Julio Capote and his <a href="http://github.com/jcapote/watercoolr/tree/master">watercoolr</a> project on GitHub. To see it in action, we can use <a href="http://www.postbin.org/">PostBin</a> as our mock recipient:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    [ilya@igvita ~]# ruby postbin.rb <a href="http://www.postbin.org/1987c4m">http://www.postbin.org/1987c4m</a><br>
+                                    creating channel...<br>
+                                    adding subscriber to channel sej7u7<br>
+                                    <em>{"status":"OK"}</em><br>
+                                    Post message: Hello Webhooks PubSub!<br>
+                                    <em>{"status":"OK"}</em>
+                                </p>
+                            </blockquote>
+                            <p>
+                                In this scenario, our local <a href="http://watercoolr.nuklei.com/">watercoolr service</a> acts as a PubSub server, accepting requests to create custom channels, maintaining a subscriber list, and pushing out notifications when an update arrives at the channel. Best of all, interacting with the server is as simple as writing a RESTful client:
+                            </p>
+                            <p>
+                                <a href="javascript:void(0);"><b>&gt; postbin.rb</b></a>
+                            </p>
+                            <div style="background:white">
+                                <pre>
+<span style="color:#CC0066;font-weight:bold">require</span> <span style="color:#996600">"rubygems"</span>
+<span style="color:#CC0066;font-weight:bold">require</span> <span style="color:#996600">"rest_client"</span>
+<span style="color:#CC0066;font-weight:bold">require</span> <span style="color:#996600">"json"</span>
+ 
+<span style="color:#CC0066;font-weight:bold">puts</span> <span style="color:#996600">"creating channel..."</span>
+resp = RestClient.<span style="color:#9900CC">post</span> <span style="color:#996600">"http://localhost:4567/channels"</span>, <span style="color:#ff3333;font-weight:bold">:data</span> =&gt; <span style="color:#996600">""</span>
+id = JSON.<span style="color:#9900CC">parse</span><span style="color:#006600;font-weight:bold">(</span>resp<span style="color:#006600;font-weight:bold">)</span><span style="color:#006600;font-weight:bold">[</span><span style="color:#996600">"id"</span><span style="color:#006600;font-weight:bold">]</span>
+ 
+<span style="color:#CC0066;font-weight:bold">puts</span> <span style="color:#996600">"adding subscriber to channel #{id}"</span>
+resp = RestClient.<span style="color:#9900CC">post</span> <span style="color:#996600">"http://localhost:4567/subscribers"</span>, <span style="color:#ff3333;font-weight:bold">:data</span> =&gt; <span style="color:#006600;font-weight:bold">{</span>:channel =&gt; id, <span style="color:#ff3333;font-weight:bold">:url</span> =&gt; ARGV<span style="color:#006600;font-weight:bold">[</span><span style="color:#006666">0</span><span style="color:#006600;font-weight:bold">]</span><span style="color:#006600;font-weight:bold">}</span>.<span style="color:#9900CC">to_json</span>
+ 
+<span style="color:#CC0066;font-weight:bold">loop</span> <span style="color:#9966CC;font-weight:bold">do</span>
+  <span style="color:#CC0066;font-weight:bold">print</span> <span style="color:#996600">"Post message: "</span>
+  msg = STDIN.<span style="color:#CC0066;font-weight:bold">gets</span>.<span style="color:#CC0066;font-weight:bold">chomp</span>
+ 
+  resp = RestClient.<span style="color:#9900CC">post</span> <span style="color:#996600">"http://localhost:4567/messages"</span>, <span style="color:#ff3333;font-weight:bold">:data</span> =&gt; <span style="color:#006600;font-weight:bold">{</span>:channel =&gt; id, <span style="color:#ff3333;font-weight:bold">:message</span> =&gt; msg<span style="color:#006600;font-weight:bold">}</span>.<span style="color:#9900CC">to_json</span>
+  <span style="color:#CC0066;font-weight:bold">puts</span> resp
+<span style="color:#9966CC;font-weight:bold">end</span>
+ 
+</pre>
+                            </div>
+                            <h4>
+                                <strong>PubSubHubbub Spec: Auth, Discovery &amp; Protocol Implementation</strong>
+                            </h4>
+                            <p>
+                                Brad Fitzpatrick of Livejournal fame and Brett Slatkin, both of whom are currently at Google <a href="http://pubsubhubbub.googlecode.com/svn/trunk/pubsubhubbub-core-0.1.html">drafted a PubSubHubbub spec</a> for a "simple web-scale pubsub protocol" which preserves the spirit of HTTP webhooks but adds a much needed layer of basic security, discovery, and coherent protocol definition:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    We offer this spec in hopes that it fills a need or at least advances the state of the discussion in the pubsub space. Polling sucks. We think a decentralized pubsub layer is a fundamental, missing layer in the Internet architecture today and its existence, more than just enabling the obvious lower latency feed readers, would enable many cool applications, most of which we can't even imagine. But we're looking forward to decentralized social networking.
+                                </p>
+                            </blockquote>
+                            <p>
+                                <iframe src="http://docs.google.com/EmbedSlideshow?docid=ajd8t6gk4mh2_34dvbpchfs&amp;size=s" frameborder="0" width="555" height="340"></iframe>
+                            </p>
+                            <p>
+                                The <a href="http://code.google.com/p/pubsubhubbub/">google code project</a> also provides an AppEngine implementation with a <a href="http://pubsubhubbub.appspot.com/publish">public hub</a>, which we can test via an asynchronous (EventMachine based) PubSubHubbub Ruby library:
+                            </p>
+                            <p>
+                                <a href="javascript:void(0);"><b>&gt; pubsub-gae.rb</b></a>
+                            </p>
+                            <div style="background:white">
+                                <pre>
+<span style="color:#CC0066;font-weight:bold">require</span> <span style="color:#996600">"rubygems"</span>
+<span style="color:#CC0066;font-weight:bold">require</span> <span style="color:#996600">"pubsubhubbub"</span>
+ 
+EventMachine.<span style="color:#9900CC">run</span> <span style="color:#006600;font-weight:bold">{</span>
+  <span style="color:#008000;font-style:italic"># publish single URL</span>
+  pub = <span style="color:#6666ff;font-weight:bold">EventMachine::PubSubHubbub</span>.<span style="color:#9900CC">new</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">'http://pubsubhubbub.appspot.com/publish'</span><span style="color:#006600;font-weight:bold">)</span>.<span style="color:#9900CC">publish</span> <span style="color:#996600">"http://www.test.com/"</span>
+  pub.<span style="color:#9900CC">callback</span> <span style="color:#006600;font-weight:bold">{</span> <span style="color:#CC0066;font-weight:bold">puts</span> <span style="color:#996600">"Successfully notified hub."</span> <span style="color:#006600;font-weight:bold">}</span>
+  pub.<span style="color:#9900CC">errback</span>  <span style="color:#006600;font-weight:bold">{</span> <span style="color:#CC0066;font-weight:bold">puts</span> <span style="color:#996600">"Uh oh, something broke: #{pub.response}"</span> <span style="color:#006600;font-weight:bold">}</span>
+ 
+  <span style="color:#008000;font-style:italic"># publish multiple URL's to hub</span>
+  feeds = <span style="color:#006600;font-weight:bold">[</span><span style="color:#996600">"http://www.test.com"</span>, <span style="color:#996600">"http://www.test.com/2"</span><span style="color:#006600;font-weight:bold">]</span>
+  pub = <span style="color:#6666ff;font-weight:bold">EventMachine::PubSubHubbub</span>.<span style="color:#9900CC">new</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">'http://pubsubhubbub.appspot.com/publish'</span><span style="color:#006600;font-weight:bold">)</span>.<span style="color:#9900CC">publish</span> feeds
+ 
+  pub.<span style="color:#9900CC">callback</span> <span style="color:#006600;font-weight:bold">{</span> <span style="color:#CC0066;font-weight:bold">puts</span> <span style="color:#996600">"Successfully notified hub."</span> <span style="color:#006600;font-weight:bold">}</span>
+  pub.<span style="color:#9900CC">errback</span>  <span style="color:#006600;font-weight:bold">{</span> <span style="color:#CC0066;font-weight:bold">puts</span> <span style="color:#996600">"Uh oh, something broke: #{pub.response}"</span> <span style="color:#006600;font-weight:bold">}</span>
+<span style="color:#006600;font-weight:bold">}</span>
+ 
+</pre>
+                            </div>
+                            <div>
+                                <a href="http://www.igvita.com/download.php?file=http://www.github.com/igrigorik/PubSubHubbub/tree/master/.git"><img alt="Download" src="http://www.igvita.com/wp-content/plugins/dBeautifier/icons/github.png"></a>
+                                <h4>
+                                    <a href="http://www.igvita.com/download.php?file=http://www.github.com/igrigorik/PubSubHubbub/tree/master/.git">PubSubHubbub.git (Asynchronous PubSubHubbub Ruby Client)</a>
+                                </h4>
+                                <p>
+                                    Downloads: 505 File Size: 0.0 KB
+                                </p>
+                            </div>
+                            <h4>
+                                <strong>Webhooks &amp; PubSubHubbub</strong>
+                            </h4>
+                            <p>
+                                Of course, neither Webhooks nor PubSubHubbub are the answer to every problem. Both XMPP and AMQP will continue to exist alongside, but chances are, will take on the brunt of high-velocity feeds while Webhooks can happily power the remaining 90% of the simpler use-cases. In fact, there is already a <a href="http://github.com/tonyg/rabbithub/tree/master">RabbitMQ PubSubHubbub hub server implemenation</a> in the works! For further reading, flip through Jeff Lindsay's <a href="http://www.slideshare.net/progrium/web-hooks-and-the-programmable-world-of-tomorrow-presentation">presentations</a> on <a href="http://blog.webhooks.org/2009/04/23/slides-from-pivotal-labs-talk/">webhooks</a>, and if you are interested in PubSubHubbub check out <a href="http://www.veodia.com/player.php?vid=fCNU1qQ1oSs">this presentation</a> by Brad Fitzpatrick and Brett Slatkin.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=-zbWrPTcnHE:W_-CvtdNiIM:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=-zbWrPTcnHE:W_-CvtdNiIM:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=-zbWrPTcnHE:W_-CvtdNiIM:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=-zbWrPTcnHE:W_-CvtdNiIM:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=-zbWrPTcnHE:W_-CvtdNiIM:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=-zbWrPTcnHE:W_-CvtdNiIM:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=-zbWrPTcnHE:W_-CvtdNiIM:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=-zbWrPTcnHE:W_-CvtdNiIM:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=-zbWrPTcnHE:W_-CvtdNiIM:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/-zbWrPTcnHE" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2009/06/29/http-pubsub-webhooks-pubsubhubbub/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2009/06/29/http-pubsub-webhooks-pubsubhubbub/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

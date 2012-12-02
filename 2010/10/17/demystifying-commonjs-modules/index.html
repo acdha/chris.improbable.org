@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Demystifying CommonJS Modules
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 17 Oct 2010 23:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-10-17T19:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-10-17T19:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-10-17T23:00:00+00:00">Oct 17</time>
+                    <h2 itemprop="title">
+                        Demystifying CommonJS Modules
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/35eb505878dfbd74">
+                        <blockquote>
+                            <p>
+                                I’ve noticed a lot of misconceptions about CommonJS Modules coming from server-side JavaScript newcomers. The momentum behind the Node community is definitely a catalyst for this, although Node isn’t to blame — it’s very good at attracting newcomers to JavaScript.
+                            </p>
+                            <p>
+                                If you’re happily hacking with Node<sup><a href="http://dailyjs.com/#footnote-1">1</a></sup> but feel a bit intimidated by talk of <a href="http://www.commonjs.org/">CommonJS</a> then hopefully this article will elucidate the matter.
+                            </p>
+                            <h3>
+                                History
+                            </h3>
+                            <p>
+                                Although commercial companies and open source projects have been using server-side JavaScript for a long time, the available environments had fragmented. This article deals with <em>Modules</em> in particular, but even with this singular example it’s easy to see evidence of fragmentation.
+                            </p>
+                            <p>
+                                For example, <a href="http://www.mozilla.org/rhino/">Rhino</a> included files using <code>load()</code>, a simple function that read a file and evaluated it. In Node you’d use <code>require()</code>. What happens when you want to run your Rhino code on Node?
+                            </p>
+                            <p>
+                                It became obvious that a set of standards should be created to harmonise interpreters, enabling us to use libraries across environments. The CommonJS group was founded with the goal of creating a set of specifications with this in mind.
+                            </p>
+                            <p>
+                                As part of this initiative, <a href="http://wiki.commonjs.org/wiki/Modules">CommonJS Modules</a> was created to determine how code should be loaded. Right now there are three specifications: <a href="http://wiki.commonjs.org/wiki/Modules/1.0">1.0</a>, <a href="http://wiki.commonjs.org/wiki/Modules/1.1">1.1</a>, and <a href="http://wiki.commonjs.org/wiki/Modules/1.1.1">1.1.1</a>.
+                            </p>
+                            <h3>
+                                Politics
+                            </h3>
+                            <p>
+                                I remember reading this heated <a href="http://groups.google.com/group/nodejs/msg/7121230f4b7fc176">CommonJS discussion on the Node group</a>::
+                            </p>
+                            <blockquote>
+                                <p>
+                                    I generally support the CommonJS idea, but let’s be clear: it’s hardly a specification handed down by the gods (like ES5); it’s just some people discussing ideas on a mailing list. Most of these ideas are without actual implementations.
+                                </p>
+                            </blockquote>
+                            <p>
+                                - Ryan Dahl
+                            </p>
+                            <blockquote>
+                                <p>
+                                    I’m happy you think that. A good example is the Module spec, which isn’t easily implementable in the browser. One promise of CommonJS is to be able to share code between browser and server but at the same time they seem eager to loose backward-compatibility that browsers impose. I hope more effort will be put in that sense.
+                                </p>
+                            </blockquote>
+                            <p>
+                                - Jonas Pfenniger
+                            </p>
+                            <p>
+                                The political debates between implementors and CommonJS are interesting, especially as Node has built up such a large community that may be perceived by CommonJS as “locked in” to Node.
+                            </p>
+                            <p>
+                                Another related thread of CommonJS discussions is whether or not browsers are first class citizens — getting modules to work as intended in browsers isn’t necessarily straightforward.
+                            </p>
+                            <p>
+                                However, our problems are practical – I want to write software that as many people can run as possible. If you’re choosing a server-side platform and like the idea of CommonJS adherence, then you’ll want to look at the <a href="http://wiki.commonjs.org/wiki/CommonJS">implementations table on the wiki</a>.
+                            </p>
+                            <h3>
+                                Modules: Basic Syntax
+                            </h3>
+                            <p>
+                                I prefer reading code to specs. This is what a module looks like:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>exports</span><span>.</span><span>hello</span> <span>=</span> <span>function</span><span>()</span> <span>{</span>
+  <span>return</span> <span>'Hello World'</span>
+<span>};</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                This module makes the <code>hello</code> function available to the outside world. It can be loaded using <code>require</code>:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>var</span> <span>example</span> <span>=</span> <span>require</span><span>(</span><span>'./example.js'</span><span>);</span>
+<span>example</span><span>.</span><span>hello</span><span>();</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                This will work in <a href="http://narwhaljs.org/">Narwhal</a> and <a href="http://nodejs.org/">Node</a> although you won’t see anything if you run it because it doesn’t print the output.
+                            </p>
+                            <p>
+                                This raises an interesting point: even simply printing the output makes you get into a mess if you want to write portable JavaScript:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>print</span><span>(</span><span>example</span><span>.</span><span>hello</span><span>());</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                Works in Narwhal but displays an error in Node:
+                            </p>
+                            <div>
+                                <pre>
+<code>Error: print<span>()</span> has moved. Use require<span>(</span><span>'sys'</span><span>)</span> to bring it back.
+</code>
+</pre>
+                            </div>
+                            <p>
+                                And recently Node’s core maintainers decided to move away from the <em>sys</em> module name to <a href="http://github.com/ry/node/commit/e38eb0c5a4d4e8497f5815be81994ddb01fbceb7">util</a>.
+                            </p>
+                            <h3>
+                                Specification Versions
+                            </h3>
+                            <p>
+                                As I mentioned, there are currently three versions of the Modules specification. Version 1.1 adds some clarifications and extended functionality.
+                            </p>
+                            <p>
+                                During the evolution of the specifications, there were discussions that pulled the concept of modules from extremes that sounded like more like package management systems, back to something simple like version 1.0 introduced:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    I think there needs to be a separation between <strong>package management</strong> and <strong>module loading</strong>.
+                                </p>
+                            </blockquote>
+                            <p>
+                                - Christoph Dorn, from the <a href="http://groups.google.com/group/commonjs/browse_thread/thread/9f73afe65dc33df7/06e830d0d2826d98?lnk=gst#06e830d0d2826d98">modules packaging discussion</a>
+                            </p>
+                            <h3>
+                                Conclusion
+                            </h3>
+                            <p>
+                                We need to be able to share library code and even split our own projects up into modular chunks. JavaScript didn’t have this functionality out of the box because it originated in browsers, where a script tag was sufficient. As it turned out, JavaScript is a simple, flexible language that we’d like to use elsewhere, so this deceptively easy problem needs a lot of work to solve it satisfactorily.
+                            </p>
+                            <p>
+                                <a href="http://wiki.commonjs.org/wiki/Modules/1.1.1">Modules 1.1.1</a> has been approved, and implementations (like Narwhal) have appeared.
+                            </p>
+                            <hr>
+                            <p>
+                                <sup><a href="http://dailyjs.com/#fn1">1</a></sup> Other environments are available!
+                            </p><img src="http://feeds.feedburner.com/~r/dailyjs/~4/RPOYKcdwAgw" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dailyjs.com/2010/10/18/modules/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+dailyjs+%28DailyJS%29">http://dailyjs.com/2010/10/18/modules/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+dailyjs+%28DailyJS%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

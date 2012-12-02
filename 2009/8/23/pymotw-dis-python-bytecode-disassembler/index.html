@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            PyMOTW: dis - Python Bytecode Disassembler
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 23 Aug 2009 11:03:14 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-08-23T07:03:00-04:00">
+                    <meta itemprop="dateModified" content="2009-08-23T07:03:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-08-23T11:03:00+00:00">Aug 23</time>
+                    <h2 itemprop="title">
+                        PyMOTW: dis - Python Bytecode Disassembler
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/2f3077d3a98b9d54">
+                        <blockquote>
+                            <div>
+                                <h1>
+                                    dis – Python Bytecode Disassembler
+                                </h1>
+                                <table>
+                                    <col>
+                                    <col>
+                                    <tbody valign="top">
+                                        <tr>
+                                            <th>
+                                                Purpose:
+                                            </th>
+                                            <td>
+                                                Convert code objects to a human-readable representation of the bytecodes for analysis.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                Python Version:
+                                            </th>
+                                            <td>
+                                                1.4 and later
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <p>
+                                    The <tt><span>dis</span></tt> module includes functions for working with Python bytecode by “disassembling” it into a more human-readable form. Reviewing the bytecodes being executed by the interpreter is a good way to hand-tune tight loops and perform other kinds of optimizations. It is also useful for finding race conditions in multi-threaded applications, since you can estimate where in your code thread control may switch.
+                                </p>
+                                <div>
+                                    <h2>
+                                        Basic Disassembly
+                                    </h2>
+                                    <p>
+                                        The function <tt><span>dis.dis()</span></tt> prints the disassembled representation of a Python code source (module, class, method, function, or code object). We can disassemble a module such as:
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+1<br>2<br>3<br>4
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span>my_dict</span> <span>=</span> <span>{</span> <span>'a'</span><span>:</span><span>1</span> <span>}</span><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        by running dis from the command line. The output is organized into columns with the original source line number, the instruction “address” within the code object, the opcode name, and any arguments passed to the opcode.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python -m dis dis_simple.py<br>  4           0 BUILD_MAP                1<br>              3 LOAD_CONST               0 (1)<br>              6 LOAD_CONST               1 ('a')<br>              9 STORE_MAP<br>             10 STORE_NAME               0 (my_dict)<br>             13 LOAD_CONST               2 (None)<br>             16 RETURN_VALUE
+</pre><br>
+                                    </div>
+                                    <p>
+                                        In this case, the source translates to 5 different operations to create and populate the dictionary, then save the results to a local variable. Since the Python interpreter is stack-based, the first steps are to put the constants onto the stack in the correct order with LOAD_CONST, and then use STORE_MAP to pop off the new key and value to be added to the dictionary. The resulting object is bound to the name “my_dict” with STORE_NAME.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Disassembling Functions
+                                    </h2>
+                                    <p>
+                                        Unfortunately, disassembling the entire module does not recurse into functions automatically. For example, if we disassemble this module:
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+ 1<br> 2<br> 3<br> 4<br> 5<br> 6<br> 7<br> 8<br> 9<br>10
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span>def</span> <span>f</span><span>(</span><span>*</span><span>args</span><span>):</span><br><span>nargs</span> <span>=</span> <span>len</span><span>(</span><span>args</span><span>)</span><br><span>print</span> <span>nargs</span><span>,</span> <span>args</span><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>import</span> <span>dis</span><br><span>dis</span><span>.</span><span>dis</span><span>(</span><span>f</span><span>)</span><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        the results show loading the code object onto the stack and then turning it into a function (LOAD_CONST, MAKE_FUNCTION), but <em>not</em> the body of the function.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python -m dis dis_function.py<br>  4           0 LOAD_CONST               0 (&lt;code object f at 0xd2218, file "dis_function.py", line 4&gt;)<br>              3 MAKE_FUNCTION            0<br>              6 STORE_NAME               0 (f)<br><br>  8           9 LOAD_NAME                1 (__name__)<br>             12 LOAD_CONST               1 ('__main__')<br>             15 COMPARE_OP               2 (==)<br>             18 JUMP_IF_FALSE           29 (to 50)<br>             21 POP_TOP<br><br>  9          22 LOAD_CONST               2 (-1)<br>             25 LOAD_CONST               3 (None)<br>             28 IMPORT_NAME              2 (dis)<br>             31 STORE_NAME               2 (dis)<br><br> 10          34 LOAD_NAME                2 (dis)<br>             37 LOAD_ATTR                2 (dis)<br>             40 LOAD_NAME                0 (f)<br>             43 CALL_FUNCTION            1<br>             46 POP_TOP<br>             47 JUMP_FORWARD             1 (to 51)<br>        &gt;&gt;   50 POP_TOP<br>        &gt;&gt;   51 LOAD_CONST               3 (None)<br>             54 RETURN_VALUE
+</pre><br>
+                                    </div>
+                                    <p>
+                                        To see inside the function, we need to pass it to <tt><span>dis.dis()</span></tt>.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python dis_function.py<br>  5           0 LOAD_GLOBAL              0 (len)<br>              3 LOAD_FAST                0 (args)<br>              6 CALL_FUNCTION            1<br>              9 STORE_FAST               1 (nargs)<br><br>  6          12 LOAD_FAST                1 (nargs)<br>             15 PRINT_ITEM<br>             16 LOAD_FAST                0 (args)<br>             19 PRINT_ITEM<br>             20 PRINT_NEWLINE<br>             21 LOAD_CONST               0 (None)<br>             24 RETURN_VALUE
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <br>
+                                    <h2>
+                                        Classes
+                                    </h2>
+                                    <p>
+                                        You can also pass classes to <tt><span>dis</span></tt>, in which case all of the methods are disassembled in turn.
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+ 1<br> 2<br> 3<br> 4<br> 5<br> 6<br> 7<br> 8<br> 9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span>import</span> <span>dis</span><br><br><span>class</span> <span>MyObject</span><span>(</span><span>object</span><span>):</span><br><span>"""Example for dis."""</span><br><br><span>CLASS_ATTRIBUTE</span> <span>=</span> <span>'some value'</span><br><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>name</span><span>):</span><br><span>self</span><span>.</span><span>name</span> <span>=</span> <span>name</span><br><br><span>def</span> <span>__str__</span><span>(</span><span>self</span><span>):</span><br><span>return</span> <span>'MyObject(</span><span>%s</span><span>)'</span> <span>%</span> <span>self</span><span>.</span><span>name</span><br><br><span>dis</span><span>.</span><span>dis</span><span>(</span><span>MyObject</span><span>)</span><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div>
+                                        <pre>
+$ python dis_class.py<br>Disassembly of __init__:<br> 12           0 LOAD_FAST                1 (name)<br>              3 LOAD_FAST                0 (self)<br>              6 STORE_ATTR               0 (name)<br>              9 LOAD_CONST               0 (None)<br>             12 RETURN_VALUE<br><br>Disassembly of __str__:<br> 15           0 LOAD_CONST               1 ('MyObject(%s)')<br>              3 LOAD_FAST                0 (self)<br>              6 LOAD_ATTR                0 (name)<br>              9 BINARY_MODULO<br>             10 RETURN_VALUE
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Using Disassembly to Debug
+                                    </h2>
+                                    <p>
+                                        Sometimes when debugging an exception it can be useful to see which bytecode caused a problem. There are a couple of ways to disassemble the code around an error.
+                                    </p>
+                                    <p>
+                                        The first is by using <tt><span>dis.dis()</span></tt> in the interactive interpreter to report about the last exception. If no argument is passed to <tt><span>dis</span></tt>, then it looks for an exception and shows the disassembly of the most top of the stack that caused it.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python<br>Python 2.6.2 (r262:71600, Apr 16 2009, 09:17:39)<br>[GCC 4.0.1 (Apple Computer, Inc. build 5250)] on darwin<br>Type "help", "copyright", "credits" or "license" for more information.<br>&gt;&gt;&gt; import dis<br>&gt;&gt;&gt; j = 4<br>&gt;&gt;&gt; i = i + 4<br>Traceback (most recent call last):<br>  File "&lt;stdin&gt;", line 1, in &lt;module&gt;<br>NameError: name 'i' is not defined<br>&gt;&gt;&gt; dis.distb()<br>  1 --&gt;       0 LOAD_NAME                0 (i)<br>              3 LOAD_CONST               0 (4)<br>              6 BINARY_ADD<br>              7 STORE_NAME               0 (i)<br>             10 LOAD_CONST               1 (None)<br>             13 RETURN_VALUE<br>&gt;&gt;&gt;
+</pre><br>
+                                    </div>
+                                    <p>
+                                        Notice the <tt><span>--&gt;</span></tt> indicating the opcode that caused the error. There is no “i” variable defined, so the value associated with the name can’t be loaded onto the stack.
+                                    </p>
+                                    <p>
+                                        Within your code you can also print the information about an active traceback by passing it to <tt><span>dis.distb()</span></tt> directly. In this example, there is a DivideByZero exception, but since the formula has two divisions it isn’t clear which part is zero.
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+ 1<br> 2<br> 3<br> 4<br> 5<br> 6<br> 7<br> 8<br> 9<br>10<br>11<br>12<br>13<br>14<br>15<br>16
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span>i</span> <span>=</span> <span>1</span><br><span>j</span> <span>=</span> <span>0</span><br><span>k</span> <span>=</span> <span>3</span><br><br><span># ... many lines removed ...</span><br><br><span>try</span><span>:</span><br><span>result</span> <span>=</span> <span>k</span> <span>*</span> <span>(</span><span>i</span> <span>/</span> <span>j</span><span>)</span> <span>+</span> <span>(</span><span>i</span> <span>/</span> <span>k</span><span>)</span><br><span>except</span><span>:</span><br><span>import</span> <span>dis</span><br><span>import</span> <span>sys</span><br><span>exc_type</span><span>,</span> <span>exc_value</span><span>,</span> <span>exc_tb</span> <span>=</span> <span>sys</span><span>.</span><span>exc_info</span><span>()</span><br><span>dis</span><span>.</span><span>distb</span><span>(</span><span>exc_tb</span><span>)</span><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        The bad value is easy to spot when it is loaded onto the stack in the disassembled version. The bad operation is highlighted with the <tt><span>--&gt;</span></tt>, and we just need to look up a few lines higher to find where <tt><span>i</span></tt>‘s <tt><span>0</span></tt> value was pushed onto the stack.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python dis_traceback.py<br>  4           0 LOAD_CONST               0 (1)<br>              3 STORE_NAME               0 (i)<br><br>  5           6 LOAD_CONST               1 (0)<br>              9 STORE_NAME               1 (j)<br><br>  6          12 LOAD_CONST               2 (3)<br>             15 STORE_NAME               2 (k)<br><br> 10          18 SETUP_EXCEPT            26 (to 47)<br><br> 11          21 LOAD_NAME                2 (k)<br>             24 LOAD_NAME                0 (i)<br>             27 LOAD_NAME                1 (j)<br>    --&gt;      30 BINARY_DIVIDE<br>             31 BINARY_MULTIPLY<br>             32 LOAD_NAME                0 (i)<br>             35 LOAD_NAME                2 (k)<br>             38 BINARY_DIVIDE<br>             39 BINARY_ADD<br>             40 STORE_NAME               3 (result)<br>             43 POP_BLOCK<br>             44 JUMP_FORWARD            65 (to 112)<br><br> 12     &gt;&gt;   47 POP_TOP<br>             48 POP_TOP<br>             49 POP_TOP<br><br> 13          50 LOAD_CONST               3 (-1)<br>             53 LOAD_CONST               4 (None)<br>             56 IMPORT_NAME              4 (dis)<br>             59 STORE_NAME               4 (dis)<br><br> 14          62 LOAD_CONST               3 (-1)<br>             65 LOAD_CONST               4 (None)<br>             68 IMPORT_NAME              5 (sys)<br>             71 STORE_NAME               5 (sys)<br><br> 15          74 LOAD_NAME                5 (sys)<br>             77 LOAD_ATTR                6 (exc_info)<br>             80 CALL_FUNCTION            0<br>             83 UNPACK_SEQUENCE          3<br>             86 STORE_NAME               7 (exc_type)<br>             89 STORE_NAME               8 (exc_value)<br>             92 STORE_NAME               9 (exc_tb)<br><br> 16          95 LOAD_NAME                4 (dis)<br>             98 LOAD_ATTR               10 (distb)<br>            101 LOAD_NAME                9 (exc_tb)<br>            104 CALL_FUNCTION            1<br>            107 POP_TOP<br>            108 JUMP_FORWARD             1 (to 112)<br>            111 END_FINALLY<br>        &gt;&gt;  112 LOAD_CONST               4 (None)<br>            115 RETURN_VALUE
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <br>
+                                    <h2>
+                                        Performance Analysis of Loops
+                                    </h2>
+                                    <p>
+                                        Aside from debugging errors, dis can also help you identify performance issues in your code. Examining the disassembled code is especially useful with tight loops where the number of exposed Python instructions is low but they translate to an inefficient set of bytecodes. We can see how the disassembly is helpful by examining a few different implementations of a class, <tt><span>Dictionary</span></tt>, that reads a list of words and groups them by their first letter.
+                                    </p>
+                                    <p>
+                                        First, the test driver application:
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>dis</span><br><span>import</span> <span>sys</span><br><span>import</span> <span>timeit</span><br><br><span>module_name</span> <span>=</span> <span>sys</span><span>.</span><span>argv</span><span>[</span><span>1</span><span>]</span><br><span>module</span> <span>=</span> <span>__import__</span><span>(</span><span>module_name</span><span>)</span><br><span>Dictionary</span> <span>=</span> <span>module</span><span>.</span><span>Dictionary</span><br><br><span>dis</span><span>.</span><span>dis</span><span>(</span><span>Dictionary</span><span>.</span><span>load_data</span><span>)</span><br><span>print</span><br><span>t</span> <span>=</span> <span>timeit</span><span>.</span><span>Timer</span><span>(</span><br><span>'d = Dictionary(words)'</span><span>,</span> <br><span>"""from %(module_name)s import Dictionary</span><br><span>words = [l.strip() for l in open('/usr/share/dict/words', 'rt')]</span><br><span>    """</span> <span>%</span> <span>locals</span><span>()</span><br><span>)</span><br><span>iterations</span> <span>=</span> <span>10</span><br><span>print</span> <span>'TIME: </span><span>%0.4f</span><span>'</span> <span>%</span> <span>(</span><span>t</span><span>.</span><span>timeit</span><span>(</span><span>iterations</span><span>)</span><span>/</span><span>iterations</span><span>)</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        We can use <tt><span>dis_test_loop.py</span></tt> to run each incarnation of the <tt><span>Dictionary</span></tt> class.
+                                    </p>
+                                    <p>
+                                        A straightforward implementation of <tt><span>Dictionary</span></tt> might look something like:
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+ 1<br> 2<br> 3<br> 4<br> 5<br> 6<br> 7<br> 8<br> 9<br>10<br>11<br>12<br>13<br>14<br>15
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span>class</span> <span>Dictionary</span><span>(</span><span>object</span><span>):</span><br><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>words</span><span>):</span><br><span>self</span><span>.</span><span>by_letter</span> <span>=</span> <span>{}</span><br><span>self</span><span>.</span><span>load_data</span><span>(</span><span>words</span><span>)</span><br><br><span>def</span> <span>load_data</span><span>(</span><span>self</span><span>,</span> <span>words</span><span>):</span><br><span>for</span> <span>word</span> <span>in</span> <span>words</span><span>:</span><br><span>try</span><span>:</span><br><span>self</span><span>.</span><span>by_letter</span><span>[</span><span>word</span><span>[</span><span>0</span><span>]]</span><span>.</span><span>append</span><span>(</span><span>word</span><span>)</span><br><span>except</span> <span>KeyError</span><span>:</span><br><span>self</span><span>.</span><span>by_letter</span><span>[</span><span>word</span><span>[</span><span>0</span><span>]]</span> <span>=</span> <span>[</span><span>word</span><span>]</span><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        The output shows this version taking 0.1074 seconds to load the 234936 words in my copy of <tt><span>/usr/share/dict/words</span></tt> on OS X. That’s not too bad, but as you can see from the disassembly below, the loop is doing more work than it needs to. As it enters the loop in opcode 13, it sets up an exception context (<tt><span>SETUP_EXCEPT</span></tt>). Then it takes 6 opcodes to find <tt><span>self.by_letter[word[0]]</span></tt> before appending <tt><span>word</span></tt> to the list. If there is an exception because <tt><span>word[0]</span></tt> isn’t in the dictionary yet, the exception handler does all of the same work to determine <tt><span>word[0]</span></tt> (3 opcodes) and sets <tt><span>self.by_letter[word[0]]</span></tt> to a new list containing the word.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python dis_test_loop.py dis_slow_loop<br> 11           0 SETUP_LOOP              84 (to 87)<br>              3 LOAD_FAST                1 (words)<br>              6 GET_ITER<br>        &gt;&gt;    7 FOR_ITER                76 (to 86)<br>             10 STORE_FAST               2 (word)<br><br> 12          13 SETUP_EXCEPT            28 (to 44)<br><br> 13          16 LOAD_FAST                0 (self)<br>             19 LOAD_ATTR                0 (by_letter)<br>             22 LOAD_FAST                2 (word)<br>             25 LOAD_CONST               1 (0)<br>             28 BINARY_SUBSCR<br>             29 BINARY_SUBSCR<br>             30 LOAD_ATTR                1 (append)<br>             33 LOAD_FAST                2 (word)<br>             36 CALL_FUNCTION            1<br>             39 POP_TOP<br>             40 POP_BLOCK<br>             41 JUMP_ABSOLUTE            7<br><br> 14     &gt;&gt;   44 DUP_TOP<br>             45 LOAD_GLOBAL              2 (KeyError)<br>             48 COMPARE_OP              10 (exception match)<br>             51 JUMP_IF_FALSE           27 (to 81)<br>             54 POP_TOP<br>             55 POP_TOP<br>             56 POP_TOP<br>             57 POP_TOP<br><br> 15          58 LOAD_FAST                2 (word)<br>             61 BUILD_LIST               1<br>             64 LOAD_FAST                0 (self)<br>             67 LOAD_ATTR                0 (by_letter)<br>             70 LOAD_FAST                2 (word)<br>             73 LOAD_CONST               1 (0)<br>             76 BINARY_SUBSCR<br>             77 STORE_SUBSCR<br>             78 JUMP_ABSOLUTE            7<br>        &gt;&gt;   81 POP_TOP<br>             82 END_FINALLY<br>             83 JUMP_ABSOLUTE            7<br>        &gt;&gt;   86 POP_BLOCK<br>        &gt;&gt;   87 LOAD_CONST               0 (None)<br>             90 RETURN_VALUE<br><br>TIME: 0.1074
+</pre><br>
+                                    </div>
+                                    <p>
+                                        One technique to eliminate the exception setup is to pre-populate <tt><span>self.by_letter</span></tt> with one list for each letter of the alphabet. That means we should always find the list we want for the new word, and can just do the lookup and save the value.
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+ 1<br> 2<br> 3<br> 4<br> 5<br> 6<br> 7<br> 8<br> 9<br>10<br>11<br>12<br>13<br>14<br>15
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span>import</span> <span>string</span><br><br><span>class</span> <span>Dictionary</span><span>(</span><span>object</span><span>):</span><br><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>words</span><span>):</span><br><span>self</span><span>.</span><span>by_letter</span> <span>=</span> <span>dict</span><span>(</span> <span>(</span><span>letter</span><span>,</span> <span>[])</span> <br><span>for</span> <span>letter</span> <span>in</span> <span>string</span><span>.</span><span>letters</span><span>)</span><br><span>self</span><span>.</span><span>load_data</span><span>(</span><span>words</span><span>)</span><br><br><span>def</span> <span>load_data</span><span>(</span><span>self</span><span>,</span> <span>words</span><span>):</span><br><span>for</span> <span>word</span> <span>in</span> <span>words</span><span>:</span><br><span>self</span><span>.</span><span>by_letter</span><span>[</span><span>word</span><span>[</span><span>0</span><span>]]</span><span>.</span><span>append</span><span>(</span><span>word</span><span>)</span><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        The change cuts the number of opcodes in half, but only shaves the time down to 0.0984 seconds. Obviously the exception handling had some overhead, but not a huge amount.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python dis_test_loop.py dis_faster_loop<br> 14           0 SETUP_LOOP              38 (to 41)<br>              3 LOAD_FAST                1 (words)<br>              6 GET_ITER<br>        &gt;&gt;    7 FOR_ITER                30 (to 40)<br>             10 STORE_FAST               2 (word)<br><br> 15          13 LOAD_FAST                0 (self)<br>             16 LOAD_ATTR                0 (by_letter)<br>             19 LOAD_FAST                2 (word)<br>             22 LOAD_CONST               1 (0)<br>             25 BINARY_SUBSCR<br>             26 BINARY_SUBSCR<br>             27 LOAD_ATTR                1 (append)<br>             30 LOAD_FAST                2 (word)<br>             33 CALL_FUNCTION            1<br>             36 POP_TOP<br>             37 JUMP_ABSOLUTE            7<br>        &gt;&gt;   40 POP_BLOCK<br>        &gt;&gt;   41 LOAD_CONST               0 (None)<br>             44 RETURN_VALUE<br><br>TIME: 0.0984
+</pre><br>
+                                    </div>
+                                    <p>
+                                        We can further improve the performance by moving the lookup for <tt><span>self.by_letter</span></tt> outside of the loop (the value doesn’t change, after all).
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+ 1<br> 2<br> 3<br> 4<br> 5<br> 6<br> 7<br> 8<br> 9<br>10<br>11<br>12<br>13<br>14<br>15
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span>import</span> <span>collections</span><br><br><span>class</span> <span>Dictionary</span><span>(</span><span>object</span><span>):</span><br><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>words</span><span>):</span><br><span>self</span><span>.</span><span>by_letter</span> <span>=</span> <span>collections</span><span>.</span><span>defaultdict</span><span>(</span><span>list</span><span>)</span><br><span>self</span><span>.</span><span>load_data</span><span>(</span><span>words</span><span>)</span><br><br><span>def</span> <span>load_data</span><span>(</span><span>self</span><span>,</span> <span>words</span><span>):</span><br><span>by_letter</span> <span>=</span> <span>self</span><span>.</span><span>by_letter</span><br><span>for</span> <span>word</span> <span>in</span> <span>words</span><span>:</span><br><span>by_letter</span><span>[</span><span>word</span><span>[</span><span>0</span><span>]]</span><span>.</span><span>append</span><span>(</span><span>word</span><span>)</span><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        Opcodes 0-6 now find the value of <tt><span>self.by_letter</span></tt> and save it as a local variable <tt><span>by_letter</span></tt>. Using a local variable only takes a single opcode, instead of 2 (statement 22 uses <tt><span>LOAD_FAST</span></tt> to place the dictionary onto the stack). After this change, the run time is down to 0.0842 seconds.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python dis_test_loop.py dis_fastest_loop<br> 13           0 LOAD_FAST                0 (self)<br>              3 LOAD_ATTR                0 (by_letter)<br>              6 STORE_FAST               2 (by_letter)<br><br> 14           9 SETUP_LOOP              35 (to 47)<br>             12 LOAD_FAST                1 (words)<br>             15 GET_ITER<br>        &gt;&gt;   16 FOR_ITER                27 (to 46)<br>             19 STORE_FAST               3 (word)<br><br> 15          22 LOAD_FAST                2 (by_letter)<br>             25 LOAD_FAST                3 (word)<br>             28 LOAD_CONST               1 (0)<br>             31 BINARY_SUBSCR<br>             32 BINARY_SUBSCR<br>             33 LOAD_ATTR                1 (append)<br>             36 LOAD_FAST                3 (word)<br>             39 CALL_FUNCTION            1<br>             42 POP_TOP<br>             43 JUMP_ABSOLUTE           16<br>        &gt;&gt;   46 POP_BLOCK<br>        &gt;&gt;   47 LOAD_CONST               0 (None)<br>             50 RETURN_VALUE<br><br>TIME: 0.0842
+</pre><br>
+                                    </div>
+                                    <p>
+                                        A further optimization, suggested by Brandon Rhodes, is to eliminate the Python version of the <tt><span>for</span></tt> loop entirely. If we use <tt><span>groupby()</span></tt> from <tt><span>itertools</span></tt> to arrange the input, the iteration is moved to C. We can do this safely because we know the inputs are already sorted. If you didn’t know they were sorted you would need to sort them first.
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+ 1<br> 2<br> 3<br> 4<br> 5<br> 6<br> 7<br> 8<br> 9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span>import</span> <span>operator</span><br><span>import</span> <span>itertools</span><br><br><span>class</span> <span>Dictionary</span><span>(</span><span>object</span><span>):</span><br><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>words</span><span>):</span><br><span>self</span><span>.</span><span>by_letter</span> <span>=</span> <span>{}</span><br><span>self</span><span>.</span><span>load_data</span><span>(</span><span>words</span><span>)</span><br><br><span>def</span> <span>load_data</span><span>(</span><span>self</span><span>,</span> <span>words</span><span>):</span><br><span># Arrange by letter</span><br><span>grouped</span> <span>=</span> <span>itertools</span><span>.</span><span>groupby</span><span>(</span><span>words</span><span>,</span> <span>key</span><span>=</span><span>operator</span><span>.</span><span>itemgetter</span><span>(</span><span>0</span><span>))</span><br><span># Save arranged sets of words</span><br><span>self</span><span>.</span><span>by_letter</span> <span>=</span> <span>dict</span><span>((</span><span>group</span><span>[</span><span>0</span><span>][</span><span>0</span><span>],</span> <span>group</span><span>)</span> <span>for</span> <span>group</span> <span>in</span> <span>grouped</span><span>)</span><br><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        The <tt><span>itertools</span></tt> version takes only 0.0543 seconds to run, just over half of the original time.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python dis_test_loop.py dis_eliminate_loop<br> 15           0 LOAD_GLOBAL              0 (itertools)<br>              3 LOAD_ATTR                1 (groupby)<br>              6 LOAD_FAST                1 (words)<br>              9 LOAD_CONST               1 ('key')<br>             12 LOAD_GLOBAL              2 (operator)<br>             15 LOAD_ATTR                3 (itemgetter)<br>             18 LOAD_CONST               2 (0)<br>             21 CALL_FUNCTION            1<br>             24 CALL_FUNCTION          257<br>             27 STORE_FAST               2 (grouped)<br><br> 17          30 LOAD_GLOBAL              4 (dict)<br>             33 LOAD_CONST               3 (&lt;code object &lt;genexpr&gt; at 0x7e7b8, file "/Users/dhellmann/Documents/PyMOTW/dis/PyMOTW/dis/dis_eliminate_loop.py", line 17&gt;)<br>             36 MAKE_FUNCTION            0<br>             39 LOAD_FAST                2 (grouped)<br>             42 GET_ITER<br>             43 CALL_FUNCTION            1<br>             46 CALL_FUNCTION            1<br>             49 LOAD_FAST                0 (self)<br>             52 STORE_ATTR               5 (by_letter)<br>             55 LOAD_CONST               0 (None)<br>             58 RETURN_VALUE<br><br>TIME: 0.0543
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Compiler Optimizations
+                                    </h2>
+                                    <p>
+                                        Disassembling compiled source also exposes some of the optimizations made by the compiler. For example, literal expressions are folded during compilation, when possible.
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+ 1<br> 2<br> 3<br> 4<br> 5<br> 6<br> 7<br> 8<br> 9<br>10<br>11<br>12
+</pre>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <pre>
+<span>#!/usr/bin/env python</span><br><span># encoding: utf-8</span><br><br><span># Folded</span><br><span>i</span> <span>=</span> <span>1</span> <span>+</span> <span>2</span><br><span>f</span> <span>=</span> <span>3.4</span> <span>*</span> <span>5.6</span><br><span>s</span> <span>=</span> <span>'Hello,'</span> <span>+</span> <span>' World!'</span><br><br><span># Not folded</span><br><span>I</span> <span>=</span> <span>i</span> <span>*</span> <span>3</span> <span>*</span> <span>4</span><br><span>F</span> <span>=</span> <span>f</span> <span>/</span> <span>2</span> <span>/</span> <span>3</span><br><span>S</span> <span>=</span> <span>s</span> <span>+</span> <span>'</span><span>\n</span><span>'</span> <span>+</span> <span>'Fantastic!'</span><br>
+</pre>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        The expressions on lines 5-7 can be computed at compilation time and collapsed into single LOAD_CONST instructions because nothing in the expression can change the way the operation is performed. That isn’t true about lines 10-12. Because a variable is involved in those expressions, and the variable might refer to an object that overloads the operator involved, the evaluation has to be delayed to runtime.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python -m dis dis_constant_folding.py<br>  5           0 LOAD_CONST              11 (3)<br>              3 STORE_NAME               0 (i)<br><br>  6           6 LOAD_CONST              12 (19.039999999999999)<br>              9 STORE_NAME               1 (f)<br><br>  7          12 LOAD_CONST              13 ('Hello, World!')<br>             15 STORE_NAME               2 (s)<br><br> 10          18 LOAD_NAME                0 (i)<br>             21 LOAD_CONST               6 (3)<br>             24 BINARY_MULTIPLY<br>             25 LOAD_CONST               7 (4)<br>             28 BINARY_MULTIPLY<br>             29 STORE_NAME               3 (I)<br><br> 11          32 LOAD_NAME                1 (f)<br>             35 LOAD_CONST               1 (2)<br>             38 BINARY_DIVIDE<br>             39 LOAD_CONST               6 (3)<br>             42 BINARY_DIVIDE<br>             43 STORE_NAME               4 (F)<br><br> 12          46 LOAD_NAME                2 (s)<br>             49 LOAD_CONST               8 ('\n')<br>             52 BINARY_ADD<br>             53 LOAD_CONST               9 ('Fantastic!')<br>             56 BINARY_ADD<br>             57 STORE_NAME               5 (S)<br>             60 LOAD_CONST              10 (None)<br>             63 RETURN_VALUE
+</pre><br>
+                                    </div>
+                                    <div>
+                                        <p>
+                                            See also
+                                        </p>
+                                        <dl>
+                                            <dt>
+                                                <a href="http://docs.python.org/library/dis.html">dis</a>
+                                            </dt>
+                                            <dd>
+                                                The standard library documentation for this module, including the list of <a href="http://docs.python.org/library/dis.html#python-bytecode-instructions">bytecode instructions</a>.
+                                            </dd>
+                                            <dt>
+                                                <em>Python Essential Reference</em>, 4th Edition, David M. Beazley
+                                            </dt>
+                                            <dd>
+                                                <a href="http://www.informit.com/store/product.aspx?isbn=0672329786">http://www.informit.com/store/product.aspx?isbn=0672329786</a>
+                                            </dd>
+                                            <dt>
+                                                <a href="http://thomas.apestaart.org/log/?p=927">thomas.apestaart.org “Python Disassembly”</a>
+                                            </dt>
+                                            <dd>
+                                                A short discussion of the difference between storing values in a dictionary between Python 2.5 and 2.6.
+                                            </dd>
+                                            <dt>
+                                                <a href="http://stackoverflow.com/questions/869229/why-is-looping-over-range-in-python-faster-than-using-a-while-loop">Why is looping over range() in Python faster than using a while loop?</a>
+                                            </dt>
+                                            <dd>
+                                                A discussion on StackOverflow.com comparing 2 looping examples via their disassembled bytecodes.
+                                            </dd>
+                                            <dt>
+                                                <a href="http://code.activestate.com/recipes/277940/">Decorator for binding constants at compile time</a>
+                                            </dt>
+                                            <dd>
+                                                Python Cookbook recipe by Raymond Hettinger and Skip Montanaro with a function decorator that re-writes the bytecodes for a function to insert global constants to avoid runtime name lookups.
+                                            </dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                            <p>
+                                <a href="http://www.doughellmann.com/PyMOTW/">PyMOTW Home</a>
+                            </p>
+                            <p>
+                                The <a href="http://www.doughellmann.com/PyMOTW/dis/">canonical version</a> of this article
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/5440028356946346379-2222851201664578066?l=blog.doughellmann.com">
+                            </div>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/PyMOTW?a=18UhM-Qddt8:xjQFQM0L8IA:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/PyMOTW?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/PyMOTW?a=18UhM-Qddt8:xjQFQM0L8IA:bcOpcFrp8Mo"><img src="http://feeds.feedburner.com/~ff/PyMOTW?d=bcOpcFrp8Mo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/PyMOTW?a=18UhM-Qddt8:xjQFQM0L8IA:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/PyMOTW?i=18UhM-Qddt8:xjQFQM0L8IA:V_sGLiPBpWU" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/PyMOTW/~4/18UhM-Qddt8" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.doughellmann.com/2009/08/pymotw-dis-python-bytecode-disassembler.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyMOTW+%28Python+Module+of+the+Week%29">http://blog.doughellmann.com/2009/08/pymotw-dis-python-bytecode-disassembler.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyMOTW+%28Python+Module+of+the+Week%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

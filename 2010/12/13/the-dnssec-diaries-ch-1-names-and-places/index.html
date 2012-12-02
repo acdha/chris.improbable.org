@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The DNSSEC Diaries, Ch. 1: Names And Places
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 14 Dec 2010 20:46:46 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-13T10:45:16-04:00">
+                    <meta itemprop="dateModified" content="2010-12-13T10:45:16-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-13T14:45:16+00:00">Dec 13</time>
+                    <h2 itemprop="title">
+                        The DNSSEC Diaries, Ch. 1: Names And Places
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/bc45b9627e7ea6ac">
+                        <blockquote>
+                            <p>
+                                DNSSEC gives developers the ability to authenticate small bits of trusted data in a namespace that transcends organizational boundaries.
+                            </p>
+                            <p>
+                                That’s great, because application developers have a real problem authenticating across organizational boundaries. PKI based on X.509 was supposed to fix this, but a couple billion dollars in failed deployments later, it’s become painfully clear:&nbsp; <a title="Black Ops Of PKI" href="http://www.slideshare.net/dakami/black-opspki-2">X.509 is really quite expensive and painful.</a>
+                            </p>
+                            <p>
+                                But developers don’t have a problem doing DNS lookups — complex as distributed databases are, DNS operations coalesce into a small bit of code that’s completely abstracted away.&nbsp; If developers could authenticate peers, as easily as they could look up an IP address — well, we’d see a lot more authentication.
+                            </p>
+                            <p>
+                                And a lot fewer password prompts.
+                            </p>
+                            <p>
+                                But — to be plainly honest — DNSSEC was not originally designed for user applications to validate just any small bits of trusted data.&nbsp; The original vision was somewhat constrained to validating IP addresses being sought after by a special subset of systems known as Name Servers.
+                            </p>
+                            <p>
+                                That’s OK.&nbsp; Believe me, Tim Berners-Lee had no idea when he originally designed much of the web, that practically every page delivered would be dynamically generated from some managed language like Java, C#, or PHP, or would come from complex, worldwide load-balanced Content Distribution Networks.&nbsp; But there was nothing in the protocol that <em>required</em> pages be static files on a hard drive somewhere.&nbsp; And look what you could do, if you just dreamed a little bigger…
+                            </p>
+                            <p>
+                                So, lets say we agree that DNSSEC should be used to push more than just IP addresses to name servers.&nbsp; There are a number of questions to be asked, regarding how this would work — questions I’ll address in further DNSSEC Diaries — but chief among them:
+                            </p>
+                            <p>
+                                What <em>exactly</em> are we going to put into DNS?
+                            </p>
+                            <p>
+                                Note, I said DNS, not DNSSEC.&nbsp; Really, DNSSEC is <em>really just DNS with signatures</em>, making it a more conservative design than people realize.&nbsp; You put whatever you want into your DNS.&nbsp; It’s just that DNSSEC validates that it’s <em>you</em> who put it there.
+                            </p>
+                            <p>
+                                At this point, a lot of people have recognized that the first thing we want to migrate into DNS are public keys, or least hashes of them.&nbsp; (If you need help understanding what a public key is:&nbsp; Think of it as your face — easy for you to validate, hard for anyone else to clone.&nbsp; Putting a public key in DNS and securing it with DNSSEC is then just like getting a passport:&nbsp; Take a photo, put your name next to it, and then overlay an anti-counterfeiting hologram to link the two.)
+                            </p>
+                            <p>
+                                Sounds pretty nice — but what does it look like on the wire?&nbsp; There’s actually quite a few options here.&nbsp; There are two major degrees of freedom when designing what’s known as the <em>schema</em> for trusted key information in DNS:
+                            </p>
+                            <ol>
+                                <li>
+                                    <em>Where</em> will public key data for www.foo.com reside?
+                                </li>
+                                <li>
+                                    <em>What</em> will public key data in www.foo.com look like?
+                                </li>
+                            </ol>
+                            <p>
+                                <em>There are no right answers here, only engineering tradeoffs.</em> Quite a few teams are working on balancing the various engineering constraints involved, to make the best possible product — the <a title="KeyAssure" href="https://www.ietf.org/mailman/listinfo/keyassure">KeyAssure</a> group, for example.&nbsp; What I’d like to set out to do, is explain my thinking behind what’s <em>presently implemented</em> in <a title="Phreebird" href="http://dakami1.wordpress.com/phreebird/">Phreebird Suite 1.02</a>.&nbsp; It’s my engineering philosophy that standards design works much better when people can understand why others built things a certain way, compare working code, and see what actually works well operationally in the field.
+                            </p>
+                            <p>
+                                Lets tackle the first question:&nbsp; Where will trusted data reside?&nbsp; Given a domain, www.foo.com, there are in fact <em>three</em> places trusted information can be stored:
+                            </p>
+                            <ol>
+                                <li>Direct:&nbsp; www.foo.com
+                                </li>
+                                <li>Indirect: _keydata.www.foo.com
+                                </li>
+                                <li>Indirect with Marker Label: _keydata._ex.www.foo.com
+                                </li>
+                            </ol>
+                            <p>
+                                It also turns out that there is something called an RRTYPE, or a Resource Record Type.&nbsp; When you query for a name, you can say that you’re interested in an IPv4 address, or an IPv6 address, or any of a number of other things.&nbsp; There are three competitors for what RRTYPE to query:
+                            </p>
+                            <ol>
+                                <li>CERT — an already specified, somewhat sub-typable record type
+                                </li>
+                                <li>TXT — a “blank” RRTYPE designed for textual data
+                                </li>
+                                <li>Custom — a new, unassigned RRTYPE, designed from scratch to contain certificate data
+                                </li>
+                            </ol>
+                            <p>
+                                As you can see, even before we’ve gotten around to what the DNS answer looks like, <em>specifying the DNS question</em> is enough to start a holy war.&nbsp; That’s OK — holy wars are oddly common in DNS.&nbsp; Even simple things like returning different IP addresses depending on load or geographic location of the user are controversial!&nbsp; But we’ve got to start somewhere.
+                            </p>
+                            <p>
+                                For <a title="Phreebird" href="http://dakami1.wordpress.com/phreebird/">Phreebird Suite 1.02</a>, I’ve presently chosen:&nbsp; Direct naming (whenever possible, which won’t be always), with TXT encoding.
+                            </p>
+                            <p>
+                                Lets start by discussing why Direct naming.
+                            </p>
+                            <p>
+                                Direct naming maintains maximum compatibility with DNS redirection and wildcards.&nbsp; Most of the time, DNS is explained as a simple chain, i.e.:
+                            </p>
+                            <ol>
+                                <li>www.dankaminsky.com = [root] -&gt; com’s name server -&gt; dankaminsky.com’s name server -&gt; 72.233.2.58
+                                </li>
+                            </ol>
+                            <p>
+                                Often however, a CNAME is involved.&nbsp; A CNAME, or Canonical Name, lets DNS say “the answer to the name you resolved, is actually the answer to this entirely different name”.&nbsp; CNAME redirection is quite common, especially on larger sites.&nbsp; For example, for www.nbc.com:
+                            </p>
+                            <ol>
+                                <li>www.nbc.com = [root] -&gt; com’s name server -&gt; nbc.com’s name server -&gt; CNAME to www.nbc.com.edgesuite.net.
+                                </li>
+                                <li>www.nbc.com.edgesuite.net. = [root] -&gt; com’s name server -&gt; Edgesuite’s name server -&gt; CNAME to a1669.b.akamai.net.
+                                </li>
+                                <li>a1669.b.akamai.net. = [root] -&gt; com’s name server -&gt; Akamai’s name server -&gt; 204.245.162.59
+                                </li>
+                            </ol>
+                            <p>
+                                And thus, through twelve or so lookups, www.nbc.com resolves to 204.245.162.59.
+                            </p>
+                            <p>
+                                (Performance isn’t as bad as the above implies, mainly because so many of the links are easily cached.&nbsp; Akamai basically invented CDNs, so they wouldn’t be doing this if it wasn’t speeding things up.)
+                            </p>
+                            <p>
+                                Now, here’s where things get interesting.&nbsp; Suppose we want to express, in DNS, that the public key for www.nbc.com has a hash of 50ac1234.&nbsp; With Direct naming, all we have to do is put this information in a1669.b.akamai.net, and we’re done.&nbsp; A lookup against www.nbc.com will transition through the existing edgesuite and a16669 CNAMEs and resolve perfectly.
+                            </p>
+                            <p>
+                                To put it another way — when CBS CNAMEs to Edgesuite or Akamai, it doesn’t need to think about what particular IP address Akamai will choose to route traffic to.&nbsp; It also doesn’t need to think about who <em>else</em> is being routed to that particular domain within Akamai.&nbsp; It just forwards the name, and Akamai figures out the IP.
+                            </p>
+                            <p>
+                                Now, Akamai can figure out the public key as well.&nbsp; It’s <em>really</em> quite elegant, way easier than what we have to do with X.509 today.
+                            </p>
+                            <p>
+                                By contrast, <em>any other name</em> will require new CNAMEs — _keyhash.www.nbc.com to _keyhash.www.nbc.com.edgesuite.net, and _keyhash.www.nbc.com.edgesuite.net to _keyhash.a1669.b.akamai.net., for example.&nbsp; Can you imagine how many meetings this would take?&nbsp; This is not operationally viable.
+                            </p>
+                            <p>
+                                And this only covers the possible.&nbsp; Suppose for a moment that there exists *.nbc.com.&nbsp; With Direct naming, it’s trivial to have this wildcard CNAME to a single Akamai address, with its particular public key.&nbsp; But Indirect naming is difficult to impossible to support, since it requires a _keyhash.*.nbc.com wildcard — a style of wildcard not supported by any present name server, and extremely difficult to implement within the confines of most DNSSEC implementations.
+                            </p>
+                            <p>
+                                So, as much as I like the named types we get from prefixes, they would cost us too much of DNS’s real world expressiveness.&nbsp; I do still have a use for them, though — I’ll describe it later.
+                            </p>
+                            <p>
+                                Next post:&nbsp; <a title="The DNSSEC Diaries, Ch. 2: For Better or Worse, How The TXT Was&nbsp;Won" href="http://dankaminsky.com/2010/12/14/dnssec-ch2/">Why TXT records, instead of CERT or something custom.</a>
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/dakami1.wordpress.com/1719/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/dakami1.wordpress.com/1719/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/dakami1.wordpress.com/1719/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/dakami1.wordpress.com/1719/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/dakami1.wordpress.com/1719/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/dakami1.wordpress.com/1719/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/dakami1.wordpress.com/1719/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/dakami1.wordpress.com/1719/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/dakami1.wordpress.com/1719/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/dakami1.wordpress.com/1719/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/dakami1.wordpress.com/1719/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/dakami1.wordpress.com/1719/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/dakami1.wordpress.com/1719/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/dakami1.wordpress.com/1719/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=dankaminsky.com&amp;blog=18023203&amp;post=1719&amp;subd=dakami1&amp;ref=&amp;feed=1" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dankaminsky.com/2010/12/13/dnssec-ch1/">http://dankaminsky.com/2010/12/13/dnssec-ch1/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

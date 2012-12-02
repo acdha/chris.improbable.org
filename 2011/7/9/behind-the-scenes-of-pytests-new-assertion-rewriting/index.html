@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Behind the scenes of py.test's new assertion rewriting
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 11 Jul 2011 02:26:46 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-07-09T19:05:00-04:00">
+                    <meta itemprop="dateModified" content="2011-07-09T19:05:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-07-09T23:05:00+00:00">Jul 09</time>
+                    <h2 itemprop="title">
+                        Behind the scenes of py.test's new assertion rewriting
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/8957a47fd5d6dd87">
+                        <blockquote>
+                            <a href="http://pytest.org">py.test</a> 2.1 was just <a href="http://codespeak.net/pipermail/py-dev/2011q3/001833.html">released</a>. py.test, which uses the Python assert statement <a href="http://pytest.org/latest/assert.html">to check test conditions</a>, has long had support for displaying intermediate values in subexpressions of a failing assert statement. This feature is called assertion introspection. Historically, py.test performed assertion introspection by <em>reinterpreting</em> failed assertions in order to glean information about subexpressions. In assertion reinterpreting, py.test actually reruns the assertion noting intermediate values during interpretation. This works pretty well but is subject to several problems, most importantly that assert statements with side-effects can produce strange results because they are evaluated twice on failure. py.test 2.1's main new feature, which I wrote (with generous sponsorship from <a href="http://merlinux.eu">Merlinux GmbH</a>), is a new assertion introspection technique called <em>assertion rewriting</em>. Assertion rewriting modifies the <a href="http://docs.python.org/dev/library/ast">AST</a> of test modules to produce subexpression information when assertions fail. This blog post will give a peek into how this is done and what the rewritten tests look like.<br>
+                            <br>
+                            py.test tries to rewrite every module that it collects as a test module. Assertion rewriting uses a <a href="http://python.org/dev/peps/pep-0302">PEP 302</a> import hook to capture test modules for rewriting. I'm happy to report doing this was easier than I expected. Most of the code in the import hook I had to write was dealing with detecting test modules rather than supporting import's extremely complicated API. Rewriting has a non-zero cost during test collection, so py.test compiles rewritten modules to bytecode and caches them in the <a href="http://www.python.org/dev/peps/pep-3147/">PEP 3147</a> PYC repository, <code>__pycache__</code>. One major thing I did have to account for was the possibility that multiple py.test processes would be writing PYC files. (This is a very real possibility when <a href="http://bitbucket.org/hpk42/pytest-xdist">the xdist plugin</a> is being used. Therefore, py.test uses only atomic operations on the rewritten PYC file. Windows, lacking atomic rename, was a pain here.<br>
+                            <br>
+                            I'm now going to demonstrate what py.test's rewriting phase does to a test module. Let's dive in with a failing test for a (broken) function that is supposed to create empty files:<br>
+                            <br>
+                            <div>
+                                <pre>
+<span>import</span> <span>os</span><br><br><span>def</span> <span>make_empty_file</span><span>(</span><span>name</span><span>):</span><br><span>with</span> <span>open</span><span>(</span><span>name</span><span>,</span> <span>"w"</span><span>)</span> <span>as</span> <span>fp</span><span>:</span><br><span>fp</span><span>.</span><span>write</span><span>(</span><span>"hello"</span><span>)</span><br><br><span>def</span> <span>test_make_empty_file</span><span>():</span><br><span>name</span> <span>=</span> <span>"/tmp/empty_test"</span><br><span>make_empty_file</span><span>(</span><span>name</span><span>)</span><br><span>with</span> <span>open</span><span>(</span><span>name</span><span>,</span> <span>"r"</span><span>)</span> <span>as</span> <span>fp</span><span>:</span><br><span>assert</span> <span>not</span> <span>fp</span><span>.</span><span>read</span><span>()</span><br>
+</pre>
+                            </div><br>
+                            <br>
+                            This test nicely demonstrates the problem with py.test's old assertion method mentioned in the first paragraph. If we force the old assertion interpretation mode with <code>--assert=reinterp</code>, we see:<br>
+                            <br>
+                            <div style="font-family:monospace;white-space:pre-wrap">
+                                <br>
+                                def test_make_empty_file():<br>
+                                name = "/tmp/empty_test"<br>
+                                make_empty_file(name)<br>
+                                with open(name, "r") as fp:<br>
+                                &gt; assert not fp.read()<br>
+                                E AssertionError: (assertion failed, but when it was re-run for printing intermediate values, it did not fail. Suggestions: compute assert expression before the assert or use --no-assert)<br>
+                                <br>
+                                test_empty_file.py:11: AssertionError<br>
+                            </div><br>
+                            <br>
+                            The problem is that assert statement has the side-effect of reading the file. When py.test reinterprets the assert statement, it uses the same file object, now at EOF, and <code>read()</code> returns an empty string. py.test's new rewriting mode fixes this by scanning the assert for introspection information before executing the test. Running py.test with assertion rewriting enabled gives the desired result:<br>
+                            <br>
+                            <div style="font-family:monospace;white-space:pre-wrap">
+                                <br>
+                                def test_make_empty_file():<br>
+                                name = "/tmp/empty_test"<br>
+                                make_empty_file(name)<br>
+                                with open(name, "r") as fp:<br>
+                                &gt; assert not fp.read()<br>
+                                E assert not 'hello'<br>
+                                E + where 'hello' = ()<br>
+                                E + where = .read<br>
+                                <br>
+                                test_empty_file.py:11: AssertionError<br>
+                            </div><br>
+                            <br>
+                            So what magic has py.test worked to display such nice debugging information? This is what Python is actually executing:<br>
+                            <br>
+                            <div style="white-space:pre-wrap;font-family:monospace">
+                                <span>def</span> <span>test_make_empty_file</span><span>():</span><br>
+                                <span>name</span> <span>=</span> <span>'/tmp/empty_test'</span><br>
+                                <span>make_empty_file</span><span>(</span><span>name</span><span>)</span><br>
+                                <span>with</span> <span>open</span><span>(</span><span>name</span><span>,</span> <span>'r'</span><span>)</span> <span>as</span> <span>fp</span><span>:</span><br>
+                                <span>@py_assert1</span> <span>=</span> <span>fp</span><span>.</span><span>read</span><br>
+                                <span>@py_assert3</span> <span>=</span> <span>@py_assert1</span><span>()</span><br>
+                                <span>@py_assert5</span> <span>=</span> <span>(</span><span>not</span> <span>@py_assert3</span><span>)</span><br>
+                                <span>if</span> <span>(</span><span>not</span> <span>@py_assert5</span><span>):</span><br>
+                                <span>@py_format6</span> <span>=</span> <span>(</span><span>'assert not</span> <span>%(py4)s</span><span>\n</span><span>{</span><span>%(py4)s</span> <span>=</span> <span>%(py2)s</span><span>\n</span><span>{</span><span>%(py2)s</span> <span>=</span> <span>%(py0)s</span><span>.read</span><span>\n</span><span>}()</span><span>\n</span><span>}'</span> <span>%</span><br>
+                                <span>{</span><span>'py0'</span><span>:</span> <span>(</span><span>@pytest_ar._saferepr</span><span>(</span><span>fp</span><span>)</span> <span>if</span> <span>(</span><span>'fp'</span> <span>in</span> <span>@py_builtins.locals</span><span>()</span> <span>is</span> <span>not</span> <span>@py_builtins.globals</span><span>())</span> <span>else</span> <span>'fp'</span><span>),</span><br>
+                                <span>'py2'</span><span>:</span> <span>@pytest_ar._saferepr</span><span>(</span><span>@py_assert1</span><span>),</span><br>
+                                <span>'py4'</span><span>:</span> <span>@pytest_ar._saferepr</span><span>(</span><span>@py_assert3</span><span>)})</span><br>
+                                <span>raise</span> <span>AssertionError</span><span>(</span><span>@pytest_ar._format_explanation</span><span>(</span><span>@py_format6</span><span>))</span><br>
+                                <span>del</span> <span>@py_assert5</span><span>,</span> <span>@py_assert1</span><span>,</span> <span>@py_assert3</span><br>
+                            </div><br>
+                            <br>
+                            As you can see, it's not going to be winning any awards for beautiful Python! (Ideally, though, you'll never have to see or think about it.) Examining the rewritten code, we see a lot of internal variables starting with "@" have been created. The "@", invalid in Python identifiers, is to make sure internal names don't conflict with any user-defined names which might be in the scope. In the first four written lines under the with statement, the test of the assert statement has been expanded into its component subexpressions. This allows py.test to display the values of subexpressions should the assertion fail. If the assertion fails, the if statement in the fifth line of rewriting evaluates to <code>True</code> and a <code>AssertionError</code> will be raised. Under the if statement is the real mess. This is where the helpful error message is generated. The line starting with <code>@py_format6</code> is simply does string formatting (with <code>%</code>) on a template generated from the structure of the assert statement. This template is filled in with the intermediate values of the expressions collected above. <code>@py_builtins</code> is the builtins module, used in case the test is shadowing builtins the rewriting code uses. The <code>@pytest_ar</code> variable is a special module of assertion formatting helpers. For example, <code>@pytest_ar._saferepr</code> is like builtin <code>repr</code> but gracefully handles long reprs and <code>__repr__</code> methods that raise exceptions. A non-obvious trick in the format dict is the expression <code>@pytest_ar._saferepr(fp) if ('fp' in @py_builtins.locals() is not @py_builtins.globals()) else 'fp'</code>. This checks whether <code>fp</code> is a local variable or not and customizes the display accordingly. After the initial formatting, the helper function <code>_format_explanation</code> is called. This function produces the indentation and "+" you see in the error message. Finally, we note that if the assertion doesn't fail, py.test cleans up after itself by deleting temporary variables.<br>
+                            <br>
+                            The example above is a fairly tame (and luckily also typical) assertion. Rewriting gets more "exciting" when boolean operations and comparisons enter because they require short circuit evaluation, which complicates both the expansion of expressions and formatting (think lots of nested ifs).<br>
+                            <br>
+                            In conclusion, py.test's new assertion rewriting fixes some long standing issues with assertion introspection and continues py.test's long tradition of excellent debugging support. (There are now <strong>three(!)</strong> assertion introspection methods in py.test: two reinterpretation implementations as well as rewriting) I just hope I haven't scared you completely off py.test! :)
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/8671476328661520656-609325961286562408?l=pybites.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://pybites.blogspot.com/2011/07/behind-scenes-of-pytests-new-assertion.html">http://pybites.blogspot.com/2011/07/behind-scenes-of-pytests-new-assertion.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

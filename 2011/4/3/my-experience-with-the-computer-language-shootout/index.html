@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            My experience with the computer language shootout
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 04 Apr 2011 01:56:26 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-03T21:56:26-04:00">
+                    <meta itemprop="dateModified" content="2011-04-03T21:56:26-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-04T01:56:26+00:00">Apr 04</time>
+                    <h2 itemprop="title">
+                        My experience with the computer language shootout
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/737532c6aaf8341b">
+                        <blockquote>
+                            <p>
+                                For a long time we, the <a href="http://pypy.org/">PyPy</a> developers, have known the Python implementations on the <a href="http://shootout.alioth.debian.org/">Computer Language Shootout</a> were not optimal under PyPy, and in fact had been ruthlessly microoptimized for CPython, to the detriment of PyPy. But we didn't really care or do anything about it, because we figured those weren't really representative of what people like to do with Python, and who really cares what it says, CPython is over 30 times slower than C, and people use it just the same. However, I've recently have a number of discussions about language implementation speed and people tend to cite the language shootout as the definitive source for cross-language comparisons. So I decided to see what I could do about making it faster.
+                            </p>
+                            <p>
+                                The first benchmark I took a stab at was <a href="http://shootout.alioth.debian.org/u32/benchmark.php?test=revcomp&amp;lang=pypy">reverse-complement</a>, PyPy was doing crappily on it, and it was super obviously optimized for CPython: every loop possible was pushed down into functions known to be implemented in C, various memory allocation tricks are played (e.g. <tt>del <span>some_list[:]</span></tt> removes the contents of the list, but doesn't deallocate the memory), and bound method allocation is pulled out of loops. The first one is the most important for PyPy, on PyPy your objective is generally to make sure your hot loops are in Python, the exact opposite of what you want on CPython. So I started coding up my own version, optimized for PyPy, I spent some time with our debugging and profiling tools, and whipped up a nice implementation that was something like 3x faster than the current one on PyPy, which you can see <a href="http://paste.pocoo.org/show/364978/">here</a>. Generally the objective here was to make sure the program does as little memory allocation in the hot loops as possible, all of which are in Python. Try that with your average interpreter.
+                            </p>
+                            <p>
+                                So I went ahead and submitted it, thinking PyPy would be looking 3 times better when I woke up. Naturally I wake up to an email from the shootout, which says that I should provide a Python 3 implementation, and that it doesn't work on CPython. What the hell? I try to run it myself and indeed it doesn't. It turns out on CPython <tt><span>sys.stdout.write(buffer(array.array("c"),</span> 0, idx))</tt> raises an exception. Which is a tad unfortunate because it should be an easy way to print out part of an array of characters without needing to allocate memory. After speaking with some CPython core developers, it appears that it is indeed a bug in CPython. And I noticed on PyPy <tt>buffer</tt> objects aren't nearly as efficient as they should be, so I set out in search of a new way to work on CPython and PyPy, and be faster if possible. I happened to stuble across the method <tt>array.buffer_info</tt> which returns a tuple of the memory address of the array's internal storage and its length, and a brilliant hack occurred to me: use <tt>ctypes</tt> to call libc's <tt>write()</tt> function. I coded it up, and indeed it worked on PyPy and CPython and was 40% faster on PyPy to boot. Fantastic I thought, I'll just submit this and PyPy will look rocking! Only 3.5x slower than C, not bad for an interpreter, in a language that is notoriously hard to optimize. You can see the implementation <a href="http://paste.pocoo.org/show/364987/">right here</a>, it contains a few other performance tricks as well, but nothing too exciting.
+                            </p>
+                            <p>
+                                So I submitted this, thinking, "Aha! I've done it". Shortly, I had an email saying this has been accepted as an "interesting alternative" because it used <tt>ctypes</tt>, which is to say it won't be included in the cumulative timings for each implementation, nor will it be listed with the normal implementations for the per-benchmark scores. Well crap, that's no good, the whole point of this was to look good, what's the point if no one is going to see this glorious work. So I sent a message asking why this implementation was considered alternative, since it appeared fairly legitimate. I received a confusing message questioning why this optimization was necessary, followed by a suggestion that perhaps PyPy wasn't compatible enough with (with what I dare not ask, but the answer obviously isn't Python the abstract language, since CPython had the bug!).
+                            </p>
+                            <p>
+                                Overall it was a pretty crappy experience. The language shootout appears to be governed by arbitrary rules. For example the C implementations use GCC builtins, which are not part of the C standard, making them not implementation portable. The CPython pidigits version uses a C extension which is obviously not implementation portable (by comparison every major Python implementation includes <tt>ctypes</tt>, only CPython, and to varying extents IronPython and PyPy, support the <strong>CPython</strong> C-API), although here PyPy was allowed to use <tt>ctypes</tt>. It's also not possible to send any messages once your ticket has been marked as closed, meaning to dispute a decision you basically need to pray the maintainer reopens it for some reason. The full back and forth <a href="https://alioth.debian.org/tracker/?func=detail&amp;atid=413100&amp;aid=313063&amp;group_id=30402">is available here</a>. I'm still interested in improving the PyPy submissions there (and further optimizing PyPy where needed). However given the seemingly capricious and painful submission process I'm not really inclined to continue work, nor can I take the shootout seriously as an honest comparison of languages.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://alexgaynor.net/2011/apr/03/my-experience-computer-language-shootout/">http://alexgaynor.net/2011/apr/03/my-experience-computer-language-shootout/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

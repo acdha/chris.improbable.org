@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Using GlusterFS for Filesystem Migration
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 15 Jun 2010 13:34:50 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-06-15T09:34:50-04:00">
+                    <meta itemprop="dateModified" content="2010-06-15T09:34:50-04:00"><time class="date" itemprop="datePublished" datetime="2010-06-15T13:34:50+00:00">Jun 15</time>
+                    <h2 itemprop="title">
+                        Using GlusterFS for Filesystem Migration
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a52a65fe85b9793e">
+                        <blockquote>
+                            <p>
+                                Someone on Slashdot asked how to do <a href="http://ask.slashdot.org/story/10/06/11/197220/Volume-Shadow-Copy-For-Linux">filesystem snapshots on Linux</a>. Many respondents pointed out somewhat reasonably that the current setup with ext3 on raw disks didn’t support that, and that the poster should migrate onto another filesystem or LVM to get that functionality, but nobody seemed to have much to say about how to do that initial migration non-disruptively. I’ve had to do filesystem migrations involving many terabytes and many millions of files, and it’s a non-trivial exercise. There are a lot of ways to get it wrong and ruin your data. Based on things I’ve done since then, here’s the approach I’d investigate first if I had to do it now.
+                            </p>
+                            <p>
+                                One of the less obvious tricks I’ve learned to do with GlusterFS is to run it all on one machine. The design very deliberately lets you stack “translators” on top of one another in all sorts of arbitrary ways, and the network protocol modules use the same translator interface as well. I often run the “distribute” translator, or those I’ve written, directly on top of the “storage/posix” local-filesystem translator. It works fine, and it’s much more convenient for development than having to run across machines. GlusterFS also has a replication translator, and one of the functions it necessarily provides is “self-heal” to rebuild directories and files on a failed (and possibly replaced) sub-volume. Do you see where I’m going with this? You can set up an old local filesystem and a new (empty) local filesystem as a replica pair under GlusterFS, and then poke it to “self-heal” all the files from old to new <em>while the filesystem is live and in active use</em>. GlusterFS doesn’t care that the two filesystems might be of different types (e.g. ext3 vs. btrfs) and/or using different kinds of storage (e.g. raw devices vs. LVM) so long as they both support POSIX locks and extended attributes. All the while it keeps track of operations in progress to the composite filesystem so this activity is effectively transparent to users who just see essentially the same filesystem they always saw. When you’re done, you just take GlusterFS back out of the picture and mount the new fully-populated filesystem directly. Here’s a <a href="http://pl.atyp.us/misc/migrate.vol">configuration file</a> to do just what I’ve described. It takes an existing directory at /root/m_old and combines that with an empty directory at /root/m_new to create a replica pair. Here are the commands to mount it and force self-heal.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    mount -f /usr/etc/glusterfs/migrate.vol /mnt/migrate<br>
+                                    ls -aR /mnt/migrate
+                                </p>
+                            </blockquote>
+                            <p>
+                                I should warn people that I’ve only done a very basic sanity test on this. It seems to work as expected for a non-trivial but still small directory tree, but you’d certainly want to test it more thoroughly before using it to migrate production data (and of course you should absolutely make sure you have a backup <em>that works</em> before you attempt any such thing). There are a couple of non-obvious things about the configuration that I should also point out.
+                            </p>
+                            <ul>
+                                <li>Both filesystems should, as mentioned previously, support POSIX locks and extended attributes. You need to load the features/locks translator to use the former.
+                                </li>
+                                <li>For some reason this doesn’t seem to work without the server and client modules involved. This hasn’t been the case in my experience with other composite translators, and it shouldn’t be necessary here either, but at least the networking is all local so it’s not too terrible.
+                                </li>
+                            </ul>
+                            <p>
+                                I’m sure there are other live-migration approaches that should work just as well if not better. I suspect there’s at least on approach using union mounts, for example. There are also <em>a lot</em> of approaches I can think of that would fall prey to subtle issues involving links (or other things that aren’t plain files), sparse files, and so on. It’s a lot easier to suggest an answer than to implement one that actually works. I’ve even thought (since SiCortex) of writing a FUSE filesystem specifically to do this kind of migration, but it would require a significant effort. This seems like an easy and fairly robust way to do it using tools that already exist.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://pl.atyp.us/wordpress/?p=2908">http://pl.atyp.us/wordpress/?p=2908</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

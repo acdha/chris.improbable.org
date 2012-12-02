@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            memcached: Benchmark of 4 Python libraries
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 03 Sep 2009 09:01:56 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-09-03T05:01:56-04:00">
+                    <meta itemprop="dateModified" content="2009-09-03T05:01:56-04:00"><time class="date" itemprop="datePublished" datetime="2009-09-03T09:01:56+00:00">Sep 03</time>
+                    <h2 itemprop="title">
+                        memcached: Benchmark of 4 Python libraries
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/74d5d4472ab5568f">
+                        <blockquote>
+                            <div style="float:right;padding:0 0 10px 10px">
+                                <img src="http://amix.dk/uploads/mc_speed.jpg" alt="Memcached speed">
+                            </div><br>
+                            Optimizations, don't we just love them! Unfortunately most micro optimizations aren't worth doing. The optimizations that are worth doing are those that affect everything... And if you use memcached, then memcached affects everything ;-) In this blog post I present a benchmark of 4 most popular Python memcached libraries (one of them pure Python, the 3 others C wrappers).
+                            <p>
+                                As my benchmark shows, there are lots of gains, basically you can speed up your memcached operations by 2x times - which is REALLY hard to do with any other optimization.
+                            </p>
+                            <p>
+                                There are currently 4 Python memcached libraries and there aren't any good benchmarks of these, so I have set a goal to benchmark these. The candidates:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://pypi.python.org/pypi/pylibmc">pylibmc</a>: C wrapper of libmemcached
+                                </li>
+                                <li>
+                                    <a href="http://code.google.com/p/python-libmemcached/">python-libmemcached</a>: PyRex wrapper of libmemcached
+                                </li>
+                                <li>
+                                    <a href="http://gijsbert.org/cmemcache/">cmemcache</a>: C wrapper of the now outdated libmemcache library
+                                </li>
+                                <li>
+                                    <a href="http://www.tummy.com/Community/software/python-memcached/">python-memcache</a>: Pure Python implementation
+                                </li>
+                                <li>pylibmc_optimized has TCP_NODELAY sat to 1
+                                </li>
+                            </ul>
+                            <p>
+                                Observations and changes:
+                            </p>
+                            <ul>
+                                <li>I have applied a patch to all C libraries to make them run on Snow Leopard (edited in setup.py and removed rpath, which isn't supported by Leopard's linker). Every library is compiled for x86_64 (i.e. 64 bit).
+                                </li>
+                                <li>I have patched pylibmc and python-libmemcached with support for serializing booleans
+                                </li>
+                                <li>I have also fixed a 64bit bug in pylibmc, it sent Py_ssize_t instead of size_t to mget
+                                </li>
+                                <li>I will share these patches after I have done some more testing
+                                </li>
+                            </ul>
+                            <p>
+                                Like every benchmark this benchmark should be taken with a grain of salt.
+                            </p>
+                            <h3>
+                                Benchmark program
+                            </h3>
+                            <p>
+                                This is a modified <a href="http://paste.plurk.com/show/17522/">benchmark.py from python-libmemcached</a>. It runs <span>10000</span> iterations of each command:
+                            </p>
+                            <pre>
+Benchmarking pylibmc_optimized...
+test_set: 0.743668 seconds
+test_set_get: 1.289444 seconds
+test_random_get: 2.336701 seconds
+test_set_same: 0.785587 seconds
+test_set_big_object (100 objects): 0.014704 seconds
+test_set_get_big_object (100 objects): 0.032860 seconds
+test_set_big_string (100 objects): 0.009394 seconds
+test_set_get_big_string (100 objects): 0.021033 seconds
+test_get: 0.606791 seconds
+test_get_big_object (100 objects): 0.012321 seconds
+test_get_multi: 0.019260 seconds
+<b>Total_time is 5.871763</b>
+---
+Benchmarking pylibmc...
+test_set: 0.744818 seconds
+test_set_get: 1.386534 seconds
+test_random_get: 2.475867 seconds
+test_set_same: 0.775607 seconds
+test_set_big_object (100 objects): 0.013254 seconds
+test_set_get_big_object (100 objects): 0.031905 seconds
+test_set_big_string (100 objects): 0.009887 seconds
+test_set_get_big_string (100 objects): 0.021890 seconds
+test_get: 0.644991 seconds
+test_get_big_object (100 objects): 0.011983 seconds
+test_get_multi: 0.018810 seconds
+<b>Total_time is 6.135546</b>
+---
+Benchmarking cmemcache...
+test_set: 0.898636 seconds
+test_set_get: 1.814076 seconds
+test_random_get: 3.197659 seconds
+test_set_same: 0.928649 seconds
+test_set_big_object (100 objects): 0.014427 seconds
+test_set_get_big_object (100 objects): 0.031279 seconds
+test_set_big_string (100 objects): 0.010986 seconds
+test_set_get_big_string (100 objects): 0.025449 seconds
+test_get: 0.854429 seconds
+test_get_big_object (100 objects): 0.013078 seconds
+test_get_multi: 0.463271 seconds
+<b>Total_time is 8.251940</b>
+---
+Benchmarking python-libmemcached...
+test_set: 0.740007 seconds
+test_set_get: 1.336759 seconds
+test_random_get: 2.363844 seconds
+test_set_same: 0.736221 seconds
+test_set_big_object (100 objects): 0.013195 seconds
+test_set_get_big_object (100 objects): 0.031755 seconds
+test_set_big_string (100 objects): 0.010874 seconds
+test_set_get_big_string (100 objects): 0.020221 seconds
+test_get: 0.622201 seconds
+test_get_big_object (100 objects): 0.011825 seconds
+test_get_multi: 0.015463 seconds
+<b>Total_time is 5.902364</b>
+---
+Benchmarking memcache...
+test_set: 1.276277 seconds
+test_set_get: 2.596438 seconds
+test_random_get: 4.869392 seconds
+test_set_same: 1.351409 seconds
+test_set_big_object (100 objects): 0.057328 seconds
+test_set_get_big_object (100 objects): 0.091957 seconds
+test_set_big_string (100 objects): 0.018521 seconds
+test_set_get_big_string (100 objects): 0.038375 seconds
+test_get: 1.303581 seconds
+test_get_big_object (100 objects): 0.028765 seconds
+test_get_multi: 0.380600 seconds
+<b>Total_time is 12.012643</b>
+</pre>
+                            <p>
+                                pylibmc seems to be fastest, especially when applied with <span>tcp_nodelay=1</span> behavior. Generally, the C libraries seem to be around 2 times faster than the pure Python implementation.
+                            </p>
+                            <h3>
+                                Test in a threaded environment
+                            </h3>
+                            <p>
+                                This is a test of these libraries in a threaded environment (basically a WSGI application that does 4 GET operations). In order for this to work the libraries need to be encapsulated in a threading.local.
+                            </p>
+                            <p>
+                                The test does 1 warmup request and afterwards 1000 requests:
+                            </p>
+                            <pre>
+#python-memcache
+Requests per second:    97.88 [#/sec] (mean)
+Time per request:       10.217 [ms] (mean)
+
+PID    COMMAND      %CPU TIME     #TH  #WQ  #PORTS #MREG RPRVT  RSHRD  RSIZE
+50077  Python       0.0  00:09.15 9    0    63     237   31M    244K   34M 
+
+#python-libmemcached
+Requests per second:    82.05 [#/sec] (mean)
+Time per request:       12.188 [ms] (mean)
+
+PID    COMMAND      %CPU TIME     #TH  #WQ  #PORTS #MREG RPRVT  RSHRD  RSIZE
+50101  Python       0.0  00:10.62 10   1    72     270   36M    244K   39M 
+
+#cmemcache
+Requests per second:    106.11 [#/sec] (mean)
+Time per request:       9.425 [ms] (mean)
+
+PID    COMMAND      %CPU TIME     #TH  #WQ  #PORTS #MREG RPRVT  RSHRD  RSIZE
+50121  Python       0.0  00:08.58 9    0    62     237   31M    244K   34M 
+
+#pylibmc_optimized
+Requests per second:    108.09 [#/sec] (mean)
+Time per request:       9.251 [ms] (mean)
+
+PID    COMMAND      %CPU TIME     #TH  #WQ  #PORTS #MREG RPRVT  RSHRD  RSIZE
+50043  Python       0.0  00:08.48 9    0    62     243   32M    244K   34M 
+</pre>
+                            <p>
+                                I have no clue why python-libmemcache performs so poorly in this test. This also shows that benchmarks should be used as indicators and not the truth ;-)
+                            </p>
+                            <h3>
+                                Conclusion
+                            </h3>
+                            <p>
+                                <b>pylibmc</b> seem to be most promising library, probably because it's hand-coded and because it's based upon libmemcached. python-libmemcached seems to be promising on a simple benchmark, but seems to be lacking in performance (and memory usage!) in a threaded environment (this could be related to PyRex, but I am unsure).
+                            </p>
+                            <p>
+                                Looking at CPU and memory usage python-libmemcached seems to be taking most, while pylibmc uses least CPU and cmemcache least memory.
+                            </p>
+                            <p>
+                                So in general I would recommend pylibmc or cmemcache - this said, it's best that you do your own benchmarks based on your architecture(s) and your usage patterns.
+                            </p>
+                            <h3>
+                                [Update] Patch for pylibmc
+                            </h3>
+                            <p>
+                                <a href="http://paste.plurk.com/show/17567/">Syntax highlighted</a> or <a href="http://pastie.org/604937">Raw</a>.
+                            </p>
+                            <p>
+                                It patches following:
+                            </p>
+                            <ul>
+                                <li>Compiles for 64 bit under Snow Leopard
+                                </li>
+                                <li>Uses size_t instead of Py_ssize_t. At the beginning I had segmentation faults and I suspect it was caused by either size_t size or the problem with 32bit vs. 64bit. <a href="http://code.google.com/p/python-libmemcached/issues/detail?id=14">python-libmemcached</a> had a similar issue with size_t. I am not a C programmer so I don't really know if this is a big issue.
+                                </li>
+                                <li>Adds support for storing and retrieving boolean values
+                                </li>
+                                <li>Adds support for storing an empty string (""), this resulted in an error before
+                                </li>
+                            </ul>
+                            <h3>
+                                [Update] Patch for python_libmemcached
+                            </h3>
+                            <p>
+                                <a href="http://pastie.org/605057">Patch</a> adds following:
+                            </p>
+                            <ul>
+                                <li>Support for storing and retrieving boolean values
+                                </li>
+                                <li>Compilation under Snow Leopard
+                                </li>
+                            </ul><img src="http://feeds.feedburner.com/~r/amixdk/~4/aZITUdt7B7s" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://amix.dk/blog/viewEntry/19471?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+amixdk+%28amix.dk+blog%29">http://amix.dk/blog/viewEntry/19471?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+amixdk+%28amix.dk+blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            LightCloud adds support for Redis
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 10 Jun 2009 12:37:17 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-06-10T08:37:17-04:00">
+                    <meta itemprop="dateModified" content="2009-06-10T08:37:17-04:00"><time class="date" itemprop="datePublished" datetime="2009-06-10T12:37:17+00:00">Jun 10</time>
+                    <h2 itemprop="title">
+                        LightCloud adds support for Redis
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/423bd3d890b5cc7e">
+                        <blockquote>
+                            <div style="float:right;padding-left:5px;padding-bottom:5px">
+                                <a href="http://opensource.plurk.com/LightCloud/"><img src="http://opensource.plurk.com/uploads/lightcloud.png"></a>
+                            </div>
+                            <p>
+                                <a href="http://plurk.com/">Plurk</a>'s open-source cloud database <a href="http://opensource.plurk.com/LightCloud/">LightCloud</a> got a bit more powerful by supporting <a href="http://code.google.com/p/redis/">Redis</a>.
+                            </p>
+                            <p>
+                                Redis is yet another key-value database, but with some nice and curly twists:
+                            </p>
+                            <ul>
+                                <li>it's persistent (but one has to hold the dataset in the memory)
+                                </li>
+                                <li>it supports unique datatypes such as lists and sets
+                                </li>
+                                <li>it can do some very interesting stuff like union and intersection between sets
+                                </li>
+                                <li>it's very fast since everything is kept in memory
+                                </li>
+                            </ul>
+                            <h3>
+                                How does it compare to Tokyo Tyrant?
+                            </h3>
+                            <p>
+                                LightCloud was initially built around <a href="http://tokyocabinet.sourceforge.net/tyrantdoc/">Tokyo Tyrant</a>, so a comparison between these two is inevitable.
+                            </p>
+                            <p>
+                                On my first benchmarks it seemed that Redis was 7 to 10 times faster than <a href="http://tokyocabinet.sourceforge.net/tyrantdoc/">Tokyo Tyrant</a>, but doing more tests I have found out that it's slightly faster. My benchmarks can be read in a section below. The bottom line thought is that Redis is faster than Tokyo Tyrant.
+                            </p>
+                            <p>
+                                The thing that makes Redis interesting is the extra data types such as sets and lists. It should be stated thought that Tokyo Tyrant supports Lua scripting which enables one to create custom datatypes (for example <a href="http://opensource.plurk.com/trac/browser/tyrant_manager/extensions/our.lua">a list extension in Lua</a>). Lua scripting is really powerful, but Redis's list operations are also nice to have. It's clear thought, that Tokyo Tyrant's Lua scripting offers more freedom.
+                            </p>
+                            <p>
+                                In the database layer it's important to note that Redis has to keep the data in memory - - while Tokyo Tyrant does not. This enables Redis to do some powerful features - such as intersection between sets. A major problem with Redis's approach is that one must have all the data in the memory (which means that Redis it not a good choice if you have lots of data).
+                            </p>
+                            <p>
+                                On scalability side Redis is weaker than Tokyo Tyrant as Redis only supports master-slave replication, while Tokyo Tyrant supports master-master replication.
+                            </p>
+                            <p>
+                                The last remark is that Redis is a new product and there are some rough edges. Tokyo Tyrant is an old and well tested product. Both products are under active development thought.
+                            </p>
+                            <p>
+                                <a href="http://code.google.com/p/redis/wiki/README">You can read more about Redis in the README file</a>.
+                            </p>
+                            <h3>
+                                Benchmarks
+                            </h3>
+                            <p>
+                                <a href="http://opensource.plurk.com/trac/browser/lightcloud/lightcloud/test/benchmark.py">The benchmark program</a> outputs following stats:
+                            </p>
+                            <pre>
+Finished "Tyrant set" 10000 times in 5.71 sec [1750.8 operations pr.sec]
+Finished "Redis set" 10000 times in 3.64 sec [2749.5 operations pr.sec]
+------
+Finished "Tyrant get" 10000 times in 2.06 sec [4842.8 operations pr.sec]
+Finished "Redis get" 10000 times in 1.75 sec [5701.0 operations pr.sec]
+------
+Finished "Tyrant list_add" 10000 times in 6.50 sec [1538.8 operations pr.sec]
+Finished "Redis list_add" 10000 times in 5.41 sec [1849.3 operations pr.sec]
+------
+Finished "Tyrant delete" 10000 times in 15.88 sec [629.7 operations pr.sec]
+Finished "Redis delete" 10000 times in 8.86 sec [1128.5 operations pr.sec]
+</pre>
+                            <p>
+                                It's clear that Redis is faster - sometimes even 2x faster. One should note thought that Redis does not hit disk, so it's really expected to be faster :-)
+                            </p>
+                            <h3>
+                                How to use it with LightCloud?
+                            </h3>
+                            <div>
+                                <pre>
+<span>import</span> <span>lightcloud</span>
+
+<span>LIGHT_CLOUD</span> <span>=</span> <span>{</span>
+    <span>'lookup1_A'</span><span>:</span> <span>[</span> <span>'127.0.0.1:10000'</span> <span>],</span>
+    <span>'storage1_A'</span><span>:</span> <span>[</span> <span>'127.0.0.1:12000'</span><span>]</span>
+<span>}</span>
+<span>lookup_nodes</span><span>,</span> <span>storage_nodes</span> <span>=</span> <span>lightcloud</span><span>.</span><span>generate_nodes</span><span>(</span><span>LIGHT_CLOUD</span><span>)</span>
+<span>lightcloud</span><span>.</span><span>init</span><span>(</span><span>lookup_nodes</span><span>,</span> <span>storage_nodes</span><span>,</span> <span>node_type</span><span>=</span><span>lightcloud</span><span>.</span><span>RedisNode</span><span>)</span>
+
+<span>def</span> <span>test_set_get</span><span>():</span>
+    <span>lightcloud</span><span>.</span><span>set</span><span>(</span><span>'hello'</span><span>,</span> <span>'world'</span><span>)</span>
+    <span>assert</span> <span>lightcloud</span><span>.</span><span>get</span><span>(</span><span>'hello'</span><span>)</span> <span>==</span> <span>'world'</span>
+</pre>
+                            </div>
+                            <h3>
+                                Are memory databases the future?
+                            </h3>
+                            <p>
+                                <a href="http://highscalability.com/">High Scalability</a> has written some interesting pieces on memory databases, they are worth a read:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://highscalability.com/are-cloud-based-memory-architectures-next-big-thing">Are Cloud Based Memory Architectures the Next Big Thing?</a>
+                                </li>
+                                <li>
+                                    <a href="http://highscalability.com/handle-1-billion-events-day-using-memory-grid">Handle 1 Billion Events Per Day Using a Memory Grid</a>
+                                </li>
+                            </ul>
+                            <h3>
+                                Conclusion
+                            </h3>
+                            <p>
+                                Redis offers another take on a database and <a href="javascript:void(0);">Salvatore Sanfilippo</a> seems to be driven by passion - - which is important for any project.
+                            </p>
+                            <p>
+                                It's clear that Redis is faster than Tokyo Tyrant, but currently I think that Tokyo Tyrant is a more mature product - - so unless you need sets, then Tokyo Tyrant seems to be a safer choice.
+                            </p>
+                            <p>
+                                Personally, I really welcome the development of both products and a big kudos goes to <a href="http://invece.org/">Salvatore Sanfilippo</a> and <a href="http://qdbm.sourceforge.net/mikio/index.html">Mikio Hirabayashi</a> for their amazing work.
+                            </p><img src="http://feeds.feedburner.com/~r/amixdk/~4/ykKd4TqF3-E" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://amix.dk/blog/viewEntry/19458?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+amixdk+%28amix.dk+blog%29">http://amix.dk/blog/viewEntry/19458?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+amixdk+%28amix.dk+blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

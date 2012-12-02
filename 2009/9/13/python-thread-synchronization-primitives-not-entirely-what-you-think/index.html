@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Python Thread Synchronization Primitives : Not Entirely What You Think
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 14 Sep 2009 00:43:39 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-09-13T20:43:00-04:00">
+                    <meta itemprop="dateModified" content="2009-09-13T20:43:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-09-14T00:43:00+00:00">Sep 14</time>
+                    <h2 itemprop="title">
+                        Python Thread Synchronization Primitives : Not Entirely What You Think
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/47a426ba68e85ba0">
+                        <blockquote>
+                            <p>
+                                If you have done any kind of programming with Python threads, you are probably familiar with the basic synchronization primitives provided by the <a href="http://docs.python.org/library/threading">threading</a> module. Specifically, you get the following kinds of synchronization objects to work with:
+                            </p>
+                            <ul>
+                                <li>
+                                    <tt>Lock</tt>. Mutual exclusion lock that's commonly used to protect shared data structures.
+                                </li>
+                                <li>
+                                    <tt>RLock</tt>. Reentrant mutual exclusion lock that is useful for code-based locking on functions or methods or to implement monitors.
+                                </li>
+                                <li>
+                                    <tt>Event</tt>. An object that that allows one or more threads to wait for some "event" to occur. Used to implement barriers or to signal the completion of some task.
+                                </li>
+                                <li>
+                                    <tt>Condition</tt>. Condition variable. Used to send signals between threads. For example in producer-consumer problems, the producer will use a condition variable to send a signal to the consumer that data is available.
+                                </li>
+                                <li>
+                                    <tt>Semaphore</tt>. A high-level synchronization primitive based on an integer counter; Acquiring the semaphore decreases the counter and releasing the semaphore increases the counter. If the counter is 0 and a thread tries to acquire, it will block until a different thread releases the semaphore.
+                                </li>
+                            </ul>
+                            <p>
+                                Knowing how and when to use the various synchronization primitives is often a non-trivial exercise. However, the point of this post is not about that--so if you're here looking for a gentle tutorial, you're in the wrong place.
+                            </p>
+                            <p>
+                                Instead, I'd like to look at the inner workings of Python's thread synchronization primitives. In part, this is motivated by a general interest in knowing how Python works on multicore machines. However, it's also related to something that I noticed when putting my GIL talk together. So, we'll take a little tour under the covers, do a few experiments, and think about how this might fit into the "big picture."<br>
+                            </p>
+                            <p>
+                                <b>A Curious Fact</b><br>
+                            </p>
+                            <p>
+                                If you write threaded programs, you should know that Python uses real system-level threads to carry out its work. That is, threads are implemented using pthreads or some other native threading mechanism provided by the operating system. However, the same can not be said of Python's basic synchronization primitives such as <tt>Lock</tt>, <tt>Condition</tt>, <tt>Semaphore</tt> and so forth. That is, even though low-level libraries such as pthreads provide various kinds of basic locks and synchronization objects, the <tt>threading</tt> library doesn't make direct use of them (so, when you're using something like a <tt>Lock</tt> object in your program, you're not manipulating a pthreads mutex).
+                            </p>
+                            <p>
+                                This fact may surprise experienced programmers. Many of Python's core library modules provide a direct interface to low-level functionality written in C (e.g., think about the <tt>os</tt> or <tt>socket</tt> modules). However, thread synchronization objects are an exception to that rule.
+                            </p>
+                            <p>
+                                <b>Some History</b><br>
+                            </p>
+                            <p>
+                                Python has included support for threads for most of its history. In fact, if Guido ever gets around to updating his <a href="http://python-history.blogspot.com/">History of Python</a> blog, he will eventually tell you that threads were first added to Python in 1992 after a contribution by one of his coworkers Sjoerd Mullender (disclaimer: I don't have a time machine, but I have seen the entire "History of Python" article that Guido is using as the basis for his history blog). This early work is where you find the introduction of the global interpreter lock (GIL) as well as the low-level <a href="http://docs.python.org/library/thread"><tt>thread</tt></a> library module.
+                            </p>
+                            <p>
+                                Part of the problem faced by early versions of Python was the fact that thread programming interfaces weren't always available or standardized across systems. Thus, threads were only supported on certain machines such as SGI Irix and Sun Solaris. The pthreads interface wasn't standardized until a little later (~1995). The modern <a href="http://docs.python.org/library/threading"><tt>threading</tt></a> library that virtually all Python programmers now use first appeared in Python-1.5.1 (1998).
+                            </p>
+                            <p>
+                                A consequence of this chaos was that Python's support for threads was intentionally designed to have a minimal set of basic requirements. The <tt>thread</tt> library module simply provided a function for launching a Python callable in its own execution thread. A single function, <tt>allocate_lock()</tt> could be used to allocate a "lock" object. This object provided the usual <tt>acquire()</tt> and <tt>release()</tt> operations, but not much else.<br>
+                            </p>
+                            <p>
+                                If you dig into the C implementation of the interpreter, you'll find that all support for locking is reduced to just four C functions.
+                            </p>
+                            <ul>
+                                <li>
+                                    <tt>PyThread_allocate_lock()</tt>
+                                </li>
+                                <li>
+                                    <tt>PyThread_free_lock()</tt>
+                                </li>
+                                <li>
+                                    <tt>PyThread_acquire_lock()</tt>
+                                </li>
+                                <li>
+                                    <tt>PyThread_release_lock()</tt>
+                                </li>
+                            </ul>
+                            <p>
+                                You can find these functions in a series of files such as <tt>thread_pthread.h</tt>, <tt>thread_nt.h</tt>, <tt>thread_solaris.h</tt>, and so forth in the <tt>Python/</tt> directory of the Python interpreter source. Each file simply contains a platform specific implementation of a basic lock. This lock then becomes the basis for all other synchronization primitives as we'll see in a minute. It should also be noted that these functions are also used to implement the infamous global interpreter lock (GIL).
+                            </p>
+                            <p>
+                                <b>What is a lock exactly?</b><br>
+                            </p>
+                            <p>
+                                If you have worked with thread locking in C, you might think that the above C functions are simply a wrapper around something like a pthreads mutex lock. However, this is not the case. Instead, the lock is minimally implemented as a <a href="http://en.wikipedia.org/wiki/Semaphore_(programming)">binary semaphore</a>. Here is a simplified example of the lock implementation that's used on many Unix systems:
+                            </p>
+                            <blockquote>
+                                <pre>
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;string.h&gt;
+
+typedef struct {
+  char           locked;
+  pthread_cond_t lock_released;
+  pthread_mutex_t mut;
+} lock_t;
+
+lock_t *
+allocate_lock(void) {
+  lock_t *lock;
+  lock = (lock_t *) malloc(sizeof(lock_t));
+  memset((void *)lock, '\0', sizeof(lock_t));
+  pthread_mutex_init(&amp;lock-&gt;mut,NULL);
+  pthread_cond_init(&amp;lock-&gt;lock_released, NULL);
+  return lock;
+}
+
+void 
+free_lock(lock_t *lock) {
+  pthread_mutex_destroy( &amp;lock-&gt;mut );
+  pthread_cond_destroy( &amp;lock-&gt;lock_released );
+  free((void *)lock);
+}
+
+int 
+acquire_lock(lock_t *lock, int waitflag) {
+  int success;
+  pthread_mutex_lock( &amp;lock-&gt;mut );
+  success = lock-&gt;locked == 0;
+
+  if ( !success &amp;&amp; waitflag ) {
+    while ( lock-&gt;locked ) {
+      pthread_cond_wait(&amp;lock-&gt;lock_released,&amp;lock-&gt;mut);
+    }
+    success = 1;
+  }
+  if (success) lock-&gt;locked = 1;
+  pthread_mutex_unlock( &amp;lock-&gt;mut );
+  return success;
+}
+
+void 
+release_lock(lock_t *lock) {
+  pthread_mutex_lock( &amp;lock-&gt;mut );
+  lock-&gt;locked = 0;
+  pthread_mutex_unlock( &amp;lock-&gt;mut );
+  pthread_cond_signal( &amp;lock-&gt;lock_released );
+}
+</pre>
+                            </blockquote>
+                            <p>
+                                Understanding this code requires some careful study. However, the key part of it is that Python lock objects manually keep track of their internal state (locked or unlocked). This is the <tt>locked</tt> attribute of the lock structure. The pthreads mutex lock is simply being used to synchronize access to the <tt>locked</tt> attribute in the <tt>acquire()</tt> and <tt>release()</tt> operations (note: this mutex lock is not actually <em>the</em> lock). Finally, the condition variable is being used to perform a kind of thread signaling that's used to wake up any sleeping threads when the lock gets released.
+                            </p>
+                            <p>
+                                <b>What about Native Semaphores?</b>
+                            </p>
+                            <p>
+                                As just mentioned, the Python lock is minimally implemented as a binary semaphore. If you've done thread programming in C, you probably know that many systems optionally include a native semaphore object. On such systems, Python may be built in a way so that it simply uses the native semaphore object for the lock. For example, this what Python uses for synchronization on Windows.
+                            </p>
+                            <p>
+                                I don't intend to say any more about this here except to emphasize that using some kind of semaphore is actually a requirement for other parts of Python's threading to work correctly. For instance, the high-level threading library won't work if the lock isn't implemented in this manner.
+                            </p>
+                            <p>
+                                <b>Semaphores vs. Mutex Locks</b>
+                            </p>
+                            <p>
+                                The differences between a semaphore and mutex lock are subtle. However, the most obvious one pertains to the issue of ownership. When you use a mutex lock, there is almost always a strong sense of ownership. Specifically, if a thread acquires a mutex, it is the only thread that is allowed to release it. Semaphores don't have this restriction. In fact, once a semaphore has been acquired, any thread can later release it. This allows for more varied forms of thread signaling and synchronization. Here is one such experiment you can try in Python:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>import threading, time</b>
+&gt;&gt;&gt; <b>done = threading.Lock()</b>
+&gt;&gt;&gt; <b>def foo():</b>
+...      <b>print "I'm foo and I'm running"</b>
+...      <b>time.sleep(30)</b>
+...      <b>done.release()</b>       # Signal completion by releasing the lock
+...
+&gt;&gt;&gt; <b>done.acquire()</b>
+&gt;&gt;&gt; <b>threading.Thread(target=foo).start()</b>
+I'm foo and I'm running
+&gt;&gt;&gt; <b>done.acquire(); print "Foo done"</b>
+Foo done                        (note: prints after 30 seconds)
+&gt;&gt;&gt;
+</pre>
+                            </blockquote>
+                            <p>
+                                In this example, a lock is being used to signal the completion of some task. The main thread acquires the lock to clear it and then launches a thread to carry out some work. Immediately after launching this thread, the main thread attempts to immediately acquire the lock again. Since the lock was already in use, this operation blocks. However, when the worker thread finishes, it releases the lock--notifying the main thread that it has finished. It is critical to emphasize that the lock is being acquired and released by two different threads. This is the essential property provided by using a semaphore. If a traditional mutex lock were used, the program would deadlock or crash with an error.
+                            </p>
+                            <p>
+                                Just as aside, I would not recommend writing Python code that uses <tt>Lock</tt> objects in this way. Most programmers are going to associate <tt>Lock</tt> with a mutex-lock. You definitely don't use mutex-locks in the manner shown.
+                            </p>
+                            <p>
+                                Other differences between mutex locks and semaphores tend to be more subtle. There are a number of well-known problems concerning mutex locks that typically get addressed by thread libraries and the operating system. For example, the system may implement policies to prevent thread starvation or provide some sense of fairness when many threads are competing for the same lock. If threads have different scheduling priorities, the system may also try to work around problems related to priority inversion (a problem where a low-priority thread holds a lock needed by a high-priority thread). Semaphores aren't necessarily treated in the same manner which means that a multithreaded program using semaphores may execute in a manner that is slightly different than one that uses mutex locks. For now, however, let's skip though details.
+                            </p>
+                            <p>
+                                <b>The threading Library</b>
+                            </p>
+                            <p>
+                                Now, that we've talked about the low-level locking mechanism used by the interpreter, let's talk about the synchronization primitives defined in the <tt>threading</tt> library. With the exception of <tt>Lock</tt> objects, which are identical to the lock described in the above section, all of the other synchronization primitives are written entirely in Python. For example, consider the <tt>RLock</tt> implementation. Here is a cleaned up version of how it is implemented:<br>
+                            </p>
+                            <blockquote>
+                                <pre>
+class RLock:
+    def __init__(self):
+        self._block = _allocate_lock()
+        self._owner = None
+        self._count = 0
+
+    def acquire(self, blocking=1):
+        me = current_thread()
+        if self._owner is me:
+            self._count = self._count + 1
+            return 1
+        rc = self._block.acquire(blocking)
+        if rc:
+            self._owner = me
+            self._count = 1
+        return rc
+
+    def release(self):
+        if self._owner is not current_thread():
+            raise RuntimeError("cannot release un-aquired lock")
+        self._count = count = self._count - 1
+        if not count:
+            self._owner = None
+            self._block.release()
+</pre>
+                            </blockquote>
+                            <p>
+                                The fact that an <tt>RLock</tt> is implemented entirely as a Python layer over a regular lock object significantly impacts its performance. For example:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>from timeit import timeit</b>
+&gt;&gt;&gt; <b>timeit("lock.acquire();lock.release()","from threading import Lock; lock = Lock()")</b>
+0.50123405456542969
+&gt;&gt;&gt; <b>timeit("lock.acquire();lock.release()","from threading import RLock; lock = RLock()")</b>
+5.2153160572052002
+&gt;&gt;&gt;
+</pre>
+                            </blockquote>
+                            <p>
+                                Here, you see that acquiring and releasing a <tt>RLock</tt> object is about ten times slower than using a <tt>Lock</tt>. The performance impact is worse for more advanced synchronization primitives. For example, here is the result of using a <tt>Semaphore</tt> object (which is also implemented entirely in Python)
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>timeit("lock.acquire();lock.release()","from threading import Semaphore; lock = Semaphore(1)")</b>
+6.5345189571380615
+&gt;&gt;&gt; 
+</pre>
+                            </blockquote>
+                            <p>
+                                <tt>Condition</tt> and <tt>Event</tt> objects are also implemented entirely in Python. However, their implementation is also rather interesting. Keep in mind that the primary purpose of a <tt>Condition</tt> object is to perform signaling between threads. Here is a very common scenario that you see with producer-consumer problems such as in the implementation of a queue.
+                            </p>
+                            <blockquote>
+                                <pre>
+from threading import Lock, Condition
+from collections import deque
+
+items      = deque()
+items_cv   = Condition()
+
+def producer():
+    while True:
+         # produce some item
+         items_cv.acquire()
+         items.append(item)
+         items_cv.notify()
+         items_cv.release()
+
+def consumer():
+    while True:
+         items_cv.acquire()
+         while not items:
+               items_cv.wait()
+         item = items.popleft()
+         items_cv.release()
+         # Do something with item
+</pre>
+                            </blockquote>
+                            <p>
+                                Of particular interest here are the <tt>wait()</tt> and <tt>notify()</tt> operations that perform the thread signaling. This signaling is actually carried out using a <tt>Lock</tt> object. When you wait on a condition variable, a new <tt>Lock</tt> object is created and acquired. The lock is then acquired again to force the thread to block. If you look at the implementation of <tt>Condition</tt> you find code like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+class Condition:
+    ...
+    def wait(self, timeout=None):
+        ...
+        waiter = _allocate_lock()
+        waiter.acquire()
+        self._waiters.append(waiter)
+        ...
+        waiter.acquire()       # Block
+    ...
+</pre>
+                            </blockquote>
+                            <p>
+                                The <tt>notify()</tt> operation that wakes up a thread is carried out by simply releasing the waiter lock created above:<br>
+                            </p>
+                            <blockquote>
+                                <pre>
+class Condition:
+    ...
+    def notify(self, n=1):
+        waiters = self._waiters[:n]
+        for waiter in waiters:
+            waiter.release()
+    ...
+</pre>
+                            </blockquote>
+                            <p>
+                                Needless to say, a lot of processing is going on underneath the covers when you use something like a <tt>Condition</tt> object in Python. Every <tt>wait()</tt> operation involves creating an entirely new lock object. Signaling is carried out with <tt>acquire()</tt> and <tt>release()</tt> operations on that lock. Moreover, there are additional locking operations carried out on the lock object associated with the condition variable itself. Plus, consider that all of this high-level locking actually involves more locks and condition variables in C.
+                            </p>
+                            <p>
+                                <b>Who Cares?</b>
+                            </p>
+                            <p>
+                                At this point, you might be asking yourself "who cares? This is all a bunch of low-level esoteric details." However, I think that anyone who is serious about using threads in Python should take an interest in how the synchronization primitives are actually put together.
+                            </p>
+                            <p>
+                                For one, a common rule of thumb with thread programming is to try and avoid the use of locks and synchronization primitives as much as possible. This is certainly true in C, but even more so in Python. The fact that almost all of the synchronization primitives are implemented in Python means that they are substantially slower than any comparable operations in a C/C++ threading library. So, if you care about performance, using a lot of locks is something you'll definitely want to avoid.
+                            </p>
+                            <p>
+                                The other reason to care about this concerns the <tt>Queue</tt> module. It is commonly advised that the Queue module be used as a means for exchanging data between threads because it already deals with all of the underlying synchronization. This is all well and good except for the fact that <tt>Queue</tt> objects add even more layers to all of the synchronization primitives that we've talked about. In particular, the locking performed by a queue is done using a combination of locks and condition variables from the <tt>threading</tt> module.
+                            </p>
+                            <p>
+                                This means that if you're using queues, you're not really avoiding all of the overhead of locking. Instead, you're just moving it to a different location where it's out of view.<br>
+                            </p>
+                            <p>
+                                One might wonder just how much overhead gets added by all of this. For instance, a <tt>Queue</tt> object is really just a wrapper around a <tt>collections.deque</tt> with the added locking. You can try a few performance experiments. For instance, inserting items:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>timeit("q.append(1)","from collections import deque; q = deque()")</b>
+0.17505884170532227
+&gt;&gt;&gt; <b>timeit("q.put(1)","from Queue import Queue; q = Queue()")</b>
+4.4164938926696777
+&gt;&gt;&gt; 
+</pre>
+                            </blockquote>
+                            <p>
+                                Here, you find that inserting into a <tt>Queue</tt> is about 25 times slower than inserting into a <tt>deque</tt>. You get similar figures for removing items. Keep in mind that these simple benchmarks don't even cover the case of working with multiple threads where even more overhead would be added.<br>
+                            </p>
+                            <p>
+                                <b>Some Final Thoughts</b><br>
+                            </p>
+                            <p>
+                                There surely seems to be an opportunity for some experimentation with better implementations of Python's thread synchronization primitives. For example, condition variables are a core component of Python's <tt>Semaphore</tt>, <tt>Event</tt>, and <tt>Queue</tt> objects, yet Python makes no effort to use any kind of native implementation (e.g., pthreads condition variables). Moreover, why is Python using custom implementations of synchronization objects already provided by the operating system and thread libraries (e.g., semaphores). Given that much of Python's thread implementation was worked out more than ten years ago, it would be interesting to perform some experiments and revisit the threading implementation on modern systems--especially in light of the increased interested in concurrency, multiple CPU cores, and other matters.<br>
+                            </p>
+                            <p>
+                                Anyways, that's it for now. I'd love to hear your comments. Also, if you are aware of prior work related to optimizing the threading library, benchmarks, or anything else that might be related, I'd be interested in links so that I can post them here.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/36456651-1146030503757846605?l=www.dabeaz.com%2Fblog%2Fdablog.html" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.dabeaz.com/blog/2009/09/python-thread-synchronization.html">http://www.dabeaz.com/blog/2009/09/python-thread-synchronization.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

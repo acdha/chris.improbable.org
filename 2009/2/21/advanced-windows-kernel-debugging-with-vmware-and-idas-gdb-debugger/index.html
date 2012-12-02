@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Advanced Windows Kernel Debugging with VMWare and IDA's GDB debugger
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 21 Feb 2009 14:56:34 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-21T09:56:34-04:00">
+                    <meta itemprop="dateModified" content="2009-02-21T09:56:34-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-21T13:56:34+00:00">Feb 21</time>
+                    <h2 itemprop="title">
+                        Advanced Windows Kernel Debugging with VMWare and IDA's GDB debugger
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/bbf5055e3acd1bac">
+                        <p class="annotation">
+                            Wow. The entire Windows Kernel inside GDB. Fun?
+                        </p>
+                        <blockquote>
+                            <p>
+                                We have already published <a href="http://www.hex-rays.com/idapro/debugger/gdb_vmware_winkernel.pdf">short tutorial</a> on Windows kernel debugging with IDA and VMWare on our site, but the debugging experience can still be improved.
+                            </p>
+                            <p>
+                                VMWare's GDB stub is very basic, it doesn't know anything about processes or threads (for Windows guests), so for anything high-level we'll need to do some extra work. We will show how to get the loaded module list and load symbols for all them using IDAPython.
+                            </p>
+                            <h4>
+                                Preparing VM for debugging
+                            </h4>
+                            <p>
+                                Let's assume that you already have a VM with Windows (32-bit) installed. Before starting the debugging, copy files for which you want to see symbols to the host. If you're not sure, copy nt*.exe and hal.dll from System32, and the whole System32\drivers directory.
+                            </p>
+                            <p>
+                                Edit the VM's .vmx file to enable GDB debugger stub:
+                            </p><img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_91f1c9c.png" name="graphics28" align="left" border="0" height="398" width="494" id="graphics28"><br>
+                            <p>
+                                Add these lines to the file:
+                            </p>
+                            <pre>
+debugStub.listen.guest32 = "TRUE"
+debugStub.hideBreakpoints= "TRUE"
+</pre>
+                            <p>
+                                Save the file.
+                            </p>
+                            <p>
+                                In VMWare, click "Power on this virtual machine" or click the green Play button on the toolbar.
+                            </p>
+                            <p>
+                                <img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_100c5d47.png" name="graphics7" align="left" border="0" height="418" width="576" id="graphics7"><br>
+                                <br>
+                            </p>
+                            <p>
+                                Wait until the VM boots.
+                            </p>
+                            <h4>
+                                Debugging in IDA
+                            </h4>
+                            <p>
+                                Start IDA.
+                            </p>
+                            <p>
+                                <img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_m20f96fb6.gif" name="graphics8" align="bottom" border="0" height="273" width="323" id="graphics8">
+                            </p>
+                            <p>
+                                If you get the welcome dialog, choose "Go".
+                            </p>
+                            <p>
+                                <img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_519c4c2f.gif" name="graphics32" align="bottom" border="0" height="505" width="801" id="graphics32">
+                            </p>
+                            <p>
+                                Choose Debugger | Attach | Remote GDB debugger.
+                            </p>
+                            <p>
+                                <img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_6b9e4a85.gif" name="graphics33" align="bottom" border="0" height="201" width="378" id="graphics33">
+                            </p>
+                            <p>
+                                Enter "localhost" for hostname and 8832 for the port number.
+                            </p>
+                            <p>
+                                <img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_m104fe357.gif" name="graphics34" align="bottom" border="0" height="174" width="400" id="graphics34">
+                            </p>
+                            <p>
+                                Choose &lt;attach to the process started on target&gt; and click OK.
+                            </p>
+                            <p>
+                                <img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_m15202098.png" name="graphics9" align="bottom" border="0" height="475" width="545" id="graphics9">
+                            </p>
+                            <p>
+                                The execution should stop somewhere in the kernel (address above 0x80000000). You can step through the code, but it's not very convenient without any names. Let's try to gather some more information.
+                            </p>
+                            <h4>
+                                Getting the module list
+                            </h4>
+                            <p>
+                                The list of kernel modules is stored in the list pointed to by the <code>PsLoadedModuleList</code> symbol in the kernel. To find its address, we will use the so-called "KPCR trick". KPCR stands for Kernel Processor Control Region. It is used by the kernel to store various information about each processor. It is placed at the base of the segment pointed to by the <code>fs</code> register (similar to TEB in user mode). One of the fields in it is <code>KdVersionBlock</code> which points to a structure used by the kernel debugger. It, in turn, has various pointers to kernel structures, including <code>PsLoadedModuleList</code>.
+                            </p>
+                            <p>
+                                Definition of the KPCR structure can be found in many places, including IDA's ntddk.til. Right now we just need to know that <code>KdVersionBlock</code> field is situated at offset 0x34 from the start of KPCR. It points to <code>DBGKD_GET_VERSION64</code>, which has <code>PsLoadedModuleList</code> pointer at offset 0x18.
+                            </p>
+                            <p>
+                                Let's write a small Python function to find the value of that pointer. To retrieve the base of the segment pointed to by fs, we can use the VMWare's debug monitor "r" command. GDB debugger plugin registers an IDC function <code>SendGDBMonitor()</code> to send commands to the monitor, and we can use IDAPython's <code>Eval()</code> function to call it:
+                            </p>
+                            <pre>
+fs_str = Eval('SendGDBMonitor("r fs")')
+</pre>
+                            <p>
+                                Returned string has the following format:
+                            </p>
+                            <pre>
+fs 0x30 base 0x82744a00 limit 0x00002008 type 0x3 s 1 dpl 0 p 1 db 1
+</pre>
+                            <p>
+                                We need the address specified after "base":
+                            </p>
+                            <pre>
+kpcr = int(fs_str[13:23], 16) #extract and convert as base 16 (hexadecimal) number
+</pre>
+                            <p>
+                                Then get the value of <code>KdVersionBlock</code>:
+                            </p>
+                            <pre>
+kdversionblock = Dword(kpcr+0x34)
+</pre>
+                            <p>
+                                And finally <code>PsLoadedModuleList</code>:
+                            </p>
+                            <p>
+                                <code>PsLoadedModuleList = Dword(kdversionblock+0x18)</code>
+                            </p>
+                            <h4>
+                                Walking the module list
+                            </h4>
+                            <p>
+                                <code>PsLoadedModuleList</code> is declared as <code>PLIST_ENTRY</code>. <code>LIST_ENTRY</code> is a structure which represents a member of a double-linked list:
+                            </p>
+                            <pre>
+typedef struct _LIST_ENTRY
+{
+     PLIST_ENTRY Flink;
+     PLIST_ENTRY Blink;
+} LIST_ENTRY, *PLIST_ENTRY;
+</pre>
+                            <p>
+                                So, we just need to follow the <code>Flink</code> pointer until we come back to where we started. A single entry of the list has the following structure:
+                            </p>
+                            <pre>
+struct LDR_MODULE
+{
+  LIST_ENTRY InLoadOrderModuleList;
+  LIST_ENTRY InMemoryOrderModuleList;
+  LIST_ENTRY InInitializationOrderModuleList;
+  PVOID BaseAddress;
+  PVOID EntryPoint;
+  ULONG SizeOfImage;
+  UNICODE_STRING FullDllName;
+  UNICODE_STRING BaseDllName;
+  ULONG Flags;
+  SHORT LoadCount;
+  SHORT TlsIndex;
+  LIST_ENTRY HashTableEntry;
+  ULONG TimeDateStamp;
+};
+</pre>
+                            <p>
+                                Now we can write a small function to walk this list and create a segment for each module:
+                            </p>
+                            <pre>
+#get the first module
+cur_mod = Dword(PsLoadedModuleList)
+while cur_mod != PsLoadedModuleList and cur_mod != BADADDR:
+  BaseAddress  = Dword(cur_mod+0x18)
+  SizeOfImage  = Dword(cur_mod+0x20)
+  FullDllName  = get_unistr(cur_mod+0x24)
+  BaseDllName  = get_unistr(cur_mod+0x2C)
+  #create a segment for the module
+  SegCreate(BaseAddress, BaseAddress+SizeOfImage, 0, 1, saRelByte, scPriv)
+  #set its name
+  SegRename(BaseAddress, BaseDllName)
+  #get next entry
+  cur_mod = Dword(cur_mod)
+</pre>
+                            <h4>
+                                Loading symbols
+                            </h4>
+                            <p>
+                                Having the module list is nice, but not very useful without symbols. We can load the symbols manually for each module using File | Load File | PDB file... command, but it would be better to automate it.
+                            </p>
+                            <p>
+                                For that we can use the PDB plugin. From looking at its sources (available in the SDK), we can see that it supports three "call codes":
+                            </p>
+                            <pre>
+//call_code==0: user invoked 'load pdb' command, load pdb for the input file
+//call_code==1: ida decided to call the plugin itself
+//call_code==2: load pdb for an additional exe/dll
+//              load_addr: netnode("$ pdb").altval(0)
+//              dll_name:  netnode("$ pdb").supstr(0)
+</pre>
+                            <p>
+                                Call code 2 looks just like what we need. However, current IDAPython includes a rather basic implementation of netnode class and it is not possible to set supvals from Python. However, if we look at handling of the other call codes, we can see that the plugin retrieves module base from <code>"$ PE header"</code> netnode and module path using <code>get_input_file_path()</code> function. IDAPython's <code>netnode.altset()</code> function does work, and we can use set_root_filename() to set the input file path. Also, if we pass a call code 3, we will avoid the "Do you want to load the symbols?" prompt.
+                            </p>
+                            <pre>
+#new netnode instance
+penode = idaapi.netnode()
+#create netnode the in database if necessary
+penode.create("$PE header")
+#set the imagebase (-2 == 0xFFFFFFFE)
+penode.altset(0xFFFFFFFE, BaseAddress)
+#set the module filename
+idaapi.set_root_filename(filename)
+#run the plugin
+RunPlugin("pdb",3)
+</pre>
+                            <p>
+                                However, we need to replace the kernel-mode path by the local path beforehand:
+                            </p>
+                            <pre>
+#path to the local copy of System32 directory
+local_sys32 = r"D:\VmWareShared\w7\System32"
+if FullDllName.lower().startswith(r"\systemroot\system32"):
+#translate into local filename
+filename = local_sys32 + FullDllName[20:]
+</pre>
+                            <p>
+                                Now we can gather all pieces into a single script. Download it <a href="http://hexblog.com/idapro/vmware_modules.py">here</a>
+                            </p>
+                            <p>
+                                After running it, you should have a nice memory map:
+                            </p>
+                            <p>
+                                <img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_m17b305f6.gif" name="graphics1" align="left" border="0" height="393" width="713" id="graphics1"><br>
+                                <br>
+                            </p>
+                            <p>
+                                ...and name list:
+                            </p>
+                            <p>
+                                <img src="http://www.hexblog.com/ida_pro/pix/gdb-vmware-winkernel2_htm_65b4d822.gif" name="graphics2" align="left" border="0" height="352" width="400" id="graphics2"><br>
+                                <br>
+                            </p>
+                            <p>
+                                Looks much better now. Happy debugging!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://hexblog.com/2009/02/advanced_windows_kernel_debugg.html">http://hexblog.com/2009/02/advanced_windows_kernel_debugg.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Lessons learned from deploying a production database in EC2
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 28 Apr 2011 02:47:44 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-27T15:30:00-04:00">
+                    <meta itemprop="dateModified" content="2011-04-27T15:30:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-27T19:30:00+00:00">Apr 27</time>
+                    <h2 itemprop="title">
+                        Lessons learned from deploying a production database in EC2
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/88626da31e1514be">
+                        <blockquote>
+                            In light of the <a href="http://highscalability.com/blog/2011/4/25/the-big-list-of-articles-on-the-amazon-outage.html">Big EC2 Outage of 2011</a>, I thought I'd offer some perspective on my experiences in deploying and maintaining a production database in EC2. I find it amusing to read some blog posts (esp. the one from SmugMug) where people brag about how they never went down during the EC2 outage, while saying in the same breath that their database infrastructure was hosted somewhere else...duh!<br>
+                            <br>
+                            I will give a short history of why we (Evite) ended up hosting our database infrastructure in EC2. After all, this is <b>not</b> how people start using the cloud, since it's much easier to deploy web or app servers in the cloud. I will also highlight some lessons learned along the way.<br>
+                            <br>
+                            In the summer of 2009 we decided to follow the <a href="http://bret.appspot.com/entry/how-friendfeed-uses-mysql">example of FriendFeed</a> and store our data in an almost schema-less fashion, but still use MySQL. At the time, NoSQL products such as Cassandra, Riak, etc were still very much untested at large scale, so we thought we'd use something we're familiar with. We designed our database layer from the get go to be horizontally scalable by sharding at the application layer. We store our data in what we call 'buckets', which are MySQL tables with an ID/key and a blob of JSON data corresponding to that ID, plus a few other date/time-related columns for storing the creation and update timestamps for the JSON blob. We started with 1,024 such buckets spread across 8 MySQL instances, so 128 buckets per instance. The number 8 seemed like a good compromise between capacity and cost, and we also did some initial load testing against one server to confirm this number.<br>
+                            <br>
+                            We initially rolled out the database infrastructure on 8 Dell PE2970s, each with 16 GB of RAM and 2 quad-core CPUs. Each server ran 2 MySQL instances, for a total of 16, out of each 8 were active at any time, and the other 8 were passive -- each of the active MySQL instances was in a master-master pair with a passive instance running on a different server. This was done so that if any server went down, we still had 8 active MySQL in the mix. We had HAProxy load balancing across each pair of active/passive instances, sending all traffic to the active one, unless it went down, at which point traffic would be sent automatically to the passive one (I blogged about this setup and its caveats <a href="http://agiletesting.blogspot.com/2010/10/mysql-load-balancing-with-haproxy.html">here</a>).<br>
+                            <br>
+                            As for the version of MySQL, we ran 5.1.37, which was pretty new at the time.<br>
+                            <br>
+                            At this point, we did a lot of load testing using <a href="http://browsermob.com/website-load-testing">BrowserMob</a>, which allowed us to exercise our application in an <b>end-to-end</b> fashion, in the same way a regular user would. All load tests pointed to the fact that we had indeed sufficient firepower at our disposal for the DB layer.<br>
+                            <br>
+                            Two important things to note here:<br>
+                            <br>
+                            1) We ran the load test against empty databases;<br>
+                            2) We couldn't do a proper '<a href="http://www.facebook.com/note.php?note_id=96390263919">dark launching</a>' for a variety of reasons, the main one being that the 'legacy' code we were replacing was in a state where nobody dared to touch it -- so we couldn't send existing production traffic to our new DB infrastructure;<br>
+                            <br>
+                            We deployed this infrastructure in production in May/June 2009, and it performed well for a few months. At some point, in late September 2009, and with our highest traffic of the year expected to start before Halloween, we started to see a performance degradation. The plain vanilla version of MySQL we used didn't seem to exercise the CPU cores uniformly, and CPU wait time was also increasing.<br>
+                            <br>
+                            I should also point out here that our application is *very* write-intensive, so the fact the we had 2 MySQL instances per server, both in a master-master setup with another 2 instances running on a different server, started to tax more and more the CPU and RAM resources of each server. In particular, because each server had only 16 GB RAM, the innodb_buffer_pool_size (set initially at 4 GB for each of the 2 MySQL instances) was becoming insufficient, due also to the constant increase of our database size. It also turned out we were updating the JSON blobs too frequently and in some cases unnecessarily, thus causing even more I/O.<br>
+                            <br>
+                            At this point, we had a choice of either expanding our hardware at the data center, or shooting for 'infinite' horizontal scale by deploying in EC2. We didn't want to wait 2-3 weeks for the former to happen, so we decided to go into the cloud. We also took the opportunity to do the following:<br>
+                            <br>
+                            <ul>
+                                <li>we replaced vanilla MySQL with the Percona XtraDB distribution, which includes a multitude of patches that improve the performance of MySQL especially on multi-core servers
+                                </li>
+                                <li>we engaged Percona consultants to audit our MySQL setup and recommend improvements, especially in the I/O area
+                                </li>
+                                <li>we 'flattened' our MySQL server farm by deploying 16 MySQL masters (each an m1.xlarge in EC2) backed by 16 MySQL slaves (each an m1.large in EC2); we moved away from master-master to a simpler master-slave, because the complexities and the potential subtle issues of the master-master setup were not worth the hassle (in short, we have seen at least one case where the active master was overloaded, so it stopped responded to the HAProxy health checks; this caused HAProxy to fail over to the passive master, which wasn't fully caught up replication-wise with the active one; this caused a lot of grief to us)
+                                </li>
+                                <li>we eliminated the unnecessary JSON blob updates, which tremendously reduced the writes to our database
+                                </li>
+                            </ul>
+                            <div>
+                                Both moving to the Percona distribution and engaging the Percona experts time turned out to be really beneficial to us. Here are just some of the recommendations from Percona that we applied on the master DBs:
+                            </div>
+                            <div>
+                                <ul>
+                                    <li>increase innodb_buffer_pool_size to 8 GB
+                                    </li>
+                                    <li>store different MySQL data file types on different EBS volumes; we set apart 1 EBS volume for each for these types of files:
+                                    </li>
+                                    <li style="list-style: none; display: inline">
+                                        <ul>
+                                            <li>data files
+                                            </li>
+                                            <li>innodb transaction logs
+                                            </li>
+                                            <li>binlogs
+                                            </li>
+                                            <li>temporary files (we actually have 3 EBS volumes for 3 temp directories that we specify in my.cnf)
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                                <div>
+                                    These recommendations, plus the fact that we were only running one MySQL instance per server, plus the reduction of unnecessary blob updates, gave us a #winning formula at the time. We were able to sustain what is for us the highest traffic of the year, the week after Thanksgiving. But....not all was rosy. On the Tuesday of that week we lost one DB master due to the fact that the EBS volume corresponding to the MySQL data directory went AWOL, causing the CPU to get pegged at 100% I/O wait. We had to fail over to the slave, and rebuild another master from scratch. Same thing happened again that Thursday. We thought it was an unfortunate coincidence at the time, but knowing what we know now, I believe we melted those EBS volumes with our writes. Apologies to the other EC2 customers sharing those volumes with us...
+                                </div>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Ever since the move to EC2 we've been relatively happy with the setup, with the exception of fairly frequent EBS issues. The main symptom of such an EBS issue is I/O wait pegged at &gt; 90% for that specific server, which triggers elevated errors across our application server pool. The usual MO for us is to give that server 15-30 minutes to recover, then if it doesn't, to go ahead and fail over to the slave.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                One good thing is that we got to be *really* good at this failover procedure. My colleague Marco Garcia and I can do the following real quick even if you wake us up at 1 AM (like the EC2 outage did last week):
+                            </div>
+                            <div>
+                                <ul>
+                                    <li>fail over the DB master1 to a slave (call it slave1)
+                                    </li>
+                                    <li>launch another m1.xlarge EC2 instance to act as a new master (call it master2); this instance is automatically set up via Chef
+                                    </li>
+                                    <li>take an xtrabackup of slave1 to another EBS volume (I described this in more detail <a href="http://agiletesting.blogspot.com/2010/09/mysql-innodb-hot-backups-and-restores.html">here</a>)
+                                    </li>
+                                    <li>take a snapshot of the EBS volume, then create another volume out of the snapshot, in the zone of the master2
+                                    </li>
+                                    <li>restore the xtrabackup files from the new EBS volume into master2
+                                    </li>
+                                    <li>configure master2 as a slave to slave1, let replication catch up
+                                    </li>
+                                    <li>at an appropriate time, switch the application from slave1 to master2
+                                    </li>
+                                    <li>configure slave1 back as a slave to master2
+                                    </li>
+                                </ul>
+                                <div>
+                                    When I say 'real quick', I have to qualify it -- we have to wait quite a bit for the xtrabackup to happen, the for the backup files to be transferred over to the new master, either via EBS snapshot or via scp. That's where most of the time goes in this disaster recovery procedure -- think 'hours'.
+                                </div>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                You may question our use of EBS volumes. Because we wanted to split the various MySQL file types across multiple disks, and because we wanted to make sure we have enough disk capacity, we couldn't just use ephemeral disks. Note that we did also try to stripe multiple EBS volumes into a RAID 0 array, especially for the MySQL datadir, but we didn't notice a marked performance improvement, while the overall reliability of the array was still tied to the least performing of the volumes in the stripe. Not #winning.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                We've been quite patient with this setup, even with the almost constant need to babysit or account for flaky EBS volumes, until the EC2 outage of last week. We thought we were protected against massive EC2 failures because each MySQL master had its slave in a different EC2 availability zone -- however our mistake was that all of the zones were within the same region, US East.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                During the first few hours of the outage, all of our masters and slaves in zone us-east-1a got frozen. The first symptom was that all existing queries within MySQL would not complete and would just hang there, since they couldn't write to disk. Then things got worse and we couldn't even connect to MySQL. So we failed over all masters to their corresponding slaves. This was fine until mid-day on the 1st day of the outage, when we had another master fail, this time in zone us-east-1b. To compound the issue, that master happened to have the slave in us-east-1a, so we were hosed at that point.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                It was time for plan B, which was to launch a replacement master in another region (we chose US West) and yet another server in another cloud (we chose Rackspace), then to load the database from backups. We take full mysqldump backups of all our databases every 8 hours, and incrementals (which in our case is the data from the last 24 hours) every hour. We save those to S3 and to Rackspace CloudFiles. So at least there we were well equipped to do a restore. We also had the advantage of having deployed a slave in Rackspace via <a href="https://github.com/tobami/littlechef">LittleChef</a>, so we had all that setup (we couldn't use our regular Chef server setup in EC2 at the time). However, while we were busy recovering that server, we got lucky and the server that misbehaved in us-east-1b came back online, so we were able to put it back into the production pool. We did take a maintenance window while this was happening for around 2 hours, but that was the only downtime we had during the whole EC2 outage. Not bad when everything is said and done.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                One important thing to note is that even though we were up and running, we had largely lost our redundancy -- we either lost masters, so we failed over to slaves, or we lost slaves. In each case, we had only 1 MySQL server to rely on, which didn't give us a warm and fuzzy feeling. So we spent most of last week <b>rebuilding our redundancy</b>. BTW, this is something that I haven't seen emphasized enough in the blog posts about the EC2 outage. Many people bragged about how they never went down, but they never mentioned the fact that they needed to spend a long time rebuilding their redundancy. This is probably because they never did, instead banking on Amazon to recover the affected zone.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                At this point, we are shooting for moving our database server pool back in the data center, this time on much beefier hardware. We are hoping to consolidate the 16 masters that we currently have on 4 Dell C2100s maxed out with CPUs, RAM and disks, with 4 slaves that we will deploy at a different data center. The proper sizing of the new DB pool is to be determined though at this point. We plan on starting with one Dell C2100 which will replace one of the existing masters, then start consolidating more masters, all while production traffic is hitting it. Another type of dark launching if you will -- because <b>there's nothing like production</b>!
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                I still think going into EC2 wasn't such a bad idea, because it allowed us to observe our data access patterns and how they affect MySQL. The fact that we were horizontally scalable from day one gave us the advantage of being able to launch new instances and add capacity that way if needed. At this point, we could choose to double our database server count in EC2, but this means double the headaches in babysitting those EBS volumes....so we decided against it. We are able though to take everything we learned in EC2 during the past 6 months and easily deploy anywhere else.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                OK, so now a recap with some of the lessons learned:
+                            </div>
+                            <div>
+                                <ul>
+                                    <li>
+                                        <b>Do dark launches whenever possible</b> -- I said it before, and the above story says it again, it's very hard to replicate production traffic at scale. Even with a lot of load testing, you won't uncover issues that will become apparent in production. This is partly due to the fact that many issues arise after a certain time, or after a certain volume (database size, etc) is reached, and load testing generally doesn't cover those situations.
+                                    </li>
+                                    <li>
+                                        <b>It's hard to scale a database</b> -- everybody knows that. If we were to design our data layer today, we would probably look at one of the more mature NoSQL solutions out there (although that is still a fairly risky endeavor in my mind). Our sharded MySQL solution (which we use like I said in an almost NoSQL fashion) is OK, but comes with a whole slew of issues of its own, not the least being that maintenance and disaster recovery are not trivial.
+                                    </li>
+                                    <li>
+                                        <b>If you use a write-intensive MySQL database, use real hardware</b> -- virtualization doesn't cut it, and EBS especially so. And related to this:
+                                    </li>
+                                    <li>
+                                        <b>Engage technology experts early</b> -- looking back, we should have engaged Percona much earlier in the game, and we should have asked for their help in properly sizing our initial DB cluster
+                                    </li>
+                                    <li>
+                                        <b>Failover can be easy, but rebuilding redundancy at the database layer is always hard</b> -- I'd like to see more discussion on this issue, but this has been my conclusion based on our experiences. And related to this:
+                                    </li>
+                                    <li>
+                                        <b>Automated deployments and configuration management can be quick and easy, but restoring the data is a time sink</b> -- it's relatively easy to launch a new instance or set up a new server with Chef/LittleChef/Puppet/etc. It's what happens afterwards that takes a long time, namely restoring the data in order to bring that server into the production pool. Here I am talking mostly about database servers. It's much easier if you only have web/app servers to deal with that have little or no state of their own (looking at you SmugMug). This being said, you need to have an automated deployment/config mgmt strategy if you use the cloud, otherwise you're doing it wrong.
+                                    </li>
+                                    <li>
+                                        <b>Rehearse your disaster recovery procedures</b> -- we were forced to do it due to the frequent failures we had in EC2. This turned out to be an advantage for us during the Big Outage.
+                                    </li>
+                                    <li>
+                                        <b>Don't blame 'the cloud' for your outages</b> -- this has already been rehashed to death by all the post-mortem blogs after the EC2 outage, but it does bear repeating. If you use 'the cloud', expect that each and every instance can go down at any moment, no matter who your cloud provider is. Architect your infrastructure accordingly.
+                                    </li>
+                                    <li>
+                                        <b>If yo do use the cloud, use more than one</b> -- I think that multi-cloud architectures will become the norm, especially after the EC2 outage.
+                                    </li>
+                                    <li>
+                                        <b>It's not in production if it is not monitored and graphed</b> -- this is a no-brainer, but it's surprising how often this rule is breached in practice. The first thing we do after building a new server is put it in Nagios, Ganglia and Munin.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/9238405-1835585678169065935?l=agiletesting.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://agiletesting.blogspot.com/2011/04/lessons-learned-from-deploying.html">http://agiletesting.blogspot.com/2011/04/lessons-learned-from-deploying.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

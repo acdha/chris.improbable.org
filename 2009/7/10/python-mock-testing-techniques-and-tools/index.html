@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Python mock testing techniques and tools
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 10 Jul 2009 15:54:30 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-07-10T11:54:00-04:00">
+                    <meta itemprop="dateModified" content="2009-07-10T11:54:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-07-10T15:54:00+00:00">Jul 10</time>
+                    <h2 itemprop="title">
+                        Python mock testing techniques and tools
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c6f38672b6ed1b77">
+                        <blockquote>
+                            This is an article I wrote for <a href="http://pymag.phparch.com/">Python Magazine</a> as part of the 'Pragmatic Testers' column. <a href="http://ivory.idyll.org/blog">Titus</a> and I have taken turns writing the column, although we haven't produced as many articles as we would have liked.<br>
+                            <br>
+                            Here is the content of my article, which appeared in the February 2009 issue of PyMag:<br>
+                            <br>
+                            Mock testing is a controversial topic in the area of unit testing. Some people swear by it, others swear at it. As always, the truth is somewhere in the middle.<br>
+                            <br>
+                            Let's get some terminology clarified: when people say they use mock objects in their testing, in most cases they actually mean stubs, not mocks. The difference is expanded upon with his usual brilliance by Martin Fowler in his article "<a href="http://www.martinfowler.com/articles/mocksArentStubs.html">Mocks aren't stubs</a>".<br>
+                            <br>
+                            In his revised version of the article, Fowler uses the terminology from Gerard Meszaros's 'xUnit Test Patterns' book. In this nomenclature, both stubs and mocks are special cases of 'test doubles', which are 'pretend' objects used in place of real objects during testing.&nbsp; Here is Meszaros's definition of a <a href="http://xunitpatterns.com/Test%20Double.html">test double</a>:<br>
+                            <i><br></i><br>
+                            <i>Sometimes it is just plain hard to test the system under test (SUT) because it depends on other components that cannot be used in the test environment. This could be because they aren't available, they will not return the results needed for the test or because executing them would have undesirable side effects. In other cases, our test strategy requires us to have more control or visibility of the internal behavior of the SUT.</i><br>
+                            <br>
+                            <i>When we are writing a test in which we cannot (or chose not to) use a real depended-on component (DOC), we can replace it with a Test Double. The Test Double doesn't have to behave exactly like the real DOC; it merely has to provide the same API as the real one so that the SUT thinks it is the real one!&nbsp;</i><br>
+                            <br>
+                            These 'other components' that cannot be used in a test environment, or can only be used with a high setup cost, are usually <b>external resources</b> such as database servers, Web servers, XML-RPC servers. Many of these resources may not be under your control, or may return data that often contains some <b>randomness</b> which makes it hard or impossible for your unit tests to assert things about it.<br>
+                            <br>
+                            So what is the difference between stubs and mocks? Stubs are used to return <b>canned data</b> to your SUT, so that you can make some assertions on how your code reacts to that data. This eliminates randomness from the equation, at least in the test environment. Mocks, on the other hand, are used to specify <b>expectations</b> on the behavior of the object called by your SUT. You indicate your expectations by specifying that certain methods of the mock object need to be called by the SUT in a certain order and with certain arguments.<br>
+                            <br>
+                            Fowler draws a further distinction between stubs and mocks by saying that stubs are used for <b>“state verification”</b>, while mocks are used for <b>“behavior verification”</b>. When we use state verification, we assert things about the state of the SUT after the stub returned the canned data back to the SUT. We don't care <b>how</b> the stub obtained that data, we just care about the final result (the data itself) and about how our SUT processed that data. When we use behavior verification, not only do we care about the data, but we also make sure that the SUT made the correct calls, in the correct order, and with the correct parameters, to the object representing the external resource.<br>
+                            <br>
+                            If readers are still following along after all this theory, I'm fairly sure they have at least two questions:<br>
+                            <br>
+                            1) when exactly do I use mock testing in my overall testing strategy?; <i>and</i><br>
+                            2) if I do use mock testing, should I use mocks or stubs?<br>
+                            <br>
+                            I already mentioned one scenario when you might want to use mock testing: when your SUT needs to interact with external resources which are either not under your control, or which return data with enough randomness to make it hard for your SUT to assert anything meaningful about it (for example external weather servers, or data that is timestamped). Another area where mock testing helps is in simulating error conditions which are not always under your control, and which are usually hard to reproduce. In this case, you can mock the external resource, simulate any errors or exceptions you want, and see how your program reacts to them in your unit tests (for example, you can simulate various HTTP error codes, or database connection errors).<br>
+                            <br>
+                            Now for the second question, should you use mocks or stubs? In my experience, stubs that return canned data are sufficient for simulating the external resources and error conditions I mentioned. However, if you want to make sure that your application interacts correctly with these resources, for example that all the correct connection/disconnection calls are made to a database, then I recommend using mocks. One caveat of using mocks: by specifying expectations on the behavior of the object you're mocking and on the interaction of your SUT with that object, you couple your unit tests fairly tightly to the implementation of that object. With stubs, you only care about the external interface of the object you're mocking, not about the internal implementation of that object.<br>
+                            <br>
+                            Enough theory, let's see some practical examples. I will discuss some unit tests I wrote for an application that interacts with an external resource, in my case a SnapLogic server. I don't have the space to go into detail about <a href="https://www.snaplogic.org/trac">SnapLogic</a>, but it is a Python-based Open Source data integration framework. It allows you to unify the access to the data needed by your application through a single API. Behind the scenes, SnapLogic talks to database servers, CSV files, and other data sources, then presents the data to your application via a simple unified API. The main advantage is that your application doesn't need to know the particular APIs for accessing the various external data sources.<br>
+                            <br>
+                            In my case, SnapLogic talks to a MySQL database and presents the data returned by a SELECT SQL query to my application as a list of rows, where each row is itself a list. My application doesn't know that the data comes from MySQL, it just retrieves the data from the SnapLogic server via the SnapLogic API. I encapsulated the code that interacts with the SnapLogic server in its own class, which I called SnapLogicManager. My main SUT is passed a SnapLogicManager object in its __init__ method, then calls its methods to retrieve the data from the SnapLogic server.<br>
+                            <br>
+                            I think you know where this is going – SnapLogic is an external resource as far as my SUT is concerned. It is expensive to set up and tear down, and it could return data with enough randomness so I wouldn't be able to make meaningful assertions about it. It would also be hard to simulate errors using the real SnapLogic server. All this indicates that the SnapLogicManager object is ripe for mocking.<br>
+                            <br>
+                            My application code makes just one call to the SnapLogicManager object, to retrieve the dataset it needs to process:<br>
+                            <br>
+                            <code><br>
+                            rows = self.snaplogic_manager.get_attrib_values()<br></code><br>
+                            <br>
+                            Then the application processes the rows (list of lists) and instantiates various data structures based on the values in the rows. For the purpose of this article, I'll keep it simple and say that each row has an attribute name (element #0), and attribute value (element #1) and an attribute target (element #2). For example, an attribute could have the name “DocumentRoot”, the value “/var/www/mydocroot” and the target “apache”. The application expects that certain attributes are there with the correct target. If they're not, it raises an exception.<br>
+                            <br>
+                            How do we test that the application correctly instantiates the data structure, and correctly reacts to the presence or absence of certain attributes? You guessed it, we use a mock SnapLogicManager object, and we return canned data to our application.<br>
+                            <br>
+                            I will show here how to achieve this using two different Python mock testing frameworks: <a href="http://code.google.com/p/pymox/wiki/MoxDocumentation">Mox</a>, written by Google engineers, and <a href="http://code.google.com/p/mock/">Mock</a>, written by <a href="http://www.voidspace.org.uk/python/weblog/index.shtml">Michael Foord</a>.<br>
+                            <br>
+                            Mox is based on the Java EasyMock framework, and it does have a Java-esque feel to it, down to the CamelCase naming convention. Mock feels more 'pythonic' – more intuitive and with cleaner APIs. The two frameworks also differ in the way they set up and verify the mock objects: Mox uses a record/replay/verify pattern, whereas Mock uses an action/assert pattern. I will go into these differences by showing actual code below.<br>
+                            <br>
+                            Here is a unit test that uses Mox:<br>
+                            <br>
+                            <code><br>
+                            &nbsp;&nbsp;&nbsp; def test_get_attrib_value_with_expected_target(self):<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # We return a SnapLogic dataset which contains attributes with correct targets<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; canned_snaplogic_rows = [<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [u'DocumentRoot', u'/var/www/mydocroot', u'apache'],<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [u'dbname', u'some_dbname', u'database'],<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [u'dbuser', u'SOME_DBUSER', u'database'],<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Create a mock SnapLogicManager<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mock_snaplogic_manager = mox.MockObject(SnapLogicManager)<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Return the canned list of rows when get_attrib_values is called<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mock_snaplogic_manager.get_attrib_values(self.appname, self.hostname).AndReturn(canned_snaplogic_rows)<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Put all mocks created by mox into replay mode<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mox.Replay(mock_snaplogic_manager)<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Run the test<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; myapp = MyApp(self.appname, self.hostname, mock_snaplogic_manager)<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; myapp.get_attr_values_from_snaplogic()<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Verify all mocks were used as expected<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mox.Verify(mock_snaplogic_manager)<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # We test that attributes with correct targets are retrieved correctly<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; assert '/var/www/mydocroot' == myapp.get_attrib_value_with_expected_target("DocumentRoot", "apache")<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; assert 'some_dbname' == myapp.get_attrib_value_with_expected_target("db_name", "database")<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; assert 'SOME_DBUSER' == myapp.get_attrib_value_with_expected_target("db_user", "database")<br></code><br>
+                            <br>
+                            Some explanations are in order. With the Mox framework, when you instantiate a MockObject, it is in 'record' mode, which means it's waiting for you to specify expectations on its behavior. You specify these expectations by telling the mock object what to return when called with a certain method. In my example, I tell the mock object that I want the list of canned rows to be returned when I call its 'get_attrib_values' method: mock_snaplogic_manager.get_attrib_values(self.appname, self.hostname).AndReturn(canned_snaplogic_rows)<br>
+                            <br>
+                            I only have one method that I am recording the expectations for in my example, but you could have several. When you are done recording, you need to put the mock object in 'replay' mode by calling <code>mox.Replay(mock_snaplogic_manager)</code>. This means the mock object is now ready to be called by your application, and to verify that the expectations are being met.<br>
+                            <br>
+                            Then you call your application code, in my example by passing the mock object in the constructor of MyApp: <code>myapp = MyApp(self.appname, self.hostname, mock_snaplogic_manager)</code>. My test then calls <code>myapp.get_attr_values_from_snaplogic()</code>, which in turn interacts with the mock object by calling its get_attrib_values() method.<br>
+                            <br>
+                            At this point, you need to verify that the expectations you set happened correctly. You do this by calling the Verify method of the mock object: <code>mox.Verify(mock_snaplogic_manager)</code>.<br>
+                            <br>
+                            If any of the methods you recorded were not called, or where called in the wrong order, or with the wrong parameters, you would get an exception at this point and your unit tests would fail.<br>
+                            <br>
+                            Finally, you also assert various things about your application, just as you would in any regular unit test. In my case, I assert that the <code>get_attrib_value_with_expected_target</code> method of MyApp correctly retrieves the value of an attribute.<br>
+                            <br>
+                            This seems like a lot of work if all you need to do is to return canned data to your application. Enter the other framework I mentioned, Mock, which lets you specify canned return values very easily, and also allows you to assert certain things about the way the mock objects were called without the rigorous record/replay/verify pattern.<br>
+                            <br>
+                            Here's how I rewrote my unit test using Mock:<br>
+                            <br>
+                            <code><br>
+                            &nbsp;&nbsp;&nbsp; def test_get_attrib_value_with_expected_target(self):<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # We return a SnapLogic dataset which contains attributes with correct targets<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; canned_snaplogic_rows = [<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [u'DocumentRoot', u'/var/www/mydocroot', u'apache'],<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [u'dbname', u'some_dbname', u'database'],<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [u'dbuser', u'SOME_DBUSER', u'database'],<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Create a mock SnapLogicManager<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mock_snaplogic_manager = Mock()<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Return the canned list of rows when get_attrib_values is called<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mock_snaplogic_manager.get_attrib_values.return_value = canned_snaplogic_rows<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Run the test<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; myapp = MyApp(self.appname, self.hostname, mock_snaplogic_manager)<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; myapp.get_attr_values_from_snaplogic()<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Verify that mocks were used as expected<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mock_snaplogic_manager.get_attrib_values.assert_called_with(self.appname, self.hostname)<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # We test that attributes with correct targets are retrieved correctly<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; assert '/var/www/mydocroot' == myapp.get_attrib_value_with_expected_target("DocumentRoot", "apache")<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; assert 'some_dbname' == myapp.get_attrib_value_with_expected_target("db_name", "database")<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; assert 'SOME_DBUSER' == myapp.get_attrib_value_with_expected_target("db_user", "database")<br></code><br>
+                            <br>
+                            As you can see, Mock allows you to specify the return value for a given method of the mock object, in my case for the 'get_attrib_values' method. Mock also allows you to verify that the method has been called with the correct arguments. I do that by calling <code>assert_called_with</code> on the mock object. If you just want to verify that the method has been called at all, with no regard to the arguments, you can use <code>assert_called</code>.<br>
+                            <br>
+                            There are many other things you can do with both Mox and Mock. Space doesn't permit me to go into many more details here, but I strongly encourage you to read the documentation and try things out on your own.<br>
+                            <br>
+                            Another technique I want to show is how to simulate exceptions using the Mox framework. In my unit tests, I wanted to verify that my application reacts correctly to exceptions thrown by the SnapLogicManager class. Those exception are thrown for example when the SnapLogic server is not running. Here is the unit test I wrote:<br>
+                            <br>
+                            <code><br>
+                            &nbsp;&nbsp;&nbsp; def test_get_attr_values_from_snaplogic_when_errors(self):<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # We simulate a SnapLogicManagerError and verify that it is caught properly<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Create a mock SnapLogicManager<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mock_snaplogic_manager = mox.MockObject(SnapLogicManager)<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Simulate a SnapLogicManagerError when get_attrib_values is called<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mock_snaplogic_manager.get_attrib_values(self.appname, self.hostname).AndRaise(SnapLogicManagerError('Boom!'))<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Put all mocks created by mox into replay mode<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mox.Replay(mock_snaplogic_manager)<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Run the test<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; myapp = MyApp(self.appname, self.hostname, mock_snaplogic_manager)<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; myapp.get_attr_values_from_snaplogic()<br>
+                            <br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Verify all mocks were used as expected<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mox.Verify(mock_snaplogic_manager)<br>
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Verify that MyApp caught and logged the exception<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; line = get_last_line_from_log(self.logfile)<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; assert re.search('myapp - CRITICAL - get_attr_values_from_snaplogic --&gt; SnapLogicManagerError: \'Boom!\'', line)<br></code><br>
+                            <br>
+                            I used the following Mox API for simulating an exception: <code>mock_snaplogic_manager.get_attrib_values(self.appname, self.hostname).AndRaise(SnapLogicManagerError('Boom!')).<br></code><br>
+                            <br>
+                            To verify that my application reacted correctly to the exception, I checked the application log file, and I made sure that the last line logged contained the correct exception type and value.<br>
+                            <a href="http://draft.blogger.com/goog_1247240264437"><br></a><br>
+                            Space does not permit me to show a Python-specific mock testing technique which for lack of a better name I call 'namespace overriding' (actually this is a bit like monkey patching, but for testing purposes; so maybe we can call it monkey testing?). I refer the reader to my blog post on '<a href="http://agiletesting.blogspot.com/2006/12/mock-testing-examples-and-resources.html">Mock testing examples and resources</a>' and I just quickly describe here the technique. Imagine that one of the methods of your application calls <code>urllib.urlretrieve</code> in order to download a file from an external Web server. Did I say external Web server, as in 'external resource not under your control'? I did, so you know that mock testing will help. My blog post shows how you can write a mocked_urlretrieve function, and override the name urllib.urlretrieve in your unit tests with your mocked version mocked_urlretrieve. Simple and elegant. The blog post also shows how you can return various canned valued from the mocked version of urlretrieve, based on different input values.<br>
+                            <br>
+                            I started this article by saying that mock testing is a controversial topic in the area of unit testing. Many people feel that you should not use mock testing because you are not testing your application in the presence of the real objects on which it depends, so if the code for these objects changes, you run the risk of having your unit tests pass even though the application will break when it interacts with the real objects. This is a valid objection, and I don't recommend you go overboard with mocking every single interaction in your application. Instead, limit your mock testing, as I said in this article, to resources whose behavior and returned data are hard to control.<br>
+                            <br>
+                            Another important note: whatever your unit testing strategy is, whether you use mock testing techniques or not, do not forget that you also need to have functional test and integration tests for your application. Integration tests especially do need to exercise all the resources that your application needs to interact with. For more information on different types of testing that you need to consider, please see my blog posts '<a href="http://agiletesting.blogspot.com/2006/04/should-acceptance-tests-be-included-in.html">Should acceptance tests be included in the continuous build process?</a>' and '<a href="http://agiletesting.blogspot.com/2006/08/on-importance-of-functional-testing.html">On the importance of functional testing</a>'.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/9238405-6539334617377595191?l=agiletesting.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://agiletesting.blogspot.com/2009/07/python-mock-testing-techniques-and.html">http://agiletesting.blogspot.com/2009/07/python-mock-testing-techniques-and.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

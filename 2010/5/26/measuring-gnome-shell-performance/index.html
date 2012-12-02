@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Measuring GNOME Shell Performance
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 26 May 2010 23:32:31 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-26T19:32:31-04:00">
+                    <meta itemprop="dateModified" content="2010-05-26T19:32:31-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-26T23:32:31+00:00">May 26</time>
+                    <h2 itemprop="title">
+                        Measuring GNOME Shell Performance
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/1eb0988a05457133">
+                        <blockquote>
+                            <p>
+                                One of the big goals of the <a href="http://live.gnome.org/GnomeShell">GNOME 3 Shell</a> is to use animation and visual effects for positive good. An animation explains to the user what the connection is between point A and point B. For this to work, the animation has to be smooth – it can’t be a jerky sequence of disconnected frames. Performance matters.
+                            </p>
+                            <p>
+                                Over the last 18 months we’ve done a fair bit of work on performance – everything from fixing problems with AGP memory caching in the radeon kernel drivers to to moving tests for whether recent files are still there to a separate thread. But this work was ad-hoc and unsystematic. There was no way to see if shell performance got better or worse over time. To compare the performance of two different systems. Or even to tell in a rigorous way whether an optimization that seemed to make sense actual improved things. Over the last few weeks I’ve been working to correct this; to get hard, repeatable numbers that represent how well the shell is performing.
+                            </p>
+                            <p>
+                                The core of the GNOME Shell performance framework is the <strong>event log</strong>. When event logging is enabled, all sorts of different types of <strong>events</strong> are logged: when painting of a frame begins, when painting of a frame ends, when the user enters the overview, and so forth. The log is stored in a compact format (as little as 6 bytes per event), so can be recorded with very little overhead. It doesn’t significantly affect performance.
+                            </p>
+                            <p>
+                                The other thing that is recorded in the event log is <strong>statistics</strong>. A statistic is some measurement about the current state: for example, how many bytes of memory have been allocated. Every few seconds, registered statistics are polled and written to the event log as a special event type. Statistics collection can also be triggered manually.
+                            </p>
+                            <p>
+                                Once we have an event log recorded, we can analyze it to determine <strong>metrics</strong>. We can measure the latency between clicking on the activities overview button and the first frame of the zoom animation. We can see how many bytes are leaked each time the user goes to the overview by comparing the memory usage before and after. Since we want to measure exactly the same conditions every time, we don’t want to analyze a performance log generated by the user actually doing stuff; instead we script the operation of the shell from Javascript. You can see how this looks by looking at the run() function in <a href="http://git.gnome.org/browse/gnome-shell/tree/js/perf/core.js">js/perf/core.js</a>. The rest of this performance script contains the logic to compute the metrics when the recorded event log is replayed (For example, during replay the script_overviewShowDone() function is called when replaying a script.overviewShowDone event.)
+                            </p>
+                            <p>
+                                Running <code>gnome-shell --replace --perf=core</code> produces a summary of the computed metrics that looks, in part, like:
+                            </p>
+                            <p>
+                                <code># Additional malloc'ed bytes the second time the overview is shown<br>
+                                leakedAfterOverview 83200<br>
+                                # Time to first frame after triggering overview, first time<br>
+                                overviewLatencyFirst 192482<br>
+                                # Time to first frame after triggering overview, second time<br>
+                                overviewLatencySubsequent 66838<br></code>
+                            </p>
+                            <p>
+                                (The times are in microseconds.) Being able to get these numbers for a particular build of the shell is good, but what we really want to be able to do is compare these numbers over lots of systems over time. So, there’s also a website <a href="http://shell-perf.gnome.org">shell-perf.gnome.org</a> where statistics can be uploaded.
+                            </p>
+                            <p>
+                                (The way that uploading works is that after registering a system on the site, you are mailed instructions about how to create a ~/.config/gnome-shell/perf.ini with an appropriate secret key, and the <code>--perf-upload</code> option uploads the report. Please only do this with <a href="http://live.gnome.org/GnomeShell#Building">Git builds</a> of gnome-shell for now – there are some updates to the metrics even since the 2.29.2 release yesterday.)
+                            </p>
+                            <p>
+                                If you browse around the site, you’ll see that you can look at the recorded metrics for different systems or for an individual system over time. You can also look at a specific uploaded report. <a href="http://shell-perf.gnome.org/report/otaylor-fedora13-radeon.rv505/13">An example</a>:
+                            </p>
+                            <p>
+                                <a href="http://shell-perf.gnome.org/report/otaylor-fedora13-radeon.rv505/13"><img src="http://owtaylor.files.wordpress.com/2010/05/gnome-shell-event-log-viewer.png?w=540&amp;h=272" alt="shell-perf.gnome.org: detailed view of a performance report" title="gnome-shell-report-view" width="540" height="272"></a>
+                            </p>
+                            <p>
+                                I should point out, since it’s not very obvious, that navigation to individual reports is by clicking on the report headers in the system view. In the report view, you can see the details of the uploaded metrics. But you also can see the entire original event log! (The event log browser is using the HTML canvas – I’ve tested it in Firefox and Epiphany – it probably works in most browsers that GNOME developers are likely to be using.) Having the event log means that if an anomalous performance report is uploaded we can actually dig in and see more about what’s going on.
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/owtaylor.wordpress.com/255/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/owtaylor.wordpress.com/255/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/owtaylor.wordpress.com/255/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/owtaylor.wordpress.com/255/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/owtaylor.wordpress.com/255/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/owtaylor.wordpress.com/255/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/owtaylor.wordpress.com/255/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/owtaylor.wordpress.com/255/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/owtaylor.wordpress.com/255/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/owtaylor.wordpress.com/255/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/owtaylor.wordpress.com/255/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/owtaylor.wordpress.com/255/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/owtaylor.wordpress.com/255/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/owtaylor.wordpress.com/255/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=blog.fishsoup.net&amp;blog=1430594&amp;post=255&amp;subd=owtaylor&amp;ref=&amp;feed=1" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.fishsoup.net/2010/05/26/measuring-gnome-shell-performance/">http://blog.fishsoup.net/2010/05/26/measuring-gnome-shell-performance/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

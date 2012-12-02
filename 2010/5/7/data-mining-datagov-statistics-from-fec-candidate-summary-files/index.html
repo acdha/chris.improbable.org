@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Data Mining Data.Gov: Statistics from FEC Candidate Summary Files
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 07 May 2010 20:34:09 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-07T16:34:09-04:00">
+                    <meta itemprop="dateModified" content="2010-05-07T16:34:09-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-07T20:34:09+00:00">May 07</time>
+                    <h2 itemprop="title">
+                        Data Mining Data.Gov: Statistics from FEC Candidate Summary Files
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/16c4a25481f2711e">
+                        <blockquote>
+                            <p>
+                                One of Solr’s lesser known features (at least from my perspective) is the <a href="http://wiki.apache.org/solr/StatsComponent">StatsComponent</a>. Stats is a feature that was added in Solr 1.4 and enables Solr to compute various statistics for numeric fields in your documents. It even supports the ability to compute these statistics per facet constraint from other fields.
+                            </p>
+                            <p>
+                                Since Primary Election season is ramping up (here in the US Anyway) we’ll demonstrate Solr’s Stats functionality using some data from from <a href="http://www.data.gov/">Data.Gov</a>. Specifically, we’ll index the “<a href="http://www.data.gov/raw/1930">2009-2010 Candidate Summary File</a>” data from the FEC…
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Summary financial information about campaigns for U.S. Senate, U.S. House of Representatives, and President of the United States
+                                </p>
+                            </blockquote>
+                            <p>
+                                That certainly sounds like it should contain some interesting numeric data, and the “<a href="http://www.fec.gov/finance/disclosure/metadata/metadataforcandidatesummary.shtml">Data Dictionary/Variable List</a>” certainly seems to support this. But before we can use Solr to get some statistics from this data, we need to index it. We start by fetching the data, and taking a peek inside….
+                            </p>
+                            <pre>
+$ curl -sSL http://www.data.gov/download/1930/xml | xmllint --format - | head -20
+&lt;?xml version="1.0"?&gt;
+&lt;data.fec.gov xmlns="http://www.fec.gov/data" xmlns:fecdc="http://www.w3.org/2001/XMLSchema-instance" fecdc:schemaLocation="http://www.fec.gov/data http://www.fec.gov/finance/disclosure/schema/CandidateSummary.xsd"&gt;
+  &lt;title&gt;Candidate Summary&lt;/title&gt;
+  &lt;description&gt;Financial information for each candidate who has registered with the FEC or appears on an official state ballot for an election to the U.S. House of Representatives or U.S. Senate during the current two-year election cycle (including special elections).&lt;/description&gt;
+  &lt;timestamp&gt;Thu, 06 May 2010 05:05:47 EST&lt;/timestamp&gt;
+  &lt;copyright&gt;Copyright 2010, Federal Election Commission.&lt;/copyright&gt;
+  &lt;can_sum&gt;
+    &lt;lin_ima&gt;http://images.nictusa.com/cgi-bin/fecimg/?H4NY07011&lt;/lin_ima&gt;
+    &lt;can_id&gt;H4NY07011&lt;/can_id&gt;
+    &lt;can_nam&gt;ACKERMAN, GARY L.&lt;/can_nam&gt;
+    &lt;can_off&gt;H&lt;/can_off&gt;
+    &lt;can_off_sta&gt;NY&lt;/can_off_sta&gt;
+    &lt;can_off_dis&gt;05&lt;/can_off_dis&gt;
+    &lt;can_par_aff&gt;DEM&lt;/can_par_aff&gt;
+    &lt;can_inc_cha_ope_sea&gt;INCUMBENT&lt;/can_inc_cha_ope_sea&gt;
+    &lt;can_str1&gt;113 DEER RUN&lt;/can_str1&gt;
+    &lt;can_str2/&gt;
+    &lt;can_cit&gt;ROSLYN HEIGHTS&lt;/can_cit&gt;
+    &lt;can_sta&gt;NY&lt;/can_sta&gt;
+    &lt;can_zip&gt;11577&lt;/can_zip&gt;
+</pre>
+                            <p>
+                                We haven’t seen much numeric data yet, but we’ve at least verified that the data seems to match the metadata we’ve been given — an important first step. So now we can setup our basic Solr index. The first step is to create a simple config file for the <a href="http://wiki.apache.org/solr/DataImportHandler">DataImportHandler</a> (DIH). DIH makes it easy to index from a variety of sources, including XML files. Solr 1.4 comes with an example “rss-data-config.xml” file that demonstrates indexing an RSS Feed, and we’re going to use that as a template for creating our “fec-data-config.xml”….
+                            </p>
+                            <pre>
+&lt;dataConfig&gt;
+  &lt;dataSource type="HttpDataSource" encoding="UTF-8" /&gt;
+  &lt;document&gt;
+    &lt;entity name="data-gov-1930"
+            pk="id"
+            url="http://www.data.gov/download/1930/xml"
+            processor="XPathEntityProcessor"
+            forEach="/data.fec.gov/can_sum"
+            transformer="DateFormatTransformer,RegexTransformer"&gt;
+      &lt;field column="id" xpath="/data.fec.gov/can_sum/can_id" /&gt;
+      &lt;field column="name" xpath="/data.fec.gov/can_sum/can_nam" /&gt;
+      &lt;field column="url" xpath="/data.fec.gov/can_sum/lin_ima" /&gt;
+      &lt;field column="office" xpath="/data.fec.gov/can_sum/can_off" /&gt;
+      &lt;field column="state" xpath="/data.fec.gov/can_sum/can_off_sta" /&gt;
+      &lt;field column="district" xpath="/data.fec.gov/can_sum/can_off_dis" /&gt;
+      &lt;field column="party" xpath="/data.fec.gov/can_sum/can_par_aff" /&gt;
+      &lt;field column="candidate_type" xpath="/data.fec.gov/can_sum/can_inc_cha_ope_sea" /&gt;
+
+      &lt;field column="itemized_individual_contrib" xpath="/data.fec.gov/can_sum/ind_ite_con" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+      &lt;field column="unitemized_individual_contrib" xpath="/data.fec.gov/can_sum/ind_uni_con" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+      &lt;field column="individual_contrib" xpath="/data.fec.gov/can_sum/ind_con" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+
+      &lt;field column="party_contrib" xpath="/data.fec.gov/can_sum/par_com_con" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+      &lt;field column="committees_contrib" xpath="/data.fec.gov/can_sum/oth_com_con" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+      &lt;field column="candidate_contrib" xpath="/data.fec.gov/can_sum/can_con" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+      &lt;field column="total_contrib" xpath="/data.fec.gov/can_sum/tot_con" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+      &lt;field column="net_contrib" xpath="/data.fec.gov/can_sum/net_con" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+
+      &lt;field column="candidate_loan" xpath="/data.fec.gov/can_sum/can_loa" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+      &lt;field column="other_loan" xpath="/data.fec.gov/can_sum/oth_loa" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+      &lt;field column="total_loan" xpath="/data.fec.gov/can_sum/tot_loa" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+
+      &lt;field column="net_operating_expenditures" xpath="/data.fec.gov/can_sum/net_ope_exp" regex="\$|\,|(\.\d{1,2})" replaceWith="" /&gt;
+
+      &lt;field column="report_date" xpath="/data.fec.gov/can_sum/cov_end_dat" dateTimeFormat="MM/dd/yy" /&gt;
+    &lt;/entity&gt;
+  &lt;/document&gt;
+&lt;/dataConfig&gt;
+</pre>
+                            <p>
+                                A couple of important things to note here…
+                            </p>
+                            <ul>
+                                <li>I’ve take the somewhat “terse” field names from the source data, and expanded them a bit. Core fields have simple names, while field names ending with “contrib” relate to contributions and field names ending with “loan” relate to loans.
+                                </li>
+                                <li>DIH’s XPathEntityProcessor uses a custom XPath implementation that allows it to support streaming of large XML datasources with out building an entire DOM in memory — the downside is that as a result, it only supports a small subset of XPath. Hence the somewhat verbose expressions.
+                                </li>
+                                <li>DIH has a NumberFormatTransformer which can be handy for parsing currency, but the Java NumberFormat for en-US Currency has some peculiur ideas about negative values, so we use a simple regex instead. (This also makes it easy for us to ignore pennies.)
+                                </li>
+                            </ul>
+                            <p>
+                                Now that we have a DIH config, we need an instance of Solr to use it. Starting with the example configs from Solr 1.4, we edit the fields in our schema.xml to match the fields in the data that we are interested in…
+                            </p>
+                            <pre>
+ &lt;fields&gt;
+   &lt;field name="id" type="string" multiValued="false" /&gt;
+   &lt;field name="name" type="text" multiValued="false" /&gt;
+   &lt;field name="url" type="string" indexed="false" multiValued="false" /&gt;
+   &lt;field name="report_date" type="date" multiValued="false" /&gt;
+   &lt;field name="net_operating_expenditures" type="long" multiValued="false" /&gt;
+   &lt;dynamicField name="*_loan" type="long" multiValued="false" /&gt;
+   &lt;dynamicField name="*_contrib" type="long" multiValued="false" /&gt;
+   &lt;dynamicField name="*" type="string" multiValued="false" /&gt;
+ &lt;/fields&gt;
+ &lt;uniqueKey&gt;id&lt;/uniqueKey&gt;
+ &lt;defaultSearchField&gt;name&lt;/defaultSearchField&gt;
+</pre>
+                            <p>
+                                Note that we’re using dynamicFields to define all of the *_loan and *_contrib fields as a simple way to save time instead of listing them all out — a handy side effect of picking a simple field naming system.
+                            </p>
+                            <p>
+                                We also make some modifications to our solrconfig.xml file…
+                            </p>
+                            <pre>
+&lt;requestHandler name="/load" &gt;
+  &lt;lst name="defaults"&gt;
+    &lt;str name="config"&gt;fec-data-config.xml&lt;/str&gt;
+    &lt;str name="indent"&gt;true&lt;/str&gt;
+  &lt;/lst&gt;
+&lt;/requestHandler&gt;
+&lt;requestHandler name="standard" default="true"&gt;
+   &lt;lst name="defaults"&gt;
+     &lt;str name="echoParams"&gt;none&lt;/str&gt;
+     &lt;str name="q"&gt;*:*&lt;/str&gt;
+     &lt;int name="rows"&gt;0&lt;/int&gt;
+     &lt;bool name="stats"&gt;true&lt;/bool&gt;
+   &lt;/lst&gt;
+&lt;/requestHandler&gt;
+</pre>
+                            <p>
+                                The first section creates an instance of the DIH that knows about our fec-data-config.xml file. The second section is the default SearchHandler with some modifications to it’s default behavior:
+                            </p>
+                            <ul>
+                                <li>Search for all documents: q=*:*
+                                </li>
+                                <li>Enable statistics: stats=true
+                                </li>
+                                <li>Hide the rows that match: rows=0 (this is just for convenience, since we’re mainly interested in the stats, we frequently won’t care about the specific rows that match
+                                </li>
+                            </ul>
+                            <p>
+                                With this in place, we start up Solr, instruct DIH to do a “full import” and monitor it to see when it’s finished (ie: idle)…
+                            </p>
+                            <pre>
+$ curl -sS "http://localhost:8983/solr/load?command=full-import" &gt; /dev/null
+$ curl -sS "http://localhost:8983/solr/load" | grep status
+ &lt;int name="status"&gt;0&lt;/int&gt;
+&lt;str name="status"&gt;busy&lt;/str&gt;
+&lt;lst name="statusMessages"&gt;
+$ curl -sS "http://localhost:8983/solr/load" | grep status
+ &lt;int name="status"&gt;0&lt;/int&gt;
+&lt;str name="status"&gt;idle&lt;/str&gt;
+&lt;lst name="statusMessages"&gt;
+</pre>
+                            <p>
+                                About 8 seconds later (mostly due to lag from the FEC webserver), we have our data and we can start running some queries. Without even using the StatsComponent, we can already learn some interesting facts from this data using a basic search/sort:
+                            </p>
+                            <ul>
+                                <li>The candidate with the highest net operating expenditures ($14,404,986) is the Senate campaign for Harry Reid (D) in Nevada: <code>/solr/select?rows=1&amp;sort=net_operating_expenditures+desc</code>
+                                </li>
+                                <li>The Senate candidate who has received the most total loans ($14,000,000) for her campaign is Linda McMahon (R) in South Carolina: <code>/solr/select?q=office:S&amp;rows=1&amp;sort=total_loan+desc</code>
+                                </li>
+                                <li>The Texas candidate for the House of Representatives who has reported the highest total contributions ($1,983,946) is Chet Edwards (D) in district #17: <code>/solr/select?q=%2Boffice:H+%2Bstate:TX&amp;rows=1&amp;sort=total_contrib+desc</code>
+                                </li>
+                            </ul>
+                            <p>
+                                I know what you’re thinking: “These are just basic searches of the raw data — where are the stats?” So here we go….
+                            </p>
+                            <pre>
+/solr/select?stats.field=total_contrib&amp;stats.facet=office&amp;stats.facet=party
+</pre>
+                            <p>
+                                With this single URL, we ask for three very powerful pieces of information, and get a response back in about 45ms….
+                            </p>
+                            <ul>
+                                <li>
+                                    <code>stats.field=total_contrib</code> – This instructs Solr to compute a set of basic statistics using the total_contrib field of all docs matching our query (which for now is all documents in our index). That simple param gives us the following information:
+                                    <pre>
+&lt;result name="response" numFound="2783" start="0"/&gt;
+...
+&lt;double name="min"&gt;15.0&lt;/double&gt;
+&lt;double name="max"&gt;1.5645053E7&lt;/double&gt;
+&lt;double name="sum"&gt;7.35762149E8&lt;/double&gt;
+&lt;long name="count"&gt;1619&lt;/long&gt;
+&lt;long name="missing"&gt;1164&lt;/long&gt;
+&lt;double name="sumOfSquares"&gt;2.038433485484829E15&lt;/double&gt;
+&lt;double name="mean"&gt;454454.6936380482&lt;/double&gt;
+&lt;double name="stddev"&gt;1026250.909483362&lt;/double&gt;
+</pre>
+                                    <p>
+                                        So we can see that of the 2783 campaigns that we have data for, 1619 have reported on their total contributions. Of those, the candidate with the smallest amount of total contributions received only $15, while the candidate with the highest total contributions received $15,645,053. The sum total of all contributions reported by all candidates is $735,762,149 — and it’s only May!
+                                    </p>
+                                </li>
+                                <li>
+                                    <code>stats.facet=office</code> – This param tells the StatsComponent that in addition to the “main” stats listed above, we’d also like it to see stats “broken down” for each “facet” of the office field:Comparing the stats from the Senate campaigns with those of the House of Representatives we can see that on “average” the Senate candidates are raking in roughly 4 times what the House candidates are getting ($1,296,275 vs. $328,988) although the sum total of all contributions to House campaigns is roughly twice that of all Senate campaigns ($463,544,421 vs $272,217,728).
+                                </li>
+                                <li>
+                                    <code>stats.facet=party</code> – This tells Solr that in parallel with the other stats we’ve already seen, we also want it to break down the stats on the “party” field. With this we can compare the total contributions based on the political affiliation of candidates:
+                                    <pre>
+&lt;lst name="IND"&gt;
+  &lt;double name="min"&gt;90.0&lt;/double&gt;
+  &lt;double name="max"&gt;31845.0&lt;/double&gt;
+  &lt;double name="sum"&gt;219388.0&lt;/double&gt;
+  &lt;long name="count"&gt;32&lt;/long&gt;
+  &lt;long name="missing"&gt;94&lt;/long&gt;
+  &lt;double name="sumOfSquares"&gt;4.021803544E9&lt;/double&gt;
+  &lt;double name="mean"&gt;6855.875&lt;/double&gt;
+  &lt;double name="stddev"&gt;9012.011410406132&lt;/double&gt;
+&lt;/lst&gt;
+...
+&lt;lst name="DEM"&gt;
+  &lt;double name="min"&gt;18.0&lt;/double&gt;
+  &lt;double name="max"&gt;1.2442579E7&lt;/double&gt;
+  &lt;double name="sum"&gt;3.84472068E8&lt;/double&gt;
+  &lt;long name="count"&gt;574&lt;/long&gt;
+  &lt;long name="missing"&gt;279&lt;/long&gt;
+  &lt;double name="sumOfSquares"&gt;1.08397412569238E15&lt;/double&gt;
+  &lt;double name="mean"&gt;669811.9651567944&lt;/double&gt;
+  &lt;double name="stddev"&gt;1200966.840203952&lt;/double&gt;
+&lt;/lst&gt;
+...
+&lt;lst name="REP"&gt;
+  &lt;double name="min"&gt;15.0&lt;/double&gt;
+  &lt;double name="max"&gt;1.5645053E7&lt;/double&gt;
+  &lt;double name="sum"&gt;3.49445424E8&lt;/double&gt;
+  &lt;long name="count"&gt;974&lt;/long&gt;
+  &lt;long name="missing"&gt;542&lt;/long&gt;
+  &lt;double name="sumOfSquares"&gt;9.53132479905344E14&lt;/double&gt;
+  &lt;double name="mean"&gt;358773.5359342916&lt;/double&gt;
+  &lt;double name="stddev"&gt;922350.4925797922&lt;/double&gt;
+&lt;/lst&gt;
+</pre>
+                                    <p>
+                                        Here we can see that the mean total contributions reported by Democratic candidates is roughly twice as much as that of Republicans, and ten times as much as independents ($669,811 vs. $358,773 vs. $6,855).
+                                    </p>
+                                </li>
+                            </ul>
+                            <p>
+                                All of these stats so far have been computed across the entire index — but we can also narrow the scope to analyze stats of only specific documents….
+                            </p>
+                            <ul>
+                                <li>Itemized Individual Contributions made to Democrat and Republican Candidates for Senate: <code>/solr/select?q=%2Bparty%3A(DEM+REP)+%2Boffice%3AS&amp;stats.facet=party&amp;stats.field=itemized_individual_contrib</code>
+                                    <pre>
+&lt;lst name="REP"&gt;
+  &lt;double name="min"&gt;15.0&lt;/double&gt;
+  &lt;double name="max"&gt;9543057.0&lt;/double&gt;
+  &lt;double name="sum"&gt;9.2695335E7&lt;/double&gt;
+  &lt;long name="count"&gt;127&lt;/long&gt;
+  &lt;long name="missing"&gt;74&lt;/long&gt;
+  &lt;double name="sumOfSquares"&gt;3.40761264537769E14&lt;/double&gt;
+  &lt;double name="mean"&gt;729884.5275590551&lt;/double&gt;
+  &lt;double name="stddev"&gt;1472241.498436037&lt;/double&gt;
+&lt;/lst&gt;
+&lt;lst name="DEM"&gt;
+  &lt;double name="min"&gt;24.0&lt;/double&gt;
+  &lt;double name="max"&gt;1.0200223E7&lt;/double&gt;
+  &lt;double name="sum"&gt;1.01949939E8&lt;/double&gt;
+  &lt;long name="count"&gt;69&lt;/long&gt;
+  &lt;long name="missing"&gt;63&lt;/long&gt;
+  &lt;double name="sumOfSquares"&gt;4.58668696973531E14&lt;/double&gt;
+  &lt;double name="mean"&gt;1477535.347826087&lt;/double&gt;
+  &lt;double name="stddev"&gt;2128359.138730218&lt;/double&gt;
+&lt;/lst&gt;
+</pre>
+                                </li>
+                                <li>Net operating expenditures for Democratic candidates for the House of Representatives broken down by state: <code>/solr/select?q=%2Bparty%3ADEM+%2Boffice%3AH&amp;stats.facet=state&amp;stats.field=net_operating_expenditures</code>
+                                    <pre>
+...
+&lt;lst name="MI"&gt;
+  &lt;double name="min"&gt;585.0&lt;/double&gt;
+  &lt;double name="max"&gt;761487.0&lt;/double&gt;
+  &lt;double name="sum"&gt;3046606.0&lt;/double&gt;
+  &lt;long name="count"&gt;18&lt;/long&gt;
+  &lt;long name="missing"&gt;4&lt;/long&gt;
+  &lt;double name="sumOfSquares"&gt;1.32730625872E12&lt;/double&gt;
+  &lt;double name="mean"&gt;169255.88888888888&lt;/double&gt;
+  &lt;double name="stddev"&gt;218504.30768344642&lt;/double&gt;
+&lt;/lst&gt;
+...
+&lt;lst name="MA"&gt;
+  &lt;double name="min"&gt;1130.0&lt;/double&gt;
+  &lt;double name="max"&gt;839985.0&lt;/double&gt;
+  &lt;double name="sum"&gt;3454586.0&lt;/double&gt;
+  &lt;long name="count"&gt;11&lt;/long&gt;
+  &lt;long name="missing"&gt;3&lt;/long&gt;
+  &lt;double name="sumOfSquares"&gt;1.650605122526E12&lt;/double&gt;
+  &lt;double name="mean"&gt;314053.2727272727&lt;/double&gt;
+  &lt;double name="stddev"&gt;237840.5102811928&lt;/double&gt;
+&lt;/lst&gt;
+...
+&lt;lst name="IL"&gt;
+  &lt;double name="min"&gt;2981.0&lt;/double&gt;
+  &lt;double name="max"&gt;1206092.0&lt;/double&gt;
+  &lt;double name="sum"&gt;1.1289099E7&lt;/double&gt;
+  &lt;long name="count"&gt;39&lt;/long&gt;
+  &lt;long name="missing"&gt;16&lt;/long&gt;
+  &lt;double name="sumOfSquares"&gt;6.798080371243E12&lt;/double&gt;
+  &lt;double name="mean"&gt;289464.07692307694&lt;/double&gt;
+  &lt;double name="stddev"&gt;304798.9738687473&lt;/double&gt;
+&lt;/lst&gt;
+...
+</pre>
+                                </li>
+                            </ul>
+                            <p>
+                                These statistics are all relatively simplistic — and in truth, would be easier to compute in many other tools. The key take away I want people to be aware of is that if your data is already in Solr for searching, Solr can generate these types of stats for any search result quickly and easily.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.lucidimagination.com/blog/2010/05/07/data-mining-data-dot-gov/">http://www.lucidimagination.com/blog/2010/05/07/data-mining-data-dot-gov/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

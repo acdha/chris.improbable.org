@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            More Thoughts on keys in the DNS
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 31 Mar 2011 12:48:40 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-31T08:48:40-04:00">
+                    <meta itemprop="dateModified" content="2011-03-31T08:48:40-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-31T12:48:40+00:00">Mar 31</time>
+                    <h2 itemprop="title">
+                        More Thoughts on keys in the DNS
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/846dfc44642232a7">
+                        <p class="annotation">
+                            DNSSEC would seem to make long-term caching of cert lock entries safer, and thus increase the value of that system considerably.<br>
+                            <br>
+                            On a tangent, I wonder whether Chrome will simply bake Google's cert info into the binary since gmail is such a popular target.
+                        </p>
+                        <blockquote>
+                            Over the past few years, there has been a lot of interest in putting TLS keys (or references to TLS keys) in the DNS (see <a href="http://www.educatedguesswork.org/2009/01/can_we_replace_certificates_wi.html">here</a> for background). Recently, IETF spun up the <a href="https://datatracker.ietf.org/wg/dane/">DNS-based Authentication of Names (DANE)</a> WG which is designed to address this issue. The way that <a href="http://tools.ietf.org/html/draft-hoffman-dane-smime-00">DANE for TLS</a> works is that you can publish either:
+                            <ul>
+                                <li>A list of certificates (or hashes) which correspond to the TLS server itself.
+                                </li>
+                                <li>A list of certificates (or hashes) which correspond to CAs in the TLS certificate chain.
+                                </li>
+                            </ul>
+                            <p>
+                                In either case, the semantics are that the server certificate/chain <b>must</b> match one of the provided certificates. This match is both necessary and sufficient, which is to say that the client is supposed to accept an otherwise invalid certificate (i.e., one that it wouldn't ordinarily verify) if it is approved via DANE. Obviously, in order for this to work, you need to have the relevant DNS records protected with DNSSEC, since otherwise any attacker who can inject DNS records can simply generate a valid-appearing TLS connection, which obviates the whole point of TLS.
+                            </p>
+                            <p>
+                                <i>What's the point?</i><br>
+                                I've been trying to work out what I think about DANE for a while. My initial reaction was that it was a total non starter; anything that relies on DNSSEC has a huge deployment hurdle to jump. A little before today's WG, I started to rethink a bit. At a high level, it seems that DANE-type technology serves two purposes:
+                            </p>
+                            <ul>
+                                <li>
+                                    <i>Cert lock</i>: protecting the server from mis-issued certificates, e.g., one of the 100+ certificates embedded in your average browser other than the one that the legitimate server certificate was issued by.
+                                </li>
+                                <li>
+                                    <i>Alternate certification</i>: a lot of people complain that it's too inconvenient to get a CA-issued certificate (I don't really believe this) and putting keys in the DNS presents an alternative, allegedly easier avenue.
+                                </li>
+                            </ul>
+                            <p>
+                                These objectives have fairly different value curves as a function of deployment. Cert lock is a mechanism for controlling the attack surface, so once you have deployed the DNS records, the value is roughly linear in the number of clients who are able to verify those records. If 50% of users deploy the ability to verify DNS-based certificates then that's 50% of users who aren't vulnerable to CA malfeasance.
+                            </p>
+                            <p>
+                                By contrast, alternate certification's value is that you don't need to deal with a CA, so it saves you the cost of the certificate ($20-$100) plus whatever hassle it is dealing with the CA. However, if you don't get a CA certificate, than if X% of the users in the universe are DNS-certificate capable then 100-X% of users <i>can't</i> talk to you server at all without getting some horrible error/warning. So as a practical matter, you can't discard the CA-issued certificate until a very high proportion of clients are DNS-certificate capable. Since you obviously want clients to be able to talk to you this means you don't get any benefit at all until nearly all the clients in the world have upgraded.
+                            </p>
+                            <p>
+                                So, I think that cert lock is a fairly compelling application of certificates in the DNS, whereas alternate certification isn't really that compelling, at least during the (very long) period when a large fraction of the machines in the world haven't upgraded.
+                            </p>
+                            <p>
+                                <i>Does cert lock need DNSSEC?</i><br>
+                                As of this morning, I thought that cert lock didn't really need DNSSEC. The argument runs like this: let's say that the attacker can forge DNS records. The worst he can do is suppress or replace the certificate indication in the DNS to point to his own certificate, but since that certificate must be valid and the ability to attack DNS implies the ability redirect traffic (via modifying A records) then he could have done this in any case, so DANE doesn't make this any worse. On the other hand, there may be some attackers who can't attack DNS, or clients who have cached copies of the cert lock records in DNS, in which case clients are protected from attack. So while DNSSEC is desirable, it's not actually required.
+                            </p>
+                            <p>
+                                On second thought (and after some comments by Martin Rex), I'm a little less sure. An attacker who can intercept your connection is most likely also able to inject DNS records, so a naive client doesn't get protected by a cert lock style mechanism unless for some reason the attacker is unable to attack DNS. It's possible that a client might have a cached DNS record that contained a cert lock record, in which case it would be protected, but the duration of the cache time to live also limits the responsiveness of the client to unexpected certificate changes, so there are tradeoffs here.
+                            </p>
+                            <p>
+                                Overall, then, I'm not sure how valuable I think a DNS-based cert lock mechanism is in the absence of DNSSEC. As they say, my views are evolving
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.educatedguesswork.org/2011/03/more_thoughts_on_keys_in_the_d.html">http://www.educatedguesswork.org/2011/03/more_thoughts_on_keys_in_the_d.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

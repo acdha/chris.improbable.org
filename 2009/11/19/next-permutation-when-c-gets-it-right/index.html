@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Next permutation: When C++ gets it right
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 19 Nov 2009 08:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-19T03:00:00-04:00">
+                    <meta itemprop="dateModified" content="2009-11-19T03:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-19T07:00:00+00:00">Nov 19</time>
+                    <h2 itemprop="title">
+                        Next permutation: When C++ gets it right
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/f6283eb5097db25d">
+                        <blockquote>
+                            <div>
+                                <h2>
+                                    Contents
+                                </h2>
+                                <ul>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocthe-next-number-problem" name="toc0" id="toc0">The Next Number Problem</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocchoice-of-algorithm" name="toc1" id="toc1">Choice of Algorithm</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#toclexicographical-ordering" name="toc2" id="toc2">Lexicographical Ordering</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocnext-permutation-in-action" name="toc3" id="toc3">Next permutation in action</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocsnail-sorts-revenge" name="toc4" id="toc4">Snail sort’s revenge</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocthe-next-number-solved" name="toc5" id="toc5">The Next Number, Solved</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocimplementation" name="toc6" id="toc6">Implementation</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocwhats-happening-here" name="toc7" id="toc7">What’s happening here?</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocbeautiful-c" name="toc8" id="toc8">Beautiful C++?</a>
+                                    </li>
+                                    <li>
+                                        <a href="http://wordaligned.org/articles/next-permutation#tocpermutations-in-python" name="toc9" id="toc9">Permutations in Python</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc0" name="tocthe-next-number-problem" id="tocthe-next-number-problem">The Next Number Problem</a>
+                            </h3>
+                            <p>
+                                Suppose you have a fixed list of digits chosen from the range 1..9. What numbers can you make with them? You’re allowed as many zeros as you want. Write the numbers in increasing order.
+                            </p>
+                            <p>
+                                Exactly <a href="http://code.google.com/codejam/contest/dashboard?c=186264#s=p1">this puzzle</a> came up in the recent <a href="http://code.google.com/codejam">Google Code Jam</a> programming contest:
+                            </p>
+                            <blockquote>
+                                You are writing out a list of numbers. Your list contains all numbers with exactly <strong>D<sub>i</sub></strong> digits in its decimal representation which are equal to i, for each i between 1 and 9, inclusive. You are writing them out in ascending order.
+                                <p>
+                                    For example, you might be writing every number with two ‘1’s and one ‘5’. Your list would begin 115, 151, 511, 1015, 1051.
+                                </p>
+                                <p>
+                                    Given N, the last number you wrote, compute what the next number in the list will be.
+                                </p>
+                            </blockquote>
+                            <p>
+                                The competition has closed now, but if you’d like to give it a go sample input files can be found on the <a href="http://code.google.com/codejam/contest/dashboard?c=186264#s=p1">website</a>, where you can also upload your results and have them checked.
+                            </p>
+                            <p>
+                                Here’s a short section from a trial I ran on my computer. Input numbers are in the left-hand column: the corresponding output numbers are in the right-hand column.
+                            </p>
+                            <pre style="font-size:150%">
+50110812884911623516 → 50110812884911623561
+82454322474161687049 → 82454322474161687094
+82040229261723155710 → 82040229261723157015
+43888989554234187388 → 43888989554234187838
+76080994872481480636 → 76080994872481480663
+31000989133449480678 → 31000989133449480687
+20347716554681051891 → 20347716554681051918
+</pre>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc1" name="tocchoice-of-algorithm" id="tocchoice-of-algorithm">Choice of Algorithm</a>
+                            </h3>
+                            <p>
+                                Like many of the code jam challenges, you’ll need to write a program which runs fast enough; but choosing the right algorithm is more important than choosing the right language. Typically a high-level interpreted language like Python allows me to code and test a solution far more quickly than using a low-level language like C or C++.
+                            </p>
+                            <p>
+                                In this particular case, though, like most <a href="http://www.go-hero.net/jam/09/problems/2/2">successful candidates</a>, I used C++. <a href="http://www.sgi.com/tech/stl/next_permutation.html">Here’s why</a>.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <a href="http://www.sgi.com/tech/stl/next_permutation.html"><code>Next_permutation</code></a> transforms the range of elements <code>[first, last)</code> into the lexicographically next greater permutation of the elements. […] If such a permutation exists, <code>next_permutation</code> transforms <code>[first, last)</code> into that permutation and returns true. Otherwise it transforms <code>[first, last)</code> into the lexicographically smallest permutation and returns <code>false</code>.
+                                </p>
+                            </blockquote>
+                            <p>
+                                Although the next number problem appears to be about numbers and lexicographical ordering appears to be about words, <code>std::next_permutation</code> is exactly what’s needed here.
+                            </p>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc2" name="toclexicographical-ordering" id="toclexicographical-ordering">Lexicographical Ordering</a>
+                            </h3>
+                            <p>
+                                <a href="http://www.flickr.com/photos/thomasguest/4099819327/" title="Lexicographical order by Thomas Guest, on Flickr"><img src="http://farm3.static.flickr.com/2449/4099819327_4063635302.jpg" width="500" height="216" alt="Lexicographical order"></a>
+                            </p>
+                            <p>
+                                A dictionary provides the canonical example of lexicographical ordering. Words are built from characters, which can be alphabetically ordered A, B, C, … , so in the dictionary words which begin with <strong>A</strong> appear before words which begin with <strong>B</strong>, which themselves come in front of words beginning with <strong>C</strong>, etc. If two words start with the same letter, pop that letter from the head of the word and compare their tails, which puts AARDVARK before ANIMAL, and — applying this rule recursively — after <a href="http://www.aardman.com/" title="Bristol's finest">AARDMAN</a>. Imagine there’s an empty word marking position zero, before A, right at the front of the dictionary, and our recursive definition is complete.
+                            </p>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc3" name="tocnext-permutation-in-action" id="tocnext-permutation-in-action">Next permutation in action</a>
+                            </h3>
+                            <p>
+                                Here’s a simple program which shows <code>next_permutation()</code> in action.
+                            </p>
+                            <div>
+                                <pre>
+#include &lt;algorithm&gt;
+#include &lt;cstdio&gt;
+
+int main()
+{
+    char xs[] = "123";
+    do
+    {
+        std::puts(xs);
+    }
+    while (std::next_permutation(xs, xs + sizeof(xs) - 1));
+    return 0;
+}
+
+</pre>
+                            </div>
+                            <p>
+                                This program outputs lexicographically ordered permutations of 1, 2 and 3. When the main function returns, the array <code>xs</code> will have cycled round to hold the lexicographically smallest arrangement of its elements, which is <code>"123"</code>. Note that we never convert the characters <code>'1'</code>, <code>'2'</code>, <code>'3'</code> into the numbers <code>1</code>, <code>2</code>, <code>3</code>. The values of both sets of data types appear in the same order, so all works as expected.
+                            </p>
+                            <pre>
+123
+132
+213
+231
+312
+321
+</pre>
+                            <p>
+                                If we tweak and rerun the same program with <code>xs</code> initialised to <code>"AAADKRRV"</code> we get rather more output.
+                            </p>
+                            <pre>
+AAADKRRV
+AAADKRVR
+AAADKVRR
+...
+AARDVARK
+...
+VRRKAADA
+VRRKADAA
+VRRKDAAA
+</pre>
+                            <p>
+                                The sequence <strong>doesn’t</strong> start by repeating <code>"AAADKRRV"</code> 6 times, once for every permutation of the 3 A’s. Only strictly increasing permutations are included. And although the repeated calls to <code>next_permutation</code> generate a series of permutations, the algorithm holds no state. Each function call works on its input range afresh.
+                            </p>
+                            <p>
+                                This second run of the program yields 3360 lines of output, even though there are 8! = 40320 possible permutations of 8 characters. Each unique permutation corresponds to 3! × 2! = 12 actual permutations of the 8 characters (because there are 3 A’s and 2 R’s), and 40320 ÷ 12 is 3360.
+                            </p>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc4" name="tocsnail-sorts-revenge" id="tocsnail-sorts-revenge">Snail sort’s revenge</a>
+                            </h3>
+                            <p>
+                                <a href="http://www.flickr.com/photos/tim_norris/2789759648/"><img src="http://farm4.static.flickr.com/3143/2789759648_ab4bfb5ea8.jpg" width="500px" height="333px" alt="...and in last place. By Tim Norris"></a>
+                            </p>
+                            <p>
+                                As you can see, <code>next_permutation</code> sorts an input range, one step at a time. When <code>next_permutation</code> eventually returns false, the range will be perfectly ordered. Hence we have <code>snail_sort()</code>, hailed by the SGI STL <a href="http://www.sgi.com/tech/stl/next_permutation.html">documentation</a> as the worst known deterministic sorting algorithm.
+                            </p>
+                            <div>
+                                <pre>
+template &lt;class Iter&gt; 
+void snail_sort(Iter first, Iter last)
+{
+    while (next_permutation(first, last)) {}
+}
+
+</pre>
+                            </div>
+                            <p>
+                                Very witty, and evidence that code can be both <a href="http://wordaligned.org/articles/elegance-and-efficiency">elegant and inefficient</a>.
+                            </p>
+                            <p>
+                                In two important edge cases, though, <code>snail_sort</code> performs on a par with super-charged <code>quicksort</code>!
+                            </p>
+                            <ol>
+                                <li>I snail sorted an array filled with 100000000 zeros in 0.502 seconds. Running quicksort on the same array took 5.504 seconds.
+                                </li>
+                                <li>Starting with an array of the same size filled with the values 99999999, 99999998, 99999997, … 1, 0 snail sort’s 0.500 seconds trounced quicksort’s 4.08 seconds.
+                                </li>
+                            </ol>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc5" name="tocthe-next-number-solved" id="tocthe-next-number-solved">The Next Number, Solved</a>
+                            </h3>
+                            <p>
+                                Here’s an outline solution to the <a href="http://code.google.com/codejam/contest/dashboard?c=186264#s=p1">next number problem</a>. (I’ve glossed over the exact input and output file formats for clarity.) It reads numbers from standard input and writes next numbers to standard output. <code>Next_permutation</code> does the hard work, and there’s a bit of fiddling when we have to increase the number of digits by adding a zero.<a href="http://wordaligned.org/articles/next-permutation#fn1"><sup>[1]</sup></a>
+                            </p>
+                            <div>
+                                <pre>
+#include &lt;algorithm&gt;
+#include &lt;iostream&gt;
+
+/*
+ Given a string of digits, shift any leading '0's
+ past the first non-zero digit and insert an extra zero.
+ 
+ Examples:
+  
+ 123 -&gt; 1023
+ 008 -&gt; 8000
+ 034 -&gt; 3004
+*/
+void insert_a_zero(std::string &amp; number)
+{
+    size_t nzeros = number.find_first_not_of('0');
+    number = number.substr(nzeros);
+    number.insert(1, nzeros + 1, '0');
+}
+
+/*
+ Outline solution to the 2009 code jam Next Number problem.
+ 
+ Given a string representing a decimal number, find the next
+ number which can be formed from the same set of digits. Add
+ another zero if necessary. Repeat for all such strings read
+ from standard input.
+*/
+int main()
+{
+    std::string number;
+    while (std::cin &gt;&gt; number)
+    {
+        if (!next_permutation(number.begin(), number.end()))
+        {
+            insert_a_zero(number);
+        }
+        std::cout &lt;&lt; number &lt;&lt; '\n';
+    }
+    return 0;
+}
+
+</pre>
+                            </div>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc6" name="tocimplementation" id="tocimplementation">Implementation</a>
+                            </h3>
+                            <p>
+                                Having used the C++ standard library to solve the puzzle, let’s take a look at how it works. Next permutation is a clever algorithm which shuffles a collection in place. My system implements it like this<a href="http://wordaligned.org/articles/next-permutation#fn2"><sup>[2]</sup></a>.
+                            </p>
+                            <div>
+                                <pre>
+template&lt;typename Iter&gt;
+bool next_permutation(Iter first, Iter last)
+{
+    if (first == last)
+        return false;
+    Iter i = first;
+    ++i;
+    if (i == last)
+        return false;
+    i = last;
+    --i;
+        
+    for(;;)
+    {
+        Iter ii = i;
+        --i;
+        if (*i &lt; *ii)
+        {
+            Iter j = last;
+            while (!(*i &lt; *--j))
+            {}
+            std::iter_swap(i, j);
+            std::reverse(ii, last);
+            return true;
+        }
+        if (i == first)
+        {
+            std::reverse(first, last);
+            return false;
+        }
+    }
+}
+
+</pre>
+                            </div>
+                            <p>
+                                We start with a range delimited by a pair of bi-directional iterators, <code>[first, last)</code>. If the range contains one item or fewer, there can be no next permutation, so leave the range as is and return <code>false</code>. Otherwise, enter the <code>for</code> loop with an iterator <code>i</code> pointing at the final item in the range.
+                            </p>
+                            <p>
+                                At each pass through the body of this for loop we decrement <code>i</code> by one, stepping towards the first item in the range. We are looking for one of two conditions:
+                            </p>
+                            <ol>
+                                <li>the value pointed to by <code>i</code> is smaller than the one it pointed to previously
+                                </li>
+                                <li>
+                                    <code>i</code> reaches into the first item in the range
+                                </li>
+                            </ol>
+                            <p>
+                                Put another way, we divide the range into a head and tail, where the tail is the longest possible decreasing tail of the range.
+                            </p>
+                            <p>
+                                If this tail is the whole range (the second condition listed above) then the whole range is in reverse order, and we have the lexicographical maximum formed from its elements. Reversing the range returns it to its lexicographical minimum, and we can return <code>false</code>.
+                            </p>
+                            <p>
+                                If this tail is not the whole range, then the final item in the head of the range, the item <code>i</code> points to, this item is smaller than at least one of the items in the tail of the range, and we can certainly generate a greater permutation by moving the item towards the end of the range. To find the next permutation, we reverse iterate from the end of the range until we find an item <code>*j</code> bigger than <code>*i</code> — that’s what the while loop does. Swapping the items pointed to by <code>i</code> and <code>j</code> ensures the head of the range is bigger than it was, and the tail of the range remains in reverse order. Finally, we reverse the tail of the range, leaving us with a permutation exactly one beyond the input permutation, and we return <code>true</code>.
+                            </p>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc7" name="tocwhats-happening-here" id="tocwhats-happening-here">What’s happening here?</a>
+                            </h3>
+                            <p>
+                                It’s clear from this paper analysis that the algorithm is of linear complexity. Essentially, it walks up and down the tail of the list, comparing and swapping. But why does it work?
+                            </p>
+                            <p>
+                                Let <code>xs</code> be the range <code>(first, last)</code>. As described above, divide this range into prefix and suffix subranges, <code>head</code> and <code>tail</code>, where <code>tail</code> is the longest monotonically decreasing tail of the range.
+                            </p>
+                            <p>
+                                If the <code>head</code> of the range is empty, then the range <code>xs</code> is clearly at its lexicographical maximum.
+                            </p>
+                            <p>
+                                Otherwise, <code>tail</code> is a lexicographical maximum of the elements it contains, and <code>xs</code> is therefore the largest permutation which starts with the subrange <code>head</code>. What will the <code>head</code> of the next permutation be? We have to swap the final item in <code>head</code> with the smallest item of <code>tail</code> which exceeds it: the definition of <code>tail</code> guarantees at least one such item exists. Now we want to permute the new <code>tail</code> to be at a its lexicographical minimum, which is a matter of sorting it from low to high.
+                            </p>
+                            <p>
+                                Since <code>tail</code> is in reverse order, finding the smallest item larger than <code>head[-1]</code> is a matter of walking back from the end of the range to find the first such items; and once we’ve swapped these items, <code>tail</code> remains in reverse order, so a simple reversed will sort it.
+                            </p>
+                            <p>
+                                As an example consider finding the next permutation of:
+                            </p>
+                            <pre style="font-size:250%">
+8342666411
+</pre>
+                            <p>
+                                The longest monotonically decreasing tail is <code>666411</code>, and the corresponding head is <code>8342</code>.
+                            </p>
+                            <pre style="font-size:250%">
+8342 666411
+</pre>
+                            <p>
+                                <code>666411</code> is, by definition, reverse-ordered, and cannot be increased by permuting its elements. To find the next permutation, we must increase the head; a matter of finding the smallest tail element larger than the head’s final <code>2</code>.
+                            </p>
+                            <pre style="font-size:250%">
+834<span style="color:#930">2</span> 666411
+</pre>
+                            <p>
+                                Walking back from the end of tail, the first element greater than <code>2</code> is <code>4</code>.
+                            </p>
+                            <pre style="font-size:250%">
+834<span style="color:#930">2</span>  666<span style="color:#930">4</span>11
+</pre>
+                            <p>
+                                Swap the <code>2</code> and the <code>4</code>
+                            </p>
+                            <pre style="font-size:250%">
+834<span style="color:#930">4</span> 666<span style="color:#930">2</span>11
+</pre>
+                            <p>
+                                Since head has increased, we now have a greater permutation. To reduce to the next permutation, we reverse tail, putting it into increasing order.
+                            </p>
+                            <pre style="font-size:250%">
+8344 112666
+</pre>
+                            <p>
+                                Join the head and tail back together. The permutation one greater than <code>8342666411</code> is <code>8344112666</code>.
+                            </p>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc8" name="tocbeautiful-c" id="tocbeautiful-c">Beautiful C++?</a>
+                            </h3>
+                            <p>
+                                <a href="http://wordaligned.org/articles/looping-forever-and-ever"><img src="http://wordaligned.org/images/mite.jpg" alt="for(;;) dust mite"></a>
+                            </p>
+                            <p>
+                                C++ has its <a href="http://yosefk.com/c++fqa/defective.html" title="If you are an expert in the intricacies of C++, please consider this knowledge a kind of martial art - something a real master never uses. Yossi Keinin">detractors</a>, who characterise it as subtle, <a href="http://twitter.com/dabeaz/status/5677453478" title="C++0x reminds me of blocks stacked by my toddler. Really wobbly and one block too many makes it topple. @dabeaz">complex</a>, and <a href="http://www2.research.att.com/~bs/bs_faq.html#really-say-that" title="C++ can blow your whole leg off. Bjarne Stroustrup">dangerous</a>; but sometimes it excels. Look once more at the C++ implementation of this algorithm.
+                            </p>
+                            <div>
+                                <pre>
+template&lt;typename Iter&gt;
+bool next_permutation(Iter first, Iter last)
+{
+    if (first == last)
+        return false;
+    Iter i = first;
+    ++i;
+    if (i == last)
+        return false;
+    i = last;
+    --i;
+    
+    for(;;)
+    {
+        Iter ii = i;
+        --i;
+        if (*i &lt; *ii)
+        {
+            Iter j = last;
+            while (!(*i &lt; *--j))
+            {}
+            std::iter_swap(i, j);
+            std::reverse(ii, last);
+            return true;
+        }
+        if (i == first)
+        {
+            std::reverse(first, last);
+            return false;
+        }
+    }
+}
+
+</pre>
+                            </div>
+                            <p>
+                                With its special cases, boolean literals, multiple returns (4, count them!), disembodied and infinite loops, this code fails to exhibit conventional beauty. Yet <em>it is</em> beautiful. All the next permutation algorithm needs are iterators which can advance forwards or backwards, step by step. And that’s all this implementation uses.
+                            </p>
+                            <p>
+                                I’m as excited as anyone by the mathematical rigour of <a href="http://www.informit.com/articles/article.aspx?p=1407357&amp;seqNum=3" title="Great article by Andrei Alexandrescu, which questions a pure Haskell quicksort implementation">functional programming</a>, but sometimes computer science is about algorithms with virtually no space overhead, algorithms which loop rather than recurse. Sometimes it’s about shuffling, nudging and swapping — operations which map directly to the machine’s most primitive operations. In such cases, C++ gets it right.
+                            </p>
+                            <h3>
+                                <a href="http://wordaligned.org/articles/next-permutation#toc9" name="tocpermutations-in-python" id="tocpermutations-in-python">Permutations in Python</a>
+                            </h3>
+                            <p>
+                                For the code jam, though, as mentioned earlier, having a super-fast program rarely matters. More often, it’s about developing a fast enough program super-quickly.
+                            </p>
+                            <p>
+                                I find Python a far quicker language for developing code than C++. (Indeed, sometimes when it’s obvious from the outset that a final program will need implementing in C++, I put together a working prototype using Python, which I then translate.) Could we solve the next number problem using code from the standard Python library?
+                            </p>
+                            <p>
+                                At a first glance, <a href="http://docs.python.org/py3k/library/itertools.html#itertools.permutations">itertools.permutations</a> looks promising.
+                            </p>
+                            <blockquote>
+                                <h3>
+                                    <tt>itertools.permutations(<em>iterable</em>, <em>r=None</em>)</tt>
+                                </h3>
+                                <p>
+                                    Return successive <em>r</em> length permutations of elements in the <em>iterable</em>.
+                                </p>
+                                <p>
+                                    If <em>r</em> is not specified or is <tt>None</tt>, then <em>r</em> defaults to the length of the <em>iterable</em> and all possible full-length permutations are generated.
+                                </p>
+                                <p>
+                                    Permutations are emitted in lexicographic sort order. So, if the input <em>iterable</em> is sorted, the permutation tuples will be produced in sorted order.
+                                </p>
+                                <p>
+                                    Elements are treated as unique based on their position, not on their value. So if the input elements are unique, there will be no repeat values in each permutation.
+                                </p>
+                            </blockquote>
+                            <p>
+                                However, this algorithm doesn’t care about the values of the items in the iterable, and the lexicographic sort order applies to the indices of these items. So although the ordering of the generated items is well-defined:
+                            </p>
+                            <ol>
+                                <li>we get repeats, and
+                                </li>
+                                <li>it’s not the ordering we want (in this case)
+                                </li>
+                            </ol>
+                            <div>
+                                <pre>
+&gt;&gt;&gt; from itertools import permutations
+&gt;&gt;&gt; concat = ''.join
+&gt;&gt;&gt; list(map(concat, permutations('AAA')))
+['AAA', 'AAA', 'AAA', 'AAA', 'AAA', 'AAA']
+&gt;&gt;&gt; list(map(concat, permutations('231')))
+['231', '213', '321', '312', '123', '132']
+
+</pre>
+                            </div>
+                            <p>
+                                It <strong>is</strong> possible to code up <code>next_permutation</code> using nothing more than the standard itertools, but it isn’t advisable.
+                            </p>
+                            <div>
+                                <div>
+                                    Snail permute
+                                </div>
+                                <pre>
+from itertools import permutations, groupby
+
+def next_permutation(xs):
+    """Calculate the next permutation of the sequence xs.
+    
+    Returns a pair (yn, xs'), where yn is a boolean and xs' is the 
+    next permutation. If yn is True, xs' will be the lexicographic 
+    next permutation of xs, otherwise xs' is the lexicographic 
+    smallest permutation of xs.
+    """
+    xs = tuple(xs)
+    if not xs:
+        return False, xs
+    else:
+        ps = [p for p, gp in groupby(sorted(permutations(xs)))]
+        np = len(ps)
+        ix = ps.index(xs) + 1
+        if ix == len(ps):
+            return False, ps[0]
+        else:
+            return True, ps[ix]
+
+</pre>
+                            </div>
+                            <p>
+                                As it happens, a solution based on this exhaustive search would score points in the code jam since it copes with the small input set. For the large input set its factorial complexity rules it out, and we’d need to implement the next permutation algorithm <a href="http://code.google.com/codejam/contest/dashboard?c=186264#s=a&amp;a=1">from scratch</a>.
+                            </p>
+                            <hr>
+                            <p>
+                                <a href="http://wordaligned.org/articles/next-permutation#fn1link">[1]</a>: A more cunning <a href="http://code.google.com/codejam/contest/dashboard?c=186264#s=a&amp;a=1">solution</a> avoids the special case by pushing the extra zero to head of the string before applying <code>next_permutation</code>, then popping it if it hasn’t been moved.
+                            </p>
+                            <p>
+                                <a href="http://wordaligned.org/articles/next-permutation#fn2link">[2]</a>: I’ve tweaked the layout and parameter names for use on this site.
+                            </p><img src="http://feeds.feedburner.com/~r/wordaligned/~4/ESjRGU30bM8" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://feeds.wordaligned.org/~r/wordaligned/~3/ESjRGU30bM8/next-permutation">http://feeds.wordaligned.org/~r/wordaligned/~3/ESjRGU30bM8/next-permutation</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

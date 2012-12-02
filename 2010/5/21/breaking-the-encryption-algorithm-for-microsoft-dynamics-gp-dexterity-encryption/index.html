@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Breaking the “encryption algorithm” for Microsoft Dynamics GP – Dexterity Encryption
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 21 May 2010 05:50:29 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-21T01:50:29-04:00">
+                    <meta itemprop="dateModified" content="2010-05-21T01:50:29-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-21T05:50:29+00:00">May 21</time>
+                    <h2 itemprop="title">
+                        Breaking the “encryption algorithm” for Microsoft Dynamics GP – Dexterity Encryption
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/146137ddb2689df6">
+                        <blockquote>
+                            <p>
+                                FULL DISCLOSURE – I HAVE UPDATED THE ORIGINAL POST AND HAVE ADDED COMMENTS IN ITALIC AND RETRACTED OTHERS WITH A STRIKETHROUGH
+                            </p>
+                            <p>
+                                I use the term “encryption” loosely in this article. As you read on, you’ll realize why…
+                            </p>
+                            <p>
+                                I’ve been doing some work on a plugin for <a href="http://www.microsoft.com/dynamics/en/us/products/gp-overview.aspx">Microsoft Dynamics GP</a>, which is an accounting system aimed at Medium sized to Large businesses. To give you an idea of what type of application this is: There are companies that pay somewhere around $10,000-$15,000 to consultants or VARS (Value Added Resellers) to implement a Microsoft Dynamics GP solution for their business. Many of the VARs have their own plugins and solutions for Microsoft Dynamics GP, usually written in .NET or <a href="http://en.wikipedia.org/wiki/Dexterity_programming_language">Dexterity</a>. The process of installing and maintaining GP is an industry all it’s own and it’s not cheap for a company to maintain this accounting system.
+                            </p>
+                            <p>
+                                I’ve been searching for the “encryption algorithm” or at least some way other way to “encrypt” data in GP in some other way than within Dexterity code. I was really hoping that there would be some .NET library that would do this for me, but I was never able to find anything that would help me do this. So, I became interested in what type of “encryption” this is. Somewhere (I can’t remember where) I found something that indicated that the it’s a symmetric key encryption algorithm. The message boards were not much help either. Anywhere I went, I basically saw this same type of statement, <a href="http://www.eggheadcafe.com/software/aspnet/33042377/odbc-dsn-dynamics-gp-syst.aspx">“the encryption algorithm is a closely guarded secret”.</a>
+                            </p>
+                            <p>
+                                Today, while doing some testing, I noticed something with data that we were saving to a field which utilizes the GP “encryption”. The plugin I was testing puts data in an encrypted field (not that it needs to because it’s not sensitive in nature), and I was testing with the same values each time. As I would expect, I saw the same data stored in the field in the database for each row in the table. However, I noticed that one of the entries was different, by 2 characters. That seemed very odd to me. After looking at it some more and conducting some more tests, it looks like I simply miskeyed my test data, but it prompted me to take another look at this.
+                            </p>
+                            <p>
+                                After trying a couple different combinations of test data, it became very obvious that changing only one character in the test data appeared to only alter 2 characters of the encrypted data. So I ran through a battery of tests, and came up with this:
+                            </p>
+                            <p>
+                                ’1′=’DF’, ’2′=’DC’, ’3′=’DD’, ’4′=’DA’, ’5′=’DB’, ’6′=’D8′, ’7′=’D9′, ’8′=’D6′,<br>
+                                ’9′=’D7′, ‘A’='AF’, ‘B’='AC’, ‘C’='AD’, ‘D’='AA’, ‘E’='AB’, ‘F’='A8′, ‘G’='A9′,<br>
+                                ‘H’='A6′, ‘I’='A7′, ‘J’='A4′, ‘K’='A5′, ‘L’='A2′, ‘M’='A3′, ‘N’='A0′, ‘O’='A1′,<br>
+                                ‘P’='BE’, ‘Q’='BF’, ‘R’='BC’, ‘S’='BD’, ‘T’='BA’, ‘U’='BB’, ‘V’='B8′, ‘W’='B9′,<br>
+                                ‘X’='B6′, ‘Y’='B7′, ‘Z’='B4′, ‘a’=’8F’, ‘b’=’8C’, ‘c’=’8D’, ‘d’=’8A’, ‘e’=’8B’,<br>
+                                ‘f’=’88′, ‘g’=’89′, ‘h’=’86′, ‘i’=’87′, ‘j’=’84′, ‘k’=’85′, ‘l’=’82′, ‘m’=’83′,<br>
+                                ‘n’=’80′, ‘o’=’81′, ‘p’=’9E’, ‘q’=’9F’, ‘r’=’9C’, ‘s’=’9D’, ‘t’=’9A’, ‘u’=’9B’,<br>
+                                ‘v’=’98′, ‘w’=’99′, ‘x’=’96′, ‘y’=’97′, ‘z’=’94′, ‘!’='CF’, ‘@’='AE’, ‘#’='CD’,<br>
+                                ‘$’='CA’, ‘%’='CB’, ‘^’='B0′, ‘&amp;’='C8′, ‘*’='C4′, ‘(‘=’C6′, ‘)’='C7′, ‘ ‘=’CE’,<br>
+                                ”=’20′, ”=’00′,’-'=’C3′, ‘_’='B1′, ‘=’='D3′, ‘+’='C5′, ‘['='B5', ']‘=’B3′,<br>
+                                ‘{‘=’95′, ‘}’=’93′, ‘\’='B2′, ‘|’=’92′, ‘;’='D5′, ‘:’='D4′, ””=’C9′, ‘”‘=’CC’,<br>
+                                ‘=’='C2′, ‘&lt;’='D2′, ‘.’='C0′, ‘&gt;’='D0′, ‘/’='C1′, ‘?’='D1′, ‘`’=’8E’, ‘~’=’90′
+                            </p>
+                            <p>
+                                Yep, it’s basically your run-of-the-mill Substitution cipher. The worst part, there’s evidence all over the place that this was a VERY weak encryption algorithm for awhile, but nobody seemed to pay any attention to it when people were asking how they could reset passwords of users in the database (<a href="https://community.dynamics.com/blogs/gpmohammad/comments/33220.aspx">Post 1</a> – <a href="http://www.microsoftdynamicsforums.com/forums/forum_posts.asp?TID=1647">Post 2</a>)
+                            </p>
+                            <p>
+                                I did some more searching, because there is ABSOLUTELY NO WAY THAT I AM THE ONLY ONE THAT SAW THIS… I found a good write up on the MSDN blogs that explains pretty well how the GP encryption was used (<a href="http://blogs.msdn.com/developingfordynamicsgp/archive/2008/10/02/why-does-microsoft-dynamics-gp-encrypt-passwords.aspx">here</a>).
+                            </p>
+                            <p>
+                                The article is evidence to support a theory that I have, which is after GP moved to SQL server authentication, the encryption method didn’t seem to be needed any longer so they never replaced. I don’t know if the word was released to developers and integrators that the “encryption algorithm” wasn’t ideal for storage of sensitive information, but I don’t know how many plugins or customizations use it either.
+                            </p>
+                            <p>
+                                EXCEPT…. Microsoft still uses it for their GP system password, which is the password needed to get to the Security Roles/Tasks and all the User Security related forms while in GP. What’s even worse, if you create a new user, you have to give the user explicit rights to the company or companies you want the user to access, but you DON’T HAVE TO GIVE ACCESS TO THE DYNAMICS DATABASE. <span style="text-decoration:line-through">What that means is if you create a base user in GP, that user can log into the SQL server and run select AND INSERT statements on tables containing the “encrypted” GP System password and Security Roles… Not good…</span> <em>I must correct this and clarify. By default, GP gives the user access to the DYNAMICS database but the user CANNOT login to the SQL server using SQL Enterprise Manager. Here’s what happened: I reset the LESSONUSER’s passwords with SQL Enterprise Manager and afterward I was able to login to SQL Enterprise Manager with the LESSONUSER’s credentials. Some flag most have been updated when I reset the password – I need to investigate this further (this was all done in a Test environment). This was a BIG oversight on my part and I apologize for this. I really should have tested this out more before posting that statement. (Thank you Mark and others that pointed this out to me).</em>
+                            </p>
+                            <p>
+                                I created a function that you can use to decrypt GP “encrypted” data. You can find it <a href="http://www.christopherkois.com/wp-content/uploads/2010/05/fn_decrypt_value.txt">here</a> <em>(link is working again)</em>. If you create the function on the SQL server, you can then retrieve the Master password by running this query:
+                            </p>
+                            <pre>
+select dbo.[fn_Decrypt_Value] (PASSWORD, 16) from DYNAMICS.dbo.SY02400
+</pre>
+                            <p>
+                                <em>Another point I need to clarify, as Mark pointed out, this master password is just a secondary password that is OPTIONAL.</em> <em>THIS PASSWORD DOES NOT GIVE YOU ACCESS TO GP.</em> <em>If you have this password set, the user attempting to access the Security Roles/User Forms will need to enter it. This is not a very secure way to store this password, but it is not the primary form of authentication to GP.</em>
+                            </p>
+                            <p>
+                                I did ALOT of searching to see if anyone had reported this in the past, but I found no indication of this ever being found. I don’t know if this is a “REAL” discovery, but I would think it’s worth knowing. I hope you found this informative!
+                            </p>
+                            <p>
+                                <em>This was originally meant to be a disclosure that the Microsoft Dynamics GP Dexterity Encryption algorithm was weak and has been broken. The retracted statement was an oversight on my part and I’m sorry for this.</em>
+                            </p>
+                            <p>
+                                Other References:
+                            </p>
+                            <p>
+                                <a href="http://www.streetdirectory.com/travel_guide/122860/microsoft/microsoft_dynamics_gp_table_structure_overview.html">Microsoft Dynamics GP Table Structure Overview</a>
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.christopherkois.com/?p=448">http://www.christopherkois.com/?p=448</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

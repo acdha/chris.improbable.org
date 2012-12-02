@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Get SQL features on NoSQL with django-dbindexer
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 02 Sep 2010 12:53:10 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-09-02T08:53:10-04:00">
+                    <meta itemprop="dateModified" content="2010-09-02T08:53:10-04:00"><time class="date" itemprop="datePublished" datetime="2010-09-02T12:53:10+00:00">Sep 02</time>
+                    <h2 itemprop="title">
+                        Get SQL features on NoSQL with django-dbindexer
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7058b0118fbe55cc">
+                        <blockquote>
+                            <div style="overflow:hidden;margin-bottom:8px"></div>
+                            <div>
+                                <p>
+                                    With the just released <a href="http://www.allbuttonspressed.com/projects/django-dbindexer">django-dbindexer</a> you can use <strong>all Django lookup types</strong> ("iexact", "month", "day", etc.) on non-relational DBs like App Engine and MongoDB, even if they're not natively supported by that DB! Also, django-dbindexer can help you with optimizing your code. For instance, case-insensitive filters on MongoDB can't use indexes, so they're not very efficient. With django-dbindexer they can be handled as efficient case-sensitive filters which utilize an index. Sounds too good to be true? Keep reading.
+                                </p>
+                                <p>
+                                    Non-relational databases have rather limited query APIs. For example, on App Engine you can't do a case-insensitive "iexact" match. Developers on these platforms have to use ugly workarounds to implement unsupported filters. Poor guys. ;) This is how you'd emulate "iexact" and "month" on App Engine (using <a href="http://www.allbuttonspressed.com/projects/djangoappengine">djangoappengine</a>):
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+<span style="color:#999988;font-style:italic"># models.py:</span>
+
+<span style="font-weight:bold">class</span> <span style="color:#445588;font-weight:bold">MyModel</span>(models<span style="font-weight:bold">.</span>Model):
+    name <span style="font-weight:bold">=</span> models<span style="font-weight:bold">.</span>CharField(max_length<span style="font-weight:bold">=</span><span style="color:#009999">64</span>)
+    lowercase_name <span style="font-weight:bold">=</span> models<span style="font-weight:bold">.</span>CharField(max_length<span style="font-weight:bold">=</span><span style="color:#009999">64</span>, editable<span style="font-weight:bold">=</span><span style="color:#999999">False</span>)
+    last_modified <span style="font-weight:bold">=</span> models<span style="font-weight:bold">.</span>DateTimeField(auto_now<span style="font-weight:bold">=</span><span style="color:#999999">True</span>)
+    month_last_modified <span style="font-weight:bold">=</span> models<span style="font-weight:bold">.</span>IntegerField(editable<span style="font-weight:bold">=</span><span style="color:#999999">False</span>)
+
+    <span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">save</span>(<span style="color:#999999">self</span>, <span style="font-weight:bold">*</span>args, <span style="font-weight:bold">**</span>kwargs):
+        <span style="color:#999999">self</span><span style="font-weight:bold">.</span>lowercase_name <span style="font-weight:bold">=</span> <span style="color:#999999">self</span><span style="font-weight:bold">.</span>name<span style="font-weight:bold">.</span>lower()
+        <span style="color:#999999">self</span><span style="font-weight:bold">.</span>month_last_modified <span style="font-weight:bold">=</span> <span style="color:#999999">self</span><span style="font-weight:bold">.</span>last_modified<span style="font-weight:bold">.</span>month
+        <span style="color:#999999">super</span>(MyModel, <span style="color:#999999">self</span>)<span style="font-weight:bold">.</span>save(<span style="font-weight:bold">*</span>args, <span style="font-weight:bold">**</span>kwargs)
+
+<span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">run_query</span>(name, month):
+    MyModel<span style="font-weight:bold">.</span>objects<span style="font-weight:bold">.</span>filter(lowercase_name<span style="font-weight:bold">=</span>name<span style="font-weight:bold">.</span>lower(),
+                           month_last_modified<span style="font-weight:bold">=</span>month)
+</pre>
+                                </div>
+                                <p>
+                                    This has several problems:
+                                </p>
+                                <ul>
+                                    <li>You have to remember to use <tt>lowercase_name</tt> and <tt>lower()</tt> and <tt>month_last_modified</tt>
+                                    </li>
+                                    <li>You can't reuse existing Django code without analyzing and modifying all models and queries
+                                    </li>
+                                    <li>You can't easily utilize this workaround in the admin interface
+                                    </li>
+                                    <li>Even if you modify an existing app you still have to keep your patches up-to-date
+                                    </li>
+                                    <li>It makes your models and queries unnecessarily complicated
+                                    </li>
+                                </ul>
+                                <p>
+                                    The model above had merely two fields: "name" and "last_modified". It's easy to imagine that in larger projects the models can become a real mess because of all the workarounds. This is just the wrong way to write DB code. Can't we automate this? Yes, we can! Enter <a href="http://www.allbuttonspressed.com/projects/django-dbindexer">django-dbindexer</a>. It allows you to specify index definitions separately from the model, similar to the "index.yaml" file on App Engine and the <a href="http://www.allbuttonspressed.com/blog/django/2010/07/Managing-per-field-indexes-on-App-Engine">djangoappengine index definitions</a> feature. Let's see what the example from above looks like with the indexer:
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+<span style="color:#999988;font-style:italic"># models.py:</span>
+
+<span style="font-weight:bold">class</span> <span style="color:#445588;font-weight:bold">MyModel</span>(models<span style="font-weight:bold">.</span>Model):
+    name <span style="font-weight:bold">=</span> models<span style="font-weight:bold">.</span>CharField(max_length<span style="font-weight:bold">=</span><span style="color:#009999">64</span>)
+    last_modified <span style="font-weight:bold">=</span> models<span style="font-weight:bold">.</span>DateTimeField(auto_now<span style="font-weight:bold">=</span><span style="color:#999999">True</span>)
+
+<span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">run_query</span>(name, month):
+    MyModel<span style="font-weight:bold">.</span>objects<span style="font-weight:bold">.</span>filter(name__iexact<span style="font-weight:bold">=</span>name, last_modified__month<span style="font-weight:bold">=</span>month)
+</pre>
+                                </div>
+                                <p>
+                                    Looks exactly like with SQL. Nice, isn't it? All you need to make this work is this index definition:
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+<span style="color:#999988;font-style:italic"># dbindexes.py:</span>
+
+<span style="font-weight:bold">from</span> <span style="color:#555555">models</span> <span style="font-weight:bold">import</span> MyModel
+<span style="font-weight:bold">from</span> <span style="color:#555555">dbindexer.api</span> <span style="font-weight:bold">import</span> register_index
+register_index(MyModel, {<span style="color:#bb8844">'name'</span>: <span style="color:#bb8844">'iexact'</span>, <span style="color:#bb8844">'last_modified'</span>: <span style="color:#bb8844">'month'</span>})
+</pre>
+                                </div>
+                                <p>
+                                    With this little index definition we solve all of the problems mentioned above. Many Django apps like <a href="http://bitbucket.org/ubernostrum/django-registration">django-registration</a> can be brought to life on non-relational DBs <strong>without any modifications</strong> to their source. Also, the authors of reusable Django apps can add a simple "index.py" file to their project to make sure that NoSQL developers can use it out-of-the-box. At the same time the code will continue to work on SQL DBs. Even projects that target only non-relational DBs can benefit from the indexer because their code becomes <strong>simpler and portable</strong> across many NoSQL DBs. The indexer allows the different NoSQL communities to <strong>share the same code</strong>, sometimes even with the SQL community!
+                                </p>
+                                <p>
+                                    Moreover, the index definition makes the "iexact" filter work efficiently on MongoDB because it converts the string to lowercase, so the "iexact" filter becomes an "exact" filter. This way it can be executed efficiently by using a MongoDB index.
+                                </p>
+                                <p>
+                                    You can also define multiple filters on a single field by passing a tuple of filters:
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+register_index(MyModel, {<span style="color:#bb8844">'name'</span>: (<span style="color:#bb8844">'iexact'</span>, <span style="color:#bb8844">'istartswith'</span>, <span style="font-weight:bold">...</span>)})
+</pre>
+                                </div>
+                                <p>
+                                    Finally, if you want to see a complete example you can download the <a href="http://bitbucket.org/twanschik/django-dbindexer-testapp/src">sample project</a> for App Engine.
+                                </p>
+                                <div>
+                                    <h2>
+                                        With great power comes responsibility ;)
+                                    </h2>
+                                    <p>
+                                        If you're new to NoSQL all this might sound like the Holy Grail that can magically solve all problems. Keep in mind that this is primarily a utility to make advanced developers more productive. You have to understand what's happening internally, so you can make wise design decisions. The internal implementation details of every filter are documented in the <a href="http://www.allbuttonspressed.com/projects/django-dbindexer">reference</a>.
+                                    </p>
+                                    <p>
+                                        For example, the "contains" filter stores a <tt>ListField</tt> with all substrings of the indexed field. When querying, it uses "startswith" on that <tt>ListField</tt>. On App Engine <tt>startswith</tt> gets converted to "&gt;=" and "&lt;" filters.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Installation
+                                    </h2>
+                                    <p>
+                                        This might sound strange, but the indexer is implemented as a database backend which proxies your actual database backend. For example, if you're on App Engine you have to specify your App Engine backend (here: "gae") and the indexer (here "default") and then you tell the indexer via <tt>'TARGET'</tt> which backend should be indexed:
+                                    </p>
+                                    <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                        <pre style="line-height:125%">
+<span style="color:#999988;font-style:italic"># settings.py:</span>
+
+DATABASES <span style="font-weight:bold">=</span> {
+    <span style="color:#bb8844">'default'</span>: {
+        <span style="color:#bb8844">'ENGINE'</span>: <span style="color:#bb8844">'dbindexer'</span>,
+        <span style="color:#bb8844">'TARGET'</span>: <span style="color:#bb8844">'gae'</span>,
+    },
+    <span style="color:#bb8844">'gae'</span>: {
+        <span style="color:#bb8844">'ENGINE'</span>: <span style="color:#bb8844">'djangoappengine.db'</span>,
+    },
+}
+
+MIDDLWARE_CLASSES <span style="font-weight:bold">=</span> (
+    <span style="color:#999988;font-style:italic"># This has to come first</span>
+    <span style="color:#bb8844">'autoload.middleware.AutoloadMiddleware'</span>,
+    <span style="font-weight:bold">...</span>
+)
+
+INSTALLED_APPS <span style="font-weight:bold">=</span> (
+    <span style="font-weight:bold">...</span>
+    <span style="color:#bb8844">'autoload'</span>,
+    <span style="color:#bb8844">'dbindexer'</span>,
+)
+</pre>
+                                    </div>
+                                    <p>
+                                        Note that the <tt>settings.py</tt> in <a href="http://bitbucket.org/wkornewald/django-testapp">django-testapp</a> already auto-detects and configures the dbindexer somewhere at the bottom of <tt>settings.py</tt>, so you might not need to change your settings. The middleware has to come first because it must load all index definitions before any other code tries to interact with the database. For more information on auto-loading of specified modules see <a href="http://www.allbuttonspressed.com/projects/django-autoload">django-autoload</a>.
+                                    </p>
+                                    <p>
+                                        Next we have to define a site configuration module which loads the required index definitions. Let's put it in a <tt>dbindexes.py</tt> in our project root folder. First, we add it to <tt>settings.py</tt>:
+                                    </p>
+                                    <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                        <pre style="line-height:125%">
+<span style="color:#999988;font-style:italic"># settings.py:</span>
+AUTOLOAD_SITECONF <span style="font-weight:bold">=</span> <span style="color:#bb8844">'dbindexes'</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        The actual site configuration module looks like this:
+                                    </p>
+                                    <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                        <pre style="line-height:125%">
+<span style="color:#999988;font-style:italic"># dbindexes.py:</span>
+<span style="font-weight:bold">from</span> <span style="color:#555555">dbindexer</span> <span style="font-weight:bold">import</span> autodiscover
+autodiscover()
+</pre>
+                                    </div>
+                                    <p>
+                                        The <tt>autodiscover()</tt> function will load all modules named <tt>dbindexes.py</tt> from your <tt>settings.INSTALLED_APPS</tt>, so they can register their indexes. Alternatively, you can just import the desired index definition modules directly without calling <tt>autodiscover()</tt>.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h2>
+                                        The future
+                                    </h2>
+                                    <p>
+                                        This is just the beginning. At the moment the indexer "only" adds support for all Django filters, but the plan is to also add support for JOINs by automatically denormalizing your models. We could also support aggregates and <tt>distinct()</tt> and <tt>values()</tt> and nested queries and much much more. It won't be 100% all of SQL, but we want to get really close as long as it can be done in a scalable way. This will allow you to write complex queries in a few minutes instead of hours (including unit tests and debugging ;). No more hand-written denormalization and map/reduce and aggregate code. Just tell the indexer what you want to do and it'll handle it for you. Most importantly, it'll do this in a scalable way and internally it'll use the DB exactly like your hand-written code would (or even better ;). The first step is done. If you want to help with the next phase you can drop us a mail: <a href="http://groups.google.com/group/django-non-relational">http://groups.google.com/group/django-non-relational</a>.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="overflow:hidden">
+                                <a title="Tweet this!" style="margin-right:5px" href="http://twitter.com/share?text=Get%20SQL%20features%20on%20NoSQL%20with%20django-dbindexer&amp;url=http%3A//www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer&amp;via=wkornewald"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/twitter-ba4f7679fb49cd4eb99cae4267d48d23c81137d4.png" alt="Tweet this!" width="32" height="32"></a> <a title="Share on Facebook" style="margin-right:5px" href="http://www.facebook.com/share.php?u=http%3A//www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer&amp;t=Get%20SQL%20features%20on%20NoSQL%20with%20django-dbindexer"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/facebook-4b8233c3eb59d633eacdc5dbd8b98be769b9386d.png" alt="Share on Facebook" width="32" height="32"></a> <a title="Email a friend" style="margin-right:5px" href="http://feedburner.google.com/fb/a/emailFlare?itemTitle=Get%20SQL%20features%20on%20NoSQL%20with%20django-dbindexer&amp;uri=http%3A//www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/email-e5a5556616278659d7761a5df6c58238d77ec47c.png" alt="Email a friend" width="32" height="32"></a> <a title="Share on Delicious" style="margin-right:5px" href="http://del.icio.us/post?url=http%3A//www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer&amp;title=Get%20SQL%20features%20on%20NoSQL%20with%20django-dbindexer"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/delicious-400c2ae7e6871479f4bb34a4f8f476784a0992bf.png" alt="Share on Delicious" width="32" height="32"></a> <a title="Share on StumbleUpon" style="margin-right:5px" href="http://www.stumbleupon.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer&amp;title=Get%20SQL%20features%20on%20NoSQL%20with%20django-dbindexer"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/stumbleupon-b725d91b84d24fa42787a8c79aa2695c5e5fb288.png" alt="Share on StumbleUpon" width="32" height="32"></a> <a title="Share on Digg" style="margin-right:5px" href="http://digg.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer&amp;title=Get%20SQL%20features%20on%20NoSQL%20with%20django-dbindexer"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/digg-8ada117a5610042c9fd592d3f4d3d20be242334d.png" alt="Share on Digg" width="32" height="32"></a> <a title="Share on Reddit" style="margin-right:5px" href="http://reddit.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer&amp;title=Get%20SQL%20features%20on%20NoSQL%20with%20django-dbindexer"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/reddit-f2c9d5792319c1a340054f310f4646642a48fe43.png" alt="Share on Reddit" width="32" height="32"></a> <a title="Share on Technorati" style="margin-right:5px" href="http://technorati.com/faves?sub=favthis&amp;add=http%3A//www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/technorati-1fa5656a85357eba71c018c718a7b36561a6f71c.png" alt="Share on Technorati" width="32" height="32"></a>
+                            </div>
+                            <p>
+                                <a href="http://www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer#disqus_thread">Leave a comment</a>
+                            </p><img src="http://feeds.feedburner.com/~r/AllButtonsPressed/~4/Ruz8btdU07Y" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer">http://www.allbuttonspressed.com/blog/django/2010/09/Get-SQL-features-on-NoSQL-with-django-dbindexer</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            I got accidental code execution via glibc?!
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 25 Feb 2011 02:54:51 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-24T19:13:00-04:00">
+                    <meta itemprop="dateModified" content="2011-02-24T19:13:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-24T23:13:00+00:00">Feb 24</time>
+                    <h2 itemprop="title">
+                        I got accidental code execution via glibc?!
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/1e9746a6dac35de2">
+                        <blockquote>
+                            <i>The story of <a href="http://code.google.com/p/chromium/issues/detail?id=48733">Chromium security bug 48733</a>, with guest Cris Neckar, part I</i><br>
+                            <br>
+                            It has been a long time now, but the story of <a href="http://code.google.com/p/chromium/issues/detail?id=48733">Chromium security bug 48733</a> deserves to be told. It involves intrigue in glibc and even gcc; and notably I accidentally executed arbitrary code whilst playing with this bug!<br>
+                            <br>
+                            The bug was reported in July 2010, and there were instantly some WTF aspects. It caused a full browser crash on Linux, and the trigger seemed to be a long string. Such a case would tend to suggest a buffer overflow; but these are very unusual in Chromium code. Upon further investigation, the crash was occurring in the glibc function <code>fnmatch()</code>:<br>
+                            <pre>
+<br>int fnmatch(const char *pattern, const char *string, int flags);<br>
+</pre><br>
+                            And what was very strange was the trigger was not the pattern (which is a complicated string format), but simply the string itself. Further investigation narrowed the problem down to any long-ish (few megabytes+) string, if the locale was set to UTF8. A simple C test program is included at the end of the post. And here comes the killer: I was playing around and ran the program like this on my 32-bit Ubuntu 9.04 machine:<br>
+                            <pre>
+<br>./a.out 1073741796<br>
+</pre><br>
+                            And <b>accidentally achieved arbitrary code execution!</b> The "A" characters making up the large input string actually correspond to the instruction <code>inc %ecx</code> so I wound up executing a bunch of those.<br>
+                            <br>
+                            <b>So what was going on?</b><br>
+                            Probably best to tackle the list of interesting points in bullet form:<br>
+                            <ul>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>glibc had a bug where it would use <code>alloca()</code> for the length of a user-supplied UTF8 string, times four (with additional integer overflow in the times four). This is good for at least a crash, because alloca() extends the stack, which is typically limited to a few MB.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>It seems uncommon for Linux distributions to compile packages with gcc flags that defend against stack extension attacks -- more about that in part II.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>32-bit Ubuntu releases used to lack DEP. Perhaps they still do? This permits the execution of code contained within heap chunks, and is key to the accidental code execution achieved.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>But how did EIP get redirected? The number passed to <code>a.out</code> above is a bit magic; glibc multiplies it by 4 (<code>sizeof(wchar_t)</code>) before passing it to <code>alloca()</code>, which ends up with the value <code>2^32 - 112</code>. This wraps the stack pointer, causing an effective <b>decrease</b> in the stack of 112 bytes.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>The decrease in stack size leads to all sorts of havoc; we're not sure, but most likely a local variable (in a subfunction of the function that called <code>alloca()</code>), pointing to the incoming heap string -- got plonked on top a saved EIP. I no longer have the old version of Ubuntu to test with, and more recent glibcs are fixed, so I can't confirm.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>Note that stack extension bugs like this often sidestep a lot of system defenses, such as stack canaries (which are left undamaged) and ASLR (a valid address is automatically filled in). It's another case where Ubuntu could really have used DEP; see <a href="http://scarybeastsecurity.blogspot.com/2009/03/littlecms-exploit.html">my older Firefox exploit</a> for further proof!
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                            </ul><br>
+                            <b>How does part I end?</b><br>
+                            Of course, we reported the bug upstream to glibc: <a href="http://sourceware.org/bugzilla/show_bug.cgi?id=11883">http://sourceware.org/bugzilla/show_bug.cgi?id=11883</a>. The somewhat terse response notes that the issue was fixed but not in which version. Because of this, no glibc security advisories were released; so apologies if your older but still supported Linux distribution might still have vulnerabilities in this area.<br>
+                            <br>
+                            Although certainly not a bug in Chromium, we still paid the bug finder $1337 under the <a href="http://blog.chromium.org/2010/01/encouraging-more-chromium-security.html">Chromium Security Reward program</a>. We did this partly just because we can, and we love encouraging all security research. But also, we were able to work around this glibc bug in Chromium fairly trivially -- so we did so in short order. As can be seen from the Chromium bug, we had all users protected in under 20 days from the original report, despite it not being our fault!<br>
+                            <br>
+                            <pre>
+<br>#include &lt;err.h&gt;<br>#include &lt;fnmatch.h&gt;<br>#include &lt;locale.h&gt;<br>#include &lt;stdlib.h&gt;<br>#include &lt;string.h&gt;<br><br>int main(int argc, const char* argv[]) {<br>  size_t num_as;<br>  char* p;<br>  setlocale(LC_ALL, "en_US.UTF8");<br>  if (argc &lt; 2) {<br>    errx(1, "Missing argument.");<br>  }<br>  num_as = atoi(argv[1]);<br>  if (num_as &lt; 5) {<br>    errx(1, "Need 5.");<br>  }<br>  p = malloc(num_as);<br>  if (!p) {<br>    errx(1, "malloc() failed.");<br>  }<br>  memset(p, 'A', num_as);<br>  p[num_as - 1] = '\0';<br>  p[0] = 'f';<br>  p[1] = 'o';<br>  p[2] = 'o';<br>  p[3] = '.';<br>  fnmatch("*.anim[1-9j]", p, 0);<br>  return 0;<br>}<br>
+</pre>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3024470480937744884-8650999186351892883?l=scarybeastsecurity.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://scarybeastsecurity.blogspot.com/2011/02/i-got-accidental-code-execution-via.html">http://scarybeastsecurity.blogspot.com/2011/02/i-got-accidental-code-execution-via.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

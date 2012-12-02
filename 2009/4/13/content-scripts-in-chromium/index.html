@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Content Scripts in Chromium
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 13 Apr 2009 23:26:25 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-13T05:01:00-04:00">
+                    <meta itemprop="dateModified" content="2009-04-13T05:01:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-13T09:01:00+00:00">Apr 13</time>
+                    <h2 itemprop="title">
+                        Content Scripts in Chromium
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/9fbaa6a547119ef5">
+                        <blockquote>
+                            <div>
+                                Here's an interesting factoid about browser extensions: lots of them are not about extending the browser at all. By my count, about 75% of the this week's <a href="https://addons.mozilla.org/en-US/firefox/browse/type:1/cat:all?sort=popular">top 20</a> Firefox extensions are more about extending the web content rendered by the browser than extending the browser itself. Similar trends exist in other browser extension systems.
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    Chromium extensions will be able to interact with web content too, using a feature we're calling <i>content scripts</i> (we've gone around and around on the name, this may not be final). The code for this is at a pretty good stopping point now, so I wanted to pause and write down what we did, why we did it, and some ideas I have for future improvements.
+                                </div><br>
+                                <div>
+                                    If you want to try it out, you can check out the beginnings of our <a href="http://dev.chromium.org/developers/design-documents/extensions/howto">Extension Tutorial</a>, which covers most of what I'll talk about here.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    First, some background on the feature...
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    Content scripts are basically the same thing as Greasemonkey scripts, with some important improvements.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    You register your content scripts declaratively in your extension's manifest, like this:
+                                </div>
+                                <pre>
+{<br>  "name": "My first extension",<br>  "description": "The first extension that I made",<br>  "version": "1.0",<br>  "content_scripts": [<br>    {<br>      "matches": ["http://www.google.com/*", "http://mail.google.com/"],<br>      "css": ["foo.css", "bar.css"],<br>      "js": ["hot.js", "dog.js"],<br>      "run_at": "document_start"<br>    }<br>  ]<br>}
+</pre>The syntax for <a href="http://src.chromium.org/viewvc/chrome/trunk/src/chrome/common/extensions/url_pattern.h">matching URLs</a> is slightly different than in Greasemonkey. The reason for this is that we wanted to eliminate a common bug in Greasemonkey scripts, where people accidentally match URLs more loosely than they intend. A classic example is the common Greasemonkey pattern <i><b>@include *.google.com*</b></i>, which matches <i>every</i> domain, not just google.com and its subdomains.
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    The matching syntax used in content scripts separates the domain portion of the pattern from the path portion, making it more explicit which sites a script will run on. One way we could use this is to someday do UI like this:
+                                </div><br>
+                                <pre>
+==============================================<br>Install 'My extension'?<br>----------------------------------------------<br>This extension will be able to interact with<br>web pages on:<br><br>www.google.com<br>mail.google.com<br><br>                            [ok] [cancel]<br>==============================================
+</pre><br>
+                                Other minor feature differences:
+                            </div>
+                            <div>
+                                <ul>
+                                    <li>A content script can consist of multiple physical JavaScript files or CSS files, and it can also reference images or other resources included in the extension by URL.
+                                    </li>
+                                    <li>Content scripts support "early injection", which allows them to request being injected before any nodes have been added to the document by using the optional "run_at" key.
+                                    </li>
+                                </ul>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    <b><span style="font-size:large">Execution Environment</span></b>
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    To understand the execution environment for content scripts, it helps to first understand the execution environment of normal web page JavaScript.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    All JavaScript is defined in a <i>context</i>. Each DOM window gets its own context, one purpose of which is to hold the prototypes of all the global objects (Object, Array, String, and so-on). This is why when you extend Array.prototype in one frame, it doesn't affect Arrays created in other frames.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    Importantly, you can call functions and access objects across contexts. This happens normally when you do something like <span style="font-family:'courier new'">window.frames['otherframe'].someFunction()</span>.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    Here's a diagram that explains the relationship between the various objects in pretty picture form (thanks, <a href="http://www.gliffy.com/">Gliffy</a>!):
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div align="center">
+                                    <img style="width:213px;height:400px" src="http://1.bp.blogspot.com/_wvU8sfXEBm8/Sdllw_nKfTI/AAAAAAAAAME/eUttVLKNvjE/s400/a.png" border="0" alt="">
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    Each context also has a single global object. When you access global variables in a JavaScript program, you are really interacting with the properties of this global object. In HTML, the global object is of course the <span style="font-family:'courier new'">Window</span> object.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    To make property hiding work, in Chromium's implementation, the global object is not actually the same JavaScript object that represents ("wraps") the C++ DOMWindow. There is actually a separate JavaScript object whose <span style="font-family:'courier new'">__proto__</span> points to that object. When you define global variables, it is this object where the properties are actually defined.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    Ok, so how do content scripts fit into this?
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    Content scripts run in a very similar-looking environment. They run in a separate context, and have a separate global object. But that global object's <span style="font-family:'courier new'">__proto__</span> points at the same JS object that represents the Window.
+                                </div>
+                            </div><br>
+                            <div align="center">
+                                <img style="width:361px;height:400px" src="http://4.bp.blogspot.com/_wvU8sfXEBm8/Sdj1ptpjsGI/AAAAAAAAALk/JBxkpyH08i4/s400/b.png" border="0" alt="">
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                So content scripts get their own global scope and their own set of prototypes. Variables defined in the web page won't be "visible" by default in content scripts, and the same is true in reverse. Other than that, the environment for content scripts is exactly the same as for normal JavaScript running in web pages. Writing content scripts should be exactly the same as writing JavaScript for web pages.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Sometimes it is useful to access the page's global variables. For example, in Gmail there is <a href="http://code.google.com/p/gmail-greasemonkey/wiki/GmailGreasemonkey10API">an API</a> that allows Greasemonkey scripts to drive some parts of the UI. To allow this kind of functionality, the content script envionment has a special <span style="font-family:'courier new'">contentWindow</span> global variable defined that can be used to access the global scope of the page's JavaScript.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b><span style="font-size:large">Permissions</span></b>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <div>
+                                    Another difference from Greasemonkey is the model for accessing privileged APIs. Greasemonkey scripts have direct access to some privileged APIs. The most popular of these is <span style="font-family:'courier new'">GM_xmlhttpRequest</span>, which provides access to origins other than the one for the current document. These APIs are very useful, but there have been bugs where they leaked into web content, which was bad.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    In order to prevent this from being possible, Chromium extensions are split into two main pieces: a privileged part (I'll call it just 'the extension' from now on) that has access to special powerful APIs, and an unprivileged part (the content script) that runs in the renderer and has no special APIs.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    The two parts cannot interact directly. In fact, they run in separate OS processes, so direct interaction is impossible. The only way they can communicate is via message passing APIs, similar to <span style="font-family:'courier new'">postMessage()</span>.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div align="center">
+                                    <img src="http://4.bp.blogspot.com/_wvU8sfXEBm8/Sdlo43X5gMI/AAAAAAAAAMU/jVyI82plQVo/s400/c.png" border="0" alt="" style="width:400px;height:302px">
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    <div>
+                                        (<b>NOTE:</b> The implementation of content script messaging is still in progress and is incomplete in current trunk and dev builds)
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        It is the extension developer's responsibility to send only specific messages to the extension process from the renderer, and to validate those messages carefully. Extension developers need to be aware that malicious web pages could send them messages exactly the same way their content scripts can.
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        This design is modeled after the way Chromium itself works, where the renderers are untrusted and have to send messages to the browser process to get interesting work done.
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        <b><span style="font-size:large">Future Directions</span></b>
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        I have a couple ideas for where I'd like to take this next...
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        <b><br></b>
+                                    </div>
+                                    <div>
+                                        <b>Idea 1: Completely separate content scripts and page JavaScript</b>
+                                    </div>
+                                    <div>
+                                        <b><br></b>
+                                    </div>
+                                    <div>
+                                        Right now, the way that JavaScript access to the DOM is implemented, there is essentially a global table of JavaScript wrappers for each C++ DOM object. Whenever code needs to find the JS object for a given C++ object, it consults this table:
+                                    </div>
+                                    <div align="center">
+                                        <br>
+                                        <img style="width:320px;height:184px" src="http://2.bp.blogspot.com/_wvU8sfXEBm8/Sdj3S6SY07I/AAAAAAAAAL0/FJcvh7Ia-n4/s320/d.png" border="0" alt="">
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        This single table creates a bridge between any two JavaScript contexts that have access to the same DOM nodes. For example if page JavaScript does something like <span style="font-family:'courier new'">document.body.onclick = function() { ... }</span>, any other code that has access to <span style="font-family:'courier new'">document.body</span> will also have access to the onclick function handler that the page JavaScript defined .
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        This makes sense for web pages, where you want frames in the same origin to see the same sets of JavaScript variables. But for content scripts, it would be nice to wall these two worlds off from each other. It is relatively infrequent for content scripts to need to see the JavaScript enironment fo pages. It is more typical to only need access to the DOM.
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        In order to isolate content scripts from page JavaScript, we'd have to have separate mapping tables: one for the page JavaScript, and one for each content script. A C++ DOM node could have multiple wrappers, one for each of these "worlds". Then, when we needed to get a JavaScript object for a particular C++ object, we'd decide which table to look in based on which context the calling code was running in. Every context could only be in one "world".
+                                    </div>
+                                    <div align="center">
+                                        <img style="width:301px;height:400px" src="http://3.bp.blogspot.com/_wvU8sfXEBm8/Sdj3Y9epWUI/AAAAAAAAAL8/_vYrUYv1qN8/s400/e.png" border="0" alt="">
+                                    </div>
+                                    <div>
+                                        <br>
+                                    </div>
+                                    <div>
+                                        <div>
+                                            We could even add assertions to the JavaScript engine that worlds are never bridged. That way if we ever had a bug, in the worst case we'd crash the renderer, not have a security problem.
+                                        </div>
+                                        <div>
+                                            <br>
+                                        </div>
+                                        <div>
+                                            If we can wall these worlds off from each other, then we can offer some increased privileges to content scripts directly, because we'd be confident that they couldn't leak to web content. You'd no longer have to go to the extension process to get cross-origin XHR, for example. This would also have the advantage of not requiring extension developers to carefully validate their messages, since we would know that page JavaScript could not send extensions messages.
+                                        </div>
+                                        <div>
+                                            <br>
+                                        </div>
+                                        <div>
+                                            We'd still probably need content scripts as they exist today if you want to interact with the JS defined by the page (for example for the Gmail API). But lots of use cases don't need that, and this idea would decrease complexity for those cases.
+                                        </div>
+                                        <div>
+                                            <br>
+                                        </div>
+                                        <div>
+                                            <br>
+                                        </div>
+                                        <div>
+                                            <b>Idea 2: DOM Access from Extension Processes</b>
+                                        </div>
+                                        <div>
+                                            <br>
+                                        </div>
+                                        <div>
+                                            Another idea is to offer some form of DOM access directly to extension processes. There is a team in Chromium working on an out-of-process version of the web inspector. This will clearly need some form of DOM access to work, so we can probably reuse what they do to give extension developers the ability interact with page DOM directly from their extension process.
+                                        </div>
+                                        <div>
+                                            <br>
+                                        </div>
+                                        <div>
+                                            I can imagine something simple based on querySelectorAll(). You ask for some nodes based on a CSS expression, get back a snapshot, and then send some updates. Of course, there are problems with races: the nodes might be gone by the time you send the update. But I think in most cases this would work pretty nicely I think. Again, I think we'd want to keep content scripts as they are today for more complex needs.
+                                        </div>
+                                        <div>
+                                            <br>
+                                        </div>
+                                        <div>
+                                            <br>
+                                        </div>
+                                        <div>
+                                            <span style="font-weight:bold">Yawn... Greasemonkey is great, but when do we get real extensions?</span>
+                                        </div>
+                                        <div>
+                                            <div>
+                                                <br>
+                                            </div>
+                                            <div>
+                                                I know, I know. These aren't "real" extensions. You want to know when you'll be able to put things in the Chrome UI. Good news: that is <a href="http://codereview.chromium.org/56122">well underway</a>. Hopefully my next blog post will be about how to add "toolstrips" to Chromium.
+                                            </div>
+                                            <div>
+                                                <br>
+                                            </div>
+                                            <div>
+                                                Until then, have a look at content scripts and let us know what you think.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/2863235049034941132-3391134500847869102?l=www.aaronboodman.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.aaronboodman.com/2009/04/content-scripts-in-chromium.html">http://www.aaronboodman.com/2009/04/content-scripts-in-chromium.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

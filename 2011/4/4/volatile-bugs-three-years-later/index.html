@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Volatile Bugs, Three Years Later
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 04 Apr 2011 04:21:53 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-04T00:21:53-04:00">
+                    <meta itemprop="dateModified" content="2011-04-04T00:21:53-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-04T04:21:53+00:00">Apr 04</time>
+                    <h2 itemprop="title">
+                        Volatile Bugs, Three Years Later
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/70c64add24267e48">
+                        <blockquote>
+                            <p>
+                                Almost exactly three years ago Eric Eide and I submitted a paper <a href="http://www.cs.utah.edu/%7Eregehr/papers/emsoft08-preprint.pdf">Volatiles Are Miscompiled, and What to Do about It</a> to the 8th International Conference on Embedded Software (EMSOFT 2008). The points made in this paper were that:
+                            </p>
+                            <ul>
+                                <li>C compilers fail to reliably translate accesses to volatile-qualified objects
+                                </li>
+                                <li>we can automatically detect these failures
+                                </li>
+                                <li>we can (at least in some cases) automatically work around these failures
+                                </li>
+                            </ul>
+                            <p>
+                                Gratifyingly, this paper found an audience among embedded software practitioners and in 2010 it was one of the most highly-downloaded PDFs on the Utah CS web server. Not gratifyingly, it isn’t clear that compilers are, in general, much better at volatile than they were three years ago (we haven’t quantified this, it’s just my general feeling). The root of the problem is that there is a tension between volatile and optimizations: it’s hard to make fast code that is still volatile-correct.
+                            </p>
+                            <p>
+                                The motivation for writing this paper originated in a lecture for my Advanced Embedded Systems course that I gave in 2006 or 2007. I was presenting some fragments of C code along with their translations into assembly, in order to illustrate the effect of the volatile qualifier, when a student raised his hand and said that one of the translations was incorrect. I assumed that I had made a cut-and-paste error and moved on with the lecture. However, when I checked up later, it turned out there was no cut and paste error: the compiler had been wrong (this was CodeWarrior for ColdFire, I believe). This was surprising, so I kept playing around and the situation got worse every time I tried a new compiler or wrote a new code fragment. Eventually it became clear that systematic wrongness existed and I needed to write something up, though I had no idea how to turn this into any kind of respectable academic paper. Eric saved the day by taking Randprog, an existing random C program generator, and extending it to generate code using volatile. Also, he hacked Valgrind to count accesses to volatiles, giving us the automatic detector. Finally, my student Nathan hacked up a CIL pass for turning volatile accesses into calls to helper functions (I don’t recall why we didn’t include Nathan as an author on the paper — we probably should have). At this point we had a paper. I like this story because it illustrates the way systems research often works in practice. It does not proceed in a nice chain from hypothesis to solution to evaluation. Rather, it begins with a niggling suspicion that something is wrong, and proceeds in little fits and starts, across plenty of dead ends, until finally it becomes clear that a useful result has emerged.
+                            </p>
+                            <p>
+                                By far the most interesting development in volatile-land during the last three years is CompCert, which has a provably correct implementation of volatile. This is, as I’ve <a href="http://blog.regehr.org/archives/478">said here before</a>, and will no doubt keep saying, a very impressive result.
+                            </p>
+                            <p>
+                                The volatile qualifier is a legitimate solution to a real problem in early C compilers: they would optimize away critical accesses to hardware device registers. Prior to the introduction of volatile, extremely dodgy hacks were used to avoid miscompilation. However, in retrospect, I believe volatile has proved more trouble than it’s worth, and that C/C++ would be better off without it. The alternative is to use an explicit function call to access variables that live in special kinds of memory; these calls need not have high overhead since they can be inlined. The argument for explicit accesses comes not just from the compiler side, but also from the user side. Linus Torvalds has <a href="http://kerneltrap.org/Linux/Volatile_Performance">ranted about this</a>, and he’s right.
+                            </p>
+                            <p>
+                                I suspect that Eric and I need to write at least one more volatile paper during the next year or two. Some things that have changed:
+                            </p>
+                            <ul>
+                                <li>CompCert supports volatile, so it is available as a basis for comparison
+                                </li>
+                                <li>GCC and LLVM are less prone to non-volatile miscompilations than they used to be, making it much easier for us to assess the reliability of automatically turning volatile accesses into calls to helper functions
+                                </li>
+                                <li>my student Yang Chen has created a new Pin-based volatile bug detector that works better than the Valgrind-based one
+                                </li>
+                                <li>the Pin tool supports testing whether the generated code correctly copes with the case where the volatile location returns a “fresh” value each time it is read — we never tested this before
+                                </li>
+                                <li>Csmith + the Pin tool support testing whether accesses to volatile locations are illegally reordered, which we never tested before
+                                </li>
+                            </ul>
+                            <p>
+                                It will be fun to see what kinds of bugs are turned up by the far more aggressive testing we can now do, compared to what we could do in 2008. However, the more interesting thing will be to implement the automatic volatile bug workaround in GCC and LLVM, by turning volatile accesses into calls to helper functions in the frontends, and turning them back into memory accesses in the backends. This should achieve near total volatile correctness and will also permit hundreds of silly special cases to be removed from these compilers’ optimizers. Ideally the compiler developers will adopt this approach, though I suspect this depends on the performance of the generated code (it should be decent, but won’t be as good as the current, broken approach).
+                            </p><img src="http://feeds.feedburner.com/~r/EmbeddedInAcademia/~4/WD0HfacAV-E" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.regehr.org/archives/503?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29">http://blog.regehr.org/archives/503?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Improving SSL certificate security
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 01 Apr 2011 16:18:26 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-01T12:05:00-04:00">
+                    <meta itemprop="dateModified" content="2011-04-01T12:05:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-01T16:05:00+00:00">Apr 01</time>
+                    <h2 itemprop="title">
+                        Improving SSL certificate security
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/775bb924d245d0f8">
+                        <blockquote>
+                            <span>Posted by Ben Laurie, Google Security Team</span><br>
+                            <br>
+                            In the wake of the recent <a href="http://www.comodo.com/Comodo-Fraud-Incident-2011-03-23.html">Comodo fraud incident</a>, there has been a great deal of speculation about how to improve the public key infrastructure, on which the security of the Internet rests. Unfortunately, this isn’t a problem that will be fixed overnight. Luckily, however, experts have long known about these issues and have been devising solutions for some time.<br>
+                            <br>
+                            Given the current interest it seems like a good time to talk about two projects in which Google is engaged.<br>
+                            <br>
+                            The first is the Google Certificate Catalog. Google’s web crawlers scan the web on a regular basis in order to provide our search and other services. In the process, we also keep a record of all the SSL certificates we see. The Google Certificate Catalog is a database of all of those certificates, published in DNS. So, for example, if you wanted to see what we think of <a href="https://www.google.com/">https://www.google.com/</a>’s certificate, you could do this:<br>
+                            <br>
+                            <span style="font-family:'Courier New', Courier, monospace">$ <b>openssl s_client -connect www.google.com:443 &lt; /dev/null | openssl x509 -outform DER | openssl sha1</b><br>
+                            depth=1 /C=ZA/O=Thawte Consulting (Pty) Ltd./CN=Thawte SGC CA<br>
+                            verify error:num=20:unable to get local issuer certificate<br>
+                            verify return:0<br>
+                            DONE<br>
+                            405062e5befde4af97e9382af16cc87c8fb7c4e2<br>
+                            $ <b>dig +short 405062e5befde4af97e9382af16cc87c8fb7c4e2.certs.googlednstest.com TXT</b><br>
+                            "14867 15062 74"</span><br>
+                            <br>
+                            In other words: take the SHA-1 hash of the certificate, represent it as a hexadecimal number, then look up a TXT record with that name in the <span style="font-family:'Courier New', Courier, monospace">certs.googlednstest.com</span> domain. What you get back is a set of three numbers. The first number is the day that Google’s crawlers first saw that certificate, the second is the most recent day, and the third is the number of days we saw it in between.<br>
+                            <br>
+                            In order for the hash of a certificate to appear in our database, it must satisfy some criteria:<br>
+                            <ul>
+                                <li>It must be correctly signed (either by a CA or self-signed).
+                                </li>
+                                <li>It must have the correct domain name — that is, one that matches the one we used to retrieve the certificate.
+                                </li>
+                            </ul>The basic idea is that if a certificate doesn’t appear in our database, despite being correctly signed by a well-known CA and having a matching domain name, then there may be something suspicious about that certificate. This endeavor owes much to the excellent <a href="http://www.networknotary.org/">Perspectives</a> project, but it is a somewhat different approach.<br>
+                            <br>
+                            Accessing the data manually is rather difficult and painful, so we’re thinking about how to add opt-in support to the Chrome browser. We hope other browsers will in time consider acting similarly.<br>
+                            <br>
+                            The second initiative to discuss is the <a href="https://datatracker.ietf.org/wg/dane/charter/">DANE Working Group at the IETF</a>. DANE stands for DNS-based Authentication of Named Entities. In short, the idea is to allow domain operators to publish information about SSL certificates used on their hosts. It should be possible, using DANE DNS records, to specify particular certificates which are valid, or CAs that are allowed to sign certificates for those hosts. So, once more, if a certificate is seen that isn’t consistent with the DANE records, it should be treated with suspicion. Related to the DANE effort is the individually contributed <a href="http://tools.ietf.org/html/draft-hallambaker-donotissue-03">CAA record</a>, which predates the DANE WG and provides similar functionality.<br>
+                            <br>
+                            One could rightly point out that both of these efforts rely on DNS, which is not secure. Luckily we’ve been working on that problem for even longer than this one, and a reasonable answer is DNSSEC, which enables publishing DNS records that are cryptographically protected against forgery and modification.<br>
+                            <br>
+                            It will be some time before DNSSEC is deployed widely enough for DANE to be broadly useful, since DANE requires every domain to be able to use DNSSEC. However, work is on the way to use DNSSEC for the Certificate Catalog well before the entire DNSSEC infrastructure is ready. If we publish a key for the domain in which we publish the catalog, clients can simply incorporate this key as an interim measure until DNSSEC is properly deployed.<br>
+                            <br>
+                            Improving the public key infrastructure of the web is a big task and one that’s going to require the cooperation of many parties to be widely effective. We hope these projects will help point us in the right direction.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/1176949257541686127-2029461104519147234?l=googleonlinesecurity.blogspot.com" alt="">
+                            </div>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/GoogleOnlineSecurityBlog?a=It5bOXSayBA:l7MvXY8xtCY:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/GoogleOnlineSecurityBlog?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/GoogleOnlineSecurityBlog?a=It5bOXSayBA:l7MvXY8xtCY:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/GoogleOnlineSecurityBlog?i=It5bOXSayBA:l7MvXY8xtCY:V_sGLiPBpWU" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/GoogleOnlineSecurityBlog/~4/It5bOXSayBA" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://googleonlinesecurity.blogspot.com/2011/04/improving-ssl-certificate-security.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+GoogleOnlineSecurityBlog+%28Google+Online+Security+Blog%29">http://googleonlinesecurity.blogspot.com/2011/04/improving-ssl-certificate-security.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+GoogleOnlineSecurityBlog+%28Google+Online+Security+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

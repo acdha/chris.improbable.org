@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Performance Testing the 7000 series, part 1 of 3
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 23 Mar 2009 17:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-03-23T13:00:00-04:00">
+                    <meta itemprop="dateModified" content="2009-03-23T13:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-03-23T17:00:00+00:00">Mar 23</time>
+                    <h2 itemprop="title">
+                        Performance Testing the 7000 series, part 1 of 3
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/559b21440fceb0a1">
+                        <blockquote>
+                            <p>
+                                With the introduction of the <a href="http://www.sun.com/storage/disk_systems/unified_storage">Sun Storage 7000 series</a> there has been much interest in its performance, which I've been <a href="http://blogs.sun.com/brendan/entry/my_sun_storage_7410_perf">demonstrating</a> in this blog. Along with <a href="http://blogs.sun.com/bmc">Bryan</a> and <a href="http://blogs.sun.com/roch">Roch</a>, I've also been helping other teams properly size and evaluate their configurations through performance testing. The advent of technologies like the <a href="http://blogs.sun.com/ahl/entry/hybrid_storage_pools_in_cacm">hybrid storage pool</a> makes performance testing more complicated, but no less important.
+                            </p>
+                            <p>
+                                Over the course of performance testing and analysis, we assembled best practices internally to help Sun staff avoid common testing mistakes, tune their systems for maximum performance, and properly test the hybrid storage pool. In the interest of transparency and helping others understand the issues surrounding performance testing, I'll be posting this information over two posts, and my load generation scripts in a third.
+                            </p>
+                            <h3>
+                                Performance Testing - Top 10 Suggestions:
+                            </h3>
+                            <table>
+                                <tr>
+                                    <td style="vertical-align:top;width:50%">
+                                        <ol>
+                                            <li>Sanity Test
+                                                <p>
+                                                    Before accepting a test result, find ways to sanity test the numbers.
+                                                </p>
+                                                <p>
+                                                    When testing throughput over a gigabit network interface, the theoretical maximum is about 120 Mbytes/sec (converting 1 GbE to bytes.) I've been handed results of 300 Mbytes/sec and faster over a gigabit link, which is clearly wrong. Think of ways to sanity test results, such as checking against limits.
+                                                </p>
+                                                <p>
+                                                    IOPS can be checked in a similar way: 20,000 x 8 Kbyte read ops/sec would require about 156 Mbytes/sec of network throughput, plus protocol headers - too much for a 1 GbE link.
+                                                </p>
+                                            </li>
+                                            <li>Double Check
+                                                <p>
+                                                    When collecting performance data, use an alternate method to confirm your results.
+                                                </p>
+                                                <p>
+                                                    If a test measures network throughput, validate results from different points in the data path: switches, routers, and of course the origin and destination. A result can appear sane but still be wrong. I've discovered misconfigurations and software bugs this way, by checking if the numbers add up end-to-end.
+                                                </p>
+                                            </li>
+                                            <li>Beware of Client Caching
+                                                <p>
+                                                    File access protocols may cache data on the client, which is performance tested instead of the fileserver.
+                                                </p>
+                                                <p>
+                                                    This mistake should be caught by the above two steps, but it is so common it deserves a separate mention. If you test a fileserver with a file small enough to fit within the client's RAM, you may be testing client memory bandwidth, not fileserver performance. This is currently the most frequent mistake we see people make when testing NFS performance.
+                                                </p>
+                                            </li>
+                                            <li>Distribute Client Load
+                                                <p>
+                                                    Use multiple clients, at least 10.
+                                                </p>
+                                                <p>
+                                                    The Sun Storage 7410 has no problem saturating 10 GbE interfaces, but it's difficult for a client to do the same. A fileserver's optimized kernel can respond to requests much quicker than client-side software can generate them. In general, it takes twice the CPU horsepower to drive load than it does to accept it.
+                                                </p>
+                                                <p>
+                                                    Network bandwidth can also be a bottleneck: it takes at least ten 1 Gbit clients to max out a 10 Gbit interface. The 7410 has been shown to serve NFS at <a href="http://blogs.sun.com/brendan/entry/up_to_2_gbytes_sec">1.9 Gbytes/sec</a>, so at least sixteen 1 Gbit clients would be required to test max performance.
+                                                </p>
+                                            </li>
+                                            <li>Drive CPUs to Saturation
+                                                <p>
+                                                    If the CPUs are idle, the system is not operating at peak performance.
+                                                </p>
+                                                <p>
+                                                    The ultimate limiter in the 7000 series is measured as CPU utilization, and with the 7410's four quad-core Opterons, it takes a tremendous workload to reach its <a href="http://blogs.sun.com/brendan/entry/my_sun_storage_7410_perf">limits</a>. To see the system at peak performance, add more clients, a faster network, or more drives to serve I/O. If the CPUs are not maxed out, they can handle more load.
+                                                </p>
+                                                <p>
+                                                    This is a simplification, but a useful one. Some workloads are CPU heavy due to the cycles to process instructions, others with CPU wait cycles for various I/O bus transfers. Either way, it's measured as percent CPU utilization - and when that reaches 100%, the system can generally go no faster (although it may go a little faster if polling threads and mutex contention backs off.)
+                                                </p>
+                                            </li>
+                                        </ol>
+                                    </td>
+                                    <td style="vertical-align:top;width:50%">
+                                        <ol>
+                                            <li value="6">Disks Matter
+                                                <p>
+                                                    Don't ignore the impact of rotational storage.
+                                                </p>
+                                                <p>
+                                                    A full Sun Storage <a href="http://www.sun.com/storage/disk_systems/unified_storage/7410">7410</a> can have access to a ton of read cache: up to 128 Gbytes of DRAM and six 100 Gbyte SSDs. While these caches can greatly improve performance, disk performance can't be ignored as data must eventually be written to (and read from) disk. A <i>bare minimum</i> of two fully-populated JBODs are required to properly gauge 7410 performance.
+                                                </p>
+                                            </li>
+                                            <li>Check Your Storage Profile
+                                                <p>
+                                                    Evaluate the desired redundancy profile against mirroring.
+                                                </p>
+                                                <p>
+                                                    The default RAID-Z2 storage profile on the 7000 series provides double-parity, but can also deliver lower performance than mirroring, particularly with random reads. Test your workload with mirroring as well as RAID-Z2, then compare price/performance and price/Gbyte to best understand the tradeoff made.
+                                                </p>
+                                            </li>
+                                            <li>Use Readzillas for Random Reads
+                                                <p>
+                                                    Use multiple SSDs, tune your record size, and allow for warmup.
+                                                </p>
+                                                <p>
+                                                    Readzillas (read-biased SSDs), can <a href="http://blogs.sun.com/brendan/entry/l2arc_screenshots">greatly improve</a> random read performance, if configured properly and given time to warm up. Each Readzilla currently delivers around 3,100 x 8 Kbyte read ops/sec, and has 100 Gbytes of capacity. For best performance, use as many Readzillas as possible for concurrent I/O. Also consider that, due to the low-throughput nature of random-read workloads, it can take several hours to warm up 600 Gbytes of read cache.
+                                                </p>
+                                                <p>
+                                                    On the 7000 series, when using Readzillas on random read workloads, adjust the database record size from its 128 Kbyte default down to 8 Kbytes <i>before</i> creating files, or size it to match your application record size. Data is retrieved from Readzillas by their record size, and smaller record sizes improve the available IOPS from the read cache. This must be set before file creation, as ZFS doesn't currently rewrite files after this change.
+                                                </p>
+                                            </li>
+                                            <li>Use Logzillas for Synchronous Writes
+                                                <p>
+                                                    Accelerate synchronous write workloads with SSD based intent logs.
+                                                </p>
+                                                <p>
+                                                    Some file system operations, like file and directory creation, and writes to database log files are considered "synchronous writes," requiring data be on disk before the client can continue. Flash-based intent log devices, or Logzillas, can only dramatically speed up workloads comprised of synchronous writes; otherwise, data is written directly to disk.
+                                                </p>
+                                                <p>
+                                                    Logzillas can provide roughly 10,000 write ops/sec, depending on write size, or about 100 Mbytes/sec of write throughput, and scale linearly to meet demand.
+                                                </p>
+                                            </li>
+                                            <li>Document Your Test System
+                                                <p>
+                                                    Either test a max config, or make it clear that you didn't.
+                                                </p>
+                                                <p>
+                                                    While it's not always possible or practicable to obtain a maximum configuration for testing purposes, the temptation to share and use results without a strong caveat to this effect should be resisted. Every performance result should be accompanied by details on the target system, and a comparison to a maximum configuration, to give an accurate representation of a product's true capabilities.
+                                                </p>
+                                            </li>
+                                        </ol>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                The main source of problems in performance testing that we've seen is the misuse of benchmark software and the misinterpretation of their results. The above suggestions should help the tester avoid the most common problems in this field. No matter how popular or widely-used benchmark software is, the tester is obliged to verify the results. And by paying sufficient attention to the test environment - i.e. system configuration, client load balance, network bandwidth - you can avoid common pitfalls (such as measuring 300 Mbytes/sec over a 1 Gbit/sec interface, which was courtesy of a popular benchmarking tool.)
+                            </p>
+                            <p>
+                                In part two, I'll step through a more detailed checklist for max performance testing.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blogs.sun.com/brendan/entry/performance_testing_the_7000_series1">http://blogs.sun.com/brendan/entry/performance_testing_the_7000_series1</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

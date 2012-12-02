@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Leopard, MobileAccounts, and NFS homes
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 19 Feb 2009 18:02:27 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-19T13:02:27-04:00">
+                    <meta itemprop="dateModified" content="2009-02-19T13:02:27-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-19T17:02:27+00:00">Feb 19</time>
+                    <h2 itemprop="title">
+                        Leopard, MobileAccounts, and NFS homes
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/49788dbfed632096">
+                        <blockquote>
+                            <div>
+                                <br>
+                                <p>
+                                    <img src="http://managingosx.files.wordpress.com/2006/03/HomeSync1.png?w=76&amp;h=71" alt="HomeSync" title="HomeSync" width="76" height="71">On the <a href="http://lists.psu.edu/archives/macenterprise.html">MacEnterprise maillist</a>, Arjen van Bochoven wrote of problems with automatic HomeSyncs under Leopard with NFS home directories. Manual syncs worked fine, but the automatic background syncs would fail with errors that looked like this:
+                                </p>
+                                <pre>
+1:: [228] Peer "network" is unable to sync. (-[SPeer_FS_PHD mountPeerVolume] (Peer-FS-PHD.m:140): "'((homePath))' is nil")
+0:: [228] [2009/02/19 10:45:10.640] Peer "network" is unable to sync. Not enough peers will be available to continue syncing.
+0:: [228] [2009/02/19 10:45:10.640] Aborting sync of "HomeSync_Mirror".
+</pre>
+                                <p>
+                                    I saw the exact same problem in my environment. This also affected login and logout syncs. Here’s the (ugly) fix.
+                                </p>
+                                <p>
+                                    For each mobile account, you’ll need to make two modifications to the account info in the local DS:
+                                </p>
+                                <p>
+                                    <code>/usr/bin/dscl . create /Users/$USERNAME dsAttrTypeStandard:OriginalHomeDirectory "nfs://$NFSEXPORT$USERNAME"</code>
+                                </p>
+                                <p>
+                                    where $USERNAME is the short username, and $NFSEXPORT is the nfsserver and its export.
+                                </p>
+                                <p>
+                                    This gives HomeSync a nfs:// URL to use to mount the network home directory (It shouldn’t have to do this, since the network home is already available at the autofs mountpoint for the network home, and obviously really doesn’t need it since manual syncs work), but we have to do it anyway.
+                                </p>
+                                <p>
+                                    The OriginalHomeDirectory attribute has two parts – a URL describing the mount, and a path describing the path to the actual home dir, relative to the mount. In my case, when I type `mount`, my home autofs mount looks like this:
+                                </p>
+                                <p>
+                                    <code>homeserver:/vol/home/fahome on /home/fahome</code>
+                                </p>
+                                <p>
+                                    and my NFS home path is <code>/home/fahome/gneagle</code>
+                                </p>
+                                <p>
+                                    So the URL is ‘nfs://homeserver/vol/home/fahome/’ and the path is ‘gneagle’.
+                                </p>
+                                <p>
+                                    Depending on how the home mounts are setup in your environment, the division between the URL and the path might be different, for example, we might have had this instead:
+                                </p>
+                                <p>
+                                    URL ‘nfs://homeserver/vol/home/’ with a path of ‘fahome/gneagle’.
+                                </p>
+                                <p>
+                                    The next change:<br>
+                                    <code>/usr/bin/dscl . append /Users/$USERNAME dsAttrTypeNative:preserved_attributes dsAttrTypeStandard:OriginalHomeDirectory</code>
+                                </p>
+                                <p>
+                                    This prevents the OriginalHomeDirectory attribute from being overwritten by the empty value presumably coming from the network. (If there was a useful value in the network directory, this hack wouldn’t be needed.)
+                                </p>
+                                <p>
+                                    You may be able to create the accounts “correctly” in the first place by using /System/Library/CoreServices/ManagedClient.app/Contents/Resources/createmobileaccount and passing the syncURL with the -u option in the form “nfs://homeserver/export/home/gneagle”. This didn’t work in my environment, and even if it did, it wasn’t really an option to use createmobileaccount, so I instead wrote a login hook that “fixes” the mobile account if needed. WordPress will cut off the right side of the script when displaying it, but you can select, copy and paste into your favorite text editor for examination:
+                                </p>
+                                <pre>
+<code>
+#!/bin/sh
+
+# Leopard bug workaround as of 10.5.2. March 5 2008
+# inserts nfs:// URL into OriginalHomeDirectory attribute
+# for mobile accounts so that login/logout/background syncs
+# work reliably
+#
+# Greg Neagle, Walt Disney Animation Studios
+
+# the following is the actual NFS share that is mounted via autofs
+NFSEXPORT="homeserver.example.com/vol/home/fahome/"
+
+USERNAME=$1
+LOCALACCT=`/usr/bin/dscl . read /Users/$USERNAME 2&gt;/dev/null`
+if [ "$LOCALACCT" != "" ]; then
+  # $USERNAME is a local account
+  NETHOME=`/bin/echo $LOCALACCT | /usr/bin/grep OriginalNFSHomeDirectory`
+  if [ "$NETHOME" != "" ]; then
+    # $USERNAME is a mobile account
+    # in our case, the path and the username are one and the same
+    /usr/bin/dscl . create /Users/$USERNAME dsAttrTypeStandard:OriginalHomeDirectory "nfs://$NFSEXPORT$USERNAME"
+    PRESERVED_ORIG_HOME=`/usr/bin/dscl . read /Users/$USERNAME dsAttrTypeNative:preserved_attributes | /usr/bin/grep dsAttrTypeStandard:OriginalHomeDirectory`
+    if [ "$PRESERVED_ORIG_HOME" = "" ]; then
+      /usr/bin/dscl . append /Users/$USERNAME dsAttrTypeNative:preserved_attributes dsAttrTypeStandard:OriginalHomeDirectory
+    fi
+  fi
+fi
+</code>
+</pre>
+                                <p>
+                                    The user logs in with their network account. MCX computer group settings cause the user to be asked if they want to create a mobile account, if they agree the mobile account is created and the home directory is encrypted with FileVault. As they log in, the login hook runs and if needed, inserts the additional info into the cached local account info so that automatic HomeSyncs work.
+                                </p>
+                                <p>
+                                    Though this fixed the issue for our environment, I still consider this a bug.
+                                </p><a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/managingosx.wordpress.com/177/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/managingosx.wordpress.com/177/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/managingosx.wordpress.com/177/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/managingosx.wordpress.com/177/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/managingosx.wordpress.com/177/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/managingosx.wordpress.com/177/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/managingosx.wordpress.com/177/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/managingosx.wordpress.com/177/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/managingosx.wordpress.com/177/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/managingosx.wordpress.com/177/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=managingosx.wordpress.com&amp;blog=98681&amp;post=177&amp;subd=managingosx&amp;ref=&amp;feed=1">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://managingosx.wordpress.com/2009/02/19/leopard-mobileaccounts-and-nfs-homes/">http://managingosx.wordpress.com/2009/02/19/leopard-mobileaccounts-and-nfs-homes/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

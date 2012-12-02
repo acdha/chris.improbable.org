@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Porting Py65 (and my Superboard) to Python 3
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 19 Jan 2011 23:38:36 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-19T18:38:00-04:00">
+                    <meta itemprop="dateModified" content="2011-01-19T18:38:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-19T22:38:00+00:00">Jan 19</time>
+                    <h2 itemprop="title">
+                        Porting Py65 (and my Superboard) to Python 3
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/b86d3705e07362b8">
+                        <blockquote>
+                            <p>
+                                One of my resolutions for 2011 is to write all of my software in Python 3. As a hardened Python 2 programmer, I think my initial reaction to Python 3 was lukewarm at best--it felt foreign and it made life painful in ways that I found irritating (looking at you Unicode). However, as I have used it more (and it has improved), I've really grown to like it. Most recently, I used Python 3 as the base language for my <a href="http://www.dabeaz.com/chicago/concurrent.html">Concurrency Workshop</a>. I have also been using it as the language for my various diabolical <a href="http://dabeaz.blogspot.com/2010/08/using-python-to-encode-cassette.html">Superboard II</a> projects. Last, but not least, I find myself as one of the editors working to update the O'Reilly Python Cookbook--which is going to be <a href="http://dabeaz.blogspot.com/2010/12/oreilly-python-cookbook-python-3-all.html">Python 3 only</a>.
+                            </p>
+                            <p>
+                                If you're going to use Python 3, the first thing to know is that not all libraries are going to work--not everyone has gotten around to porting their code. This means that you have to adopt a more "pioneering" mindset. In my case, I've simply decided to port the libraries that I wanted to use as I go. From a purely academic viewpoint, taking someone else's code and porting it to Python 3 is an interesting exercise. Not only will you learn a lot simply by reading someone else's code, you'll learn about all sorts of sneaky little gotchas that aren't necessarily discussed in the Python 3 porting guides.
+                            </p>
+                            <p>
+                                Over the next few months, I intend to make a series of blog posts about my experiences porting different libraries. In this installment, I port Py65, a Python emulation of the 6502.
+                            </p>
+                            <p>
+                                <b>Py65 - A 6502 Emulator in Python</b>
+                            </p>
+                            <p>
+                                <a href="https://github.com/mnaberez/py65">Py65</a> is a pure Python emulation of the 6502 microprocessor created by Mike Naberezny. I don't really know what motivated Mike to create an emulated 6502 in Python, but I became interested in Py65 because I suddenly had the idea that I might be able to use to create an emulated version of my old <a href="http://dabeaz.blogspot.com/2010/08/using-python-to-encode-cassette.html">Superboard II</a> entirely as a Python 3 program. Why, you ask? Because it would be fun. Now, stop asking silly questions--the Superboard is getting annoyed.
+                            </p>
+                            <p>
+                                <b>Py65 - A Quick Overview</b>
+                            </p>
+                            <p>
+                                One of the main features of Py65 is a 6502 machine monitor where you can load/save memory, step through programs, and try things out. For example, if you had an old 6502 ROM image sitting around, you can load it, disassemble it, and step through parts of it like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+bash % <b>py65mon</b>
+Py65 Monitor
+
+       PC  AC XR YR SP NV-BDIZC
+6502: 0000 00 00 00 ff 00110000
+<b>.load rom.bin f800</b>
+Wrote +2048 bytes from $f800 to $ffff
+
+       PC  AC XR YR SP NV-BDIZC
+6502: 0000 00 00 00 ff 00110000
+<b>.disassemble ff00:ff20</b>
+$ff00  d8        CLD
+$ff01  a2 28     LDX #$28
+$ff03  9a        TXS
+$ff04  a0 0a     LDY #$0a
+$ff06  b9 ef fe  LDA $feef,Y
+$ff09  99 17 02  STA $0217,Y
+$ff0c  88        DEY
+$ff0d  d0 f7     BNE $ff06
+$ff0f  20 a6 fc  JSR $fca6
+$ff12  8c 12 02  STY $0212
+$ff15  8c 03 02  STY $0203
+$ff18  8c 05 02  STY $0205
+$ff1b  8c 06 02  STY $0206
+$ff1e  ad e0 ff  LDA $ffe0
+
+       PC  AC XR YR SP NV-BDIZC
+6502: 0000 00 00 00 ff 00110000
+<b>.registers pc=ff00</b>
+
+       PC  AC XR YR SP NV-BDIZC
+6502: ff00 00 00 00 ff 00110000
+<b>.step</b>
+$ff01  a2 28     LDX #$28
+
+       PC  AC XR YR SP NV-BDIZC
+6502: ff01 00 00 00 ff 00110000
+<b>.step</b>
+$ff03  9a        TXS
+
+       PC  AC XR YR SP NV-BDIZC
+6502: ff03 00 28 00 ff 00110000
+...
+</pre>
+                            </blockquote>
+                            <p>
+                                Of course, there are many other features described in the <a href="http://6502.org/users/mike/projects/py65/index.html">Py65 Documentation</a>.
+                            </p>
+                            <p>
+                                <b>Porting Py65 to Python 3</b>
+                            </p>
+                            <p>
+                                Py65 consists of 27 <tt>.py</tt> files and about 12000 lines of code. More than half of the code consists of unit tests.
+                            </p>
+                            <p>
+                                To start porting, I decided that I would just run all of the files through <tt>2to3</tt> to get a basic sense for what I might have to change at a syntactic level. Here is the complete output of doing that. In a nutshell, 36 lines were identified. Most of the changes were due to well-known Python 3 changes such as changed exception handling syntax, <tt>xrange()</tt> and so forth.
+                            </p>
+                            <blockquote>
+                                <pre>
+bash % <b>2to3 src</b>
+RefactoringTool: Skipping implicit fixer: buffer
+RefactoringTool: Skipping implicit fixer: idioms
+RefactoringTool: Skipping implicit fixer: set_literal
+RefactoringTool: Skipping implicit fixer: ws_comma
+--- src/py65/monitor.py (original)
++++ src/py65/monitor.py (refactored)
+@@ -32,7 +32,7 @@
+             result = cmd.Cmd.onecmd(self, line)
+         except KeyboardInterrupt:
+             self._output("Interrupt")
+-        except Exception,e:
++        except Exception as e:
+             (file, fun, line), t, v, tbinfo = compact_traceback()
+             error = 'Error: %s, %s: file: %s line: %s' % (t, v, file, line)
+             self._output(error)
+@@ -85,7 +85,7 @@
+           line = self._shortcuts['~'] + ' ' + line[1:]
+       
+         # command shortcuts
+-        for shortcut, command in self._shortcuts.iteritems():
++        for shortcut, command in self._shortcuts.items():
+             if line == shortcut:
+                 line = command
+                 break
+@@ -150,7 +150,7 @@
+         mpus = {'6502': NMOS6502, '65C02': CMOS65C02}
+         
+         def available_mpus():
+-            mpu_list = ', '.join(mpus.keys())
++            mpu_list = ', '.join(list(mpus.keys()))
+             self._output("Available MPUs: %s" % mpu_list)            
+         
+         if args == '':                      
+@@ -315,14 +315,14 @@
+         if args != '':
+             new = args[0].lower()
+             changed = False
+-            for name, radix in radixes.iteritems():
++            for name, radix in radixes.items():
+                 if name[0].lower() == new:
+                     self._address_parser.radix = radix
+                     changed = True
+             if not changed:
+                 self._output("Illegal radix: %s" % args)
+ 
+-        for name, radix in radixes.iteritems():
++        for name, radix in radixes.items():
+             if self._address_parser.radix == radix:
+                 self._output("Default radix is %s" % name)
+ 
+@@ -364,7 +364,7 @@
+                     if len(register) == 1:
+                         intval &amp;= 0xFF
+                     setattr(self._mpu, register, intval)
+-                except KeyError, why:
++                except KeyError as why:
+                     self._output(why[0])
+     
+     def help_cd(self, args):
+@@ -374,7 +374,7 @@
+     def do_cd(self, args):
+         try:
+             os.chdir(args)
+-        except OSError, why:
++        except OSError as why:
+             msg = "Cannot change directory: [%d] %s" % (why[0], why[1])
+             self._output(msg)
+         self.do_pwd()
+@@ -407,12 +407,12 @@
+             f = open(filename, 'rb')
+             bytes = f.read()
+             f.close()
+-        except (OSError, IOError), why:
++        except (OSError, IOError) as why:
+             msg = "Cannot load file: [%d] %s" % (why[0], why[1])
+             self._output(msg)
+             return
+ 
+-        self._fill(start, start, map(ord, bytes))
++        self._fill(start, start, list(map(ord, bytes)))
+ 
+     def do_save(self, args):
+         split = shlex.split(args)
+@@ -430,7 +430,7 @@
+             for byte in bytes:
+                 f.write(chr(byte))
+             f.close()
+-        except (OSError, IOError), why:
++        except (OSError, IOError) as why:
+             msg = "Cannot save file: [%d] %s" % (why[0], why[1])
+             self._output(msg)
+             return
+@@ -455,7 +455,7 @@
+             return
+ 
+         start, end = self._address_parser.range(split[0])
+-        filler = map(self._address_parser.number, split[1:])
++        filler = list(map(self._address_parser.number, split[1:]))
+         
+         self._fill(start, end, filler)
+ 
+@@ -518,10 +518,10 @@
+         self._output("Display current label mappings.")
+ 
+     def do_show_labels(self, args):
+-        values = self._address_parser.labels.values()
+-        keys = self._address_parser.labels.keys()
++        values = list(self._address_parser.labels.values())
++        keys = list(self._address_parser.labels.keys())
+       
+-        byaddress = zip(values, keys)
++        byaddress = list(zip(values, keys))
+         byaddress.sort()
+         for address, label in byaddress:
+             self._output("%04x: %s" % (address, label))
+--- src/py65/tests/test_memory.py (original)
++++ src/py65/tests/test_memory.py (refactored)
+@@ -56,7 +56,7 @@
+         def read_subscriber(address, value):
+             return 0xAB
+         
+-        mem.subscribe_to_read(xrange(0xC000, 0xC001+1), read_subscriber)
++        mem.subscribe_to_read(range(0xC000, 0xC001+1), read_subscriber)
+     
+         mem[0xC000] = 0xAB
+         mem[0xC001] = 0xAB
+@@ -141,7 +141,7 @@
+             return 0xFF
+         mem.subscribe_to_write([0xC000,0xC001], write_subscriber)
+         
+-        mem.write(0xC000, [0x01, 002])
++        mem.write(0xC000, [0x01, 0o02])
+         self.assertEqual(0x01, subject[0xC000])
+         self.assertEqual(0x02, subject[0xC001])
+ 
+--- src/py65/tests/test_monitor.py (original)
++++ src/py65/tests/test_monitor.py (refactored)
+@@ -4,7 +4,7 @@
+ import os
+ import tempfile
+ from py65.monitor import Monitor
+-from StringIO import StringIO
++from io import StringIO
+ 
+ class MonitorTests(unittest.TestCase):
+ 
+@@ -168,7 +168,7 @@
+         mon = Monitor(stdout=stdout)
+         mon._address_parser.labels['foo'] = 0xc000
+         mon.do_delete_label('foo') 
+-        self.assertFalse(mon._address_parser.labels.has_key('foo'))
++        self.assertFalse('foo' in mon._address_parser.labels)
+         out = stdout.getvalue()
+         self.assertEqual('', out)
+ 
+--- src/py65/tests/devices/test_mpu6502.py (original)
++++ src/py65/tests/devices/test_mpu6502.py (refactored)
+@@ -4979,8 +4979,7 @@
+     self.assertEquals(0x0001, mpu.pc)
+ 
+   def test_decorated_addressing_modes_are_valid(self):
+-    valid_modes = map(lambda x: x[0], 
+-                      py65.assembler.Assembler.Addressing)
++    valid_modes = [x[0] for x in py65.assembler.Assembler.Addressing]
+     mpu = self._make_mpu()
+     for name, mode in mpu.disassemble:
+         self.assert_(mode in valid_modes)
+@@ -5024,12 +5023,12 @@
+   def _make_mpu(self, *args, **kargs):
+     klass = self._get_target_class()
+     mpu = klass(*args, **kargs)
+-    if not kargs.has_key('memory'):
++    if 'memory' not in kargs:
+         mpu.memory = 0x10000 * [0xAA]
+     return mpu
+   
+   def _get_target_class(self):
+-    raise NotImplementedError, "Target class not specified"
++    raise NotImplementedError("Target class not specified")
+ 
+ 
+ class MPUTests(unittest.TestCase, Common6502Tests):      
+--- src/py65/tests/utils/test_addressing.py (original)
++++ src/py65/tests/utils/test_addressing.py (refactored)
+@@ -48,7 +48,7 @@
+     try:
+       parser.number('bad_label')
+       self.fail()
+-    except KeyError, why:
++    except KeyError as why:
+       self.assertEqual('Label not found: bad_label', why[0])
+ 
+   def test_number_label_hex_offset(self):
+@@ -94,7 +94,7 @@
+     try:
+       parser.number('bad_label+3')
+       self.fail()
+-    except KeyError, why:
++    except KeyError as why:
+       self.assertEqual('Label not found: bad_label', why[0])    
+ 
+   def test_number_truncates_address_at_maxwidth_16(self):
+--- src/py65/tests/utils/test_hexdump.py (original)
++++ src/py65/tests/utils/test_hexdump.py (refactored)
+@@ -27,7 +27,7 @@
+         try:
+             Loader(text)
+             self.fail()
+-        except ValueError, why:
++        except ValueError as why:
+             msg = 'Start address was not found in data'
+             self.assert_(why[0].startswith('Start address'))
+ 
+@@ -36,7 +36,7 @@
+         try:
+             Loader(text)
+             self.fail()
+-        except ValueError, why:                   
++        except ValueError as why:                   
+             msg = 'Could not parse address: oops'
+             self.assertEqual(msg, why[0])
+ 
+@@ -45,7 +45,7 @@
+         try:
+             Loader(text)
+             self.fail()
+-        except ValueError, why:                   
++        except ValueError as why:                   
+             msg = 'Expected address to be 2 bytes, got 1'
+             self.assertEqual(msg, why[0])
+ 
+@@ -54,7 +54,7 @@
+         try:
+             Loader(text)
+             self.fail()
+-        except ValueError, why:                   
++        except ValueError as why:                   
+             msg = 'Expected address to be 2 bytes, got 3'
+             self.assertEqual(msg, why[0])
+ 
+@@ -63,7 +63,7 @@
+         try:
+             Loader(text)
+             self.fail()
+-        except ValueError, why:
++        except ValueError as why:
+             msg = 'Non-contigous block detected.  Expected next ' \
+                   'address to be $c001, label was $c002'
+             self.assertEqual(msg, why[0])
+@@ -73,7 +73,7 @@
+         try:
+             Loader(text)
+             self.fail()
+-        except ValueError, why:
++        except ValueError as why:
+             msg = 'Could not parse data: foo'
+             self.assertEqual(msg, why[0]) 
+ 
+--- src/py65/utils/addressing.py (original)
++++ src/py65/utils/addressing.py (refactored)
+@@ -26,7 +26,7 @@
+     def label_for(self, address, default=None):
+         """Given an address, return the corresponding label or a default.
+         """
+-        for label, label_address in self.labels.iteritems():
++        for label, label_address in self.labels.items():
+             msg = "Expected address to be 2 bytes, got %d" % (
+                                                     len(addr_bytes))
+-            raise ValueError, msg
++            raise ValueError(msg)
+ 
+         address = (addr_bytes[0] &lt;&lt; 8) + addr_bytes[1]
+ 
+@@ -62,19 +62,19 @@
+             msg = "Non-contigous block detected.  Expected next address " \
+                   "to be $%04x, label was $%04x" % (self.current_address, 
+                                                                     address)
+-            raise ValueError, msg
++            raise ValueError(msg)
+ 
+     def _parse_bytes(self, piece):
+         if self.start_address is None:
+             msg = "Start address was not found in data"
+-            raise ValueError, msg
++            raise ValueError(msg)
+ 
+         else:
+             try:
+                 bytes = [ ord(c) for c in a2b_hex(piece) ]  
+             except (TypeError, ValueError):
+                 msg = "Could not parse data: %s" % piece
+-                raise ValueError, msg
++                raise ValueError(msg)
+ 
+             self.current_address += len(bytes)
+             self.data.extend(bytes)
+RefactoringTool: Files that need to be modified:
+RefactoringTool: src/py65/monitor.py
+RefactoringTool: src/py65/tests/test_memory.py
+RefactoringTool: src/py65/tests/test_monitor.py
+RefactoringTool: src/py65/tests/devices/test_mpu6502.py
+RefactoringTool: src/py65/tests/utils/test_addressing.py
+RefactoringTool: src/py65/tests/utils/test_hexdump.py
+RefactoringTool: src/py65/utils/addressing.py
+RefactoringTool: src/py65/utils/hexdump.py
+</pre>
+                            </blockquote>
+                            <p>
+                                Not seeing anything too critical, I decided to invoke <tt>2to3 -w</tt> to simply patch all of the code. However, I must emphasize--using <tt>2to3</tt> is almost never enough to make a Python 3 port. In the next few parts, I discuss a few tricky porting problems encountered in making the new library work. This is by no means an exhaustive list.
+                            </p>
+                            <p>
+                                <b>Python 3 Porting Issue : Exception Indexing</b>
+                            </p>
+                            <p>
+                                In several places, Py65 performs an indexed lookup on exception values. For example, consider this fragment:
+                            </p>
+                            <blockquote>
+                                <pre>
+try:
+   f = open("somebadfile")
+except IOError as why:
+   msg = "Cannot open file: [%d] %s" % (why[0], why[1])
+   print(msg)
+</pre>
+                            </blockquote>
+                            <p>
+                                If you try this code in Python 2, it works. However, if you try it in Python 3, you will get an <tt>TypeError</tt> crash like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 2, in &lt;module&gt;
+IOError: [Errno 2] No such file or directory: 'badfile'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 4, in &lt;module&gt;
+TypeError: 'IOError' object is not subscriptable
+</pre>
+                            </blockquote>
+                            <p>
+                                Under the covers, exceptions hold their value in an <tt>args</tt> tuple. In Python 2, operations such as <tt>why[0]</tt> and <tt>why[1]</tt> would simply return <tt>why.args[0]</tt> and <tt>why.args[1]</tt>. This no longer works in Python 3 so you can't rely on it. A better fix is to either refer to <tt>args</tt> directly or to use the documented exception attributes. For example:
+                            </p>
+                            <blockquote>
+                                <pre>
+try:
+   f = open("somebadfile")
+except IOError as why:
+   msg = "Cannot open file: [%d] %s" % (why.errno, why.strerror)
+   print(msg)
+</pre>
+                            </blockquote>
+                            <p>
+                                In Py65, I identified 12 lines where exceptions are indexed in this manner. Most of those changes were in unit tests that checked for specific exception messages and error codes.
+                            </p>
+                            <p>
+                                While we're on the subject of exceptions, it's also worth noting that the scope of the <tt>why</tt> variable in the above example is different in Python 3. Specifically, exception variables are only defined for code inside the <tt>except</tt> block. In Python 2, such variables persists after the <tt>try-except</tt> statement.
+                            </p>
+                            <p>
+                                <b>Python 3 Porting Issue : Overloaded Slicing</b>
+                            </p>
+                            <p>
+                                One of the objects defined by Py65 is an observable memory buffer. The precise implementation is not so important, but it's programmed to be a list-like object that supports both indexing and slicing, but with the ability to invoke registered observer functions on user-specified indices (see the project at the end of the post for an example).
+                            </p>
+                            <p>
+                                In Python 2, you could use different methods for indexing and slicing by implementing <tt>__getitem__()</tt> and <tt>__getslice__()</tt> like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+class ListLike:
+     def __getitem__(self,n):
+         print("getitem",n)
+     def __getslice__(self,start,stop=None,step=None):
+         print("getslice", start,stop,step)
+</pre>
+                            </blockquote>
+                            <p>
+                                The only problem is that in Python 3, <tt>__getslice__()</tt> no longer exists as a special method (in fact, it's deprecated in Python 2 as well, but is still supported for backwards compatibility). So, if you try the following example, you'll see <tt>__getitem__()</tt> being called for both indexing and slicing. Here is what happens:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>s = ListLike()</b>
+&gt;&gt;&gt; <b>s[2]</b>
+getitem 2
+&gt;&gt;&gt; <b>s[2:4]</b>
+getitem slice(2, 4, None)
+&gt;&gt;&gt; 
+</pre>
+                            </blockquote>
+                            <p>
+                                Unless you've programmed <tt>__getitem__()</tt> specifically to look for <tt>slice</tt> objects, you will run into trouble. For example, when trying Py65, I started getting all sorts of errors about incorrect use of <tt>slice</tt> objects. However, here's a little bit of code that solves that problem:
+                            </p>
+                            <blockquote>
+                                <pre>
+class ListLike:
+     def __getitem__(self,n):
+         if isinstance(n,slice):
+            return [self[i] for i in range(*n.indices(len(self)))]
+         # Return item n
+         ...
+</pre>
+                            </blockquote>
+                            <p>
+                                Or, if you're a little more sneaky, you might use <tt>itertools</tt>:
+                            </p>
+                            <blockquote>
+                                <pre>
+class ListLike:
+     def __getitem__(self,n):
+         if isinstance(n,slice):
+            return list(itertools.islice(self,*n.indices(len(self))))
+         # Return item n
+         ...
+</pre>
+                            </blockquote>
+                            <p>
+                                For slices, the value passed to <tt>__getitem__()</tt> will be a <tt>slice</tt> object. You can create these yourself.
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>n = slice(2,4)</b>
+&gt;&gt;&gt; <b>n</b>
+slice(2, 4, None)
+&gt;&gt;&gt;
+</pre>
+                            </blockquote>
+                            <p>
+                                The <tt>indices(size)</tt> method of a slice returns a tuple <tt>(start, stop, step)</tt> that you can use should you decide to iterate over the slice using <tt>range()</tt> or some other function. For example:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>n.indices(100)</b>
+(2, 4, 1)
+&gt;&gt;&gt;
+</pre>
+                            </blockquote>
+                            <p>
+                                You can use this result as input to <tt>range()</tt> to generate the needed sequence of indices associated with the slice.
+                            </p>
+                            <p>
+                                <b>Python 3 Porting Issue: Treating bytes as character arrays</b>
+                            </p>
+                            <p>
+                                If you perform any kind of binary I/O in Python 3, be aware that data will be read as <tt>bytes</tt> objects and that those objects do not have the same behavior as strings.
+                            </p>
+                            <p>
+                                Consider this code fragment from Py65, in particular, the parts highlighted in <font color="#FF0000">red</font>.
+                            </p>
+                            <blockquote>
+                                <pre>
+try:
+    f = open(filename, 'rb')
+<font color="#FF0000">    bytes = f.read()</font>
+    f.close()
+except (OSError, IOError) as why:
+     msg = "Cannot load file: [%d] %s" % (why[0], why[1])
+     self._output(msg)
+     return
+
+self._fill(start, start, <font color="#FF0000">list(map(ord, bytes))</font>)
+</pre>
+                            </blockquote>
+                            <p>
+                                First complaint--don't use <tt>bytes</tt> as the name of a variable. <tt>bytes</tt> is now the name of a built-in type. However, that's not the problem here. Instead, the problem is with the <tt>map()</tt> operation at the end. Here is what happens in Python 2:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>s = "Hello"</b>
+&gt;&gt;&gt; <b>list(map(ord,s))</b>
+[72, 101, 108, 108, 111]
+&gt;&gt;&gt;
+</pre>
+                            </blockquote>
+                            <p>
+                                If you try it in Python 3, you get an error:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>s = b"Hello"</b>
+&gt;&gt;&gt; <b>list(map(ord,s))</b>
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+TypeError: ord() expected string of length 1, but int found
+&gt;&gt;&gt; 
+</pre>
+                            </blockquote>
+                            <p>
+                                What's happening here? Well, the answer is simple--<tt>bytes</tt> objects in Python 3 are already treated as arrays as integers so the extra conversion using <tt>ord()</tt> isn't needed. For example:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>s = b"Hello"</b>
+&gt;&gt;&gt; <b>s[0]</b>
+72
+&gt;&gt;&gt; <b>s[1]</b>
+101
+&gt;&gt;&gt; <b>s[2]</b>
+108
+&gt;&gt;&gt; 
+</pre>
+                            </blockquote>
+                            <p>
+                                In the case of the above example, you can replace <tt>list(map(ord,bytes))</tt> with <tt>list(bytes)</tt> or maybe even just <tt>bytes</tt> as it is already considered to be an array of integer values.
+                            </p>
+                            <p>
+                                <b>Porting Summary</b>
+                            </p>
+                            <p>
+                                All told, I don't think I spent more than about an hour porting Py65 so that I could use it with Python 3. As part of this work, I must emphasize that I ported all of the supplied unit tests and also ran them under Python 3 until all reported test failures were resolved. Although I can't claim that it is bug-free, it was good enough to do the project described next.
+                            </p>
+                            <p>
+                                <b>Py65 Project: Creating an Emulated Superboard II</b>
+                            </p>
+                            <p>
+                                In previous blog posts, I've described a couple of projects involving my old Superboard II system--my first computer. Here is a picture of it.
+                            </p>
+                            <center>
+                                <img src="http://www.dabeaz.com/images/osi_small.jpg">
+                            </center>
+                            <p>
+                                To make an emulator, you need to know details about the underlying hardware including memory map, ROMs, and hardware devices. For this, I referred to the Superboard II memory map taken straight from its user manual. Here it is:
+                            </p>
+                            <center>
+                                <img src="http://www.dabeaz.com/images/sb_mmap.png">
+                            </center>
+                            <p>
+                                To capture the ROM images, I wrote two simple BASIC program to dump the ROM data out of the cassette port. For example, like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+5 REM DUMP THE BASIC ROM TO CASSETTE
+10 FOR X = 40960 TO 49151
+20 WAIT 61440, 2
+30 B = PEEK(X)
+40 POKE 61441, B
+50 NEXT
+</pre>
+                            </blockquote>
+                            <p>
+                                By recording the audio stream using Audicity on my Mac and decoding the resulting WAV files using the Python scripts described in a <a href="http://dabeaz.blogspot.com/2010/08/decoding-superboard-ii-cassette-audio.html">previous post</a> I was able to capture both the 8K BASIC ROM and 2K system ROM. I put these in files <tt><a href="http://www.dabeaz.com/basic.bin">basic.bin</a></tt> and <tt><a href="http://www.dabeaz.com/rom.bin">rom.bin</a></tt>.
+                            </p>
+                            <p>
+                                Next up, you need to understand how the hardware devices work such as the Video RAM, polled keyboard, and 6850 ACIA serial port. For example, you need to wrap your brain around everything that is going on this figure:
+                            </p>
+                            <center>
+                                <img src="http://www.dabeaz.com/images/sb_poll.png">
+                            </center>
+                            <p>
+                                Once you understand that, you're ready to make an emulation. To do it, you need to address two basic problems. First, you need to load the captured ROM images. That's the easy part. Next, you need to install observer functions on the memory addresses mapped to different hardware devices and make those functions immitate the actual hardware. That's the tricky bit.
+                            </p>
+                            <p>
+                                Here is an example of doing just that. The most notable part of this code is found in the <tt>map_hardware()</tt> function that maps functions to certain memory addresses. If you look at these functions, you can see how they capture memory access and use that to emulate hardware devices. Of course, figuring out all of the subtle details of the Superboard II hardware is left as an exercise to the reader:
+                            </p>
+                            <blockquote>
+                                <pre>
+#!/usr/bin/env python3 -u
+
+import py65.monitor
+import sys
+import select
+
+# Write to a specific video address (using VT100 cursor control)
+def video_output(address,value):
+    row = (address - 0xd000) // 32
+    column = address % 32
+    sys.stdout.write(('\x1b[7m\x1b[&lt;%d&gt;;&lt;%d&gt;H' % (row,column)) + chr(value) + '\x1b[0m')
+    sys.stdout.flush()
+
+# Keyboard mapping table (for polled keyboard)
+keymap = {
+    b'\x00' : {254:254, 253:255, 251:255, 247:255, 239:255, 223:255, 191:255, 127:255}, 
+    b'\r' : {254:254, 223:247}, 
+    b'\n' : {254:254, 223:247}, 
+    b' ' : {254:254, 253:239}, 
+    b'/' : {254:254, 253:247}, 
+    b';' : {254:254, 253:251}, 
+    b':' : {254:254, 191:239}, 
+    b'-' : {254:254, 191:247}, 
+    b'.' : {254:254, 223:127}, 
+    b',' : {254:254, 251:253}, 
+    b'A' : {254:254, 253:191}, 
+    b'B' : {254:254, 251:239}, 
+    b'C' : {254:254, 251:191}, 
+    b'D' : {254:254, 247:191}, 
+    b'E' : {254:254, 239:191}, 
+    b'F' : {254:254, 247:223}, 
+    b'G' : {254:254, 247:239}, 
+    b'H' : {254:254, 247:247}, 
+    b'I' : {254:254, 239:253}, 
+    b'J' : {254:254, 247:251}, 
+    b'K' : {254:254, 247:253}, 
+    b'L' : {254:254, 223:191}, 
+    b'M' : {254:254, 251:251}, 
+    b'N' : {254:254, 251:247}, 
+    b'O' : {254:254, 223:223}, 
+    b'P' : {254:254, 253:253}, 
+    b'Q' : {254:254, 253:127}, 
+    b'R' : {254:254, 239:223}, 
+    b'S' : {254:254, 247:127}, 
+    b'T' : {254:254, 239:239}, 
+    b'U' : {254:254, 239:251}, 
+    b'V' : {254:254, 251:223}, 
+    b'W' : {254:254, 239:127}, 
+    b'X' : {254:254, 251:127}, 
+    b'Y' : {254:254, 237:247}, 
+    b'Z' : {254:254, 253:223}, 
+    b'1' : {254:254, 127:127}, 
+    b'2' : {254:254, 127:191}, 
+    b'3' : {254:254, 127:223}, 
+    b'4' : {254:254, 127:239}, 
+    b'5' : {254:254, 127:247}, 
+    b'6' : {254:254, 127:251}, 
+    b'7' : {254:254, 127:253}, 
+    b'8' : {254:254, 191:127}, 
+    b'9' : {254:254, 191:191}, 
+    b'0' : {254:254, 191:223}, 
+    b'!' : {254:252, 127:127}, 
+    b'"' : {254:252, 127:191}, 
+    b'#' : {254:252, 127:223}, 
+    b'$' : {254:252, 127:239}, 
+    b'%' : {254:252, 127:247}, 
+    b'&amp;' : {254:252, 127:251}, 
+    b"'" : {254:252, 127:254}, 
+    b'(' : {254:252, 191:127}, 
+    b')' : {254:252, 191:191}, 
+    b'*' : {254:252, 191:239}, 
+    b'=' : {254:252, 191:247}, 
+    b'&gt;' : {254:252, 223:127}, 
+    b'&lt;' : {254:252, 251:253}, 
+    b'?' : {254:252, 253:247}, 
+    b'+' : {254:252, 253:251}, 
+}
+
+# Raw file underlying stdin
+raw_stdin = sys.stdin.buffer.raw
+
+# State about what's being polled
+kb_row = 0
+kb_current = keymap[b'\x00']
+kb_count = 0
+
+# Read the row values for the polled row
+def keyboard_read(address):
+    global kb_count, kb_current
+    if kb_count &gt; 0:
+        kb_count -= 1
+        if kb_count &lt; 5:
+            # Simulate key-release
+            kb_current = keymap[b'\x00']
+    else:
+        kb_current = keymap[b'\x00']
+        if kb_row == 254:
+            # Poll stdin to see any input
+            r,w,e = select.select([raw_stdin],[],[],0)
+            if r:
+                keyboard_press(raw_stdin.read(1))
+
+    return kb_current.get(kb_row,255)
+
+# Set the current keyboard poll row
+def keyboard_write(address, val):
+    global kb_row
+    kb_row = val
+
+# Initiate a keypress
+def keyboard_press(ch):
+    global kb_count, kb_current
+    if ch in keymap:
+        kb_current = keymap[ch]
+        kb_count = 30 
+
+def map_hardware(m):
+    # Video RAM at 0xd000-xd400
+    m.subscribe_to_write(range(0xd000,0xd400),video_output)
+
+    # Monitor the polled keyboard port
+    m.subscribe_to_read([0xdf00], keyboard_read)
+    m.subscribe_to_write([0xdf00], keyboard_write)
+
+    # Bad memory address to force end to memory check
+    m.subscribe_to_read([0x8000], lambda x: 0)
+
+def main(args=None):
+    c = py65.monitor.Monitor()
+    map_hardware(c._mpu.memory)
+    try:
+        import readline
+    except ImportError:
+        pass
+
+    # Load the ROMs and boot
+    c.onecmd("load rom.bin f800")
+    c.onecmd("load basic.bin a000")
+    c.onecmd("goto ff00")
+    try:
+        c.onecmd('version')
+        c.cmdloop()
+    except KeyboardInterrupt:
+        c._output('')
+
+if __name__ == "__main__":
+    main()
+</pre>
+                            </blockquote>
+                            <p>
+                                <b>Running the Emulation</b>
+                            </p>
+                            <p>
+                                Running the emulation in a VT100 compatible terminal window, you'll get output that looks like this. Yep, that's my Superboard II running up in the upper left corner of the terminal window (click on the image to see a video):
+                            </p>
+                            <center>
+                                <a href="http://www.youtube.com/watch?v=unAKUE0fUnA"><img src="http://www.dabeaz.com/images/sb_emul.png"></a>
+                            </center>
+                            <p>
+                                Admittedly, it's kind of a hack, but then again, that's the whole point.
+                            </p>
+                            <p>
+                                <b>Final Words</b>
+                            </p>
+                            <p>
+                                I've put my modified Py65 code online at <a href="http://github.com/dabeaz/py65">http://github.com/dabeaz/py65</a>. The distribution also includes a slightly different emulation example that allows you to telnet to an emulated Superboard.
+                            </p>
+                            <p>
+                                I gave a talk about this at the January 13, 2011 meeting of <a href="http://chipy.org">Chipy</a>. Check out the <a href="http://carlfk.blip.tv/file/4639616">video</a>.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/36456651-5523699269187039520?l=dabeaz.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dabeaz.blogspot.com/2011/01/porting-py65-and-my-superboard-to.html">http://dabeaz.blogspot.com/2011/01/porting-py65-and-my-superboard-to.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

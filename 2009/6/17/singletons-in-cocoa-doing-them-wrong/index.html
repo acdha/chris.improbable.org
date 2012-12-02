@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Singletons in Cocoa: Doing them wrong
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 05 Sep 2009 02:48:11 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-06-17T18:19:51-04:00">
+                    <meta itemprop="dateModified" content="2009-06-17T18:19:51-04:00"><time class="date" itemprop="datePublished" datetime="2009-06-17T22:19:51+00:00">Jun 17</time>
+                    <h2 itemprop="title">
+                        Singletons in Cocoa: Doing them wrong
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/33f45d5798ac81ee">
+                        <blockquote>
+                            <p>
+                                A singleton is a simple concept: It's an object that you can only have one of. Being that simple, you may think it's hard to get wrong.
+                            </p>
+                            <p>
+                                If you do, I welcome you to the wonderful world of programming.
+                            </p>
+                            <p>
+                                The <a href="http://developer.apple.com/documentation/Cocoa/Conceptual/CocoaFundamentals/CocoaObjects/CocoaObjects.html#//apple_ref/doc/uid/TP40002974-CH4-SW32">Cocoa Fundamentals Guide</a> is necessary reading for all Cocoa programmers. Even so, nobody's perfect, and the CFG's authors are no exception.
+                            </p>
+                            <p>
+                                On Twitter last night, a mistake of theirs came to light when <a href="https://twitter.com/nicktmro/status/2200854091">someone named Nick tweeted</a> about how hard it is to make a singleton in Cocoa. Nick cited <a href="http://developer.apple.com/documentation/Cocoa/Conceptual/CocoaFundamentals/CocoaObjects/CocoaObjects.html#//apple_ref/doc/uid/TP40002974-CH4-SW32">an example from the CFG</a>; <a href="https://twitter.com/eschaton/status/2200947432">Chris Hanson responded</a> that “that example does WAY too much work”, and <a href="https://twitter.com/bbum/status/2201368352">Bill Bumgarner added</a> that the example is “ridiculous”. They're both right.
+                            </p>
+                            <p style="float:right;padding:0;margin-top:0;margin-bottom:2pt">
+                                <a href="http://icanhascheezburger.com/2008/07/17/funny-pictures-ur-doin-it-rong/"><img src="http://boredzo.org/blog/wp-content/uploads/2009/06/1f72324e-e50a-4100-a03b-b8add963f4e4.jpg" alt="Doing it wrong." border="0" width="250" height="238"></a>
+                            </p>
+                            <p>
+                                The example, in order to “ensure singleton behavior”, overrides four basic Foundation methods:
+                            </p>
+                            <ul>
+                                <li>
+                                    <code>retain</code>
+                                </li>
+                                <li>
+                                    <code>release</code>
+                                </li>
+                                <li>
+                                    <code>autorelease</code>
+                                </li>
+                                <li>
+                                    <code>retainCount</code>
+                                </li>
+                            </ul>
+                            <p>
+                                In the override implementations, <code>retain</code>, <code>release</code>, and <code>autorelease</code> are all no-ops. <code>release</code> does exactly nothing; the other two do nothing but return <code>self</code>. The override implementation of <code>retainCount</code> unconditionally returns <code>UINT_MAX</code>.
+                            </p>
+                            <p>
+                                Before I proceed any further, I'll give you a caution about singletons. <strong>You generally do not need to make your object a singleton <em>at all</em>.</strong> Even if your application has a single-window interface, with only one of each controller, you probably don't need to enforce that. Just don't create more than one. Then, if you do create more than one, you have a bug.
+                            </p>
+                            <p>
+                                Let's digress for a moment. Imagine if you allowed it. Imagine that you allow, say, your app delegate to create more than one of your root controller object. Your app delegate will then proceed to set up both twin objects, and they both respond to such things as notifications.
+                            </p>
+                            <p>
+                                Bad, right? Now let's say you “fix” this by making your root controller a singleton.
+                            </p>
+                            <p>
+                                Your app delegate is still trying to create two root controllers. It's still trying to set up two root controllers, and as a result of the two set-up messages, the controller is signed up twice for notifications.
+                            </p>
+                            <p>
+                                But now you really only have one root controller. Your app delegate creates the first one, then gets it again when it tries to create the second. All according to plan so far. Then your app delegate sets up the first object—<em>and then it sets it up again</em>, again thinking that it's talking to a second object. Even worse, because the object is now signed up twice for notifications (once per set-up message), <em>every notification response happens twice</em>.
+                            </p>
+                            <p>
+                                You now have only one root controller, but you didn't fix the bug, which wasn't in the controller at all, but in the app delegate. To fix the bug, you must fix the app delegate; you don't need a singleton for this at all.
+                            </p>
+                            <p>
+                                OK, digression over. Singletons are bad. Avoid them. If you have a lot of them, rip most of them out. (Dave Dribin has bookmarked <a href="http://del.icio.us/ddribin/singleton">a lot of other good cases against singletons</a>, and <a href="http://bjhomer.blogspot.com/2009/06/singleton-pattern-in-cocoa.html">BJ Homer points out that they aren't all bad</a>. More on BJ's post later.)
+                            </p>
+                            <p>
+                                Back to the singleton at hand.
+                            </p>
+                            <p>
+                                First, let's look at <code>retainCount</code>. A comment explains that <code>UINT_MAX</code> “denotes an object that cannot be released”, implying that the framework itself considers <code>UINT_MAX</code> a special value.
+                            </p>
+                            <p>
+                                This is actually correct, although I originally thought (and wrote, in an earlier version of this post) that it was bogus. <a href="http://developer.apple.com/documentation/Cocoa/Reference/Foundation/Protocols/NSObject_Protocol/Reference/NSObject.html#//apple_ref/occ/intfm/NSObject/retainCount">The documentation for <code>retainCount</code></a> explicitly says that objects whose <code>release</code> method does nothing should return <code>UINT_MAX</code>.
+                            </p>
+                            <p>
+                                Next on the hit list: <code>autorelease</code>. This is just mostly pointless. <code>autorelease</code> means nothing more than “send this a <code>release</code> message later”. If <code>release</code> does nothing, then <code>autorelease</code> becomes “do nothing later”. All this override does is move the nothing up to now. A performance optimization, perhaps, but I'd say it's premature.
+                            </p>
+                            <p>
+                                And now we come to the real villains: <code>retain</code> and <code>release</code>.
+                            </p>
+                            <p>
+                                First off, you shouldn't retain&nbsp;a singleton anyway. I can't imagine why you would do this, except incidentally, by making it a timer target or something.
+                            </p>
+                            <p>
+                                But even if you do think of a reason to retain a singleton, you still need to balance retain and release. If you retain without releasing afterward, you are under-releasing the object. If you release without retaining previously, you are over-releasing the object. These two statements have no exceptions.
+                            </p>
+                            <p>
+                                If you break <code>retain</code> and <code>release</code>, then you're able to over-retain or over-release (or even both!) the object with impunity. Your app no longer crashes, but you didn't really fix the problem; you're just getting away with it. You're still trying to over-retain and/or over-release an object.
+                            </p>
+                            <p>
+                                The Cocoa Fundamentals Guide's primary audience is new Cocoa developers. Those who have never used a retain-counting system before may very well over-release the singleton, and Apple's example singleton implementation hides that bug from them. That's bad; every Cocoa programmer should know how to recognize an over-release crash, and breaking <code>retain</code> and <code>release</code> denies the reader an opportunity to learn that. I've filed <a href="javascript:void(0);">a documentation bug report</a> about the example.
+                            </p>
+                            <h3>
+                                Also, a rebuttal
+                            </h3>
+                            <p>
+                                <a href="http://bjhomer.blogspot.com/2009/06/singleton-pattern-in-cocoa.html">BJ Homer responds at a different angle</a> to last night's flurry of tweets.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    First, though, we need to get a definition straight. A singleton is a class of which there should only be one instance in any given process. There are actually very few singleton classes in the Cocoa framework including NSDocumentController and NSFontManager. You cannot create more than one of these objects; …
+                                </p>
+                            </blockquote>
+                            <p>
+                                This is true. A singleton object is an object that your app can only have one of. There are a couple of different ways to do this:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    … if you try to call <code>[[NSDocumentController alloc] init]</code>, you'll get back the exact same object as you do when you call <code>[NSDocument sharedDocumentController]</code>, no matter how many times you call alloc and init. <code>NSApplication</code> is arguably a singleton as well; you can alloc another one, but you'll get an assertion failure when you call init.
+                                </p>
+                            </blockquote>
+                            <p>
+                                Another way is to simply implement the <code>sharedFramistan</code> method, and leave <code>allocWithZone:</code> and <code>init</code> alone. I suspect that this is common, since it's the easiest way, but BJ is right that it isn't a true singleton, since it allows multiple instances.
+                            </p>
+                            <p>
+                                Where BJ goes wrong is in his defense of the <code>retain</code> and <code>release</code> overrides:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Consider the following example:
+                                </p>
+                                <pre>
+<code>MyFloozit *floozit1 = [[MyFloozit alloc] init];
+[floozit1 doSomething];
+[floozit1 release];
+
+MyFloozit *floozit2 = [[MyFloozit alloc] init]; // MyFloozit is a singleton, so this should be the same object as floozit1
+[floozit2 doSomething]; // CRASH HERE
+[floozit2 release];
+</code>
+</pre>
+                            </blockquote>
+                            <p>
+                                We'll leave aside the problem that you probably should be using <code>sharedFloozit</code> to obtain the singleton instance of <code>MyFloozit</code>.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    When <code>floozit1</code> is set, a new <code>MyFloozit</code> is allocated, and a static <code>MyFloozit</code> pointer is set. When <code>floozit1</code> is released, that static pointer <em>is still pointing to the old instance</em>. As a result, when we try to set <code>floozit2</code> (or when anyone else tries to call <code>[MyFloozit sharedFloozit]</code>), we get back a pointer to that same instance. <em>The one that has been dealloc-ed.</em>
+                                </p>
+                            </blockquote>
+                            <p>
+                                BJ is missing something else the CFG says, which he even quoted later on:
+                            </p>
+                            <blockquote>
+                                <blockquote>
+                                    <p>
+                                        Situations could arise where you want a singleton instance (<strong>created and controlled by the class factory method</strong>) but also have the ability to create other instances as needed through allocation and initialization. …
+                                    </p>
+                                </blockquote>
+                            </blockquote>
+                            <p>
+                                (Emphasis added by me.)
+                            </p>
+                            <p>
+                                <strong>A singleton object owns itself.</strong> As such, it retains itself. As such, it should never die, because it always has at least one owner—and that's <em>without</em> breaking <code>retain</code> and <code>release</code>. If it does die, it's because something over-released it; later, something that was using it will crash, which lets you know that you have a bug. This is a good thing, because now you can fix the bug.
+                            </p>
+                            <p>
+                                Each of the <code>release</code> messages in BJ's example balances an <code>alloc</code> message above it. That <code>alloc</code> message may actually return an existing object, but we're expecting to own a new object. Therefore, the singleton's <code>allocWithZone:</code> should implicitly retain the existing object.
+                            </p>
+                            <p>
+                                There is no good reason to override <code>retain</code> and <code>release</code>. Don't do it. This also goes for <code>autorelease</code>. And, since you never override <code>release</code>, you also never need to override <code>retainCount</code>.
+                            </p>
+                            <h3>
+                                Doing it right
+                            </h3>
+                            <p>
+                                So, having thoroughly dismantled the Apple documentation's poor implementation of a singleton, let's look at the <em>correct</em> way to do it.
+                            </p>
+                            <p>
+                                Let's go through the requirements:
+                            </p>
+                            <ul>
+                                <li>The One True Instance is the only instance. (If you deliberately allow multiple instances, I call this a “multipleton”. I'll leave that as&nbsp;an exercise for the reader, and concentrate on the true singleton here.)
+                                </li>
+                                <li>There is a <code>sharedFramistan</code> method. It tests whether the One True Instance exists; if not, it creates the object and remembers it&nbsp;in file-scope <code>static</code> storage. Then it returns the One True Instance.
+                                </li>
+                                <li>We'll allow going through <code>alloc</code> and <code>init</code>, and return the same instance. We'll do this in <code>allocWithZone:</code>, as Apple did. We'll also need to make sure <code>init</code> doesn't do its work twice on the same object.
+                                </li>
+                            </ul>
+                            <pre>
+@interface PRHEmptySingleton: NSObject
+{
+}
+
++ (id) sharedFramistan;
+
+@end
+</pre>
+                            <pre>
+static PRHEmptySingleton *sharedInstance = nil;
+
+@implementation PRHEmptySingleton
+
++ (void) initialize {
+    if (!sharedInstance)
+        sharedInstance = [[self alloc] init];
+}
+
++ (id) sharedFramistan {
+    //Already set by +initialize.
+    return sharedInstance;
+}
+
++ (id) allocWithZone:(NSZone *)zone {
+    //Usually already set by +initialize.
+    if (sharedInstance) {
+        //The caller expects to receive a new object, so implicitly retain it to balance out the caller's eventual release message.
+        return [sharedInstance retain];
+    } else {
+        //When not already set, +initialize is our caller—it's creating the shared instance. Let this go through.
+        return [super allocWithZone:zone];
+    }
+}
+
+- (id) init {
+    //If sharedInstance is nil, +initialize is our caller, so initialize the instance.
+    //Conversely, if it is not nil, simply return the instance without re-initializing it.
+    if (!sharedInstance) {
+        if ((self = [super init])) {
+            //Initialize the instance here.
+        }
+    }
+
+    return self;
+}
+
+@end
+</pre>
+                            <p>
+                                Now, your tests:
+                            </p>
+                            <ol>
+                                <li>
+                                    <code>sharedFramistan</code> always returns the same object.
+                                </li>
+                                <li>
+                                    <code>alloc</code>/<code>init</code> always produce the same object (which, itself, is the same object as <code>sharedFramistan</code>).
+                                </li>
+                                <li>
+                                    <code>alloc</code>/<code>init</code> will not return an object confused by multiple <code>init</code> messages.
+                                </li>
+                                <li>Over-releasing causes a crash.
+                                </li>
+                                <li>Keeping <code>alloc</code>/<code>allocWithZone:</code>/<code>retain</code> balanced with <code>release</code> never causes a crash.
+                                </li>
+                                <li>If <code>[super init]</code> returns a different object, <code>alloc</code>/<code>init</code> won't break.
+                                </li>
+                            </ol>
+                            <p>
+                                Apple's example fails test 4 (and 6, for that matter). BJ doesn't show an implementation for his example, but according to his own description of its behavior, it fails test 5. My example above passes all six tests.
+                            </p>
+                            <h3>
+                                Take-aways
+                            </h3>
+                            <p>
+                                Hiding bugs is bad. Even worse is giving code that can hide a bug to new Cocoa programmers who could really use practice in detecting and fixing that kind of bug.
+                            </p>
+                            <p>
+                                If you really need to implement a singleton, there is a right way to do it. The way currently shown in the Cocoa Fundamentals Guide isn't it.
+                            </p>
+                            <p>
+                                Don't change the behavior of <code>retain</code>, <code>release</code>, <code>retainCount</code>, or <code>autorelease</code>. Ever.
+                            </p>
+                            <p>
+                                <span>UPDATE 2009-09-04:</span> Removed <code>hasInited</code> instance variable after Christiaan Hofman pointed out its redundancy in the comments.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/domainofthebored?a=kjPjCj4uYII:D61CKsaBuoM:cGdyc7Q-1BI"><img src="http://feeds.feedburner.com/~ff/domainofthebored?d=cGdyc7Q-1BI" border="0"></a> <a href="http://feeds.feedburner.com/~ff/domainofthebored?a=kjPjCj4uYII:D61CKsaBuoM:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/domainofthebored?i=kjPjCj4uYII:D61CKsaBuoM:F7zBnMyn0Lo" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/domainofthebored/~4/kjPjCj4uYII" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://boredzo.org/blog/archives/2009-06-17/doing-it-wrong">http://boredzo.org/blog/archives/2009-06-17/doing-it-wrong</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

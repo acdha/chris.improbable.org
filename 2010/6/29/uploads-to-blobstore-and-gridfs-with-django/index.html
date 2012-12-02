@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Uploads to Blobstore and GridFS with Django
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 29 Jun 2010 12:40:24 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-06-29T08:40:24-04:00">
+                    <meta itemprop="dateModified" content="2010-06-29T08:40:24-04:00"><time class="date" itemprop="datePublished" datetime="2010-06-29T12:40:24+00:00">Jun 29</time>
+                    <h2 itemprop="title">
+                        Uploads to Blobstore and GridFS with Django
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0197be2a3f91dbcb">
+                        <blockquote>
+                            <div style="overflow:hidden;margin-bottom:8px"></div>
+                            <div>
+                                <p>
+                                    We've finished our App Engine Blobstore and MongoDB GridFS storage backends for Django. With these backends you can directly use <tt>FileField</tt> and <tt>ModelForm</tt> to easily handle file uploads in a portable way. You can see a demo in action on App Engine at <a href="http://django-filetransfers.appspot.com/">http://django-filetransfers.appspot.com/</a> and also have a look at the demo's <a href="http://bitbucket.org/wkornewald/upload-sample">source code</a>.
+                                </p>
+                                <p>
+                                    The App Engine Blobstore backend is already integrated and pre-configured in <a href="http://www.allbuttonspressed.com/projects/djangoappengine">djangoappengine</a>. The GridFS backend is now part of <a href="http://bitbucket.org/david/django-storages">django-storages</a>. However, that's only the first half of the solution.
+                                </p>
+                                <p>
+                                    In addition to the storage backends we've also created a reusable Django app called <a href="http://www.allbuttonspressed.com/projects/django-filetransfers">django-filetransfers</a> which provides a simple API for upload and download handling in your views. This API is an abstraction over the little details in the different file hosting services. For example, in a traditional Apache/Lighttpd/nginx setup you might want to efficiently serve files via your web server instead of Django by using the "X-Sendfile" extension. App Engine requires that you use a modified upload URL. Asynchronous uploads to Amazon S3 (i.e., the browser sends the file directly to S3 instead of piping it through your Django instance) require that you generate a custom upload URL and use additional POST data to authorize the upload. Each solution is different.
+                                </p>
+                                <p>
+                                    Instead of writing custom code for a specific hosting solution you can use <a href="http://www.allbuttonspressed.com/projects/django-filetransfers">django-filetransfers</a> and specify a backend in your settings.py that handles the platform-specific details. This is particularly useful if you want to write a reusable Django app.
+                                </p>
+                                <p>
+                                    Note that we're also working on getting an API similar to django-filetransfers integrated into Django core. Once this is done we'll make a follow-up post with instructions on how to port your code.
+                                </p>
+                                <div>
+                                    <h2>
+                                        How does it work?
+                                    </h2>
+                                    <div>
+                                        <h3>
+                                            Installation
+                                        </h3>
+                                        <p>
+                                            You can install the package via <tt>setup.py install</tt> or by copying or linking the "filetransfers" folder to your project (App Engine developers have to use the copy/link method). Then, add "filetransfers" to your <tt>INSTALLED_APPS</tt>.
+                                        </p>
+                                        <p>
+                                            Note for App Engine users: In order to use the Blobstore on the App Engine production server you have to enable billing. Otherwise, the Blobstore API is disabled.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h3>
+                                            Model and form
+                                        </h3>
+                                        <p>
+                                            In the following we'll use this model and form:
+                                        </p>
+                                        <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                            <pre style="line-height:125%">
+<span style="font-weight:bold">class</span> <span style="color:#445588;font-weight:bold">UploadModel</span>(models<span style="font-weight:bold">.</span>Model):
+    <span style="color:#999999">file</span> <span style="font-weight:bold">=</span> models<span style="font-weight:bold">.</span>FileField(upload_to<span style="font-weight:bold">=</span><span style="color:#bb8844">'uploads/%Y/%m/%d/%H/%M/%S/'</span>)
+
+<span style="font-weight:bold">class</span> <span style="color:#445588;font-weight:bold">UploadForm</span>(forms<span style="font-weight:bold">.</span>ModelForm):
+    <span style="font-weight:bold">class</span> <span style="color:#445588;font-weight:bold">Meta</span>:
+        model <span style="font-weight:bold">=</span> UploadModel
+</pre>
+                                        </div>
+                                        <p>
+                                            The <tt>upload_to</tt> parameter for <tt>FileField</tt> defines the target folder for file uploads (here, we add the date).
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h3>
+                                            Handling uploads
+                                        </h3>
+                                        <p>
+                                            File uploads are handled with the <tt>prepare_upload()</tt> function which takes the request and the URL of the upload view and returns a tuple with a generated upload URL and extra POST data for the upload. This is an example upload view:
+                                        </p>
+                                        <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                            <pre style="line-height:125%">
+<span style="font-weight:bold">from</span> <span style="color:#555555">filetransfers.api</span> <span style="font-weight:bold">import</span> prepare_upload
+
+<span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">upload_handler</span>(request):
+    view_url <span style="font-weight:bold">=</span> reverse(<span style="color:#bb8844">'upload.views.upload_handler'</span>)
+    <span style="font-weight:bold">if</span> request<span style="font-weight:bold">.</span>method <span style="font-weight:bold">==</span> <span style="color:#bb8844">'POST'</span>:
+        form <span style="font-weight:bold">=</span> UploadForm(request<span style="font-weight:bold">.</span>POST, request<span style="font-weight:bold">.</span>FILES)
+        form<span style="font-weight:bold">.</span>save()
+        <span style="font-weight:bold">return</span> HttpResponseRedirect(view_url)
+
+    upload_url, upload_data <span style="font-weight:bold">=</span> prepare_upload(request, view_url)
+    form <span style="font-weight:bold">=</span> UploadForm()
+    <span style="font-weight:bold">return</span> direct_to_template(request, <span style="color:#bb8844">'upload/upload.html'</span>,
+        {<span style="color:#bb8844">'form'</span>: form, <span style="color:#bb8844">'upload_url'</span>: upload_url, <span style="color:#bb8844">'upload_data'</span>: upload_data})
+</pre>
+                                        </div>
+                                        <p>
+                                            Note that it's important that you send a redirect after an upload. Otherwise, some file hosting services won't work correctly.
+                                        </p>
+                                        <p>
+                                            Now, you have to use the generated upload URL and the upload's extra POST data in the template:
+                                        </p>
+                                        <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                            <pre style="line-height:125%">
+{% load filetransfers %}
+<span style="color:#000080">&lt;form</span> <span style="color:#008080">action=</span><span style="color:#bb8844">"{{ upload_url }}"</span> <span style="color:#008080">method=</span><span style="color:#bb8844">"POST"</span> <span style="color:#008080">enctype=</span><span style="color:#bb8844">"multipart/form-data"</span><span style="color:#000080">&gt;</span>
+  {% csrf_token %}
+  {% render_upload_data upload_data %}
+  <span style="color:#000080">&lt;table&gt;</span>{{ form }}<span style="color:#000080">&lt;/table&gt;</span>
+  <span style="color:#000080">&lt;input</span> <span style="color:#008080">type=</span><span style="color:#bb8844">"submit"</span> <span style="color:#008080">value=</span><span style="color:#bb8844">"Upload"</span> <span style="color:#000080">/&gt;</span>
+<span style="color:#000080">&lt;/form&gt;</span>
+</pre>
+                                        </div>
+                                        <p>
+                                            Here we use the <tt>{% render_upload_data %}</tt> tag which generates <tt>&lt;input <span>type="hidden"</span> /&gt;</tt> fields for the extra POST data.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h3>
+                                            Handling downloads
+                                        </h3>
+                                        <p>
+                                            The <tt>serve_file()</tt> function primarily takes care of private file downloads for which you need to check permissions before the download starts, but in some configurations it might also have to take care of public downloads because the file hosting solution doesn't provide publicly accessible URLs (e.g., App Engine Blobstore). This means that you should also use that function as a fallback even if you only have public downloads. The function takes two required arguments: the request and the Django <tt>File</tt> object that should be served (e.g. from <tt>FileField</tt>):
+                                        </p>
+                                        <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                            <pre style="line-height:125%">
+<span style="font-weight:bold">from</span> <span style="color:#555555">filetransfers.api</span> <span style="font-weight:bold">import</span> serve_file
+
+<span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">download_handler</span>(request, pk):
+    upload <span style="font-weight:bold">=</span> get_object_or_404(UploadModel, pk<span style="font-weight:bold">=</span>pk)
+    <span style="font-weight:bold">return</span> serve_file(request, upload<span style="font-weight:bold">.</span>file)
+</pre>
+                                        </div>
+                                        <p>
+                                            The <tt>public_download_url</tt> function, which is also available as a template filter, returns a file's publicly accessible URL if that's supported by the backend. Otherwise it returns <tt>None</tt>.
+                                        </p>
+                                        <p>
+                                            <strong>Important</strong>: Use <tt>public_download_url</tt> only for files that should be publicly accessible. Otherwise you should only use <tt>serve_file()</tt>, so you can check permissions before approving the download.
+                                        </p>
+                                        <p>
+                                            A complete solution for public downloads which falls back to <tt>serve_file()</tt> would look like this in a template for an instance of <tt>UploadModel</tt> called <tt>upload</tt>:
+                                        </p>
+                                        <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                            <pre style="line-height:125%">
+{% load filetransfers %}
+{% url upload.views.download_handler pk=upload.pk as fallback_url %}
+<span style="color:#000080">&lt;a</span> <span style="color:#008080">href=</span><span style="color:#bb8844">"{% firstof upload.file|public_download_url fallback_url %}"</span><span style="color:#000080">&gt;</span>Download<span style="color:#000080">&lt;/a&gt;</span>
+</pre>
+                                        </div>
+                                        <p>
+                                            The second line stores the <tt>serve_file()</tt> fallback URL in a variable. In the third line we then use the <tt>public_download_url</tt> template filter in order to get the file's publicly accessible URL. If that returns <tt>None</tt> the <tt>{% firstof %}</tt> template tag returns the second argument which is our fallback URL. Otherwise the public download URL is used.
+                                        </p>
+                                        <p>
+                                            As you can see, it's a rather simple solution. You should read the <a href="http://www.allbuttonspressed.com/projects/django-filetransfers">documentation</a> for more details about the available configuration options, permissions, and backends. Also, don't forget to check out the <a href="http://django-filetransfers.appspot.com/">demo</a> and its <a href="http://bitbucket.org/wkornewald/upload-sample">source code</a>.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        What do you think?
+                                    </h2>
+                                    <p>
+                                        Please provide some feedback on the API. Do you know some file hosting service where it wouldn't work? Do you have improvement suggestions? Please comment, so we can take improvements into account when adding a file transfer API to Django core.
+                                    </p>
+                                    <p>
+                                        Also, if you have a favorite Django app which could benefit from <a href="http://www.allbuttonspressed.com/projects/django-filetransfers">django-filetransfers</a> please let the app's author know or maybe even port it to django-filetransfers and send him a patch.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="overflow:hidden">
+                                <a title="Tweet this!" style="margin-right:5px" href="http://twitter.com/share?text=Uploads%20to%20Blobstore%20and%20GridFS%20with%20Django&amp;url=http%3A//www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django&amp;via=wkornewald"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/twitter-ba4f7679fb49cd4eb99cae4267d48d23c81137d4.png" alt="Tweet this!" width="32" height="32"></a> <a title="Share on Facebook" style="margin-right:5px" href="http://www.facebook.com/share.php?u=http%3A//www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django&amp;t=Uploads%20to%20Blobstore%20and%20GridFS%20with%20Django"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/facebook-4b8233c3eb59d633eacdc5dbd8b98be769b9386d.png" alt="Share on Facebook" width="32" height="32"></a> <a title="Email a friend" style="margin-right:5px" href="http://feedburner.google.com/fb/a/emailFlare?itemTitle=Uploads%20to%20Blobstore%20and%20GridFS%20with%20Django&amp;uri=http%3A//www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/email-e5a5556616278659d7761a5df6c58238d77ec47c.png" alt="Email a friend" width="32" height="32"></a> <a title="Share on Delicious" style="margin-right:5px" href="http://del.icio.us/post?url=http%3A//www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django&amp;title=Uploads%20to%20Blobstore%20and%20GridFS%20with%20Django"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/delicious-400c2ae7e6871479f4bb34a4f8f476784a0992bf.png" alt="Share on Delicious" width="32" height="32"></a> <a title="Share on StumbleUpon" style="margin-right:5px" href="http://www.stumbleupon.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django&amp;title=Uploads%20to%20Blobstore%20and%20GridFS%20with%20Django"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/stumbleupon-b725d91b84d24fa42787a8c79aa2695c5e5fb288.png" alt="Share on StumbleUpon" width="32" height="32"></a> <a title="Share on Digg" style="margin-right:5px" href="http://digg.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django&amp;title=Uploads%20to%20Blobstore%20and%20GridFS%20with%20Django"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/digg-8ada117a5610042c9fd592d3f4d3d20be242334d.png" alt="Share on Digg" width="32" height="32"></a> <a title="Share on Reddit" style="margin-right:5px" href="http://reddit.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django&amp;title=Uploads%20to%20Blobstore%20and%20GridFS%20with%20Django"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/reddit-f2c9d5792319c1a340054f310f4646642a48fe43.png" alt="Share on Reddit" width="32" height="32"></a> <a title="Share on Technorati" style="margin-right:5px" href="http://technorati.com/faves?sub=favthis&amp;add=http%3A//www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/technorati-1fa5656a85357eba71c018c718a7b36561a6f71c.png" alt="Share on Technorati" width="32" height="32"></a>
+                            </div>
+                            <p>
+                                <a href="http://www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django#disqus_thread">Leave a comment</a>
+                            </p><img src="http://feeds.feedburner.com/~r/AllButtonsPressed/~4/-yW_PdGSZT0" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django">http://www.allbuttonspressed.com/blog/django/2010/06/Uploads-to-Blobstore-and-GridFS-with-Django</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

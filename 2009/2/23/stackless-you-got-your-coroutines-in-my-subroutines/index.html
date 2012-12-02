@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Stackless: You got your coroutines in my subroutines.
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 23 Feb 2009 20:43:33 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-23T15:43:33-04:00">
+                    <meta itemprop="dateModified" content="2009-02-23T15:43:33-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-23T19:43:33+00:00">Feb 23</time>
+                    <h2 itemprop="title">
+                        Stackless: You got your coroutines in my subroutines.
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a99eea11a782d745">
+                        <blockquote>
+                            <p>
+                                <b>Note:</b>This is another post in what I hope will be a series leading up to my concurrency/distributed systems talk at PyCon. I’m steadily working through experimenting with and learning the various frameworks/libraries in the python ecosystem.
+                            </p>
+                            <p>
+                                I reserve the right (and probably will) to revise these entries based on feedback from people (mainly the author(s) of said tool(s)). I will also add additional bits and pieces as I learn and explore more.<b>/Note</b>
+                            </p>
+                            <p>
+                                Stackless python - here’s another big one on the pile - is much more than a library, or a framework which runs on CPython - Stackless is actually a modified version of the CPython interpreter. It’s much more than just a C-extension. Stackless is in use by various people and companies - most notably, it’s in use by CCP Games, makers of Eve Online (see <a href="http://www.stackless.com/Members/rmtew/News%20Archive/newsPyCon2006Pres">this</a> pycon presentation). In fact, CCP Games is a large part of why Stackless is still around today.
+                            </p>
+                            <p>
+                                I say that intentionally - quoting the readme in the Stackless/ directory of the distribution(<a href="http://svn.python.org/view/stackless/trunk/Stackless/readme.txt?view=markup">here</a>):
+                            </p>
+                            <blockquote>
+                                <p>
+                                    In 2003, the fabulous PyPy porject was started, which is still<br>
+                                    performing very well. I have implemented Stackless for PyPy<br>
+                                    (with lots of support from Armin), and it is so incredibly<br>
+                                    much nicer. No more fiddling with existing calling conventions,<br>
+                                    no compromizes, everything that needs to be stackless also is.
+                                </p>
+                                <p>
+                                    Unfortuantely, PyPy is still not fast and complete enough to<br>
+                                    take over. This means, my users are still whining for an update<br>
+                                    all the time CPython gets an update.<br>
+                                    And maintaining this code gets more and more a nightmare for<br>
+                                    me, since I have the nice PyPy version, and I hate hacking this<br>
+                                    clumsy C code again and again.
+                                </p>
+                            </blockquote>
+                            <p>
+                                The original author, Christian Tismer largely moved onto PyPy, which is still largely in it infancy (although I read through bits of the code base frequently, it’s pretty), and further development has largely been stalled minus the improvements Richard M. Tew (CCP Games) and others have done. There’s still life in it.
+                            </p>
+                            <p>
+                                Fundamentally, Stackless modifies the interpreter internals a bit to modify the way that the C call stack is manipulated/used as well as to add other other nice bits Stackless offers (<a href="http://en.wikipedia.org/wiki/Call_stack">call stack</a>). Stackless simply doesn’t use the C call stack - all told, each microthread only has a few kilobytes of overhead, which is awesome.
+                            </p>
+                            <p>
+                                It adds something called microthreads and does other patching to python-core. Normal OS/Posix threads require a fair amount of resources to create and run - in the case of Python, each thread has to get its own stack, this costs memory. With Stackless’ microthread support - you get “threads”, but threads which cost a significantly less, and potentially execute faster due to context switching improvements (no need to go from user-&gt;kernel-&gt;user and so on).
+                            </p>
+                            <p>
+                                <b>Point of Order</b>: Before I continue, I want to clear up a common misconception I’ve heard - Stackless, does not in any way, remove the Global Interpreter Lock. No sir. It’s still there. Lurking. Waiting to steal your candy. Also, it still has a stack, so it’s not truly “stackless”.
+                            </p>
+                            <p>
+                                So, microthreads are smaller and require less OS hand holding for context switching, and ultimately can (and are) scheduled by the interpreter, rather than the operating system.
+                            </p>
+                            <p>
+                                <b>install note for os/x users</b>: You need to pass the “–enable-stacklessfewerregisters” to configure, otherwise, make pukes on you.
+                            </p>
+                            <p>
+                                Stackless is a basic implementation of these - for a simple resource example usage example, I wrote a simple script which spawns 2,000 threads (sorry windows) and 2,000 tasklets. I watched the memory usage of both:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> <span style="color:#dc143c">time</span>
+<span style="color:#ff7700;font-weight:bold">import</span> <span style="color:#dc143c">threading</span>
+<span style="color:#ff7700;font-weight:bold">def</span> func<span style="color:black">(</span><span style="color:black">)</span>:
+    <span style="color:#dc143c">time</span>.<span style="color:black">sleep</span><span style="color:black">(</span><span style="color:#ff4500">120</span><span style="color:black">)</span>
+ 
+threads = <span style="color:black">[</span><span style="color:#dc143c">threading</span>.<span style="color:black">Thread</span><span style="color:black">(</span>target=func<span style="color:black">)</span> <span style="color:#ff7700;font-weight:bold">for</span> i <span style="color:#ff7700;font-weight:bold">in</span> <span style="color:#008000">range</span><span style="color:black">(</span><span style="color:#ff4500">2000</span><span style="color:black">)</span><span style="color:black">]</span>
+<span style="color:#ff7700;font-weight:bold">for</span> i <span style="color:#ff7700;font-weight:bold">in</span> threads:
+    i.<span style="color:black">start</span><span style="color:black">(</span><span style="color:black">)</span>
+<span style="color:#ff7700;font-weight:bold">for</span> i <span style="color:#ff7700;font-weight:bold">in</span> threads:
+    i.<span style="color:black">join</span><span style="color:black">(</span><span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                For the threaded script - the resident size was 42M and the virtual size was 1037. Versus the stackless version:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> <span style="color:#dc143c">time</span>
+<span style="color:#ff7700;font-weight:bold">import</span> stackless
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> func<span style="color:black">(</span><span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">for</span> i <span style="color:#ff7700;font-weight:bold">in</span> <span style="color:#008000">range</span><span style="color:black">(</span><span style="color:#ff4500">120</span><span style="color:black">)</span>:
+        <span style="color:#dc143c">time</span>.<span style="color:black">sleep</span><span style="color:black">(</span><span style="color:#ff4500">1</span><span style="color:black">)</span>
+        stackless.<span style="color:black">schedule</span><span style="color:black">(</span><span style="color:black">)</span>
+ 
+<span style="color:#ff7700;font-weight:bold">for</span> i <span style="color:#ff7700;font-weight:bold">in</span> <span style="color:#008000">range</span><span style="color:black">(</span><span style="color:#ff4500">2000</span><span style="color:black">)</span>:
+    stackless.<span style="color:black">tasklet</span><span style="color:black">(</span>func<span style="color:black">)</span><span style="color:black">(</span><span style="color:black">)</span>
+ 
+stackless.<span style="color:black">run</span><span style="color:black">(</span><span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                Stackless had a resident size of 3416K and a virtual size of 22M - virtually microscopic versus the heavier thread version. Obviously, they are not line for line comparisons - the Stackless version, like other cooperative multitasking systems requires that each tasklet be a good citizen, and not block execution forever, instead rescheduling itself or otherwise yielding to allow for others to run. If a tasklet blocks on a socket, everyone blocks on that tasklet.
+                            </p>
+                            <p>
+                                Someone asked me to track the linear growth of the threaded numbers vs. the tasklet numbers. Since I’m a sucker, I thought I’d take him up on it (OS/X 10.5, 4GB of ram, Core 2 Duo):
+                            </p>
+                            <p>
+                                <b>Threads</b>:
+                            </p>
+                            <table border="1">
+                                <tr>
+                                    <th>
+                                        Num Threads
+                                    </th>
+                                    <th>
+                                        Resident Size
+                                    </th>
+                                    <th>
+                                        Virtual Size
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        2
+                                    </td>
+                                    <td>
+                                        3412K
+                                    </td>
+                                    <td>
+                                        23M
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        200
+                                    </td>
+                                    <td>
+                                        7336K
+                                    </td>
+                                    <td>
+                                        123M
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        2,000
+                                    </td>
+                                    <td>
+                                        42M
+                                    </td>
+                                    <td>
+                                        1037M
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                <b>Tasklets</b>:
+                            </p>
+                            <table border="1">
+                                <tr>
+                                    <th>
+                                        Num Tasklets
+                                    </th>
+                                    <th>
+                                        Resident Size
+                                    </th>
+                                    <th>
+                                        Virtual Size
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        2
+                                    </td>
+                                    <td>
+                                        3128K
+                                    </td>
+                                    <td>
+                                        21M
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        200
+                                    </td>
+                                    <td>
+                                        3164K
+                                    </td>
+                                    <td>
+                                        21M
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        2,000
+                                    </td>
+                                    <td>
+                                        3408K
+                                    </td>
+                                    <td>
+                                        22M
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <b>20,000</b>
+                                    </td>
+                                    <td>
+                                        5920K
+                                    </td>
+                                    <td>
+                                        24M
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <b>100,000</b>
+                                    </td>
+                                    <td>
+                                        17M
+                                    </td>
+                                    <td>
+                                        34M
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                <i>One note - the Stackless numbers should be low, but not this low (from my understanding, and review from others), anyone have any ideas?</i>
+                            </p>
+                            <p>
+                                There’s the numbers - lots of threads is going to consume lots of ram. With stackless, a given tasklet is only a few kilobytes in average size and therefore the memory footprint is small when you start raising the count. Additionally, note the two counts at the bottom of the tasklets table; you can’t spawn that many threads (depending on your OS and configuration) and even if you could, the memory footprint would be costly.
+                            </p>
+                            <p>
+                                Now, in the age of cheap-ass-ram, where you can trick out a desktop or server with 16GB sticks, people might argue “so what” - but on machines where memory is constrained, such as smaller notebooks, embedded devices, or game consoles - this is a critical thing to take into consideration.
+                            </p>
+                            <p>
+                                If you look at the stackless code, there is another big thing to realize; Stackless like other frameworks or systems which use an scheduler built into the interpreter gives you the benefit/task of scheduling when your tasklets/components/etc execute. This gives you more control, but more responsibility. Stackless offers both cooperative and preemptive scheduling, however the preemptive scheduling doesn’t feel right. <a href="http://www.stackless.com/wiki/Scheduling">more on scheduling here</a>
+                            </p>
+                            <p>
+                                So, we’ve determined that stackless tasklets are smaller, right? Pretty simple.
+                            </p>
+                            <p>
+                                If you’ve read the other things I’ve written on Kamaelia/Twisted/etc, you’ll recognize the concepts within Stackless pretty quickly - a tasklet is a component, a thread of work and tasklets intercommunicate via channels. For example, here’s a little example of two tasklets communicating:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> stackless
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> chicken<span style="color:black">(</span>channel<span style="color:black">)</span>:
+    channel.<span style="color:black">send</span><span style="color:black">(</span><span style="color:#483d8b">'cluck'</span><span style="color:black">)</span>
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> egg<span style="color:black">(</span>channel<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">print</span> channel.<span style="color:black">receive</span><span style="color:black">(</span><span style="color:black">)</span>
+ 
+channel = stackless.<span style="color:black">channel</span><span style="color:black">(</span><span style="color:black">)</span>
+stackless.<span style="color:black">tasklet</span><span style="color:black">(</span>chicken<span style="color:black">)</span><span style="color:black">(</span>channel<span style="color:black">)</span>
+stackless.<span style="color:black">tasklet</span><span style="color:black">(</span>egg<span style="color:black">)</span><span style="color:black">(</span>channel<span style="color:black">)</span>
+stackless.<span style="color:black">run</span><span style="color:black">(</span><span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                Pretty easy, and a tiny amount of code. The concept of tasklets/microthreads isn’t a new one - in fact, it’s how Erlang gets it’s groove on - Erlang doesn’t use native OS threads, instead, it uses microthreads scheduled by the Erlang compiler. However, <i>they are not directly comparable</i>. Stackless isn’t running across cores - Erlang does, stackless, due to the GIL, has to obey the same rules as the rest of python-core. For more on “erlang v. stackless”, see <a href="http://www.reddit.com/r/programming/comments/u2ng/ask_reddit_are_taskletschannels_in_stackless">this</a>.
+                            </p>
+                            <p>
+                                Oh, and you can share normal object via the channel too:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> stackless
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> yes<span style="color:black">(</span>channel<span style="color:black">)</span>:
+    x = channel.<span style="color:black">receive</span><span style="color:black">(</span><span style="color:black">)</span>
+    x.<span style="color:black">append</span><span style="color:black">(</span><span style="color:#483d8b">'yes'</span><span style="color:black">)</span>
+    channel.<span style="color:black">send</span><span style="color:black">(</span>x<span style="color:black">)</span>
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> no<span style="color:black">(</span>channel<span style="color:black">)</span>:
+    x = channel.<span style="color:black">receive</span><span style="color:black">(</span><span style="color:black">)</span>
+    x.<span style="color:black">append</span><span style="color:black">(</span><span style="color:#483d8b">'no'</span><span style="color:black">)</span>
+    channel.<span style="color:black">send</span><span style="color:black">(</span>x<span style="color:black">)</span>
+ 
+channel = stackless.<span style="color:black">channel</span><span style="color:black">(</span><span style="color:black">)</span>
+stackless.<span style="color:black">tasklet</span><span style="color:black">(</span>yes<span style="color:black">)</span><span style="color:black">(</span>channel<span style="color:black">)</span>
+stackless.<span style="color:black">tasklet</span><span style="color:black">(</span>no<span style="color:black">)</span><span style="color:black">(</span>channel<span style="color:black">)</span>
+channel.<span style="color:black">send</span><span style="color:black">(</span><span style="color:black">[</span><span style="color:black">]</span><span style="color:black">)</span>
+stackless.<span style="color:black">run</span><span style="color:black">(</span><span style="color:black">)</span>
+<span style="color:#ff7700;font-weight:bold">print</span> channel.<span style="color:black">receive</span><span style="color:black">(</span><span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                Moving on, Stackless offers something else - the ability to pickle tasklets. This means you can pickle up a tasklet and send it over the wire to another machine and then unpickle it and continue running it - channels get pickled too. Locally, this means to can save it to disk, and then resume state easily.
+                            </p>
+                            <p>
+                                You could use this to generate a tasklet which listened on a port for data on the local machine, and passed the data off the wire to the channel - when you pickled the channel or the tasklets with that channel in scope, and sent it over the wire, they would pick up listening on the same port <b>number</b> on the remote machine. You loose current sessions, yes, but you could also detect active sessions and handle those gracefully.
+                            </p>
+                            <p>
+                                This is nice for say, a component you wanted to be able to easily send to other machines to help load balancing. In theory, you could auto-detect new servers being added to a cluster, and when that server came up into a “ready” state, send it the daemon it should handle - and the tasklets would pick up where they left off (minus the sessions).
+                            </p>
+                            <p>
+                                Otherwise, pickling channels and tasklets could be used for a few things - you have to think of them in terms of coroutines (<a href="http://en.wikipedia.org/wiki/Coroutine#Implementations_for_Python">here</a>) - you should be able to suspend processing state and then simply resume where you left off. If you’ve got python brains - picke-able generators. You could put them in a database; but the use of that escapes me at the moment.
+                            </p>
+                            <p>
+                                Oh - and pickled tasklets and channels can be shared amongst different architectures too, as long as that architecture is running the same version of Stackless, and supports Stackless.
+                            </p>
+                            <p>
+                                To continue on - if you wanted to add threads into the mix as well - Stackless tasklets can be run within Python threads, however those tasklets are local to that thread, and each thread gets it’s own scheduler. Your main application thread has it’s own scheduler, and so on.
+                            </p>
+                            <p>
+                                Stackless’ tasklet/channel system is quite nice, however note that I’m not saying Stackless is the only way into this magical world - it’s not, especially with a plethora of coroutine/greenlet/etc packages for python today, and the continued work towards making generators more awesome. I’m just showing what Stackless can/could do.
+                            </p>
+                            <p>
+                                The primitives within Stackless are nice - frankly, I’d like a light weight green thread implementation in python core on which we could build a nice Actor library, as well as support the lower memory footprint/etc. However, in order to use these primitives within Stackless - you’d find yourself building your own abstraction layer/framework (for example, <a href="http://pypi.python.org/pypi/concurrence">concurrence</a>) to really get a lot of mileage out of it. This is why people run twisted on top of it, CCP Games has the uthread library (which you can see <a href="http://svn.python.org/view/stackless/sandbox/libraries/uthread-ccp/uthread.py?view=markup">here</a>) and so on.
+                            </p>
+                            <p>
+                                The cost of a deployment of Stackless can not be underestimated though - it’s got some magic assembler code within it, which isn’t the most portable of goods (versus OSes, compiler versions, compilers, etc). Some platforms simply aren’t supported due to this. Not to mention, it’s an entirely new interpreter, which has a cost much higher than that of an extension module.
+                            </p>
+                            <p>
+                                A few people who I’ve been talking with asked me the simple question - “Why hasn’t any of this been pushed into python-core”. Well, in short - it was never really proposed (by Christian), and the changes within Stackless - the last serious discussion was from 2007 (see <a href="http://mail.python.org/pipermail/python-dev/2007-February/071037.html">this</a>).
+                            </p>
+                            <p>
+                                With Stackless, it’s difficult - I think there is a perceived complexity about the code and then there is real complexity. I suspect both of these are high in the case of Stackless due to the nature of the problem it is trying to solve; namely bolting a feature like this onto an interpreter <b>not meant for it</b>. I think that due to this, and due to Christian and others moving onto the greener pastures of PyPy - inclusion into core simply won’t happen.
+                            </p>
+                            <p>
+                                <b>Resources:</b>
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://www.onlamp.com/pub/a/python/2002/02/14/pythonnews.html">http://www.onlamp.com/pub/a/python/2002/02/14/pythonnews.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.python.org/dev/peps/pep-0219/">http://www.python.org/dev/peps/pep-0219/</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.python.org/dev/peps/pep-0255/">http://www.python.org/dev/peps/pep-0255/</a>
+                                </li>
+                                <li>
+                                    <a href="http://muharem.wordpress.com/2007/07/31/erlang-vs-stackless-python-a-first-benchmark/">http://muharem.wordpress.com/2007/07/31/erlang-vs-stackless-python-a-first-benchmark/</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.ibm.com/developerworks/library/l-pythrd.html">http://www.ibm.com/developerworks/library/l-pythrd.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://mail.python.org/pipermail/python-dev/2007-February/071037.html">http://mail.python.org/pipermail/python-dev/2007-February/071037.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://members.verizon.net/olsongt/stackless/why_stackless.html">http://members.verizon.net/olsongt/stackless/why_stackless.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://code.google.com/p/stacklessexamples/wiki/StacklessExamples">http://code.google.com/p/stacklessexamples/wiki/StacklessExamples</a>
+                                </li>
+                                <li>
+                                    <a href="http://islab.org/stackless/">http://islab.org/stackless/</a>
+                                </li>
+                            </ul>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://jessenoller.com/2009/02/23/stackless-you-got-your-coroutines-in-my-subroutines/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Jessenollercom+%28jessenoller.com%29">http://jessenoller.com/2009/02/23/stackless-you-got-your-coroutines-in-my-subroutines/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Jessenollercom+%28jessenoller.com%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

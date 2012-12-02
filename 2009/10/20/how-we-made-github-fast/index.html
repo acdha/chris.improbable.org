@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How We Made GitHub Fast
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 21 Oct 2009 17:08:08 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-10-20T14:54:03-04:00">
+                    <meta itemprop="dateModified" content="2009-10-20T14:54:03-04:00"><time class="date" itemprop="datePublished" datetime="2009-10-20T18:54:03+00:00">Oct 20</time>
+                    <h2 itemprop="title">
+                        How We Made GitHub Fast
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/185c553b6288e9ae">
+                        <blockquote>
+                            <p>
+                                Now that things have settled down from the move to Rackspace, I wanted to take some time to go over the architectural changes that we’ve made in order to bring you a speedier, more scalable GitHub.
+                            </p>
+                            <p>
+                                In my first draft of this article I spent a lot of time explaining why we made each of the technology choices that we did. After a while, however, it became difficult to separate the architecture from the discourse and the whole thing became confusing. So I’ve decided to simply explain the architecture and then write a series of follow up posts with more detailed analyses of exactly why we made the choices we did.
+                            </p>
+                            <p>
+                                There are many ways to scale modern web applications. What I will be describing here is the method that we chose. This should by no means be considered the only way to scale an application. Consider it a case study of what worked for us given our unique requirements.
+                            </p>
+                            <h3>
+                                Understanding the Protocols
+                            </h3>
+                            <p>
+                                We expose three primary protocols to end users of GitHub: <span>HTTP</span>, <span>SSH</span>, and Git. When browsing the site with your favorite browser, you’re using <span>HTTP</span>. When you clone, pull, or push to a private <span>URL</span> like <span style="background-color:#ddd;padding:0 .2em;font:90% Monaco, 'Courier New', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace">git@github.com:mojombo/jekyll.git</span> you’re doing so via <span>SSH</span>. When you clone or pull from a public repository via a <span>URL</span> like <code>git://github.com/mojombo/jekyll.git</code> you’re using the Git protocol.
+                            </p>
+                            <p>
+                                The easiest way to understand the architecture is by tracing how each of these requests propagates through the system.
+                            </p>
+                            <h3>
+                                Tracing an <span>HTTP</span> Request
+                            </h3>
+                            <p>
+                                For this example I’ll show you how a request for a tree page such as <a href="http://github.com/mojombo/jekyll">http://github.com/mojombo/jekyll</a> happens.
+                            </p>
+                            <p>
+                                The first thing your request hits after coming down from the internet is the active load balancer. For this task we use a pair of Xen instances running <a href="http://www.vergenet.net/linux/ldirectord/">ldirectord</a>. These are called <code>lb1a</code> and <code>lb1b</code>. At any given time one of these is active and the other is waiting to take over in case of a failure in the master. The load balancer doesn’t do anything fancy. It forwards <span>TCP</span> packets to various servers based on the requested IP and port and can remove misbehaving servers from the balance pool if necessary. In the event that no servers are available for a given pool it can serve a simple static site instead of refusing connections.
+                            </p>
+                            <p>
+                                For requests to the main website, the load balancer ships your request off to one of the four frontend machines. Each of these is an 8 core, 16GB <span>RAM</span> bare metal server. Their names are <code>fe1</code>, …, <code>fe4</code>. <a href="http://nginx.net/">Nginx</a> accepts the connection and sends it to a Unix domain socket upon which sixteen <a href="http://github.com/blog/517-unicorn">Unicorn</a> worker processes are selecting. One of these workers grabs the request and runs the <a href="http://rubyonrails.org/">Rails</a> code necessary to fulfill it.
+                            </p>
+                            <p>
+                                Many pages require database lookups. Our MySQL database runs on two 8 core, 32GB <span>RAM</span> bare metal servers with 15k <span>RPM</span> <span>SAS</span> drives. Their names are <code>db1a</code> and <code>db1b</code>. At any given time, one of them is master and one is slave. MySQL replication is accomplished via <a href="http://www.drbd.org/"><span>DRBD</span></a>.
+                            </p>
+                            <p>
+                                If the page requires information about a Git repository and that data is not cached, then it will use our <a href="http://github.com/mojombo/grit">Grit</a> library to retrieve the data. In order to accommodate our Rackspace setup, we’ve modified Grit to do something special. We start by abstracting out every call that needs access to the filesystem into the Grit::Git object. We then replace Grit::Git with a stub that makes <span>RPC</span> calls to our Smoke service. Smoke has direct disk access to the repositories and essentially presents Grit::Git as a service. It’s called Smoke because Smoke is just Grit in the cloud. Get it?
+                            </p>
+                            <p>
+                                The stubbed Grit makes <span>RPC</span> calls to <code>smoke</code> which is a load balanced hostname that maps back to the <code>fe</code> machines. Each frontend runs four <a href="http://github.com/mojombo/proxymachine">ProxyMachine</a> instances behind <a href="http://haproxy.1wt.eu/">HAProxy</a> that act as routing proxies for Smoke calls. ProxyMachine is my content aware (layer 7) <span>TCP</span> routing proxy that lets us write the routing logic in Ruby. The proxy examines the request and extracts the username of the repository that has been specified. We then use a proprietary library called Chimney (it routes the smoke!) to lookup the route for that user. A user’s route is simply the hostname of the file server on which that user’s repositories are kept.
+                            </p>
+                            <p>
+                                Chimney finds the route by making a call to <a href="http://code.google.com/p/redis/">Redis</a>. Redis runs on the database servers. We use Redis as a persistent key/value store for the routing information and a variety of other data.
+                            </p>
+                            <p>
+                                Once the Smoke proxy has determined the user’s route, it establishes a transparent proxy to the proper file server. We have four pairs of fileservers. Their names are <code>fs1a</code>, <code>fs1b</code>, …, <code>fs4a</code>, <code>fs4b</code>. These are 8 core, 16GB <span>RAM</span> bare metal servers, each with six 300GB 15K <span>RPM</span> <span>SAS</span> drives arranged in <span>RAID</span> 10. At any given time one server in each pair is active and the other is waiting to take over should there be a fatal failure in the master. All repository data is constantly replicated from the master to the slave via <span>DRBD</span>.
+                            </p>
+                            <p>
+                                Every file server runs two <a href="http://github.com/mojombo/ernie">Ernie</a> <span>RPC</span> servers behind HAProxy. Each Ernie spawns 15 Ruby workers. These workers take the <span>RPC</span> call and reconstitute and perform the Grit call. The response is sent back through the Smoke proxy to the Rails app where the Grit stub returns the expected Grit response.
+                            </p>
+                            <p>
+                                When Unicorn is finished with the Rails action, the response is sent back through Nginx and directly to the client (outgoing responses do not go back through the load balancer).
+                            </p>
+                            <p>
+                                Finally, you see a pretty web page!
+                            </p>
+                            <p>
+                                The above flow is what happens when there are no cache hits. In many cases the Rails code uses Evan Weaver’s Ruby <a href="http://github.com/fauna/memcached/">memcached</a> client to query the <a href="http://www.danga.com/memcached/">Memcache</a> servers that run on each slave file server. Since these machines are otherwise idle, we place 12GB of Memcache on each. These servers are aliased as <code>memcache1</code>, …, <code>memcache4</code>.
+                            </p>
+                            <h3>
+                                <span>BERT</span> and <span>BERT</span>-<span>RPC</span>
+                            </h3>
+                            <p>
+                                For our data serialization and <span>RPC</span> protocol we are using <span>BERT</span> and <span>BERT</span>-<span>RPC</span>. You haven’t heard of them before because they’re brand new. I invented them because I was not satisfied with any of the available options that I evaluated, and I wanted to experiment with an idea that I’ve had for a while. Before you freak out about <span>NIH</span> syndrome (or to help you refine your freak out), please read my accompanying article <a href="http://github.com/blog/531-introducing-bert-and-bert-rpc">Introducing <span>BERT</span> and <span>BERT</span>-<span>RPC</span></a> about how these technologies came to be and what I intend for them to solve.
+                            </p>
+                            <p>
+                                If you’d rather just check out the spec, head over to <a href="http://bert-rpc.org">http://bert-rpc.org</a>.
+                            </p>
+                            <p>
+                                For the code hungry, check out my Ruby <span>BERT</span> serialization library <a href="http://github.com/mojombo/bert"><span>BERT</span></a>, my Ruby <span>BERT</span>-<span>RPC</span> client <a href="http://github.com/mojombo/bertrpc"><span>BERTRPC</span></a>, and my Erlang/Ruby hybrid <span>BERT</span>-<span>RPC</span> server <a href="http://github.com/mojombo/ernie">Ernie</a>. These are the exact libraries we use at GitHub to serve up all repository data.
+                            </p>
+                            <h3>
+                                Tracing an <span>SSH</span> Request
+                            </h3>
+                            <p>
+                                Git uses <span>SSH</span> for encrypted communications between you and the server. In order to understand how our architecture deals with <span>SSH</span> connections, it is first important to understand how this works in a simpler setup.
+                            </p>
+                            <p>
+                                Git relies on the fact that <span>SSH</span> allows you to execute commands on a remote server. For instance, the command <span style="background-color:#ddd;padding:0 .2em;font:90% Monaco, 'Courier New', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace">ssh tom@frost ls -al</span> runs <code>ls -al</code> in the home directory of my user on the <code>frost</code> server. I get the output of the command on my local terminal. <span>SSH</span> is essentially hooking up the <span>STDIN</span>, <span>STDOUT</span>, and <span>STDERR</span> of the remote machine to my local terminal.
+                            </p>
+                            <p>
+                                If you run a command like <span style="background-color:#ddd;padding:0 .2em;font:90% Monaco, 'Courier New', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace">git clone tom@frost:mojombo/bert</span>, what Git is doing behind the scenes is SSHing to <code>frost</code>, authenticating as the <code>tom</code> user, and then remotely executing <code>git upload-pack mojombo/bert</code>. Now your client can talk to that process on the remote server by simply reading and writing over the <span>SSH</span> connection. Neat, huh?
+                            </p>
+                            <p>
+                                Of course, allowing arbitrary execution of commands is unsafe, so <span>SSH</span> includes the ability to restrict what commands can be executed. In a very simple case, you can restrict execution to <a href="http://www.kernel.org/pub/software/scm/git/docs/git-shell.html">git-shell</a> which is included with Git. All this script does is check the command that you’re trying to execute and ensure that it’s one of <code>git upload-pack</code>, <code>git receive-pack</code>, or <code>git upload-archive</code>. If it is indeed one of those, it uses <a href="http://linux.die.net/man/3/exec" title="3">exec</a> to replace the current process with that new process. After that, it’s as if you had just executed that command directly.
+                            </p>
+                            <p>
+                                So, now that you know how Git’s <span>SSH</span> operations work in a simple case, let me show you how we handle this in GitHub’s architecture.
+                            </p>
+                            <p>
+                                First, your Git client initiates an <span>SSH</span> session. The connection comes down off the internet and hits our load balancer.
+                            </p>
+                            <p>
+                                From there, the connection is sent to one of the frontends where <a href="http://www.au.kernel.org/software/scm/git/docs/git-daemon.html"><span>SSHD</span></a> accepts it. We have patched our <span>SSH</span> daemon to perform public key lookups from our MySQL database. Your key identifies your GitHub user and this information is sent along with the original command and arguments to our proprietary script called Gerve (Git sERVE). Think of Gerve as a super smart version of <code>git-shell</code>.
+                            </p>
+                            <p>
+                                Gerve verifies that your user has access to the repository specified in the arguments. If you are the owner of the repository, no database lookups need to be performed, otherwise several <span>SQL</span> queries are made to determine permissions.
+                            </p>
+                            <p>
+                                Once access has been verified, Gerve uses Chimney to look up the route for the owner of the repository. The goal now is to execute your original command on the proper file server and hook your local machine up to that process. What better way to do this than with another remote <span>SSH</span> execution!
+                            </p>
+                            <p>
+                                I know it sounds crazy but it works great. Gerve simply uses <code>exec(3)</code> to replace itself with a call to<span style="background-color:#ddd;padding:0 .2em;font:90% Monaco, 'Courier New', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace">ssh git@&lt;route&gt; &lt;command&gt; &lt;arg&gt;</span>. After this call, your client is hooked up to a process on a frontend machine which is, in turn, hooked up to a process on a file server.
+                            </p>
+                            <p>
+                                Think of it this way: after determining permissions and the location of the repository, the frontend becomes a transparent proxy for the rest of the session. The only drawback to this approach is that the internal <span>SSH</span> is unnecessarily encumbered by the overhead of encryption/decryption when none is strictly required. It’s possible we may replace this this internal <span>SSH</span> call with something more efficient, but this approach is just too damn simple (and still very fast) to make me worry about it very much.
+                            </p>
+                            <h3>
+                                Tracing a Git Request
+                            </h3>
+                            <p>
+                                Performing public clones and pulls via Git is similar to how the <span>SSH</span> method works. Instead of using <span>SSH</span> for authentication and encryption, however, it relies on a server side <a href="http://www.au.kernel.org/software/scm/git/docs/git-daemon.html">Git Daemon</a>. This daemon accepts connections, verifies the command to be run, and then uses <code>fork(2)</code> and <code>exec(3)</code> to spawn a worker that then becomes the command process.
+                            </p>
+                            <p>
+                                With this in mind, I’ll show you how a public clone operation works.
+                            </p>
+                            <p>
+                                First, your Git client issues a <a href="http://github.com/mojombo/egitd/blob/master/docs/protocol.txt">request</a> containing the command and repository name you wish to clone. This request enters our system on the load balancer.
+                            </p>
+                            <p>
+                                From there, the request is sent to one of the frontends. Each frontend runs four ProxyMachine instances behind HAProxy that act as routing proxies for the Git protocol. The proxy inspects the request and extracts the username (or gist name) of the repo. It then uses Chimney to lookup the route. If there is no route or any other error is encountered, the proxy speaks the Git protocol and sends back an appropriate messages to the client. Once the route is known, the repo name (e.g. <code>mojombo/bert</code>) is translated into its path on disk (e.g. <code>a/a8/e2/95/mojombo/bert.git</code>). On our old setup that had no proxies, we had to use a modified daemon that could convert the user/repo into the correct filepath. By doing this step in the proxy, we can now use an unmodified daemon, allowing for a much easier upgrade path.
+                            </p>
+                            <p>
+                                Next, the Git proxy establishes a transparent proxy with the proper file server and sends the modified request (with the converted repository path). Each file server runs two Git Daemon processes behind HAProxy. The daemon speaks the pack file protocol and streams data back through the Git proxy and directly to your Git client.
+                            </p>
+                            <p>
+                                Once your client has all the data, you’ve cloned the repository and can get to work!
+                            </p>
+                            <h3>
+                                Sub- and Side-Systems
+                            </h3>
+                            <p>
+                                In addition to the primary web application and Git hosting systems, we also run a variety of other sub-systems and side-systems. Sub-systems include the job queue, archive downloads, billing, mirroring, and the svn importer. Side-systems include GitHub Pages, Gist, gem server, and a bunch of internal tools. You can look forward to explanations of how some of these work within the new architecture, and what new technologies we’ve created to help our application run more smoothly.
+                            </p>
+                            <h3>
+                                Conclusion
+                            </h3>
+                            <p>
+                                The architecture outlined here has allowed us to properly scale the site and resulted in massive performance increases across the entire site. Our average Rails response time on our previous setup was anywhere from 500ms to several seconds depending on how loaded the slices were. Moving to bare metal and federated storage on Rackspace has brought our average Rails response time to consistently under 100ms. In addition, the job queue now has no problem keeping up with the 280,000 background jobs we process every day. We still have plenty of headroom to grow with the current set of hardware, and when the time comes to add more machines, we can add new servers on any tier with ease. I’m very pleased with how well everything is working, and if you’re like me, you’re enjoying the new and improved GitHub every day!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://github.com/blog/530-how-we-made-github-fast">http://github.com/blog/530-how-we-made-github-fast</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

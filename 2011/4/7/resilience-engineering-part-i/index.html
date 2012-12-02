@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Resilience Engineering: Part I
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 08 Apr 2011 02:52:47 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-07T22:52:47-04:00">
+                    <meta itemprop="dateModified" content="2011-04-07T22:52:47-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-08T02:52:47+00:00">Apr 08</time>
+                    <h2 itemprop="title">
+                        Resilience Engineering: Part I
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/176fae00f1ba4d5e">
+                        <p class="annotation">
+                            Interesting, with a heavy dose of everything old is new again for anyone who has read Denming's WWII-era accounts
+                        </p>
+                        <blockquote>
+                            <p>
+                                I’ve been drafting this post for a really long time. Like most posts, it’s largely for me to get some thoughts down. It’s also very related to the topic I’ll be <a href="http://velocityconf.com/velocity2011/public/schedule/detail/19766">talking about at Velocity</a> later this year.
+                            </p>
+                            <p>
+                                When I gave a keynote talk at the <a href="http://omniti.com/surge/2010/speakers/john-allspaw">Surge Conference last year</a>, I talked about how our field of web engineering is still young, and would do very well to pay attention to other fields of engineering, since I suspect that we have a lot to learn from them. Contrary to popular belief, concepts such as fault tolerance, redundancy of components, sacrificial parts, automatic safety mechanisms, and capacity planning weren’t invented with the web. As it turns out, some of those ideas have been studied and put into practice in other fields for decades, if not centuries.
+                            </p>
+                            <p>
+                                Systems engineering, control theory, reliability engineering…the list goes on for where we should be looking for influences, and other folks have <a href="http://cuddletech.com/blog/?p=150">noticed this as well</a>. As our field recognizes the value of taking a “systems” (the <a href="http://en.wikipedia.org/wiki/C._West_Churchman">C. West Churchman</a> definition, not the computer software definition) view on building and managing infrastructures with a “<a href="http://www.facebook.com/notes/facebook-engineering/the-full-stack-part-i/461505383919">Full Stack Programmer</a>” perspective, we should pull our heads out of our echo chamber every now and again, because we can gain so much from lessons learned elsewhere.
+                            </p>
+                            <p>
+                                Last year, I was lucky to convince <a href="http://www.ctlab.org/Cook.cfm">Dr. Richard Cook</a> to let us include his article “<a href="http://www.kitchensoap.com/2009/11/12/how-complex-systems-fail-a-webops-perspective/">How Complex Systems Fail</a>” in <em><a href="http://oreilly.com/catalog/0636920000136">Web Operations</a></em>. Some months before, I had seen the article and began to poke around Dr. Cook’s research areas: human error, cognitive systems engineering, safety, and a relatively new multi-discipline area known as <strong>Resilience Engineering</strong>.
+                            </p>
+                            <p>
+                                What I found was nothing less than exhilarating and inspirational, and it’s hard for me to not consider this research mandatory reading for anyone involved with building or designing <a href="http://en.wikipedia.org/wiki/Sociotechnical_systems">socio-technical systems</a>. (<em>Hint: we all do, in web operations</em>) Frankly, I haven’t been this excited since I saw Jimmy Page in a restaurant once in the mid-90s. Even though Dr. Cook (and others in his field, like <a href="http://www.ida.liu.se/~eriho/">Erik Hollnagel</a>, <a href="http://www-iwse.eng.ohio-state.edu/biosketch_DWoods.cfm">David Woods</a>, and <a href="http://www.griffith.edu.au/professional-page/sidney-dekker">Sidney Dekker</a>) historically have written and researched resilience in the context of aviation, space transportation, healthcare and manufacturing, their findings strike me as incredibly appropriate to web operations and development.
+                            </p>
+                            <p>
+                                Except, of course, accidents in our field don’t actually harm or kill people. But they almost always involve humans, machines, high stress, and high expectations.
+                            </p>
+                            <p>
+                                Some of the concepts in resilience engineering run contrary to the typical (or stereotypical) perspectives that I’ve found in operations management, and that’s what I find so fascinating. I’m especially interested in <strong>organizational</strong> resilience, and the realization that safety in systems develops not in <em>spite</em> of us messy humans, but <em>because</em> of it.
+                            </p>
+                            <p>
+                                For example:
+                            </p>
+                            <p>
+                                <strong>Historical approaches taken towards improving “safety” in production might not be best<br></strong>
+                            </p>
+                            <p>
+                                Conventional wisdom might have you believe that the systems we build are basically safe, and that all they need is protection from unreliable humans. This logically stems from the myth that all outages/degradations occur as the result of a change gone wrong, and I suspect this idea also comes from Root Cause Analysis write-ups ending with “human error” at the bottom of the page. But Dekker, Woods, and others in <em><a href="http://www.amazon.com/Behind-Human-Error-David-Woods/dp/0754678342">Behind Human Error</a></em> suggest that listing human error as a root cause isn’t where you should <em>end,</em> it’s where you should <em>start</em> your investigation. Getting behind what led to a ‘human error’ is where the good stuff happens, but unless you’ve got a safe political climate (i.e., no one is going to get punished or fired for making mistakes) you’ll never get at how and why the error was made. Which means that you will ignore one of the largest opportunities to make your system (and organization) more efficient and resilient in the face of incidents. Mismatches, slips, lapses, and violations…each one of those types of error can lead to different ways of improving. And of course, working out the motivations and intentions of people who have made errors isn’t straightforward, especially engineers who might not have enough humility to admit to making an error in the first place.
+                            </p>
+                            <p>
+                                <strong>Root Cause Analysis can be easily misinterpreted and abused<br></strong>
+                            </p>
+                            <p>
+                                The idea that failures in complex systems can literally have a singular ‘root’ cause, as if failures are the result of linear steps in time, is just incorrect. Not only is it almost always incorrect, but in practice that perspective can be harmful to an organization because it allows management and others to feel better about improving safety, when they’re not, because the solution(s) can be viewed as simple and singular fixes (in reality, they’re not). James Reason’s pioneering book <a href="http://www.amazon.com/Human-Error-James-Reason/dp/0521314194"><em>Human Error</em></a> is enlightening on these points, to say the least. In reality (and I am guilty of this as anyone) there are motivations to reduce complex failures to singular/linear models, tipping the scales on what Hollnagel refers to as an ETTO, or <a href="http://www.namahn.com/resources/interview/erik-hollnagel-birds-do-it">Efficiency-Thoroughness Trade-Off</a>, which I think will sound familiar to anyone working in a web startup. Because why spend extra time digging to find details of that human error-causing outage, when you have work to do? Plus, if you linger too long in that postmortem meeting, people are going to feel even worse about making a mistake, and that’s just cruel, right? <img src="http://www.kitchensoap.com/wp-includes/images/smilies/icon_smile.gif" alt=":)">
+                            </p>
+                            <p>
+                                <strong>PostMortems or accident investigations is the only way an organization can improve “safety”</strong>
+                            </p>
+                            <p>
+                                Only looking at failures to guide your designs, tools, and processes drastically minimizes your ability to improve, Hollnagel says. Instead of looking at the things that go <em>wrong</em>, looking at the things that go <em>right</em> is a better strategy to improve resiliency. Personally, I think that engineering teams who practice continuous deployment intuitively understand this. Small and frequent changes made to production by a growing number of developers ascribe to a particular culture of safety, whether they know it or not. It requires what Hollnagel refers to as a “constant sense of unease”, and awareness of failure is what helps bridge that stereotypical development and operations divide.
+                            </p>
+                            <p>
+                                <strong>Resilience should be a 4th management objective, alongside Better/Faster/Cheaper</strong>
+                            </p>
+                            <p>
+                                The definition goes like this:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Resilience is the intrinsic ability of a system to adjust its functioning prior to, during, or following changes and disturbances, so that it can sustain required operations under both expected and unexpected conditions. Since resilience is about being able to function, rather than being impervious to failure, there is no conflict between productivity and safety.
+                                </p>
+                            </blockquote>
+                            <p>
+                                This sounds like one of those commonsense ideas, right? In an extremely self-serving way, I find some validation in that definition that <a href="http://www.kitchensoap.com/2010/11/07/mttr-mtbf-for-most-types-of-f/">optimizing for MTTR is better than optimizing for MTBF</a>. My gut says that this shouldn’t be shocking or a revelation; it’s what mature engineering is all about.
+                            </p>
+                            <p>
+                                <strong>Safety might not come from the sources you think it comes from</strong>
+                            </p>
+                            <blockquote>
+                                <p>
+                                    “…so safety isn’t about the <em>absence</em> of something…that you need to count errors or monitor violations, and tabulate incidents and try to make those things go away…..it’s about the <em>presence</em> of something. But the presence of what? When we find that things go right under difficult circumstances, it’s mostly because of people’s <em>adaptive capacity</em>; their ability to recognize, adapt to, and absorb changes and disruptions, some of which might fall outside of what the system is designed or trained to handle.”
+                                </p>
+                                <p>
+                                    - Sidney Dekker
+                                </p>
+                            </blockquote>
+                            <p>
+                                My plan is to post more about these topics, because there are just too many ideas to explain in a single go. Apparently, Ashgate Publishing has owned this space, with a <a href="http://www.ashgate.com/default.aspx?page=2415">whole series of books</a>. The newest one, <a href="http://www.amazon.com/Resilience-Engineering-Practice-Ashgate-Studies/dp/1409410358/"><em>Resilience Engineering in Practice</em></a>, is in my bag, and I can’t put it down. Examples of these ideas in real-world scenarios (hospital and medical ops, power plants, air traffic control, financial services) are juicy with details, and the chapter “Lessons from the Hudson” goes into excellent detail about the trade-offs that go on in the mind of someone in high-stress failure scenarios, like <a href="http://en.wikipedia.org/wiki/Chesley_Sullenberger">Chesley Sullenberger</a>.
+                            </p>
+                            <p>
+                                I’ll end on this decent introduction to some of the ideas that includes the above quote, from Sidney Dekker. There’s some distracting camera work, but the ideas get across:<br>
+                                <iframe title="YouTube video player" width="480" height="390" src="http://www.youtube.com/embed/mVt9nIf9VJw" frameborder="0"></iframe>
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.kitchensoap.com/2011/04/07/resilience-engineering-part-i/">http://www.kitchensoap.com/2011/04/07/resilience-engineering-part-i/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How App Engine served the Humble Indie Bundle
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 18 Jun 2010 15:14:24 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-06-18T11:08:00-04:00">
+                    <meta itemprop="dateModified" content="2010-06-18T11:08:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-06-18T15:08:00+00:00">Jun 18</time>
+                    <h2 itemprop="title">
+                        How App Engine served the Humble Indie Bundle
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/2fe4ae4fb74c6bdc">
+                        <blockquote>
+                            <p>
+                                <i>This is a guest post from Jeffrey Rosen, of <a href="http://www.wolfire.com/">Wolfire Games</a>.</i>
+                            </p>
+                            <p>
+                                Recently, Wolfire Games, joined by four other independent video game developers and two charities, put on a pretty unusual promotion: <a href="http://www.wolfire.com/humble">The Humble Indie Bundle</a>. For twelve days, you could have gone to the promotional site and paid what you want (divided any way you choose among the developers, the <a href="http://www.eff.org">EFF</a>, and the <a href="http://www.childsplaycharity.org/">Child's Play Charity</a>) for a bundle of independent video games, all compatible with Mac, Windows, and Linux.
+                            </p>
+                            <p>
+                                The reason why I've been invited to write this guest blog post is because the site was built on Google App Engine and, according to Google Analytics, it served about 3.4 million pageviews (1 million unique visitors) in the 12 days it was live. It grossed over $1.2 million. Depending on who you ask, this is quite a lot of traffic, and we exceeded the free App Engine quota. Google sent us a bill for a grand total of $71.56.
+                            </p>
+                            <p>
+                                I've been a long time advocate of Google App Engine on the <a href="http://blog.wolfire.com/">Wolfire Blog</a>, even when traffic was tiny, for a number of reasons. I really like its ease of use, and the fact that Google engineers, including Guido himself (the creator of Python), are the ones making sure everything works at 4 AM, and Google's infrastructure is responsible for data durability and security. The pay-as-you-go price combined with a generous free quota is icing.
+                            </p>
+                            <p>
+                                As an independent video game developer, it's pretty crazy to have these resources at my disposal. While I'm confident in my Python web coding ability, I am definitely not confident in being a Linux sys-admin and commiting to an expensive server that may or may not handle the load properly (especially scary when critical data is involved). This upfront risk and steep learning curve would probably have been the straw that broke the camels back and turned the bundle into vaporware.
+                            </p>
+                            <h2>
+                                How did App Engine perform?
+                            </h2>
+                            <p>
+                                According to Google Analytics we did about 3.4 million pageviews (1 million unique visitors) during the bundle period on the Wolfire site (heavily concentrated around the first and last days). The traffic came in huge surges from Reddit, Slashdot, Digg, and a plethora of gaming and tech sites, and people seemed to really enjoy pushing the server by refreshing the page to update the real-time statistics. App Engine performed as advertised: additional servers were seamlessly brought up as needed and shut down when appropriate.
+                            </p>
+                            <p>
+                                One thing that was really neat about the bundle is that it had a bunch of real-time statistics about purchases along with a leaderboard of the top contributions. There were many interesting donations, for example, $3333.33, $1337, $327.67, and $313.37 and watching the average donation go up and down was really addictive. I think being able to refresh the page to see the sales coming in was a really big draw for the bundle. This feature was really easy to implement on App Engine using a <a href="http://code.google.com/appengine/articles/sharding_counters.html">sharding counter</a>. I'm really looking forward to native <a href="http://en.wikipedia.org/wiki/Comet_(programming)">comet support</a> in App Engine so the next bundle can have this update completely live, without polling or refreshing. Memcache and the datastore is built for stuff like this, so it was very fast.
+                            </p>
+                            <h2>
+                                How was developing on App Engine?
+                            </h2>
+                            <p>
+                                One awesome thing about App Engine is how it handles the deployment for you transparently and seamlessly. I felt comfortable developing, testing, and ultimately deploying new features to the site, even while it was serving say, 100 visitors per second. App Engine handles all the details of seamlessly bringing down the servers and getting the new ones in place even under intense loads. Because of this, I was able to hack on new features to the site as necessary. For example, I expanded the statistics so that you could see the platform specific average payments in real-time. That feature was started, tested, and deployed on maybe the third day of the bundle. Similarly, I spontaneously added an unplanned sixth game (<a href="http://amanita-design.net/samorost-2/">Samorost 2</a>) to the bundle on the fifth day and deployed minor tweaks dozens of times throughout the promo.
+                            </p>
+                            <p>
+                                One thing that the bundle made clear to me is that raw Python code is much faster than you might expect. After I finished building the prototype of the bundle, I was getting ready to heavily optimize everything: each hit to the Humble Bundle page executed a few hundred lines of my Python code, doing all sorts of calculations for the statistics and inserting that into a massive Django template. Initially I thought that there would be no way this would be scalable and I'd need to aggressively cache the whole page. However, when I looked at the estimated CPU usage (tip: if you look at the request headers of a page while logged in as an admin, App Engine gives you some estimates on how much it will charge you for 1000 requests and how long it will take) it was something like 0.00375 CPM and was executing in milliseconds. Despite what I had assumed to be inefficient, unoptimized code, the CPM was so ridiculously low and it was executing so fast, I decided not to even bother optimizing the backend further. The only thing that was taking any time at all were the few memcache calls to retrieve the real-time list of tweets, real-time raw sales data, and other interesting stats. In hindsight though, I could have easily shaved off 30 ms by combining all the memcache requests into a single RPC with <a href="http://code.google.com/appengine/docs/python/memcache/clientclass.html#Client_get_multi">memcache.get_multi</a>.
+                            </p>
+                            <h2>
+                                Was there anything App Engine could improve?
+                            </h2>
+                            <p>
+                                While I am really satisfied with App Engine and credit its existence and my familiarity with it for the existence of the Humble Indie Bundle in the first place, there were a few gotchas:
+                            </p>
+                            <p>
+                                Due to a scheduled maintenance period on the datastore, the bundle was down for about 20 minutes (we need to store metadata about people's orders before we forward them to PayPal, Amazon Payments, or Google Checkout). Normally a message pops up to inform people when downtime occurs is going on, but this didn't activate for some reason, so we had to handle a lot of email about a blank page when people were trying to place their orders. I understand that Google is addressing this though.
+                            </p>
+                            <p>
+                                The features that I would like to ask for are mostly all "on deck" on the <a href="http://code.google.com/appengine/docs/roadmap.html">roadmap</a>: SSL for custom domains, comet support, and longer background tasks in particular. I'd also like to see App Engine focus on utilizing Google's infrastructure by serving non-static requests geographically like "web acceleration" services from CDNs. There are some trade-offs due to the nature of the datastore, but I think it can be done.
+                            </p>
+                            <p>
+                                Thanks for having me on the blog! People can find me on the <a href="http://blog.wolfire.com">Wolfire Blog</a> where we talk about more technical and game design topics, and check out our upcoming game <a href="http://www.wolfire.com/overgrowth">Overgrowth</a>.
+                            </p><span>Posted by Jeffrey Rosen of Wolfire Games</span>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/8501956666581132164-6631494706028187922?l=googleappengine.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/GoogleAppEngineBlog/~4/7mdsKM0_5Aw" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://googleappengine.blogspot.com/2010/06/how-app-engine-served-humble-indie.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+GoogleAppEngineBlog+%28Google+App+Engine+Blog%29">http://googleappengine.blogspot.com/2010/06/how-app-engine-served-humble-indie.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+GoogleAppEngineBlog+%28Google+App+Engine+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

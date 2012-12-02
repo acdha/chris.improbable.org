@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Correct way to handle mobile browsers
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 09 Nov 2009 18:33:37 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-09T13:33:37-04:00">
+                    <meta itemprop="dateModified" content="2009-11-09T13:33:37-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-09T17:33:37+00:00">Nov 09</time>
+                    <h2 itemprop="title">
+                        Correct way to handle mobile browsers
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/4286a9402eb9298f">
+                        <blockquote>
+                            <p>
+                                At work, a lot of our sites have <a href="http://m.ljworld.com/marketplace/all/">sweet</a> <a href="http://m.kusports.com/">mobile</a> <a href="http://m.lawrence.com">versions</a>. The problem is how to educate people of their existence. Currently we just have little ads that show up on the site that promote the mobile site, which seems a subpar solution. So I was tasked with doing providing a way to redirect to the mobile sites. Luckily, as a lot of the time with Django, most of my work was done for me.
+                            </p>
+                            <p>
+                                <a href="http://code.google.com/p/minidetector/">Minidetector</a> is a Django reusable app that allows you to know if a request is being viewed on a mobile device. It provides a middleware and a view decorator that sets a request.mobile variable to True if the request is coming from a mobile device. It's <a href="http://code.google.com/p/minidetector/source/browse/trunk/minidetector/__init__.py#11">method</a> of figuring out if a device is mobile is simple; It first checks for a special Opera Mini header, then for WAP support, then finally checks the User Agent against a <a href="http://code.google.com/p/minidetector/source/browse/trunk/minidetector/search_strings.txt">list of known mobile strings</a>.
+                            </p>
+                            <p>
+                                So at work I have implemented a simple way to promote the mobile sites through redirecting, allowing for a couple of different use cases. This has lead to a problem that a lot of internet sites face, and I haven't found a good solution to the problem: <strong>how do I redirect users to a mobile site?</strong>
+                            </p>
+                            <p>
+                                Obviously, <strong>you should keep the request path</strong>, so that when you go to SITE/blog/2009, you get redirected to m.SITE/blog/2009. A lot of sites actually chop off the request path, bringing you to the mobile home page!
+                            </p>
+                            <h3>
+                                The use case
+                            </h3>
+                            <p>
+                                The use case I am thinking about is a user that is using twitter, and they click on a lot of links to a site, through a mobile browser. They should be gentley introduced to the existance of the mobile site, and have the ability to always have mobile links go to the mobile site. However, they should also have the ability to say 'never show me the mobile site' as well.
+                            </p>
+                            <h2>
+                                Three approaches
+                            </h2>
+                            <h4>
+                                No Redirects
+                            </h4>
+                            <p>
+                                I see two basic approaches to the problem. The first is that we don't automatically redirect anyone to our mobile sites. We are able to detect if they are identifying as a mobile browser, so we can show them a message about our mobile site, and let them choose.
+                            </p>
+                            <p>
+                                An option could be made to allow a user to say "Always redirect me" if they enjoy usage of the mobile site. This seems to allow the user to get expected behavior, but allow them to choose to use the mobile site on their mobile device if they want. However, you run into the problem of users ignoring the message about the mobile site, or just not caring enough to click it.
+                            </p>
+                            <h5>
+                                Redirect once (opt in)
+                            </h5>
+                            <p>
+                                Redirect once is the plan where you redirect the user once, and then set a cookie to never redirect them again. This allows the mobile user to get a glimpse of your mobile site the first time they visit, and can then choose to visit in the future.
+                            </p>
+                            <p>
+                                You can also allow them to set a cookie to automatically redirect all of their mobile requests in the future. This allows the user to get a glimpse of the mobile site, and see if they want to use it. Then based on this experience, they can choose to visit it by default if they want.
+                            </p>
+                            <h5>
+                                Always redirect (opt out)
+                            </h5>
+                            <p>
+                                The third option is to always redirect mobile browsers to the mobile site, with the ability to go back to the main site. You would have a setting that the user could set to never be redirected. This is more of a 'all mobile users will use our mobile site, unless they choose not to'. I don't know if the mobile web is quite there yet (for example, we don't have a mobile version for every page), and it might lead to user confusion.
+                            </p>
+                            <h4>
+                                What do you think?
+                            </h4>
+                            <p>
+                                I think that redirecting the user on their first visit on a mobile browser is a good idea. This introduces them to the mobile site, and by setting a cookie on that redirect, you can be sure that they won't be redirected again. Then you can have an opt in cookie, that basically says redirect me every time. This makes it do what people expect most of the time, while still allowing the choice to always be redirected.
+                            </p>
+                            <p>
+                                Have you implemented mobile redirecting before on a site? How have you solves this problem? Am I missing some obvious solution that handles all these cases gracefully?
+                            </p><img src="http://feeds.feedburner.com/~r/EricsThoughts/~4/u86bZOmYfvw" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ericholscher.com/blog/2009/nov/9/correct-way-handle-mobile-browsers/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EricsThoughts+%28Eric%27s+Thoughts%29">http://ericholscher.com/blog/2009/nov/9/correct-way-handle-mobile-browsers/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EricsThoughts+%28Eric%27s+Thoughts%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

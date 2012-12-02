@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Scalable Work Queues with Beanstalk
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 20 May 2010 16:38:46 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-20T12:38:46-04:00">
+                    <meta itemprop="dateModified" content="2010-05-20T12:38:46-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-20T16:38:46+00:00">May 20</time>
+                    <h2 itemprop="title">
+                        Scalable Work Queues with Beanstalk
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c60a31231916343f">
+                        <blockquote>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/10/beanstalkd.png">Any web application that reaches some critical mass eventually discovers that separation of services, where possible, is a great strategy for scaling the service. In fact, oftentimes a user action can be offloaded into a background task, which can be handled asynchronously while the user continues to explore the site. However, coordinating this workflow does require some infrastructure: a message queue, or a work queue. The distinction between the two is subtle and blurry, but it does carry important architectural implications. Should you pick a messaging bus such as <a href="http://en.wikipedia.org/wiki/Advanced_Message_Queuing_Protocol">AMQP</a> or <a href="http://www.igvita.com/2009/11/10/consuming-xmpp-pubsub-in-ruby/">XMPP</a>, roll your own database backed system such as <a href="http://github.com/ahoward/bj">BJ</a>, go with <a href="http://github.com/blog/542-introducing-resque">Resque</a>, or evaluate the other three dozen variants available in every conceivable language?
+                            </p>
+                            <p>
+                                Of course, there is no single answer to that question - it depends on your application. AMQP is a great <a href="http://www.igvita.com/2009/10/08/advanced-messaging-routing-with-amqp/">power tool for message routing</a>, but there are other systems that can do a better job at specific tasks. One of such tools is <a href="http://kr.github.com/beanstalkd/">Beanstalkd</a>, which is a simple, and a very fast work queue service rolled into a single binary - it is the memcached of work queues. Originally built to power the backend for Causes Facebook app, it is a mature and production ready <a href="http://github.com/kr/beanstalkd">open source project</a>. It just seems that not too many people talk about it, perhaps exactly because it works so well.
+                            </p>
+                            <h4>
+                                <strong>Beanstalkd Features &amp; Recipes</strong>
+                            </h4>
+                            <p>
+                                Adam Wiggins recently published a <a href="http://adam.heroku.com/past/2010/4/24/beanstalk_a_simple_and_fast_queueing_backend/">great comparison</a> of Beanstalk to a few other work-queue services, and speed is where it stands out. A single instance of Beanstalk is perfectly capable of handling thousands of jobs a second (or more, depending on your job size) because it is an in-memory, event-driven system. Powered by <a href="http://www.monkey.org/~provos/libevent/">libevent</a> under the hood, it requires zero setup (launch and forget, ala memcached), optional log based persistence, an easily parsed ASCII protocol, and a rich set of tools for job management that go well beyond a simple FIFO work queue.
+                            </p>
+                            <p>
+                                Out of the box, Beanstalk supports multiple <em>'tubes'</em> (work queues), which are created and deleted on demand. In turn, each job is associated with a single tube, and has a number of parameters: priority, time to run, delay, an id, and an opaque job body itself.
+                            </p>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/10/beanstalk-workflow.png">Once a job is inserted into the work queue, the server returns an ID, which we can use to inspect the job. From there, the queue itself is actually a priority heap! Need to <strong>jump a head in line</strong>? Set a higher <a href="http://github.com/kr/beanstalkd/blob/master/doc/protocol.txt#L132">priority</a> on the job and Beanstalk will do the rest. Or, <strong>what if your worker goes down</strong> while processing a job? Because you specified a <a href="http://github.com/kr/beanstalkd/blob/master/doc/protocol.txt#L139">time to run</a> on the job, Beanstalk will monitor the checked out job and put it back on the work queue if the timeout expires - seamless recovery, nice. Does the worker need <strong>more time to complete the job</strong>? There is a '<a href="http://github.com/kr/beanstalkd/blob/master/doc/protocol.txt#L303">touch</a>' command to notify the server to prolong the timeout. Have a bad job that you want to <strong>save for later inspection</strong>? Just <a href="http://github.com/kr/beanstalkd/blob/master/doc/protocol.txt#L285">bury</a> it and take care of it later. Need to <strong>throttle all of the workers</strong>? You can <a href="http://github.com/kr/beanstalkd/blob/master/doc/protocol.txt#L648">pause</a> the tube for a specified period of time. And there is more, do checkout the <a href="http://github.com/kr/beanstalkd/blob/master/doc/protocol.txt">protocol specification</a>.
+                            </p>
+                            <h4>
+                                <strong>Beanstalk at PostRank: Chronos</strong>
+                            </h4>
+                            <p>
+                                At PostRank we have dozens of Beanstalk processes sprinkled throughout which are being used for job management within the same machine and coordination between entire clusters. The larger deployments, which are the front-line coordinators to our crawlers are serving 50+ million jobs on a daily basis (average job is several kb), without breaking a sweat. On average, each job is just several kilobytes, but the numbers add up, meaning that a pure memory system would require 60GB+ of RAM to make it work for our use case. That is where the Beanstalk ASCII protocol, good old MySQL, and a little Ruby come together to create our scheduling system: <em>Chronos</em>.
+                            </p>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/10/pr-chronos.png">The idea behind Chronos is based on a simple observation: we have tens of millions of crawler jobs, each of which is repeated on a custom interval, but only a small portion of that entire set needs to be in memory to make the system run! So, out of that observation, two projects were born: <a href="http://github.com/dj2/em-jack">em-jack</a> and <a href="http://github.com/igrigorik/em-proxy">em-proxy</a>. EM-Jack is a Ruby Eventmachine client, which provides a simple mechanism to define <a href="http://github.com/dj2/em-jack/tree/master/lib/em-jack/handlers/">custom command handlers</a> that go beyond the native Beanstalk protocol. On the other hand, em-proxy is a protocol agnostic (<a href="http://en.wikipedia.org/wiki/Network_Layer">layer 3</a>) proxy, which allows us to intercept any TCP data stream and <a href="http://github.com/igrigorik/em-proxy/tree/master/examples/">manipulate it at will</a>.
+                            </p>
+                            <p>
+                                So, instead of talking directly to Beanstalk, all the traffic is routed through our custom em-proxy (~150 LOC) which parses the Beanstalk protocol, intercepts custom commands, or simply inspects the "delay" parameter, and decides where the job should be routed: beanstalk or the MySQL instance. Jobs that are scheduled at least one hour into the future are persisted into the database, which significantly reduces the memory footprint. Finally, in the background, the upcoming jobs are silently loaded into beanstalk as their execution time approaches. Simple, reliable, scales well, and it gives us all the features available in Beanstalk for job management and coordination (plus persistence and replication of MySQL). A quick API demo:
+                            </p>
+                            <div style="background:white">
+                                <pre>
+EM.<span style="color:#9900CC">run</span> <span style="color:#9966CC;font-weight:bold">do</span>
+  jack = <span style="color:#6666ff;font-weight:bold">EMJack::Connection</span>.<span style="color:#9900CC">new</span>
+  r = jack.<span style="color:#9900CC">put</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"my message"</span>, <span style="color:#ff3333;font-weight:bold">:ttr</span> =&gt; <span style="color:#006666">300</span><span style="color:#006600;font-weight:bold">)</span> <span style="color:#006600;font-weight:bold">{</span> |jobid| <span style="color:#CC0066;font-weight:bold">puts</span> <span style="color:#996600">"put successful #{jobid}"</span> <span style="color:#006600;font-weight:bold">}</span>
+ 
+  j = jack.<span style="color:#9900CC">reserve</span>
+  j.<span style="color:#9900CC">callback</span> <span style="color:#9966CC;font-weight:bold">do</span> |job|
+    <span style="color:#CC0066;font-weight:bold">puts</span> job.<span style="color:#9900CC">jobid</span>
+    <span style="color:#CC0066;font-weight:bold">puts</span> job.<span style="color:#9900CC">body</span>
+ 
+    jack.<span style="color:#9900CC">delete</span><span style="color:#006600;font-weight:bold">(</span>job<span style="color:#006600;font-weight:bold">)</span> <span style="color:#006600;font-weight:bold">{</span> <span style="color:#CC0066;font-weight:bold">puts</span> <span style="color:#996600">"Successfully deleted"</span> <span style="color:#006600;font-weight:bold">}</span>
+  <span style="color:#9966CC;font-weight:bold">end</span>
+<span style="color:#9966CC;font-weight:bold">end</span>
+ 
+</pre>
+                            </div>
+                            <div>
+                                <a href="http://www.igvita.com/download.php?file=http://www.github.com/dj2/em-jack/tree/master/.git"><img alt="Download" src="http://www.igvita.com/wp-content/plugins/dBeautifier/icons/github.png"></a>
+                                <h4>
+                                    <a href="http://www.igvita.com/download.php?file=http://www.github.com/dj2/em-jack/tree/master/.git">em-jack (An evented beanstalk client)</a>
+                                </h4>
+                                <p>
+                                    Downloads: 453 File Size: 0.0 KB
+                                </p>
+                            </div>
+                            <h4>
+                                <strong>Architecture Limitations and Alternatives</strong>
+                            </h4>
+                            <p>
+                                There is an abundance of different job and message queue systems, in part because they are so seemingly simple to write. However, if you ever tried to build your own, you will also know that the scaling and the features available in Beanstalk are non-trivial to replicate. However, there are a few limitations as well. Beanstalk does not currently support replication or any other form of high availability. Likewise, there is no native sharding (a few clients support it), or a native GUI. Other then that, it works, it is fast, it is easy to extend, and it is definitely worth a <a href="http://kr.github.com/beanstalkd/">test drive</a>.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=B4Nf_wAjpVA:f5K2EXqsjVo:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=B4Nf_wAjpVA:f5K2EXqsjVo:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=B4Nf_wAjpVA:f5K2EXqsjVo:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=B4Nf_wAjpVA:f5K2EXqsjVo:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=B4Nf_wAjpVA:f5K2EXqsjVo:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=B4Nf_wAjpVA:f5K2EXqsjVo:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=B4Nf_wAjpVA:f5K2EXqsjVo:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=B4Nf_wAjpVA:f5K2EXqsjVo:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=B4Nf_wAjpVA:f5K2EXqsjVo:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/B4Nf_wAjpVA" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2010/05/20/scalable-work-queues-with-beanstalk/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2010/05/20/scalable-work-queues-with-beanstalk/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

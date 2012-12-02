@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Analyzing Bandwidth and Latency on YUIBlog.com
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 08 Apr 2010 15:38:37 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-08T11:38:37-04:00">
+                    <meta itemprop="dateModified" content="2010-04-08T11:38:37-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-08T15:38:37+00:00">Apr 08</time>
+                    <h2 itemprop="title">
+                        Analyzing Bandwidth and Latency on YUIBlog.com
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/84ceccbbb63f9dd8">
+                        <blockquote>
+                            <div>
+                                <p>
+                                    <img align="right" src="http://yuiblog.com/assets/philip.jpg" height="75" width="75" hspace="10" vspace="5"><em><strong>About the author</strong>: Philip Tellis (<a href="http://twitter.com/bluesmoon">@bluesmoon</a>) is a geek working with Yahoo!’s Exceptional Performance team where he analyses the impact of various design decisions on web application performance. He also maintains YUI’s date formatter and the <a href="http://github.com/bluesmoon/yui-flot" title="bluesmoon's yui-flot at master - GitHub">YUI port of the flot charting library</a>. You can find him on the web at <a href="http://bluesmoon.info/" title="Welcome to the moon">http://bluesmoon.info/</a>.</em>
+                                </p>
+                            </div>
+                            <p>
+                                A few months ago, Eric helped me run some analysis on the types of network connections that were coming in to <a href="http://yuiblog.com/" title="Yahoo! User Interface Blog (YUIBlog)">YUIBlog</a>. In this article, I’ll analyze the data we collected and look for insights about the tools and infrastructure the YUIBlog readership uses to browse the web. Being the performance guy at Yahoo!, my interest focuses how fast our readers connections are. In particular, with what kind of network bandwidth and latency do YUI geeks experience the web? Although your mileage will vary, YUIBlog is likely to be representative of US tech blogs read by people in the software industry, and the data here may prove useful for those of you catering to a similar audience.
+                            </p>
+                            <h3>
+                                Caveats
+                            </h3>
+                            <p>
+                                Before I go any further, I have a few caveats to list. The tests and analysis we ran were based in the US (since that’s where YUIBlog is hosted), so if you view this site from outside the US, your measured experience will probably be a little slower than what you’d see with local sites. Secondly, while we see traffic from all over the world, I’ll only look at countries with a statistically relevant sample size. Lastly, each individual IP was considered only once. If the same IP accessed the site more than once, we consider the arithmetic mean of values from each access. For overall summaries, we use the median. No statistical filtering was applied to the data before analysis. The total sample size was approximately 27,000 points.
+                            </p>
+                            <h3>
+                                The tests
+                            </h3>
+                            <p>
+                                The test measured HTTP bandwidth and HTTP latency between an end user’s computer (or a proxy somewhere in between) and YUIBlog. Note that I say HTTP bandwidth and latency because these may be different (i.e., worse) from the actual bandwidth that your ISP provides you, but it’s what we, as frontend engineers, care about more. Latency is the time between a request going out and the first byte of the response coming back. It depends on how far you are from the server and the number and quality of hops between you and the server, so if you’re far away, you’ll have high latency. HTTP latency also depends on the overhead of HTTP headers, but we’ve tried to keep that down, and on how long it takes for the web server to respond to a request. We think that’s fairly fast.
+                            </p>
+                            <p>
+                                Bandwidth depends on the bandwidth at every step between you and the server, and it’s somewhat affected by latency as well. The measured bandwidth is also affected by other applications or devices using the network in parallel. If you’re streaming movies or loading an image heavy site while a measurement is taken, your bandwidth will appear lower than it actually is. However, this is the effective bandwidth that you browse YUIBlog with, so it’s what we care about.
+                            </p>
+                            <h3>
+                                So, what kind of networks do YUI geeks browse through?
+                            </h3>
+                            <p>
+                                Quick summary answer: The bandwidth of YUI geeks is <strong><em>1 Mbps</em></strong> (that’s Megabits) and the latency is <strong><em>262 ms</em></strong>. Most of you are either on <em>Broadband</em>, <em>DSL</em> or <em>Cable</em> connections and come in from the <em>US</em>, <em>Canada</em>, <em>Great Britain</em>, <em>Germany</em> and <em>India</em> (ordered by distance from our server). For more detailed results, read on…
+                            </p>
+                            <h3>
+                                Connection types
+                            </h3>
+                            <p>
+                                The type of network connection you have with your ISP determines the primary bandwidth limit and secondary latency limit (the first being distance divided by the 66% speed of light). Not surprisingly most of you are very closely associated with the internet, and use Broadband data connections. Only 2% of you used your mobile phones to reach the site, but that’s still more than the number of people on dial-up.
+                            </p>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <th>
+                                            Connection Type
+                                        </th>
+                                        <th>
+                                            Broadband
+                                        </th>
+                                        <th>
+                                            xDSL
+                                        </th>
+                                        <th>
+                                            Cable
+                                        </th>
+                                        <th>
+                                            T1
+                                        </th>
+                                        <th>
+                                            Mobile
+                                        </th>
+                                        <th>
+                                            Dial-up
+                                        </th>
+                                        <th>
+                                            Wireless
+                                        </th>
+                                        <th>
+                                            Satellite
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Count
+                                        </th>
+                                        <td>
+                                            14155
+                                        </td>
+                                        <td>
+                                            4874
+                                        </td>
+                                        <td>
+                                            4719
+                                        </td>
+                                        <td>
+                                            880
+                                        </td>
+                                        <td>
+                                            552
+                                        </td>
+                                        <td>
+                                            143
+                                        </td>
+                                        <td>
+                                            86
+                                        </td>
+                                        <td>
+                                            71
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Bandwidth (kbps)
+                                        </th>
+                                        <td>
+                                            733
+                                        </td>
+                                        <td>
+                                            953
+                                        </td>
+                                        <td>
+                                            3,118
+                                        </td>
+                                        <td>
+                                            3,017
+                                        </td>
+                                        <td>
+                                            407
+                                        </td>
+                                        <td>
+                                            356
+                                        </td>
+                                        <td>
+                                            291
+                                        </td>
+                                        <td>
+                                            287
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Latency (ms)
+                                        </th>
+                                        <td>
+                                            305
+                                        </td>
+                                        <td>
+                                            278
+                                        </td>
+                                        <td>
+                                            165
+                                        </td>
+                                        <td>
+                                            188
+                                        </td>
+                                        <td>
+                                            430
+                                        </td>
+                                        <td>
+                                            436
+                                        </td>
+                                        <td>
+                                            537
+                                        </td>
+                                        <td>
+                                            859
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                <img src="http://yuiblog.com/assets/tellis-bandwidth/connection-types.png" alt="Pie chart of data point counts from table #connection-type-table">
+                            </p>
+                            <p>
+                                Of all the connection types we’ve seen, Cable and T1 offer the best bandwidth and latency, going over four times as fast as Broadband with half the latency. This could possibly mean that most of these connections were within the US while the others span the globe. The low latency seems to suggest that, but drilling down reduces the sample size too much to make an accurate assessment. From the data we see a clear inverse relationship between bandwidth and latency.
+                            </p>
+                            <p>
+                                <img src="http://yuiblog.com/assets/tellis-bandwidth/bandwidth-latency.png" alt="3D Bar chart of bandwidth and latency data from table #connection-type-table">
+                            </p>
+                            <h3>
+                                International data
+                            </h3>
+                            <p>
+                                We expected connections from outside the US to appear slower because the test has an intrinsic geographical bias, but what does the data really tell us?
+                            </p>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <th>
+                                            Countries
+                                        </th>
+                                        <th>
+                                            CA
+                                        </th>
+                                        <th>
+                                            US
+                                        </th>
+                                        <th>
+                                            DK
+                                        </th>
+                                        <th>
+                                            NL
+                                        </th>
+                                        <th>
+                                            NO
+                                        </th>
+                                        <th>
+                                            BE
+                                        </th>
+                                        <th>
+                                            SE
+                                        </th>
+                                        <th>
+                                            CH
+                                        </th>
+                                        <th>
+                                            AT
+                                        </th>
+                                        <th>
+                                            GB
+                                        </th>
+                                        <th>
+                                            FI
+                                        </th>
+                                        <th>
+                                            DE
+                                        </th>
+                                        <th>
+                                            CZ
+                                        </th>
+                                        <th>
+                                            FR
+                                        </th>
+                                        <th>
+                                            RO
+                                        </th>
+                                        <th>
+                                            PT
+                                        </th>
+                                        <th>
+                                            BG
+                                        </th>
+                                        <th>
+                                            HU
+                                        </th>
+                                        <th>
+                                            ES
+                                        </th>
+                                        <th>
+                                            IT
+                                        </th>
+                                        <th>
+                                            PL
+                                        </th>
+                                        <th>
+                                            GR
+                                        </th>
+                                        <th>
+                                            JP
+                                        </th>
+                                        <th>
+                                            UA
+                                        </th>
+                                        <th>
+                                            AR
+                                        </th>
+                                        <th>
+                                            TR
+                                        </th>
+                                        <th>
+                                            KR
+                                        </th>
+                                        <th>
+                                            RU
+                                        </th>
+                                        <th>
+                                            BR
+                                        </th>
+                                        <th>
+                                            TW
+                                        </th>
+                                        <th>
+                                            HK
+                                        </th>
+                                        <th>
+                                            AU
+                                        </th>
+                                        <th>
+                                            SG
+                                        </th>
+                                        <th>
+                                            IN
+                                        </th>
+                                        <th>
+                                            PH
+                                        </th>
+                                        <th>
+                                            TH
+                                        </th>
+                                        <th>
+                                            CN
+                                        </th>
+                                        <th>
+                                            ID
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Numrecs
+                                        </th>
+                                        <td>
+                                            949
+                                        </td>
+                                        <td>
+                                            9071
+                                        </td>
+                                        <td>
+                                            141
+                                        </td>
+                                        <td>
+                                            497
+                                        </td>
+                                        <td>
+                                            238
+                                        </td>
+                                        <td>
+                                            218
+                                        </td>
+                                        <td>
+                                            417
+                                        </td>
+                                        <td>
+                                            212
+                                        </td>
+                                        <td>
+                                            181
+                                        </td>
+                                        <td>
+                                            1833
+                                        </td>
+                                        <td>
+                                            157
+                                        </td>
+                                        <td>
+                                            1503
+                                        </td>
+                                        <td>
+                                            176
+                                        </td>
+                                        <td>
+                                            811
+                                        </td>
+                                        <td>
+                                            232
+                                        </td>
+                                        <td>
+                                            168
+                                        </td>
+                                        <td>
+                                            129
+                                        </td>
+                                        <td>
+                                            151
+                                        </td>
+                                        <td>
+                                            455
+                                        </td>
+                                        <td>
+                                            496
+                                        </td>
+                                        <td>
+                                            405
+                                        </td>
+                                        <td>
+                                            126
+                                        </td>
+                                        <td>
+                                            340
+                                        </td>
+                                        <td>
+                                            251
+                                        </td>
+                                        <td>
+                                            179
+                                        </td>
+                                        <td>
+                                            224
+                                        </td>
+                                        <td>
+                                            154
+                                        </td>
+                                        <td>
+                                            395
+                                        </td>
+                                        <td>
+                                            482
+                                        </td>
+                                        <td>
+                                            174
+                                        </td>
+                                        <td>
+                                            133
+                                        </td>
+                                        <td>
+                                            659
+                                        </td>
+                                        <td>
+                                            146
+                                        </td>
+                                        <td>
+                                            1748
+                                        </td>
+                                        <td>
+                                            200
+                                        </td>
+                                        <td>
+                                            147
+                                        </td>
+                                        <td>
+                                            639
+                                        </td>
+                                        <td>
+                                            206
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Bandwidth (kbps)
+                                        </th>
+                                        <td>
+                                            3,295
+                                        </td>
+                                        <td>
+                                            3,206
+                                        </td>
+                                        <td>
+                                            2,404
+                                        </td>
+                                        <td>
+                                            2,247
+                                        </td>
+                                        <td>
+                                            2,144
+                                        </td>
+                                        <td>
+                                            1,981
+                                        </td>
+                                        <td>
+                                            1,936
+                                        </td>
+                                        <td>
+                                            1,807
+                                        </td>
+                                        <td>
+                                            1,658
+                                        </td>
+                                        <td>
+                                            1,648
+                                        </td>
+                                        <td>
+                                            1,599
+                                        </td>
+                                        <td>
+                                            1,581
+                                        </td>
+                                        <td>
+                                            1,453
+                                        </td>
+                                        <td>
+                                            1,420
+                                        </td>
+                                        <td>
+                                            1,357
+                                        </td>
+                                        <td>
+                                            1,296
+                                        </td>
+                                        <td>
+                                            1,267
+                                        </td>
+                                        <td>
+                                            1,165
+                                        </td>
+                                        <td>
+                                            893
+                                        </td>
+                                        <td>
+                                            869
+                                        </td>
+                                        <td>
+                                            765
+                                        </td>
+                                        <td>
+                                            560
+                                        </td>
+                                        <td>
+                                            549
+                                        </td>
+                                        <td>
+                                            545
+                                        </td>
+                                        <td>
+                                            498
+                                        </td>
+                                        <td>
+                                            496
+                                        </td>
+                                        <td>
+                                            478
+                                        </td>
+                                        <td>
+                                            477
+                                        </td>
+                                        <td>
+                                            418
+                                        </td>
+                                        <td>
+                                            409
+                                        </td>
+                                        <td>
+                                            405
+                                        </td>
+                                        <td>
+                                            392
+                                        </td>
+                                        <td>
+                                            368
+                                        </td>
+                                        <td>
+                                            238
+                                        </td>
+                                        <td>
+                                            207
+                                        </td>
+                                        <td>
+                                            205
+                                        </td>
+                                        <td>
+                                            181
+                                        </td>
+                                        <td>
+                                            64
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Latency (ms)
+                                        </th>
+                                        <td>
+                                            108
+                                        </td>
+                                        <td>
+                                            133
+                                        </td>
+                                        <td>
+                                            247
+                                        </td>
+                                        <td>
+                                            230
+                                        </td>
+                                        <td>
+                                            263
+                                        </td>
+                                        <td>
+                                            233
+                                        </td>
+                                        <td>
+                                            264
+                                        </td>
+                                        <td>
+                                            256
+                                        </td>
+                                        <td>
+                                            278
+                                        </td>
+                                        <td>
+                                            242
+                                        </td>
+                                        <td>
+                                            276
+                                        </td>
+                                        <td>
+                                            269
+                                        </td>
+                                        <td>
+                                            256
+                                        </td>
+                                        <td>
+                                            254
+                                        </td>
+                                        <td>
+                                            274
+                                        </td>
+                                        <td>
+                                            297
+                                        </td>
+                                        <td>
+                                            285
+                                        </td>
+                                        <td>
+                                            270
+                                        </td>
+                                        <td>
+                                            335
+                                        </td>
+                                        <td>
+                                            309
+                                        </td>
+                                        <td>
+                                            284
+                                        </td>
+                                        <td>
+                                            363
+                                        </td>
+                                        <td>
+                                            416
+                                        </td>
+                                        <td>
+                                            340
+                                        </td>
+                                        <td>
+                                            387
+                                        </td>
+                                        <td>
+                                            353
+                                        </td>
+                                        <td>
+                                            462
+                                        </td>
+                                        <td>
+                                            359
+                                        </td>
+                                        <td>
+                                            409
+                                        </td>
+                                        <td>
+                                            506
+                                        </td>
+                                        <td>
+                                            516
+                                        </td>
+                                        <td>
+                                            555
+                                        </td>
+                                        <td>
+                                            595
+                                        </td>
+                                        <td>
+                                            588
+                                        </td>
+                                        <td>
+                                            595
+                                        </td>
+                                        <td>
+                                            688
+                                        </td>
+                                        <td>
+                                            649
+                                        </td>
+                                        <td>
+                                            867
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                <img src="http://yuiblog.com/assets/tellis-bandwidth/high-bw.png" alt="Bar chart of bandwidth data for top 18 countries (CA to HU) in table #international-bandwidth-table">
+                            </p>
+                            <p>
+                                The US and Canada top the list as expected. All other countries with a bandwidth over 1 Mbps are from Europe. Looking at the other end of the spectrum, we see a few surprises.
+                            </p>
+                            <p>
+                                <img src="http://yuiblog.com/assets/tellis-bandwidth/low-bw.png" alt="Bar chart of bandwidth data for bottom 17 countries (GR to ID) in table #international-bandwidth-table">
+                            </p>
+                            <p>
+                                I know from recent experience that Korea and Hong Kong have really high bandwidth network connections. Faster than most of the US in fact. The data puts them at less than one sixth the bandwidth of the US. A possible explanation is the latency. As we already know, there’s a correlation between bandwidth and latency. Looking at the latency numbers for these countries gives us a possible answer.
+                            </p>
+                            <p>
+                                <img src="http://yuiblog.com/assets/tellis-bandwidth/low-bw-latency.png" alt="Bar chart of latency data for bottom 17 countries (GR to ID) in table #international-bandwidth-table">
+                            </p>
+                            <p>
+                                We get hits from many more countries (147 in all). They either fell between these two blocks or had too few data points to be a statistically sound sample.
+                            </p>
+                            <h3>
+                                ISPs
+                            </h3>
+                            <p>
+                                As the final piece of analysis, I looked at ISP information. I only looked at a few countries since there were too many ISPs world-wide to put on a bar chart. Presented in the chart below is data for US and Canadian ISPs.
+                            </p>
+                            <div>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Country
+                                            </th>
+                                            <th>
+                                                ISP
+                                            </th>
+                                            <th>
+                                                Latency (ms)
+                                            </th>
+                                            <th>
+                                                Bandwidth (kbps)
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="vertical-align:top">
+                                        <tr>
+                                            <td rowspan="3">
+                                                Germany
+                                            </td>
+                                            <td>
+                                                hansenet telekommunikation gmbh
+                                            </td>
+                                            <td>
+                                                282
+                                            </td>
+                                            <td>
+                                                1,849
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                international ip-backbone of vodafone
+                                            </td>
+                                            <td>
+                                                263
+                                            </td>
+                                            <td>
+                                                1,282
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                deutsche telekom ag
+                                            </td>
+                                            <td>
+                                                311
+                                            </td>
+                                            <td>
+                                                1,149
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td rowspan="3">
+                                                Great Britain
+                                            </td>
+                                            <td>
+                                                avatar broadband limited
+                                            </td>
+                                            <td>
+                                                229
+                                            </td>
+                                            <td>
+                                                2,200
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                btnet uk regional network
+                                            </td>
+                                            <td>
+                                                256
+                                            </td>
+                                            <td>
+                                                1,769
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                ntl group limited
+                                            </td>
+                                            <td>
+                                                253
+                                            </td>
+                                            <td>
+                                                1,581
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td rowspan="5">
+                                                India
+                                            </td>
+                                            <td>
+                                                videsh sanchar nigam ltd. aut
+                                            </td>
+                                            <td>
+                                                508
+                                            </td>
+                                            <td>
+                                                355
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                reliance infocom ltd internet
+                                            </td>
+                                            <td>
+                                                615
+                                            </td>
+                                            <td>
+                                                260
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                bharti airtel ltd. telemedia services
+                                            </td>
+                                            <td>
+                                                601
+                                            </td>
+                                            <td>
+                                                226
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                tata communications
+                                            </td>
+                                            <td>
+                                                569
+                                            </td>
+                                            <td>
+                                                195
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                national internet backbone
+                                            </td>
+                                            <td>
+                                                609
+                                            </td>
+                                            <td>
+                                                167
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td rowspan="12">
+                                                USA
+                                            </td>
+                                            <td>
+                                                cablevision systems corp.
+                                            </td>
+                                            <td>
+                                                78
+                                            </td>
+                                            <td>
+                                                4,752
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                verizon global networks
+                                            </td>
+                                            <td>
+                                                101
+                                            </td>
+                                            <td>
+                                                4,218
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                road runner holdco llc
+                                            </td>
+                                            <td>
+                                                108
+                                            </td>
+                                            <td>
+                                                4,093
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                charter communications
+                                            </td>
+                                            <td>
+                                                114
+                                            </td>
+                                            <td>
+                                                3,945
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                comcast cable communications inc.
+                                            </td>
+                                            <td>
+                                                123
+                                            </td>
+                                            <td>
+                                                3,816
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                att worldnet services
+                                            </td>
+                                            <td>
+                                                117
+                                            </td>
+                                            <td>
+                                                3,328
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                time warner telecom
+                                            </td>
+                                            <td>
+                                                95
+                                            </td>
+                                            <td>
+                                                3,304
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                cox communications inc.
+                                            </td>
+                                            <td>
+                                                166
+                                            </td>
+                                            <td>
+                                                3,224
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                xo communications
+                                            </td>
+                                            <td>
+                                                140
+                                            </td>
+                                            <td>
+                                                2,986
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                qwest
+                                            </td>
+                                            <td>
+                                                203
+                                            </td>
+                                            <td>
+                                                1,892
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                att internet services
+                                            </td>
+                                            <td>
+                                                204
+                                            </td>
+                                            <td>
+                                                1,502
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                bellsouth.net inc.
+                                            </td>
+                                            <td>
+                                                121
+                                            </td>
+                                            <td>
+                                                1,446
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td rowspan="3">
+                                                Canada
+                                            </td>
+                                            <td>
+                                                rogers cable communications inc.
+                                            </td>
+                                            <td>
+                                                96
+                                            </td>
+                                            <td>
+                                                4,386
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                bell canada
+                                            </td>
+                                            <td>
+                                                103
+                                            </td>
+                                            <td>
+                                                3,161
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                shaw communications inc.
+                                            </td>
+                                            <td>
+                                                203
+                                            </td>
+                                            <td>
+                                                3,007
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p>
+                                <img src="http://yuiblog.com/assets/tellis-bandwidth/isp-bw.png" data="http://www.yuiblog.com/blog">
+                            </p>
+                            <p>
+                                I’m not sure what the difference between AT&amp;T Worldnet and AT&amp;T Internet is, but I’ll leave that for you to figure out. We saw more hits from Comcast than from any other ISP on the planet.
+                            </p>
+                            <h3>
+                                Users of different browsers
+                            </h3>
+                            <p>
+                                The browser you use doesn’t affect your bandwidth (at least hasn’t in lab tests) and has a very negligible effect on latency, so I didn’t expect to see any differences here. I was curious though, to see what the data said, and this is what I found. I’ve included iPhones and iPods as well as they made up a sizeable fraction of all data points. Opera’s mobile browsers are included under Opera. The “other” category only included 22 data points.
+                            </p>
+                            <div>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Browser
+                                            </th>
+                                            <th>
+                                                Latency
+                                            </th>
+                                            <th>
+                                                Bandwidth
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                Gecko
+                                            </td>
+                                            <td>
+                                                267
+                                            </td>
+                                            <td>
+                                                1,105
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Webkit
+                                            </td>
+                                            <td>
+                                                238
+                                            </td>
+                                            <td>
+                                                1,591
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                MSIE
+                                            </td>
+                                            <td>
+                                                285
+                                            </td>
+                                            <td>
+                                                759
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Opera
+                                            </td>
+                                            <td>
+                                                271
+                                            </td>
+                                            <td>
+                                                1,174
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                iPod/iPhone
+                                            </td>
+                                            <td>
+                                                399
+                                            </td>
+                                            <td>
+                                                477
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                other
+                                            </td>
+                                            <td>
+                                                274
+                                            </td>
+                                            <td>
+                                                1,289
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p>
+                                <img src="http://yuiblog.com/assets/tellis-bandwidth/user-agent-profile.png" alt="Radar chart of bandwidth and latency data across user agents from table #useragent-table">
+                            </p>
+                            <p>
+                                The iPhone’s latency is close to other mobile phones. All other browsers have the same latency. This is as expected. Bandwidth tells a different story though. It appears that those of you with the fastest internet connections use a Webkit based browser like Safari, Chrome or Konqueror, while users with the slowest internet connections use Internet Explorer.
+                            </p>
+                            <h3>
+                                Summary
+                            </h3>
+                            <ul>
+                                <li>The overall bandwidth of YUIBlog readers is 1 Mbps and the overall latency is 262ms
+                                </li>
+                                <li>We see a definite correlation between latency and bandwidth, so it would be interesting to see what the measured bandwidth is after eliminating delays caused by latency. Perhaps in a future test I’ll do that.
+                                </li>
+                                <li>Putting a mirror in Asia probably makes sense for a US-based engineering blog like this one. Putting one in Europe probably doesn’t.
+                                </li>
+                                <li>Mobile users have terrible latency, so a site optimised for mobile should really reduce the number of HTTP requests it makes. Note that mobile users that surf the web over wifi experience far lower latency.
+                                </li>
+                            </ul>
+                            <div>
+                                <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=Uw5WYih0S-Q:06fLP6x5_W8:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=Uw5WYih0S-Q:06fLP6x5_W8:dnMXMwOfBR0"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=dnMXMwOfBR0" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=Uw5WYih0S-Q:06fLP6x5_W8:7Q72WNTAKBA"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=7Q72WNTAKBA" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=Uw5WYih0S-Q:06fLP6x5_W8:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?i=Uw5WYih0S-Q:06fLP6x5_W8:D7DqB2pKExk" border="0"></a>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.yuiblog.com/blog/2010/04/08/analyzing-bandwidth-and-latency/">http://www.yuiblog.com/blog/2010/04/08/analyzing-bandwidth-and-latency/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

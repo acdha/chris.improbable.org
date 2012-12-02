@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Performance Followup from NoSQL
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 23 Jun 2009 17:55:52 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-06-23T13:55:52-04:00">
+                    <meta itemprop="dateModified" content="2009-06-23T13:55:52-04:00"><time class="date" itemprop="datePublished" datetime="2009-06-23T17:55:52+00:00">Jun 23</time>
+                    <h2 itemprop="title">
+                        Performance Followup from NoSQL
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/8c5c9b1b781606f4">
+                        <blockquote>
+                            <p>
+                                I was at the NoSQL meetup in SF two weeks ago to present about Dynomite and I had a great time. There has been some discussion afterwards about the various performance numbers bandied about and I wanted to speak for Dynomite about the exact meaning of the performance numbers I present in my slides. And generally, I wanted to talk about what I think is a superior approach to performance testing that meets the needs of the potential users of a distributed database.
+                            </p>
+                            <h1>
+                                The Current State of Performance Testing
+                            </h1>
+                            <h2>
+                                Mapping a Multidimensional Space
+                            </h2>
+                            <p>
+                                Any reasonably mature database project is going to have quite a few knobs to turn in order to have different effects on latency, scalability, and absolute throughput. For instance, in Dynomite you can change cache sizes, replication and quorum constants, and, of course, the actual storage engine used to persist the data. Factors like the OS used, the physical raid configuration, filesystem, number of CPU’s, RAM and network topology all figure in to the performance results that can be achieved by a distributed database. Naturally, the workload used to test a database has the greatest influence over the results.
+                            </p>
+                            <p>
+                                When you put all of these things together you see that any values (latency, throughput, etc) obtained from a configuration are actually points in a multidimensional space, where each configuration parameter is a dimension. Trying to map the entire space results in a combinatorial explosion and does not even shed any light on database to database comparisons.
+                            </p>
+                            <h2>
+                                Rosy Results
+                            </h2>
+                            <p>
+                                The second issue with most performance tests is that the publicly available numbers (especially those appearing in slides) are produced by project maintainers. This creates a moral hazard: project maintainers are motivated to cast their software in the best light, even if the benchmarks are based on systems and configurations that skew far from common use. I know that if I configure Dynomite to not hit disk and use the native binary term protocol then I can get the throughput up to 20k reqs/s with random reads and writes. Of course, that means nothing since the vast majority of users want their data to be persistent.
+                            </p>
+                            <h2>
+                                Naysayers
+                            </h2>
+                            <p>
+                                Results that look a little too rosy will inevitably lead to a backlash of naysayers, which we are starting to see the seeds of today. Some of them have very real concerns, but others will actively seek to poison the conversation with misleading statistics and FUD about projects. Criticism is always welcome, but uninformed criticism is not helpful. One should also be wary of criticism leveled by purveyors of commercial database offerings, including hosted databases.
+                            </p>
+                            <h1>
+                                Possibly a Better Way
+                            </h1>
+                            <h2>
+                                Equalizing the Datacenter
+                            </h2>
+                            <p>
+                                If we are going to advance, or at least be able to compare apples and apples, then we will need to settle on a basic procedure that can be followed for performance testing distributed databases. The first issue is machine equivalence. Most of the companies that sponsor open source distributed database development operate out of their own datacenter and thus will have different machine specs.
+                            </p>
+                            <p>
+                                One option to start comparing fairly is to use EC2 for public performance testing. It would be easy enough to assemble a set of test scripts configurable for different cluster sizes and different configurations and spin up fresh EC2 nodes to run the benchmarks. The repeatability of such a scheme would allow for many benchmarks to be run to try and see how stable performance is in a shared network environment such as EC2. Even better, these scripts can be used by anyone to easily verify the publicly posted performance numbers of a project.
+                            </p>
+                            <p>
+                                Of course EC2 does not offer what one would call blazing performance. 99.9th percentile performance for I/O is especially poor in some of the smaller EC2 instances. So whatever numbers a project posts from EC2, they are almost guaranteed to be worse than what can be had from dedicated hardware in a dedicated datacenter. Therefore the point is not to see how fast a database can perform on an absolute scale. The point is to equalize hardware variance between the tests of various databases.
+                            </p>
+                            <h2>
+                                Dataset Size
+                            </h2>
+                            <p>
+                                The underlying data structures used to persist data to disk can often be sensitive to the size of a dataset. The size of the dataset in absolute number of items, the average size of values in bytes, and the byte size of the dataset as a whole can all factor in to the performance of the database. For smaller dataset sizes competently written caching layers will make sure that reads almost never touch disk, for instance.
+                            </p>
+                            <p>
+                                Therefore any real test of a data store will involve a dataset size several times that of available memory. The test will also have realistic sizes for the values. 10 bytes per value is in no way a realistic use case for a database. Something like 100 bytes per value on average or more is a much more realistic use case. Even better, tests can be made to load up real life datasets, such as the Netflix prize data or the AOL query logs. These will introduce some variance into the data. Sets of larger values might be used as well, such as Wikipedia data, a Freebase dump, or some other freely available set of larger (1k and above) values.
+                            </p>
+                            <h2>
+                                Workload Profile
+                            </h2>
+                            <p>
+                                This brings us to the workload profile under test. There are as many workloads as there are applications in existence, but many can be grouped with similar workloads, and a good performance test will hit the most common ones:
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        Bulk load.
+                                    </p>
+                                    <p>
+                                        A common database use pattern is to load a dataset for read-only serving to clients. For these applications quickly loading data from something like Hadoop is an important use case. Important metrics that can be gleaned from this workload are throughput in transactions/second, throughput in megabytes/second, and number of concurrent clients.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        Latency sensitive traffic. Read-only, write-only, and read / write mixture.
+                                    </p>
+                                    <p>
+                                        This category of workload encompasses latency sensitive work. In other words, operations which are on the critical path for live traffic. There are a couple of important questions to be asked for this sort of workload.
+                                    </p>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                What is the steady state latency?
+                                            </p>
+                                            <p>
+                                                Latency should be measured with varying numbers of concurrent clients. Speaking for Dynomite, measuring at 12, 50, 100, and 400 concurrent clients per host seems, anecdotally, to give a good spread of latency results. Latency should also be aggregated into percentiles. At the very least 99.9%, 99%, and 50% as averages mask much relevant information.
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                What is the maximum throughput at saturation?
+                                            </p>
+                                            <p>
+                                                Saturation is the number of concurrent clients at which the cluster’s throughput peaks. Typically the cluster will reach a point of diminishing returns where throughput will either go down or hold steady as more concurrent clients are added. The important metrics here are, of course, the maximum throughput and the number of concurrent clients at which that throughput is reached. Throughput should be measured in transactions / sec and megabytes / sec.
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                And at what number of concurrent clients does the cluster become overwhelmed?
+                                            </p>
+                                            <p>
+                                                After reaching saturation the cluster throughput will either hold steady as the number of clients are increased (at the cost of client latency), or it will dramatically drop as the cluster becomes overwhelmed and starts experiencing failures, timeouts, and or memory overruns. On a graph of concurrent clients vs. throughput the point at which the cluster becomes overwhelmed should be pretty evident.
+                                            </p>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <p>
+                                        Scanning.
+                                    </p>
+                                    <p>
+                                        This category of workload is not very well supported (if at all) by the distributed key value stores. The bigtable clones, however, are mostly designed around exactly this kind of workload. Therefore if a distributed database supports scanning, this should be tested. A scanning test would ideally iterate over an entire table or datastore in whatever order the database imposes. The important metric for this test is the scanning throughput in transactions / sec and megabytes / sec.
+                                    </p>
+                                </li>
+                            </ul>
+                            <h1>
+                                An Effort Already Underway
+                            </h1>
+                            <p>
+                                Jon Travis has already started a project for testing out <a href="http://project-voldemort.com/">Project Voldemort</a>. It is called <a href="http://github.com/trav/vpork">vpork</a>. This is a step in the right direction. As a community we should come together and start talking about how we test performance because it is important. We owe it to our users and we owe it to ourselves to be honest about the capabilities of our projects. Only through our commitment to quality, even at a cost to our own egos, will we build great systems.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <a href="http://www.bartleby.com/190/12.html">“Murder your darlings.”</a> - Sir Arthur Quiller-Couch
+                                </p>
+                            </blockquote>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://cliffmoon.tumblr.com/post/128847520">http://cliffmoon.tumblr.com/post/128847520</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

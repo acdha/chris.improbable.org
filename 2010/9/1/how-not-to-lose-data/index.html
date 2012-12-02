@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How *NOT* to Lose Data
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 02 Sep 2010 01:42:30 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-09-01T21:42:30-04:00">
+                    <meta itemprop="dateModified" content="2010-09-01T21:42:30-04:00"><time class="date" itemprop="datePublished" datetime="2010-09-02T01:42:30+00:00">Sep 02</time>
+                    <h2 itemprop="title">
+                        How *NOT* to Lose Data
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/072f4930c0dbfb04">
+                        <blockquote>
+                            <p>
+                                In my last post, I described several common data-loss scenarios and took people to task for what I feel is a very unbalanced view of the problem space. It would be entirely fair for someone to say that it would be even more constructive for me to explain some ways to <b>avoid</b> those problems, so here goes.
+                            </p>
+                            <p>
+                                One of the most popular approaches to ensuring data protection is immutable and/or append-only files, using ideas that often go back to Seltzer et al’s <a href="http://www.eecs.harvard.edu/~margo/papers/usenix93/">log structured filesystem</a> paper in 1993. One key justification for that seminal project was the observation that operating-system buffer/page caches absorb most reads, so the access pattern as it hits the filesystem is write-dominated and that’s the case for which the filesystem should be optimized. We’ll get back to that point in a moment. In such a log-oriented approach, writes are handled as simple appends to the latest in a series of logs. Usually, the size of a single log file is capped, and when one log file fills up another is started. When there are enough log files, old ones are combined or retired based on whether they contain updates that are still considered relevant – a process called compaction in several current projects, but also known by other names in other contexts. Reads are handled by searching through the accumulated logs for updates which overlap with what the user requested. Done naively, this could take linear time relative to the number of log entries present, so in practice the read path is often heavily optimized using Bloom filters and other techniques so it can actually be quite efficient. This leads me to a couple of tangential observations about how such solutions are neither as novel nor as complete as some of their more strident champions would have you believe.
+                            </p>
+                            <ul>
+                                <li>The general outline described above is pretty much exactly what Steven LeBrun and I came up with in 2003/2004, to handle “timeline” data in Revivio’s continuous data protection system. This predates the publication of details about <a href="http://www.allthingsdistributed.com/2007/10/amazons_dynamo.html">Dynamo</a> in 2007, and therefore all of Dynamo’s currently-popular descendants as well.
+                                </li>
+                                <li>Some people seem to act as though immutable files are always and everywhere superior to update-in-place solutions (including soft updates or COW), apparently unaware that they’re just making the complexity of update-in-place Somebody Else’s Problem. When you’re creating and deleting all those immutable files within a finite pool of mutable disk blocks, somebody else – i.e. the filesystem – has to handle all of the space reclamation/reuse issues for you, and they do so with update-in-place.
+                                </li>
+                            </ul>
+                            <p>
+                                Despite those caveats, the log-oriented approach can be totally awesome and designers should generally consider it first especially when lookups are by a single key in a flat namespace. You could theoretically handle multiple keys by creating separate sets of Bloom filters etc. for each key, but that can quickly become unwieldy. It also makes writes less efficient, and – as noted previously – write efficiency is one of the key justifications for this approach in the first place. At some point, or for some situations, a different solution might be called for.
+                            </p>
+                            <p>
+                                The other common approach to data protection is copy on write or COW (as represented by <a href="http://www.netapp.com/library/tr/3002.pdf">WAFL</a>, <a href="http://www.sun.com/2004-0914/feature/">ZFS</a>, or <a href="http://lkml.org/lkml/2007/6/12/242">btrfs</a>) or its close cousin <a href="http://www.usenix.org/publications/library/proceedings/usenix99/full_papers/mckusick/mckusick.pdf">soft updates</a>. In these approaches, blocks are updated in place, but with very careful attention paid to where and/or when individual block updates actually hit disk. Most commonly, all blocks are either explicitly or implicitly related as parts of a tree. Updates occur from leaves to root, copying old blocks into newly allocated space and then modifying the new copies. Ultimately all of this new space is spliced into the filesystem with an atomic update at the root – the superblock in a filesystem. It’s contention either at the root or on the way up to it that accounts for much of the complexity in such systems, and for many of the differences between them. The soft-update approach diverges from this model by doing more updates in place instead of into newly allocated space, avoiding the issue of contention at the root but requiring even more careful attention to write ordering. Here are a few more notes.
+                            </p>
+                            <ul>
+                                <li>When writes are into newly allocated space, and the allocator generally allocates seqential blocks, the at-disk access pattern can be strongly sequential just as with the more explicitly log-oriented approach.
+                                </li>
+                                <li>The COW approach lends itself to very efficient snapshots, because each successive version of the superblock (or equivalent) represents a whole state of the filesystem at some point in time. Garbage collection becomes quite complicated as a result, but the complexity seems well worth it.
+                                </li>
+                                <li>There’s a very important optimization that can be made sometimes when a write is wholly contained within a single already-allocated block. In this case, that one block can simply be updated in place and you can skip a lot of the toward-the-root rigamarole. I should apply this technique to VoldFS. Unfortunately, it doesn’t apply if you have to update mtime or if you’re at a level where “torn writes” (something I forgot to mention in my “how to lose data” post) are a concern.
+                                </li>
+                            </ul>
+                            <p>
+                                It’s worth noting also that, especially in a distributed environment, these approaches can be combined. For example, VoldFS itself uses a COW approach but most of the actual or candidate data stores from which it allocates its blocks are themselves more log-oriented. As always it’s horses for courses, and different systems – or even different parts of the same system – might be best served by different approaches. That’s why I thought it was worth describing multiple alternatives and the tradeoffs between them.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://pl.atyp.us/wordpress/?p=3020">http://pl.atyp.us/wordpress/?p=3020</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

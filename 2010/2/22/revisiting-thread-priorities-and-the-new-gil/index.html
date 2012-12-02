@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Revisiting thread priorities and the new GIL
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 22 Feb 2010 21:47:27 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-02-22T16:47:00-04:00">
+                    <meta itemprop="dateModified" content="2010-02-22T16:47:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-02-22T20:47:00+00:00">Feb 22</time>
+                    <h2 itemprop="title">
+                        Revisiting thread priorities and the new GIL
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ab180b744758e840">
+                        <blockquote>
+                            <p>
+                                Well, PyCon is over and it's time to get back to work. First, I'd just like to thank everyone who came to my <a href="http://www.dabeaz.com/python/UnderstandingGIL.pdf">GIL Talk</a> and participated in all of the discussion that followed. It was almost as if part of PyCon had turned into a mini operating systems conference!
+                            </p>
+                            <p>
+                                This post is a followup to the GIL open space at PyCon where we looked at the new GIL and explored the possibility of introducing thread priorities. For those of you not at PyCon, the open space was attended by about 30-40 people and included Guido, Antoine Pitrou, and a large number of systems hackers, some of which had previously worked on thread library implementations and operating system kernels.
+                            </p>
+                            <p>
+                                First, a little background. As might know, Antoine Pitrou implemented a new Python GIL that is currently only available in the Python 3.2 development branch (you can obtain it via subversion). This new GIL is described in his <a href="http://mail.python.org/pipermail/python-dev/2009-October/093321.html">original mailing list post</a> as well as the <a href="http://www.dabeaz.com/python/UnderstandingGIL.pdf">slides</a> for my PyCon talk. You should read those first if you haven't already.
+                            </p>
+                            <p>
+                                Right before PyCON, I discovered an I/O performance problem with the new GIL that is related to CPU-bound threads stalling the progress of I/O bound threads which it turn leads to a severe performance degradation of I/O bandwidth and response time. This is described in <a href="http://bugs.python.org/issue7946">Issue 7946 : Convoy effect with I/O bound threads and New GIL</a>.
+                            </p>
+                            <p>
+                                In the bug report, I submitted a very simple test case that illustrated the problem. However, here is a more refined experiment that you can try. The following program, <tt>iotest.py</tt> contains both CPU-bound threads and an I/O server thread that echos UDP packets. It is meant to study the case in which CPU-processing and I/O processing are overlapped.
+                            </p>
+                            <blockquote>
+                                <pre>
+# iotest.py
+
+import time
+import threading
+from socket import *
+import itertools
+
+def task_pidigits():
+    """Pi calculation (Python)"""
+    _map = map
+    _count = itertools.count
+    _islice = itertools.islice
+
+    def calc_ndigits(n):
+        # From http://shootout.alioth.debian.org/
+        def gen_x():
+            return _map(lambda k: (k, 4*k + 2, 0, 2*k + 1), _count(1))
+
+        def compose(a, b):
+            aq, ar, as_, at = a
+            bq, br, bs, bt = b
+            return (aq * bq,
+                    aq * br + ar * bt,
+                    as_ * bq + at * bs,
+                    as_ * br + at * bt)
+
+        def extract(z, j):
+            q, r, s, t = z
+            return (q*j + r) // (s*j + t)
+
+        def pi_digits():
+            z = (1, 0, 0, 1)
+            x = gen_x()
+            while 1:
+                y = extract(z, 3)
+                while y != extract(z, 4):
+                    z = compose(z, next(x))
+                    y = extract(z, 3)
+                z = compose((10, -10*y, 0, 1), z)
+                yield y
+
+        return list(_islice(pi_digits(), n))
+
+    return calc_ndigits, (50, )
+
+def spin():
+    task,args = task_pidigits()
+    while True:
+       r= task(*args)
+
+def echo_server():
+    s = socket(AF_INET, SOCK_DGRAM)
+    s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
+    s.bind(("",16000))
+    while True:
+        msg, addr = s.recvfrom(16384)
+        s.sendto(msg,addr)  
+
+# Launch threads (adjust the number to see different results)
+NUMTHREADS = 1
+for n in range(NUMTHREADS):
+    t = threading.Thread(target=spin)
+    t.daemon = True
+    t.start()
+
+# Launch a background echo server
+echo_server()
+</pre>
+                            </blockquote>
+                            <p>
+                                Next, here is a client program <tt>ioclient.py</tt> that simply measures the time it takes to echo 10MB of data to the server in the <tt>iotest.py</tt> program.
+                            </p>
+                            <blockquote>
+                                <pre>
+# echoclient.py
+from socket import *
+import time
+
+CHUNKSIZE = 8192
+NUMMESSAGES = 1280     # Total of 10MB
+
+# Dummy message
+msg = b"x"*CHUNKSIZE
+
+# Connect and send messages
+s = socket(AF_INET,SOCK_DGRAM)
+start = time.time()
+for n in range(NUMMESSAGES):
+    s.sendto(msg,("",16000))
+    msg, addr = s.recvfrom(65536)
+end = time.time()
+print("%0.3f seconds (%0.3f bytes/sec)" % (end-start, (CHUNKSIZE*NUMMESSAGES)/(end-start)))
+</pre>
+                            </blockquote>
+                            <p>
+                                If you run <tt>iotest.py</tt> on a dual-core Macbook with only 1 spin() thread. You get the following result if you run <tt>ioclient.py</tt>:
+                            </p>
+                            <ul>
+                                <li>Python 3.2 (New GIL) : 9.166 seconds (1143998.140 bytes/sec)<br>
+                                </li>
+                            </ul>
+                            <p>
+                                It works, but it's hardly impressive (just barely over 1MB/sec transfer rate between two processes?). However, if you make the server have two spin() threads, the performance gets much worse:
+                            </p>
+                            <ul>
+                                <li>Python 3.2 (New GIL) : 28.064 seconds (373642.858 bytes/sec)
+                                </li>
+                            </ul>
+                            <p>
+                                Now to further complicate matters, if you disable all but one of the CPU cores, you get this inexplicable result:
+                            </p>
+                            <ul>
+                                <li>Python 3.2 (New GIL, 1 CPU) : 0.297 seconds (35326299.028 bytes/sec)
+                                </li>
+                            </ul>
+                            <p>
+                                Needless to say, there are many bizarre things going on here. The most major effect is that on multiple cores, it is very easy for CPU-bound threads to reacquire the GIL whenever an I/O bound thread performs I/O. This means that CPU-threads have a greater tendency to hog the GIL.
+                            </p>
+                            <p>
+                                At PyCON, I did some experiments with thread priorities and a modified GIL that adjusted priorities in a manner similar to what you find with multilevel feedback queues in operating systems. Namely:
+                            </p>
+                            <ul>
+                                <li>If a thread is forced to give up the GIL due to a timeout, it is penalized with lower priority.
+                                </li>
+                                <li>If a thread voluntarily gives up the GIL because it performed I/O, it is reward with higher priority.
+                                </li>
+                                <li>High priority threads always preempty low-priority threads.
+                                </li>
+                            </ul>
+                            <p>
+                                The results of this approach were impressive. If you run the same tests with priorities on 2 CPU cores, you get this result:
+                            </p>
+                            <ul>
+                                <li>Python 3.2 (New GIL with priorities), 0.298 seconds (35156921.564 bytes/sec)
+                                </li>
+                            </ul>
+                            <p>
+                                The prioritized GIL also gives good performance for Antoine's own <tt>ccbench.py</tt> benchmark.
+                            </p>
+                            <table border="1" cellspacing="15">
+                                <tr>
+                                    <th>
+                                        New GIL
+                                    </th>
+                                    <th>
+                                        New GIL with priorities
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <br>
+                                        <pre>
+== CPython 3.2a0.0 (py3k:78250) ==
+== i386 Darwin on 'i386' ==
+
+--- Throughput ---
+
+Pi calculation (Python)
+
+threads=1: 873 iterations/s.
+threads=2: 845 ( 96 %)
+threads=3: 837 ( 95 %)
+threads=4: 820 ( 93 %)
+
+regular expression (C)
+
+threads=1: 348 iterations/s.
+threads=2: 339 ( 97 %)
+threads=3: 328 ( 94 %)
+threads=4: 317 ( 91 %)
+
+bz2 compression (C)
+
+threads=1: 367 iterations/s.
+threads=2: 655 ( 178 %)
+threads=3: 642 ( 174 %)
+threads=4: 646 ( 175 %)
+
+--- Latency ---
+
+Background CPU task: Pi calculation (Python)
+
+CPU threads=0: 0 ms. (std dev: 0 ms.)
+CPU threads=1: 5 ms. (std dev: 0 ms.)
+CPU threads=2: 2 ms. (std dev: 2 ms.)
+CPU threads=3: 138 ms. (std dev: 100 ms.)
+CPU threads=4: 132 ms. (std dev: 99 ms.)
+
+Background CPU task: regular expression (C)
+
+CPU threads=0: 0 ms. (std dev: 0 ms.)
+CPU threads=1: 6 ms. (std dev: 1 ms.)
+CPU threads=2: 6 ms. (std dev: 6 ms.)
+CPU threads=3: 6 ms. (std dev: 4 ms.)
+CPU threads=4: 10 ms. (std dev: 8 ms.)
+
+Background CPU task: bz2 compression (C)
+
+CPU threads=0: 0 ms. (std dev: 0 ms.)
+CPU threads=1: 0 ms. (std dev: 1 ms.)
+CPU threads=2: 0 ms. (std dev: 0 ms.)
+CPU threads=3: 0 ms. (std dev: 0 ms.)
+CPU threads=4: 0 ms. (std dev: 0 ms.)
+
+</pre>
+                                    </td>
+                                    <td>
+                                        <br>
+                                        <pre>
+== CPython 3.2a0.0 (py3k:78215M) ==
+== i386 Darwin on 'i386' ==
+
+--- Throughput ---
+
+Pi calculation (Python)
+
+threads=1: 885 iterations/s.
+threads=2: 860 ( 97 %)
+threads=3: 869 ( 98 %)
+threads=4: 859 ( 97 %)
+
+regular expression (C)
+
+threads=1: 362 iterations/s.
+threads=2: 358 ( 98 %)
+threads=3: 349 ( 96 %)
+threads=4: 354 ( 97 %)
+
+bz2 compression (C)
+
+threads=1: 373 iterations/s.
+threads=2: 654 ( 175 %)
+threads=3: 649 ( 173 %)
+threads=4: 638 ( 170 %)
+
+--- Latency ---
+
+Background CPU task: Pi calculation (Python)
+
+CPU threads=0: 0 ms. (std dev: 0 ms.)
+CPU threads=1: 0 ms. (std dev: 0 ms.)
+CPU threads=2: 0 ms. (std dev: 2 ms.)
+CPU threads=3: 0 ms. (std dev: 1 ms.)
+CPU threads=4: 0 ms. (std dev: 1 ms.)
+
+Background CPU task: regular expression (C)
+
+CPU threads=0: 0 ms. (std dev: 0 ms.)
+CPU threads=1: 2 ms. (std dev: 1 ms.)
+CPU threads=2: 3 ms. (std dev: 3 ms.)
+CPU threads=3: 2 ms. (std dev: 1 ms.)
+CPU threads=4: 2 ms. (std dev: 2 ms.)
+
+Background CPU task: bz2 compression (C)
+
+CPU threads=0: 0 ms. (std dev: 0 ms.)
+CPU threads=1: 0 ms. (std dev: 1 ms.)
+CPU threads=2: 0 ms. (std dev: 1 ms.)
+CPU threads=3: 0 ms. (std dev: 1 ms.)
+CPU threads=4: 0 ms. (std dev: 1 ms.)
+
+</pre>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                The overall outcome of the GIL open space was that having a priority mechanism was probably a good idea. However, a lot of people wanted to study the problem in more detail and to think about different possible implementations. I am posting the following tar file that has my own modifications to the GIL used for the above benchmarks:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://www.dabeaz.com/python/prioritygil.tar.gz">prioritygil.tar.gz</a>
+                                </li>
+                            </ul>
+                            <p>
+                                Note: This tar file has all of the modified files in the Python 3.2 source (pystate.h, pystate.c, and ceval_gil.h) along with the io testing benchmark. Be advised that this patch is only intended for further study by others---it's kind of hacked together and really only a proof of concept implementation of one possible priority scheme. A real implementation would still need to address some issues not covered in my patch (e.g., starvation effects).
+                            </p>
+                            <p>
+                                Due to other time commitments, I'm not going to be able to do much followup with this patch at this moment. However, I do want to encourage others to at least consider the benefit of introducing thread priorities and to explore different possible implementations. Initial results seem to indicate that this can fix the GIL for both CPU-bound threads and for<br>
+                                I/O performance.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/36456651-8935811723349955313?l=www.dabeaz.com%2Fblog%2Fdablog.html" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.dabeaz.com/blog/2010/02/revisiting-thread-priorities-and-new.html">http://www.dabeaz.com/blog/2010/02/revisiting-thread-priorities-and-new.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

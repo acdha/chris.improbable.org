@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Building a Fast People-Finder for Flickr with YUI AutoComplete
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 26 Mar 2009 16:59:09 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-03-26T12:59:09-04:00">
+                    <meta itemprop="dateModified" content="2009-03-26T12:59:09-04:00"><time class="date" itemprop="datePublished" datetime="2009-03-26T16:59:09+00:00">Mar 26</time>
+                    <h2 itemprop="title">
+                        Building a Fast People-Finder for Flickr with YUI AutoComplete
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/f730fa81902b7efb">
+                        <blockquote>
+                            <p>
+                                At <a href="http://flickr.com/">Flickr</a>, we recently added a new people-selector widget to a few of our pages; this feature is based on the <a href="http://developer.yahoo.com/yui/autocomplete/">YUI AutoComplete Control</a>. The people-selector widget allows our members to select individuals from their contact list, which can contain upwards of 20,000 entries. Due to the large amount of data involved, traditional techniques for fetching and parsing the data were not feasible, mostly due to extremely slow parse times. In this post, we’ll take a look at some of the different data formats we tried and at the AutoComplete configuration we found to be most performant.
+                            </p>
+                            <p>
+                                First, here’s a video recap of what we were trying to accomplish; the new interaction with the people-finder widget is depicted on the right:
+                            </p>
+                            <p>
+                                <iframe src="http://reader.googleusercontent.com/reader/embediframe?src=http://www.flickr.com/apps/video/stewart.swf?v%3D68975&amp;width=400&amp;height=229&amp;flashVars=intl_lang%3Den-us%26photo_secret%3D7d60e13b0d%26photo_id%3D3328806159" width="400" height="229"></iframe>
+                            </p>
+                            <h2>
+                                Fetching and Parsing: XHR and Custom Data
+                            </h2>
+                            <p>
+                                The biggest challenge was finding a data format that would be fast to download, fast to parse, and — above all else — secure. We first tried XML and Ajax, but XML parsing proved to be much to slow — in fact, we found that this approach could bring down the browser on larger data sets. Next we tried a combination of JSON and Ajax; this was significantly faster, but it still took more than 80 seconds to parse our largest data set (an array containing roughly 10,700 objects, each with several properties).
+                            </p>
+                            <p>
+                                In the end, we found two transport/parse techniques that turned out to be extremely fast:
+                            </p>
+                            <ol>
+                                <li>Fetching JSON (wrapped in a callback function) using dynamically generated script tags;
+                                </li>
+                                <li>parsing a custom data format (a control-character delimited list) using <code>split()</code>, fetched with Ajax (using <a href="http://developer.yahoo.com/yui/connection/">YUI Connection Manager</a>).
+                                </li>
+                            </ol>
+                            <p>
+                                In the end, we went with the custom format. Formatting our JSON so that it could be executed by a dynamic script tag was a less secure approach and not a performance win. Using XHR gave us a more secure and still very performant solution.
+                            </p>
+                            <h2>
+                                User Interaction: YUI AutoComplete
+                            </h2>
+                            <p>
+                                Once we had a way to get the data into JavaScript quickly, the next challenge was to create a way for the user to quickly search through the list of contacts. To accomplish this, we turned to YUI’s AutoComplete Control. It met our needs exactly: <em>extremely</em> fast and very configurable. To use it with our custom data, we created a function to use as the AutoComplete instance’s DataSource; every keypress in the widget triggers this function and passes in the search string. Within this function, we loop through all of the member’s contacts and try to match the query on four different fields. We used regular expressions to do the string matching.
+                            </p>
+                            <p>
+                                Even for large sets of contacts, we found this technique to be extremely efficient. Here is the basic version of what we did:
+                            </p>
+                            <pre>
+function searchContacts(query) {
+
+       var matches = [],
+           queryRegEx = new RegExp(query, 'i'), // query should be
+                                                // checked before
+                                                // using in a regex.
+           contact;
+
+        for (var n = 0, len = contacts.length; n &lt; len; n++) {
+
+               contact = contacts[n];
+
+               if (contact.username.search(queryRegEx) !== -1 ||
+                   contact.realname.search(queryRegEx) !== -1 ||
+                   contact.emailAddress.search(queryRegEx) !== -1 ||
+                   contact.alias.search(queryRegEx) !== -1) {
+                       matches.push(contact);
+               }
+       }
+
+       return matches;
+}
+</pre>
+                            <p>
+                                Once we had the data connected to the widget, we made one change to the default AutoComplete configuration: We set the <code>queryDelay</code> parameter to <code>0</code> (the default value is 200ms). This means that there will be no delay between a key press and a search being initiated. There are downsides to this (the AutoComplete display tends to flicker a bit if you type a few characters in quick succession), but we found it to be the single biggest improvement we made, more important even than optimizations to our search function. While a <code>queryDelay</code> of 200ms or more might be more appropriate for XHR or other remote DataSources, we found that our regex-based DataSource with local data was up to the task of searching on every keystroke. With AutoComplete, we got free caching added to the mix so that any given search would only have to be done once.
+                            </p>
+                            <p>
+                                More details on all of these techniques, including full details on the different data formats and extensive profiling data for each one, can be found on the <a href="http://code.flickr.com/blog/2009/03/18/building-fast-client-side-searches/">code.flickr</a> blog.
+                            </p>
+                            <div>
+                                <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=s_goPrqlglE:-kn0INbpxNY:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=s_goPrqlglE:-kn0INbpxNY:dnMXMwOfBR0"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=dnMXMwOfBR0" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=s_goPrqlglE:-kn0INbpxNY:7Q72WNTAKBA"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=7Q72WNTAKBA" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=s_goPrqlglE:-kn0INbpxNY:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?i=s_goPrqlglE:-kn0INbpxNY:D7DqB2pKExk" border="0"></a>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.yuiblog.com/blog/2009/03/26/flickr-autocomplete/">http://www.yuiblog.com/blog/2009/03/26/flickr-autocomplete/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How secure is the secure web? SSL/TLS-server stats, part 3
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 25 Aug 2010 09:30:01 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-25T05:30:01-04:00">
+                    <meta itemprop="dateModified" content="2010-08-25T05:30:01-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-25T09:30:01+00:00">Aug 25</time>
+                    <h2 itemprop="title">
+                        How secure is the secure web? SSL/TLS-server stats, part 3
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c48787b6dce48225">
+                        <blockquote>
+                            Time for a third update on the status of TLS servers! Since our last report we've seen a big jump in the number of patched servers, and, according to our statistics, around 27% of servers should now be patched. The reason for this growth is, of course, <a href="http://www.microsoft.com/technet/security/bulletin/MS10-049.mspx">that Microsoft released a patch for its servers three weeks ago</a>.<br>
+                            <br>
+                            <span><img alt="" src="http://files.myopera.com/amoygardopera/blog/RenegoPatched_noncompliant_2010.08.30.png"></span><br>
+                            <br>
+                            Hopefully we will see more jumps in the coming months, since Ubuntu is scheduled to implement a patched version of OpenSSL as part of the Maverick Meerkat (AKA 10.10) release in October. We also hope Debian will soon update their stable releases with the patch, even though we know the Debian maintainers are careful about what they include in their stable branches. If we're lucky, we might "celebrate" the one-year anniversary of the publication of this security vulnerability with at least 50% of servers patched. We're certainly crossing our fingers!<br>
+                            <br>
+                            <span><img alt="" src="http://files.myopera.com/amoygardopera/blog/RenegoPatched_2010.08.30.png"></span><br>
+                            <br>
+                            For some reason, the release of Microsoft's patch has not seemed to reduce the rate of noncompliance (<a href="http://my.opera.com/yngve/blog/2010/06/02/renego-patched-servers-a-long-term-interoperability-time-bomb-brewing">see Yngve's post about this</a>). In our tests on Windows 7, the Microsoft patch seems to have been correctly implemented and compliant, but our statistics show that most of the noncompliant MS-servers are IIS 6.0, so there could be some problems with the patch for this specific version. It could also simply be due to our tests running into front-ends rather than the actual TLS servers. We need to do some further digging to figure out the source of the noncompliance.<br>
+                            <br>
+                            Since the last report, we have also discovered we are not the only ones interested in the status of TLS servers across the world. <a href="http://blog.ivanristic.com/">Ivan Ristic</a>, the person behind <a href="https://www.ssllabs.com/">SSL Labs</a>, presented an extensive survey of servers in July at Black Hat USA 2010. Slides from his presentation <a href="http://blog.ivanristic.com/2010/07/internet-ssl-survey-2010-is-here.html">can be found at his blog</a> . Similar to our survey, he scanned a wide range of servers in order to locate a representative selection of TLS servers, and he ended up with 850,000 entries. In his presentation, he mentioned that 20.53% of the found domains were patched, which we assume was near the date when the presentation was held (July 29). This is, in fact, a 5% higher percentage than our surveys from the same time indicate. We suspect that we may be testing slightly different things, but we are investigating the cause of the differences in measured patch rates and have contacted Ristic about comparing our data with his. Anyhow, we warmly welcome his research, since more eyes on the status of TLS can only help keep the Web more secure and speed up the patching.<br>
+                            <br>
+                            Just to sum up the issues for those readers who have not followed our recent articles:<br>
+                            <br>
+                            <ul>
+                                <li>Last November <a href="http://extendedsubset.com/?p=8">a hole in the TLS security protocol</a> was publicized. The TLS protocol is the protocol behind all secure communication on the Web, most commonly used in HTTPS connections with for instance banks. To fix this hole, both clients <i>and</i> servers need to implement patches. Most browsers have now implemented patches and we are waiting for all server vendors to release patches and for server owners to install them.
+                                </li>
+                                <li>Since March this year, we have been probing around 400 000 TLS servers worldwide regularly, to find how many of these are patched. This sample is estimated to be around 1/8th of all TLS servers. When most servers are patched, we will disable and/or warn about insecure communication via unpatched servers.
+                                </li>
+                            </ul><br>
+                            <br>
+                            Do you think we'll make 50% patched servers by November 5th? And, how long do you think it will take for 95% of servers to be patched? If you have other questions, please ask in the comments below.
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://my.opera.com/securitygroup/blog/show.dml/16271902">http://my.opera.com/securitygroup/blog/show.dml/16271902</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

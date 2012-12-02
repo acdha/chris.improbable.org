@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            HAProxy and Apache performance tuning tips
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 17 Mar 2009 21:06:24 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-03-17T14:17:00-04:00">
+                    <meta itemprop="dateModified" content="2009-03-17T14:17:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-03-17T18:17:00+00:00">Mar 17</time>
+                    <h2 itemprop="title">
+                        HAProxy and Apache performance tuning tips
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/9cb67630deb8c5de">
+                        <blockquote>
+                            I want to start my post by a big shout-out to Willy Tarreau, the author of <a href="http://haproxy.1wt.eu/">HAProxy</a>, for his help in fine-tuning one of our HAProxy installations and working with us through some issues we had. Willy is amazingly responsive and obviously lives and breathes stuff related to load balancing, OS and TCP stack tuning, and other arcane subjects ;-)<br>
+                            <br>
+                            Let's assume you have a cluster of Apache servers behind an HAProxy and you want to sustain 500 requests/second with low latency per request. First of all, you need to bump up <span style="font-weight:bold">MaxClients</span> and <span style="font-weight:bold">ServerLimit</span> in your Apache configuration, as I explained in <a href="http://agiletesting.blogspot.com/2006/08/couple-of-apache-performance-tips.html">another post</a>. In this case you would set both variables to 500. Note that you actually need to stop and start the httpd service, because simply restarting it won't change the built-in limit (which is 256). Also ignore the warning that Apache gives you on startup:<br>
+                            <br>
+                            <span style="font-style:italic">WARNING: MaxClients of 500 exceeds ServerLimit value of 256 servers,</span><br>
+                            <span style="font-style:italic">lowering MaxClients to 256. To increase, please see the ServerLimit</span><br>
+                            <span style="font-style:italic">directive.</span><br>
+                            <br>
+                            Note that the more httpd processes you have, the more CPU and RAM will be consumed on the server. You need to decide how much to push the envelope in terms of concurrent httpd processes you can sustain on a given server. A good measure is the latency / responsiveness you expect from your Web application. At some point, it will start to suffer, and that will be a sign that you need to add a new Web server to your server farm (of course, this over-simplifies things a bit, since there's always the question of the database layer; I'm assuming you can use memcache to minimize database access.) Here's a good <a href="http://modperlbook.org/html/11-1-Setting-the-MaxClients-Directive.html">overview</a> of the trade-offs related to MaxClients.<br>
+                            <br>
+                            Other Apache configuration variables I've tweaked are <span style="font-weight:bold">StartServers</span>, <span style="font-weight:bold">MinSpareServers</span> and <span style="font-weight:bold">MaxSpareServers</span>. It sometimes pays to bump up the values for these variables, so you can have spare httpd processes waiting around for those peak times when the requests hitting your server suddenly increase. Again, there's a trade-off here between server resources and number of spare httpd processes you want to maintain.<br>
+                            <br>
+                            Assuming you fine-tuned your Apache servers, it's time to tweak some variables in the HAProxy configuration. Perhaps the most important ones for our discussion are the number of maximum connections per server (<span style="font-weight:bold">maxconn</span>), <span style="font-weight:bold">httpclose</span> and <span style="font-weight:bold">abortonclose</span>.<br>
+                            <br>
+                            It's a good idea to throttle the maximum number of connections per server and set it to a number related to the request/second rate you're shooting for. In our case, that number is 500. Since HAProxy itself needs some connections for healthchecking and other internal bookkeeping, you should set the maxconn per server to something slightly lower than 500. In terms of syntax, I have something similar to this in the backend section of haproxy.cfg:<br>
+                            <pre>
+<br>server server1 10.1.1.1:80 check maxconn 500<br>
+</pre><br>
+                            I also have the following 2 lines in the backend section:<br>
+                            <br>
+                            <pre>
+<br>option abortonclose<br>option httpclose<br>
+</pre><br>
+                            According to the official <a href="http://haproxy.1wt.eu/download/1.3/doc/configuration.txt">HAProxy documentation</a>, here's what these options do:<br>
+                            <br>
+                            <pre>
+<span style="font-weight:bold">option abortonclose</span><br><br>In presence of very high loads, the servers will take some time to respond.<br>The per-instance connection queue will inflate, and the response time will<br>increase respective to the size of the queue times the average per-session<br>response time. When clients will wait for more than a few seconds, they will<br>often hit the "STOP" button on their browser, leaving a useless request in<br>the queue, and slowing down other users, and the servers as well, because the<br>request will eventually be served, then aborted at the first error<br>encountered while delivering the response.<br><br>As there is no way to distinguish between a full STOP and a simple output<br>close on the client side, HTTP agents should be conservative and consider<br>that the client might only have closed its output channel while waiting for<br>the response. However, this introduces risks of congestion when lots of users<br>do the same, and is completely useless nowadays because probably no client at<br>all will close the session while waiting for the response. Some HTTP agents<br>support this behaviour (Squid, Apache, HAProxy), and others do not (TUX, most<br>hardware-based load balancers). So the probability for a closed input channel<br>to represent a user hitting the "STOP" button is close to 100%, and the risk<br>of being the single component to break rare but valid traffic is extremely<br>low, which adds to the temptation to be able to abort a session early while<br>still not served and not pollute the servers.<br><br>In HAProxy, the user can choose the desired behaviour using the option<br>"abortonclose". By default (without the option) the behaviour is HTTP<br>compliant and aborted requests will be served. But when the option is<br>specified, a session with an incoming channel closed will be aborted while<br>it is still possible, either pending in the queue for a connection slot, or<br>during the connection establishment if the server has not yet acknowledged<br>the connection request. This considerably reduces the queue size and the load<br>on saturated servers when users are tempted to click on STOP, which in turn<br>reduces the response time for other users.<br>
+</pre><br>
+                            <pre>
+<span style="font-weight:bold">option httpclose</span><br><br>As stated in section 2.1, HAProxy does not yes support the HTTP keep-alive<br>mode. So by default, if a client communicates with a server in this mode, it<br>will only analyze, log, and process the first request of each connection. To<br>workaround this limitation, it is possible to specify "option httpclose". It<br>will check if a "Connection: close" header is already set in each direction,<br>and will add one if missing. Each end should react to this by actively<br>closing the TCP connection after each transfer, thus resulting in a switch to<br>the HTTP close mode. Any "Connection" header different from "close" will also<br>be removed.<br><br>It seldom happens that some servers incorrectly ignore this header and do not<br>close the connection eventough they reply "Connection: close". For this<br>reason, they are not compatible with older HTTP 1.0 browsers. If this<br>happens it is possible to use the "option forceclose" which actively closes<br>the request connection once the server responds.<br>
+</pre><br>
+                            And now for something completely different.....TCP stack tuning! Even with all the tuning above, we were still seeing occasional high latency numbers. Willy Tarreau to the rescue again....he was kind enough to troubleshoot things by means of the haproxy log and a tcpdump. It turned out that some of the TCP/IP-related OS variables were set too low. You can find out what those values are by running:<br>
+                            <pre>
+<br>sysctl -a | grep ^net<br>
+</pre><br>
+                            In our case, the main one that was out of tune was:<br>
+                            <pre>
+<br>net.ipv4.tcp_max_syn_backlog = 1024<br>
+</pre><br>
+                            Because of this, when there were more than 1,024 concurrent sessions on the machine running HAProxy, the OS had to recycle through the SYN backlog, causing the latency issues. Here are all the variables we set in /etc/sysctl.conf at the advice of Willy:<br>
+                            <pre>
+net.ipv4.tcp_tw_reuse = 1<br>net.ipv4.ip_local_port_range = 1024 65023<br>net.ipv4.tcp_max_syn_backlog = 10240<br>net.ipv4.tcp_max_tw_buckets = 400000<br>net.ipv4.tcp_max_orphans = 60000<br>net.ipv4.tcp_synack_retries = 3<br>net.core.somaxconn = 10000<br>
+</pre>(to have these values take effect, you need to run 'sysctl -p')<br>
+                            <br>
+                            That's it for now. As I continue to use HAProxy in production, I'll report back with other tips/tricks/suggestions.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/9238405-6843542505635332591?l=agiletesting.blogspot.com">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://agiletesting.blogspot.com/2009/03/haproxy-and-apache-performance-tuning.html">http://agiletesting.blogspot.com/2009/03/haproxy-and-apache-performance-tuning.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

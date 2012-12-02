@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Apple growing pains
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 03 May 2006 19:21:50 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2006-05-03T08:21:50-04:00">
+                    <meta itemprop="dateModified" content="2006-05-03T15:21:50-04:00"><time class="date" itemprop="datePublished" datetime="2006-05-03T19:21:50+00:00">May 03</time>
+                    <h2 itemprop="title">
+                        Apple growing pains
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <p>
+                        I ran into an interesting problem today illustrating the sorts of problems Apple's development process creates once you start moving out of the single-user desktop realm:
+                    </p>
+                    <p>
+                        We have a Mac-based lab which uses a couple of terabytes on an XServe for all of their data. Since they use a number of machines simultaneously we need to use network home directories and since there's no way to create a writable AFP automount this means that we have to use an NFS mount for network home directories. Unfortunately this lab also needs to work with data files created on OS 9-based data acquisition systems and some legacy Carbon apps, both of which depend heavily on resource forks, and that means that we need to use the AFP resource fork format because the OS 9 clients can't access the NFS service.
+                    </p>
+                    <p>
+                        After a bit of testing this was all working: our LDAP server contains the appropriate mount definitions and the users know to mount an AFP volume once they login to actually access their data (we've encouraged this further by using .hidden files to keep the NFS mountpoint from showing up in the Finder).
+                    </p>
+                    <p>
+                        Unfortunately, we ran into a bizarre problem: when the user navigates to a directory on the AFP server and double-clicks on an an application the icon will appear in the Dock, bounce a couple of times and then disappear without any explanation or a log message.
+                    </p>
+                    <p>
+                        This looked like what happens when you strip the resource fork from a Mac application and a quick check revealed that this is actually the case: when the user double-clicks on a program on the AFP mount the Finder actually attempts to launch the application using the NFS mount! This is a Finder-specific problem, too, as you can open Terminal and run the app using either <code>open /Volumes/Lab/Applications/program.app</code> or <code>/System/Library/Frameworks/Carbon.framework/Versions/A/Support/LaunchCFMApp /Volumes/Lab/Applications/program.app/Contents/MacOs/program</code>. I'm sure the users will love those instructions...
+                    </p>
+                    <p>
+                        The cause is LaunchServices. If you reset the LaunchServices database and restart the Finder everything will work as expected (unfortunately you need to do this for each login session): <code>killall Finder ; /System/Library/Frameworks/ ApplicationServices.framework/Frameworks/LaunchServices.framework/ Support/lsregister -kill -r -domain local -domain system -domain user</code>
+                    </p>
+                    <p>
+                        A quick tally of the key points:
+                    </p>
+                    <ol>
+                        <li>Someone on the Finder team thought there were circumstances in which it made sense to take a direct user command ("Run this program") and interpret it as "Run something else instead". In addition to the additional work that required it creates some potential security problems similar to the other LaunchServices exploits which Apple's had to deal with in the past; unfortunately past LaunchServices/Finder problems have been handled with <a href="http://www.taronga.com/~peter/io/apple2.html">one-off</a> <a href="http://www.taronga.com/~peter/io/apple.html">kludges</a> rather than <a href="http://www.unsanity.org/archives/000449.php">true fixes</a> and so we can look forward to more insecurity and confusion in the future. (I was quick to try the database reset because we've had to use that command many times in the past to fix observed bizarre behaviour which left a user unable to work)
+                        </li>
+                        <li>LaunchServices is indexing directories which the user has never looked at and favoring them over the ones which are actually used. Is it actually attempting to recognize that the same volume is available via multiple protocols?
+                        </li>
+                        <li>AppleFileServer doesn't support the AppleDouble format used by every protocol other than AFP, requiring exclusive use of AFP for those of us stuck in legacy environments.
+                        </li>
+                        <li>The AFP client doesn't have support for automounted writable volumes necessitating the use of multiple protocols for what is in the Unix world a routine automount setup.
+                        </li>
+                    </ol>
+                    <p>
+                        In case anyone at Apple reads this I've reported it as <a href="rdar://4535178">Radar #4535178</a>.
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

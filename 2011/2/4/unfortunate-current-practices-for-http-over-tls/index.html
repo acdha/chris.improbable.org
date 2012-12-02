@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Unfortunate current practices for HTTP over TLS
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 04 Feb 2011 08:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-04T03:00:00-04:00">
+                    <meta itemprop="dateModified" content="2011-02-04T03:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-04T07:00:00+00:00">Feb 04</time>
+                    <h2 itemprop="title">
+                        Unfortunate current practices for HTTP over TLS
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/4f52577e6d4f97ac">
+                        <blockquote>
+                            <p>
+                                (For amusement value.)
+                            </p>
+                            <pre>
+Network Working Group                                         A. Langley
+Internet-Draft                                                Google Inc
+Expires: July 5, 2011                                           Jan 2011
+
+
+            Unfortunate current practices for HTTP over TLS
+                      draft-agl-tls-oppractices-00
+
+Abstract
+
+   This document describes some of the unfortunate current practices
+   which are needed in order to transport HTTP over TLS on the public
+   Internet.
+
+Status of this Memo
+
+   This Internet-Draft is submitted to IETF in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF), its areas, and its working groups.  Note that
+   other groups may also distribute working documents as Internet-
+   Drafts.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   The list of current Internet-Drafts can be accessed at
+   http://www.ietf.org/ietf/1id-abstracts.txt.
+
+   The list of Internet-Draft Shadow Directories can be accessed at
+   http://www.ietf.org/shadow.html.
+
+   This Internet-Draft will expire on July 5, 2011.
+
+Copyright Notice
+
+   Copyright (c) 2011 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the BSD License.
+
+
+Table of Contents
+
+   1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . . .  3
+   2.  Handshake message fragmentation  . . . . . . . . . . . . . . .  4
+   3.  Protocol Fallback  . . . . . . . . . . . . . . . . . . . . . .  5
+   4.  More implementation mistakes . . . . . . . . . . . . . . . . .  6
+   5.  Certificate Chains . . . . . . . . . . . . . . . . . . . . . .  7
+   6.  Insufficient Security  . . . . . . . . . . . . . . . . . . . .  8
+   7.  Acknowledgements . . . . . . . . . . . . . . . . . . . . . . .  9
+   8.  Normative References . . . . . . . . . . . . . . . . . . . . . 10
+   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 11
+   Author's Address . . . . . . . . . . . . . . . . . . . . . . . . . 12
+
+
+1.  Introduction
+
+   HTTP [RFC2616] is one of the most common application level protocols
+   transported over TLS [RFC5246].  (This combination is commonly known
+   as HTTPS based on the URL scheme used to indicate it.)  HTTPS clients
+   have to function with a huge range of TLS implementations, some of
+   higher quality than others.  This text aims to document some of the
+   behaviours of existing HTTPS clients that are designed to ensure
+   maximum interoperability.
+
+   This text should not be taken as a recommendation that future HTTPS
+   clients adopt these behaviours.  The security implications of each
+   need to be carefully considered by each implementation.  However,
+   these behaviours are common and the authors consider it better to
+   document the state of practice than to simply wish it were otherwise.
+
+
+2.  Handshake message fragmentation
+
+   Many servers will fail to process a handshake message that spans more
+   than one record.  These servers will close the connection when they
+   encounter such a handshake message.  HTTPS clients will commonly
+   ensure against that by either packing all handshake messages in a
+   flow into a single record, or by creating a single record for each
+   handshake message.
+
+
+3.  Protocol Fallback
+
+   Despite it being nearly twelve years since the publication of TLS 1.0
+   [RFC2246], around 3% of HTTPS servers will reject a valid TLS
+   "ClientHello".  These rejections can take the form of immediately
+   closing the connection or a fatal alert.  Intolerance to the
+   following has been observed:
+
+      Advertising version TLS 1.0.
+
+      Advertising a TLS version greater than TLS 1.0 (around 2% for 1.1
+      or 1.2, around 3% for greater than 1.2).
+
+      Advertising a version greater than 0x03ff (around 65% of servers)
+
+      The presence of any extensions (around 7% of servers)
+
+      The presence of specific extensions ("server_name" and
+      "status_request" intolerance has been observed, although in very
+      low numbers).
+
+      The presence of any advertised compression algorithms
+
+   Next, some servers will misbehave after processing the "ClientHello"
+   message.  Negotiating the use of "DEFLATE" compression can result in
+   fatal "bad_record_mac", "decompression_failure" or
+   "decryption_failed" alerts.  Notably, OpenSSL prior to version 0.9.8c
+   will intermittently fail to process compressed finished messages due
+   to a work around of a previous padding bug.
+
+   Lastly, some servers will negotiate the use of SSLv3 but select a
+   TLS-only cipher suite.
+
+   In all these cases, HTTPS clients will often enter a fallback mode.
+   The connection is retried using only SSLv3 and without advertising
+   any compression algorithms.  (This is obviously an easy downgrade
+   attack.)  Also, the fallback can be triggered by transient network
+   problems, which often manifest as an abruptly closed connection.
+   Since SSLv3 does not provide any means of Server Name Indication
+   [RFC3546], the fallback connection can use the wrong certificate
+   chain, resulting in a very surprising certificate error.
+
+
+4.  More implementation mistakes
+
+   Non-fatal errors in version negotiation also occur.  Some 0.2% of
+   servers use the version from the record header.  Around 0.6% of
+   servers require that the version in the "ClientHello" and record
+   header match in order to respect the version in the "ClientHello".  A
+   very low number of servers echo whatever version the client
+   advertises.
+
+   In the event that the client supports a higher protocol version than
+   the server, about 0.4% of servers require that the RSA
+   "ClientKeyExchange" message include the server's protocol version.
+
+   Some 30% of servers don't check the version in an RSA
+   "ClientKeyExchange" at all.
+
+
+5.  Certificate Chains
+
+   Certificate chains presented by servers will commonly be missing
+   intermediate certificates, have certificates in the wrong order and
+   will include unrelated, superfluous certificates.  Servers have been
+   observed presenting more than ten certificates in what we assume is a
+   drive-by shooting approach to including the correct intermediate
+   certificate.
+
+   In order to validate chains which are missing certificates, some
+   HTTPS clients will collect intermediate certificates from other
+   servers.  Clients will commonly put all the presented certificates
+   into a set and try to validate a chain assuming only that the first
+   certificate is the leaf.
+
+
+6.  Insufficient Security
+
+   Some 65% of servers support SSLv2 (beyond just supporting the
+   handshake in order to upgrade to SSLv3 or TLS).  HTTPS clients will
+   typically not support SSLv2, nor send SSLv2 handshakes by default.
+   Of those servers, 80% support the export ciphersuites.  (Although
+   about 3% of those servers negotiate weak ciphersuites only to show a
+   warning.)
+
+   Some servers will choose very small multiplicative group sizes for
+   their ephemeral Diffie-Hellman exchange (for example, 256-bits).
+   Some HTTPS clients will reject all multiplicative group sizes smaller
+   than 512-bits while others will retry after demoting DHE ciphersuites
+   in their "ClientHello".
+
+
+7.  Acknowledgements
+
+   Yngve Pettersen made significant contributions and many of the
+   numbers in this document come from his scanning work.  Other numbers
+   were taken from Ivan Ristic's SSL Survey.
+
+   Thanks to Wan Teh Chang for reviewing early drafts.
+
+
+8.  Normative References
+
+   [RFC2246]  Dierks, T. and C. Allen, "The TLS Protocol Version 1.0",
+              RFC 2246, January 1999.
+
+   [RFC2616]  Fielding, R., Gettys, J., Mogul, J., Frystyk, H.,
+              Masinter, L., Leach, P., and T. Berners-Lee, "Hypertext
+              Transfer Protocol -- HTTP/1.1", RFC 2616, June 1999.
+
+   [RFC3546]  Blake-Wilson, S., Nystrom, M., Hopwood, D., Mikkelsen, J.,
+              and T. Wright, "Transport Layer Security (TLS)
+              Extensions", RFC 3546, June 2003.
+
+   [RFC5246]  Dierks, T. and E. Rescorla, "The Transport Layer Security
+              (TLS) Protocol Version 1.2", RFC 5246, August 2008.
+</pre>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.imperialviolet.org/2011/02/04/oppractices.html">http://www.imperialviolet.org/2011/02/04/oppractices.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

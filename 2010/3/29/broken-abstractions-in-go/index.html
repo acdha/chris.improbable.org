@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Broken abstractions in Go
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 29 Mar 2010 16:00:01 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-29T12:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-03-29T12:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-29T16:00:00+00:00">Mar 29</time>
+                    <h2 itemprop="title">
+                        Broken abstractions in Go
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/f2a0aca802df75d7">
+                        <blockquote>
+                            <p>
+                                One of my favorite pieces of Go is the implementation of the <code>go</code> and <code>defer</code> statements, because it seems to cheat. It reuses the function call code in such a way that adding <code>go</code> is just a couple lines in the compiler back end, far shorter than it would have been if implemented from scratch. But reusing the function call code requires breaking an abstraction layer in a somewhat non-obvious way. <code>Defer</code> cheats in a few more interesting ways too. (I'm not claiming responsibility for any of this clever code. I believe it's all due to Ken Thompson.)
+                            </p>
+                            <h3>
+                                Go
+                            </h3>
+                            <p>
+                                In Go, the statement <code>go f(x,y,z)</code> starts a new goroutine running the function call <code>f(x,y,z)</code>. The values of <code>f</code>, <code>x</code>, <code>y</code>, and <code>z</code> are all computed in the original goroutine: it is only the execution of <code>f</code> that happens in the new goroutine.
+                            </p>
+                            <p>
+                                Before we go on, stop for a minute and think about how you'd implement this if you were generating C code. I would probably create a struct with fields for <code>f</code>, <code>x</code>, <code>y</code>, and <code>z</code>, and then I'd write a function that took a pointer to that struct as input and called <code>f(x,y,z)</code>, and then I'd compile the <code>go</code> statement by generating code to allocate and fill in the struct and then call a function <code>go(helper, structptr)</code> where <code>helper</code> is the other function that does the call. It's a fair amount of work, and it would have to happen for each call. The Go implementation of <code>go</code> avoids all of that.
+                            </p>
+                            <p>
+                                Let's defer <code>go</code> for a minute and look at a normal function call. Here's the assembly for calling <code>f(1, 2, 3)</code>:
+                            </p>
+                            <pre>
+ MOVL    $1, 0(SP)
+ MOVL    $2, 4(SP)
+ MOVL    $3, 8(SP)
+ CALL    f(SB)
+</pre>
+                            <p>
+                                It stores <code>1</code>, <code>2</code>, and <code>3</code> on the stack in the places where <code>f</code> expects them, and then it executes a <code>CALL</code> instruction. Simple enough.
+                            </p>
+                            <p>
+                                Here's the code for <code>go f(1, 2, 3)</code>:
+                            </p>
+                            <pre>
+ MOVL    $1, 0(SP)
+ MOVL    $2, 4(SP)
+ MOVL    $3, 8(SP)
+ PUSHQ   $f(SB)
+ PUSHQ   $12
+ CALL    runtime.newproc(SB)
+ POPQ    AX
+ POPQ    AX
+</pre>
+                            <p>
+                                This is not something you could have written in C. It starts out by setting up for an ordinary function call, storing the arguments in the usual places. But then at the last minute it swerves: instead of calling <code>f</code> directly, it pushes two more arguments onto the stack: <code>f</code> and the number <code>12</code>, and then it calls a different function <code>runtime.newproc</code>.
+                            </p>
+                            <p>
+                                <code>Newproc</code> expects its arguments to be a byte count <i>n</i>, the function to call, and then <i>n</i> bytes of parameters to the function, already laid out exactly how the function needs to receive them. It copies those <i>n</i> bytes to a new stack and starts <code>f</code> running with its stack pointer pointing at those arguments. <code>Newproc</code> is essentially the helper, but there's just one instance of it.
+                            </p>
+                            <p>
+                                In the gc compilers (6g, etc), the implementation of <code>go</code> calls the same code generator as for an ordinary function call, but it ends with that 5-instruction sequence instead of a simple <code>CALL</code> instruction.
+                            </p>
+                            <p>
+                                This trick eliminates all the special code that I would have generated, requiring only a handful of lines in the runtime and only a handful of lines in the compiler.
+                            </p>
+                            <h3>
+                                Defer
+                            </h3>
+                            <p>
+                                The statement <code>defer f(x,y,z)</code> is like <code>go f(x,y,z)</code>, but instead of running the call in a new goroutine, it saves the call for later, running it when the current function eventually returns. The implementation of the statement itself is almost identical to the implementation for <code>go</code>, except that the generated code calls <code>deferproc</code> instead of <code>newproc</code>.
+                            </p>
+                            <p>
+                                The interesting new broken abstractions for <code>defer</code> are in how the deferred functions get called. If a function contains a defer statement, instead of ending with the usual epilogue
+                            </p>
+                            <pre>
+ ADDL $48, SP // or whatever the frame size is
+ RET
+</pre>
+                            <p>
+                                the function ends with
+                            </p>
+                            <pre>
+ CALL runtime.deferreturn(SB)
+ ADDL $48, SP
+ RET
+</pre>
+                            <p>
+                                The runtime function <code>deferreturn</code> arranges for the deferred calls, if any, to run. How? Each goroutine has associated with it a linked list of deferred calls, <code>Defer</code> structures:
+                            </p>
+                            <pre>
+struct Defer
+{
+ int32 siz;
+ byte* sp;
+ byte* fn;
+ Defer* link;
+ byte args[8]; // padded to actual size
+};
+</pre>
+                            <p>
+                                The struct represents a deferred call to <code>fn</code> with the <code>siz</code> bytes of arguments stored in <code>args</code>. (The struct is allocated with enough space on the end even if <code>siz &gt; 8</code>.) The <code>link</code> field is for the linked list. What about <code>sp</code>? That's how <code>calldefer</code> knows whether it's time to run a particular call. The <code>sp</code> field records the address of the first argument (after <code>fn</code>) in the call to <code>deferproc</code>. If the first argument to <code>calldefer</code> is at the same address, then the <code>Defer</code> is for this call frame. If not, it is for a different call frame, and since defers run when a function exits, it must be for a frame higher up the stack:
+                            </p>
+                            <pre>
+void
+deferreturn(uintptr arg0)
+{
+ byte *sp, *fn;
+ Defer *d;
+
+ sp = (byte*)&amp;arg0;
+ d = g-&gt;defer;
+ if(d == nil || <b><i>d-&gt;sp != sp</i></b>)
+  return;
+ mcpy(d-&gt;sp, d-&gt;args, d-&gt;siz);
+ g-&gt;defer = d-&gt;link;
+ fn = d-&gt;fn;
+ free(d);
+ jmpdefer(fn, sp);
+}
+</pre>
+                            <p>
+                                If you were writing this in pure C, you'd probably have a separate stack for each call frame, or maybe on entry to a function with a <code>defer</code> statement you'd push a special marker onto the defer stack and then, at the end, run deferred calls until you found the marker. But if you work at the lower-level world of machine instructions, the stack pointer is a perfectly good unique identifier of a particular call frame; using it avoids any work on the way into the function.
+                            </p>
+                            <p>
+                                If there is a deferred call to run, then <code>deferreturn</code> copies the arguments to the stack—there's definitely room, because that's the same address <code>deferproc</code> copied them from—frees the defer stub, and then calls the assembly function <code>jmpdefer</code> to transfer control to <code>fn</code> as though the original function had called <code>fn</code> directly instead of <code>deferreturn</code>.
+                            </p>
+                            <p>
+                                But wait! That only takes care of a single deferred call, yet a function can defer many calls during the course of its execution. How can that work?
+                            </p>
+                            <p>
+                                Well, the assembly trampoline <code>jmpdefer</code> has one more abstraction breaker up its sleeve. It subtracts five—the size of <code>CALL</code> instruction that invoked <code>deferreturn</code>—from the return address on the stack before jumping to <code>fn</code>, so the deferred function returns not to the instruction <i>after</i> the <code>CALL</code>, as it normally would, but back to the <code>CALL</code> itself. That is, subtracting five turns the <code>CALL</code> instruction into a loop. The only way out of the loop is for <code>deferreturn</code> to find no work left for this call frame and return normally, without calling <code>jmpdefer</code>. This subterfuge avoids the need to write a loop at the end of every function with a defer statement.
+                            </p>
+                            <h3>
+                                On abstraction
+                            </h3>
+                            <p>
+                                In today's programming world, there seems to be a lot of emphasis on the power of abstraction. I think there's not enough emphasis on the power of breaking abstractions. All three of these places where the Go implementation breaks the abstraction are more efficient than if it had colored within the abstraction boundaries.
+                            </p>
+                            <p>
+                                All three are also the kinds of tricks that were commonplace in the early days of Unix, since it had been written in assembly. For example, the original <code>fork</code> system call handler distinguished parent from child by changing the return address just as <code>jmpdefer</code> does. In modern Unix, the <code>fork</code> system call returns the new process id in the parent but returns zero in the child. In the early versions, including Sixth Edition, <code>fork</code> returns the new process id in both, but the child returned normally while the parent returned to one instruction past the usual return address. Thus the instruction after invoking the fork system call needed to be an unconditional jump to the child-specific code.
+                            </p>
+                            <p>
+                                There are other, more fundamental abstractions broken in Go. The implementation of segmented stacks in Go breaks the simple abstraction of a stack that most C compilers assume (more on that in another post). The idea that an object can implement an interface without explicitly declaring that fact is foreign to Java: it is impossible to compile Go to standard Java byte codes, because Go's interfaces break the JVM's abstraction.
+                            </p>
+                            <p>
+                                Ultimately, I think the reason I like all these broken abstractions is that they help you get to a better understanding of the system as a whole. Where before you only saw two different layers, you now begin to see how the layers are related and how they can interact. And every broken abstraction is a chance to see or create a new concept that may not have even been expressible before.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/8082954141980125536-2151404652490400903?l=research.swtch.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://research.swtch.com/2010/03/broken-abstractions-in-go.html">http://research.swtch.com/2010/03/broken-abstractions-in-go.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

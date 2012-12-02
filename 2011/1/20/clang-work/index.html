@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Clang work
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 20 Jan 2011 17:15:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-20T12:15:00-04:00">
+                    <meta itemprop="dateModified" content="2011-01-20T12:15:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-20T16:15:00+00:00">Jan 20</time>
+                    <h2 itemprop="title">
+                        Clang work
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0272235720b27841">
+                        <blockquote>
+                            <p>
+                                Googlers get 20% time -- time to work on something not necessarily part of your direct goals -- as an outlet to allow bottom-up work. I spent my 20% time over the last few months getting our build working under the <a href="http://clang.llvm.org/">clang</a> compiler.
+                            </p>
+                            <p>
+                                The work was kind of repetitive: adjusting our build system to support clang, then seeing what built, what didn't, and whether to blame our code or the compiler. It found a number of Chrome bugs! A simple check that gcc apparently lacked is accidentally initializing a member variable with itself rather than the argument:
+                            </p>
+                            <pre>
+<code>class Foo {
+  int bar_;
+  Foo(int bar) : bar_(bar_) { }
+  // Intended to write:
+  // Foo(int bar) : bar_(bar) { }
+};
+</code>
+</pre>
+                            <p>
+                                We also found a number of clang bugs; <a href="http://llvm.org/bugs/buglist.cgi?emailassigned_to1=1&amp;query_format=advanced&amp;emailcc1=1&amp;emailreporter1=1&amp;email1=evan%40chromium.org&amp;emailtype1=substring">here's a link to the bugs I'm involved with on their tracker</a>, most of which are about bugs we encountered. It turned out that v8 in particular has a ton of gnarly C++ stuff related to instantiating templates. I found the <a href="http://delta.tigris.org/">delta</a> tool particularly useful in providing reduced test cases, and my coworker Jeffrey Yasskin particularly helpful in C++ wizardry.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    An aside: I'd provide a link for Jeffrey but everything I could find was pretty out of date; instead, a story I like to tell about interviewing. I once observed an interview where the interviewer asked the candidate to evaluate their knowledge on a scale from 1 to 5 in various areas on their resume, as a way of guiding which sorts of things they would ask. The candidate rated themselves a 4 on C++, which I now know in retrospect is actually a red flag: pretty much anyone who claims to be above a 3 out of 5 in C++ knows too little to know how much of C++ they don't know.
+                                </p>
+                                <p>
+                                    Jeffrey may be one of the rare true 4s; he patiently tried to explain to me argument-dependent and two-phase lookup a number of times. I doubt I would've been able to complete this clang project if he hadn't happened to be sitting in our office for those few months.
+                                </p>
+                            </blockquote>
+                            <p>
+                                Now that Chrome builds under clang, I'm not exactly sure why I started the project. I think I was motivated by a few factors:
+                            </p>
+                            <ul>
+                                <li>wanting to see if the compiler really was faster than gcc with better error messages (answer: yes, though building with gcc is still faster for us due to <a href="http://llvm.org/bugs/show_bug.cgi?id=7554">this bug</a>; longer-term, I expect us to switch once the resulting binaries are faster)
+                                </li>
+                                <li>finding more Chrome bugs (success)
+                                </li>
+                                <li>wanting to learn more about how clang works, both to be able to use it for static analysis tools and to be able to improve the compiler for our needs
+                                </li>
+                            </ul>
+                            <p>
+                                On that last point, two more stories.
+                            </p>
+                            <p>
+                                One: a somewhat common code modification problem relates to the way overloading works. Suppose you have a base class with a virtual function and a tree of classes that sometimes imlement the interface.
+                            </p>
+                            <pre>
+<code>class Base {
+  virtual Foo* MakeFoo(int some_param) {
+    return new SimpleFoo(some_param);
+  }
+};
+class Derived : public Base {
+  virtual Foo* MakeFoo(int some_param) {
+    return new MoreComplicatedFoo(some_param);
+  }
+};
+</code>
+</pre>
+                            <p>
+                                Now suppose you want to modify the signature of <code>MakeFoo</code> to take another argument. You need to adjust every class's <code>MakeFoo</code>, and if you miss any one of them, like <code>Derived::MakeFoo</code>, everything will compile just fine (C++ just sees it as a different overloaded function due to its different signature) but when you call <code>MakeFoo</code> on a <code>Derived</code> you'll get the wrong type back.
+                            </p>
+                            <p>
+                                I lost a few hours to this once, and again was saved by a brilliant coworker who happened to be temporarily sitting in my office -- this one immediately dereferenced the vtable on the pointer in gdb to see that we were getting back a <code>SimpleFoo</code> where we expected a <code>MoreComplicatedFoo</code> (as for why gdb couldn't tell us the type of the pointee itself, I don't know why it didn't work; the code was of course much more complicated than the above).
+                            </p>
+                            <p>
+                                Anyway, it turns out that Microsoft's C++ compiler, I think due to C# making use of it, adds an <code>override</code> keyword that says "give me a compiler warning if this is not overriding a virtual function in a superclass". This would've saved me a lot of grief, had the functions been annotated. <em>And</em> it turns out that C++0x has some notion of the same thing, and that because of this (I think?) clang already parses <code>__attribute__((override))</code> in the same location as Microsoft's keyword.
+                            </p>
+                            <p>
+                                At the time I discovered this, the attribute was parsed but ignored. This allowed me to write a clang plugin to verify the overrides on Mac and Linux while relying on the system compiler on Windows. Here's the macro from the Chrome tree:
+                            </p>
+                            <pre>
+<code>// Annotate a virtual method indicating it must be overriding a virtual
+// method in the parent class.
+// Use like:
+//   virtual void foo() OVERRIDE;
+#if defined(COMPILER_MSVC)
+#define OVERRIDE override
+#elif defined(__clang__)
+#define OVERRIDE __attribute__((override))
+#else
+#define OVERRIDE
+#endif
+</code>
+</pre>
+                            <p>
+                                More recently the checking was added to clang itself (I should've just written it as part of the compiler in the first place, but I wanted to learn about plugins), so we now can use this throughout the Chrome code to hopefully make us more resilient to future refactoring bugs.
+                            </p>
+                            <p>
+                                Here's the second clang story. A hard-to-spot typo made it into the Chrome tree; <a href="http://src.chromium.org/viewvc/chrome/trunk/src/chrome/browser/tab_contents/thumbnail_generator.cc?r1=71666&amp;r2=71665&amp;pathrev=71666">here's the diff</a>, but the wrong code is easy enough to spot once you know something is wrong:
+                            </p>
+                            <pre>
+<code>if (monitor |= currently_monitored) {
+</code>
+</pre>
+                            <p>
+                                Nico from the Chrome team reasonably pointed out that you get a compiler warning when you use a single equals in an <code>if</code>, and filed a bug against clang. Hans from the Chrome team <a href="http://llvm.org/viewvc/llvm-project?view=rev&amp;revision=123836">implemented it for clang</a>. And after it landed, it found <a href="http://llvm.org/viewvc/llvm-project?view=rev&amp;revision=123872">the same bug in the clang code</a> itself!
+                            </p>
+                            <p>
+                                There are more stories, like how Elliot has been writing analyzers to enforce some of our coding guidelines, but this post is long enough already. For more information, see our <a href="http://code.google.com/p/chromium/wiki/Clang">wiki page</a> which links to our mailing list and other projects.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://neugierig.org/software/chromium/notes/2011/01/clang.html">http://neugierig.org/software/chromium/notes/2011/01/clang.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

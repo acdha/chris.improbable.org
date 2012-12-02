@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Flow Analysis &amp; Time-based Bloom Filters
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 06 Jan 2010 17:45:21 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-06T12:45:21-04:00">
+                    <meta itemprop="dateModified" content="2010-01-06T12:45:21-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-06T16:45:21+00:00">Jan 06</time>
+                    <h2 itemprop="title">
+                        Flow Analysis &amp; Time-based Bloom Filters
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/fd3302892d697f62">
+                        <blockquote>
+                            <p>
+                                <img align="left" src="http://www.igvita.com/posts/10/data-graph.png" style="margin-right:1em">Working with large streams of data is becoming increasingly widespread, be it for log, user behavior, or raw firehose analysis of user generated content. There is some very interesting academic literature on this type of data crunching, although much of it is focused on query or network packet analysis and is often not directly applicable to the type of data we have to deal with in the social web. For example, if you were tasked to build (a better) "<a href="http://search.twitter.com/">Trending Topics</a>" algorithm for Twitter, how would you do it?
+                            </p>
+                            <p>
+                                Of course, the challenge is that it has to be practical - it needs to be "real-time" and be able to react to emerging trends in under a minute, all the while using a reasonable amount of CPU and memory. Now, we don't know how the actual system is implemented at Twitter, nor will we look at any specific solutions - I have some ideas, but I am more curious to hear how you would approach it. Instead, I want to revisit the concept of Bloom Filters, because as I am making my way through the literature, it is surprising how sparsely they are employed for these types of tasks. Specifically, a concept I have been thinking of prototyping for some time now: <strong>time-based, counting bloom filters</strong>!
+                            </p>
+                            <h4>
+                                <strong>Bloom Filters: What &amp; Why</strong>
+                            </h4>
+                            <p>
+                                A <a href="http://www.igvita.com/2008/12/27/scalable-datasets-bloom-filters-in-ruby/">Bloom Filter is a probabilistic data structure</a> which can tell if an element is a member of a set. However, the reason it is interesting is because it accomplishes this task with an incredibly efficient use of memory: instead of storing a full hash map, it is simply a bit vector which guarantees that you may have some small fraction of false positives (the filter will report that a key is in the bloom filter when it is really not), but it will never report a false negative. File system and web caches frequently use bloom filters as the first query to avoid otherwise costly database or file system lookups. There is some math involved in determining the right parameters for your bloom filter, which you can read about in an <a href="http://www.igvita.com/2008/12/27/scalable-datasets-bloom-filters-in-ruby/">earlier post</a>.
+                            </p>
+                            <p align="center">
+                                <img src="http://www.igvita.com/posts/10/tbbf.png" style="padding:3px">
+                            </p>
+                            <p>
+                                Of course, as is, the Bloom Filter data structure is not very useful for analyzing continuous data streams - eventually we would fill up the filter and it would begin reporting false positives all the time. But, what if your bloom filter only remembered seen data for a fixed interval of time? Imagine adding time-to-live (TTL) timestamp on each record. All of the sudden, if you knew the approximate number of messages for the interval of time you wanted to analyze, then a bloom filter is once again an incredibly fast and space-efficient (fixed memory footprint) data structure!
+                            </p>
+                            <h4>
+                                <strong>Time-based Bloom Filters</strong>
+                            </h4>
+                            <p>
+                                Arguably the key feature of bloom filters is their compact representation as a bit vector. By associating a timestamp with each record, the size of the filter immediately expands by an order of magnitude, but even with that, depending on the size of the time window you are analyzing, you could store the TTL's in just a few additional bits. Conversely, if counting bits is not mission critical, you could even used a backend such as <a href="http://code.google.com/p/redis/">Redis</a> or <a href="http://memcached.org/">Memcached</a> to drive the filter as well. The direct benefit of such approach is that the data can be shared by many distributed processes. On that note, I have <a href="http://github.com/igrigorik/bloomfilter/commit/cf3c0661213e8b9432057e54622504976431cde7">added a prototype Redis backend</a> to the bloomfilter gem which implements a time-based, counting Bloom Filter. Let's take a look at a simple example:
+                            </p>
+                            <p>
+                                <a href="javascript:void(0);"><b>&gt; chrono-bloom.rb</b></a>
+                            </p>
+                            <div style="background:white">
+                                <pre>
+<span style="color:#CC0066;font-weight:bold">require</span> <span style="color:#996600">'bloomfilter'</span>
+ 
+options = <span style="color:#006600;font-weight:bold">{</span>
+  <span style="color:#ff3333;font-weight:bold">:size</span>     =&gt; <span style="color:#006666">100</span>,       <span style="color:#008000;font-style:italic"># size of bit vector</span>
+  <span style="color:#ff3333;font-weight:bold">:hashes</span> =&gt; <span style="color:#006666">4</span>,       <span style="color:#008000;font-style:italic"># number of hash functions</span>
+  <span style="color:#ff3333;font-weight:bold">:seed</span>     =&gt; <span style="color:#CC0066;font-weight:bold">rand</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#006666">100</span><span style="color:#006600;font-weight:bold">)</span>, <span style="color:#008000;font-style:italic"># seed value for the filter</span>
+  <span style="color:#ff3333;font-weight:bold">:bucket</span> =&gt; <span style="color:#006666">3</span>        <span style="color:#008000;font-style:italic"># number of bits for the counting filter</span>
+<span style="color:#006600;font-weight:bold">}</span>
+ 
+<span style="color:#008000;font-style:italic"># Regular, in-memory counting bloom filter        </span>
+bf = BloomFilter.<span style="color:#9900CC">new</span><span style="color:#006600;font-weight:bold">(</span>options<span style="color:#006600;font-weight:bold">)</span>
+bf.<span style="color:#9900CC">insert</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"mykey"</span><span style="color:#006600;font-weight:bold">)</span>
+bf.<span style="color:#9966CC;font-weight:bold">include</span>?<span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"mykey"</span><span style="color:#006600;font-weight:bold">)</span>  <span style="color:#008000;font-style:italic"># =&gt; true</span>
+bf.<span style="color:#9966CC;font-weight:bold">include</span>?<span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"mykey1"</span><span style="color:#006600;font-weight:bold">)</span> <span style="color:#008000;font-style:italic"># =&gt; false</span>
+ 
+<span style="color:#008000;font-style:italic">#</span>
+<span style="color:#008000;font-style:italic"># Redis-backed bloom filter, with optional time-based semantics</span>
+<span style="color:#008000;font-style:italic">#</span>
+bf = BloomFilter.<span style="color:#9900CC">new</span><span style="color:#006600;font-weight:bold">(</span>options.<span style="color:#9900CC">merge</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#006600;font-weight:bold">{</span>:type =&gt; <span style="color:#ff3333;font-weight:bold">:redis</span>, <span style="color:#ff3333;font-weight:bold">:ttl</span> =&gt; <span style="color:#006666">2</span>, <span style="color:#ff3333;font-weight:bold">:server</span> =&gt; <span style="color:#006600;font-weight:bold">{</span>:host =&gt; <span style="color:#996600">'localhost'</span><span style="color:#006600;font-weight:bold">}</span><span style="color:#006600;font-weight:bold">}</span><span style="color:#006600;font-weight:bold">)</span><span style="color:#006600;font-weight:bold">)</span>
+bf.<span style="color:#9900CC">insert</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"mykey"</span><span style="color:#006600;font-weight:bold">)</span>
+bf.<span style="color:#9966CC;font-weight:bold">include</span>?<span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"mykey"</span><span style="color:#006600;font-weight:bold">)</span>  <span style="color:#008000;font-style:italic"># =&gt; true</span>
+<span style="color:#CC0066;font-weight:bold">sleep</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#006666">3</span><span style="color:#006600;font-weight:bold">)</span>
+bf.<span style="color:#9966CC;font-weight:bold">include</span>?<span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"mykey"</span><span style="color:#006600;font-weight:bold">)</span>  <span style="color:#008000;font-style:italic"># =&gt; false</span>
+ 
+<span style="color:#008000;font-style:italic"># custom 5s TTL for a key</span>
+bf.<span style="color:#9900CC">insert</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"newkey"</span>, <span style="color:#0000FF;font-weight:bold">nil</span>, <span style="color:#006666">5</span><span style="color:#006600;font-weight:bold">)</span>
+ 
+</pre>
+                            </div>
+                            <div>
+                                <a href="http://www.igvita.com/download.php?file=http://www.github.com/igrigorik/bloomfilter/tree/master/.git"><img alt="Download" src="http://www.igvita.com/wp-content/plugins/dBeautifier/icons/github.png"></a>
+                                <h4>
+                                    <a href="http://www.igvita.com/download.php?file=http://www.github.com/igrigorik/bloomfilter/tree/master/.git">bloomfilter.git (Ruby+Redis counting Bloom Filter)</a>
+                                </h4>
+                                <p>
+                                    Downloads: 1157 File Size: 0.0 KB
+                                </p>
+                            </div>
+                            <p>
+                                Storing data in Redis or Memcached is roughly an order of magnitude less efficient, but it gives us an easy to use, distributed, and fixed memory filter for analyzing continuous data streams. In other words, a useful tool for applications such as duplicate detection, trends analysis, and many others.
+                            </p>
+                            <h4>
+                                <strong>Mechanics of Time-Based Bloom Filters</strong>
+                            </h4>
+                            <p>
+                                <img align="left" src="http://www.igvita.com/posts/10/algorithm-small.png" style="margin-right:1em">So how does it work? Given the settings above, we create a fixed memory vector of 100 buckets (or bits in raw C implementation). Then, for each key, we hash it 4 times with different key offsets and increment the counts in those buckets - a non-negative value indicates that one of the hash functions for some key has used that bucket. Then, for a lookup, we reverse the operation: generate the 4 different hash keys and look them up, if all of them are non-zero then either we have seen this key or there has been a collision (false positive). By optimizing the size of the bit vector we can control the false positive rate - you're always trading the of amount of allocated memory vs. collision rate. Finally, we also make use of the <a href="http://code.google.com/p/redis/wiki/ExpireCommand">native expire functionality</a> in Redis to guarantee that keys are only stored for a bounded amount of time.
+                            </p>
+                            <p>
+                                Time-based bloom filters have seen a few rogue mentions in the academic literature, but to the best of my knowledge, have not seen wide applications in the real world. However, it is an incredibly powerful data structure, and one that could benefit many modern, big-data applications. Gem install the bloomfilter gem and give it a try, perhaps it will help you build a better trends analysis tool. Speaking of which, what other tools, algorithms, or data structures would you use to build a "Trending Topics" algorithm for a high-velocity stream?
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=gZpJBys6UNU:X4yY3nx3fT4:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=gZpJBys6UNU:X4yY3nx3fT4:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=gZpJBys6UNU:X4yY3nx3fT4:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=gZpJBys6UNU:X4yY3nx3fT4:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=gZpJBys6UNU:X4yY3nx3fT4:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=gZpJBys6UNU:X4yY3nx3fT4:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=gZpJBys6UNU:X4yY3nx3fT4:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=gZpJBys6UNU:X4yY3nx3fT4:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=gZpJBys6UNU:X4yY3nx3fT4:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/gZpJBys6UNU" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2010/01/06/flow-analysis-time-based-bloom-filters/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2010/01/06/flow-analysis-time-based-bloom-filters/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

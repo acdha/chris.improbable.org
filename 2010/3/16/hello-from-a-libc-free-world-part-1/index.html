@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Hello from a libc-free world! (Part 1)
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 16 Mar 2010 14:53:03 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-16T10:53:03-04:00">
+                    <meta itemprop="dateModified" content="2010-03-16T10:53:03-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-16T14:53:03+00:00">Mar 16</time>
+                    <h2 itemprop="title">
+                        Hello from a libc-free world! (Part 1)
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7864c61e024f2b2c">
+                        <blockquote>
+                            <p>
+                                As an exercise, I want to write a Hello World program in C simple enough that I can disassemble it and be able to explain all of the assembly to myself.
+                            </p>
+                            <p>
+                                This should be easy, right?
+                            </p>
+                            <p>
+                                This adventure assumes compilation and execution on a Linux machine. Some familiarity with reading assembly is helpful.
+                            </p>
+                            <p>
+                                Here’s our basic Hello World program:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ cat hello.c
+#include &lt;stdio.h&gt;
+
+int main()
+{
+  printf("Hello World\n");
+  return 0;
+}
+</pre>
+                            <p>
+                                Let’s compile it and get a bytecount:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ gcc -o hello hello.c
+jesstess@kid-charlemagne:~/c$ wc -c hello
+10931 hello
+</pre>
+                            <p>
+                                Yikes! Where are 11 Kilobytes worth of executable coming from? <kbd>objdump -t hello</kbd> gives us 79 symbol-table entries, most of which we can blame on our using the standard library.
+                            </p>
+                            <p>
+                                So let’s stop using it. We won’t use <kbd>printf</kbd> so we can get rid of our include file:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ cat hello.c
+int main()
+{
+  char *str = "Hello World";
+  return 0;
+}
+</pre>
+                            <p>
+                                Recompiling and checking the bytecount:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ gcc -o hello hello.c
+jesstess@kid-charlemagne:~/c$ wc -c hello
+10892 hello
+</pre>
+                            <p>
+                                What? That barely changed anything!
+                            </p>
+                            <p>
+                                The problem is that gcc is still using standard library startup files when linking. Want proof? We’ll compile with <kbd><a href="http://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Link-Options.html#index-nodefaultlibs-893">-nostdlib</a></kbd>, which according to the gcc man page <i>won’t</i> “use the standard system libraries and startup files when linking. Only the files you specify will be passed to the linker”.
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ gcc -nostdlib -o hello hello.c
+/usr/bin/ld: warning: cannot find entry symbol _start; defaulting to 00000000004000e8
+</pre>
+                            <p>
+                                Well, it’s just a warning; let’s check it anyway:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ wc -c hello
+1329 hello
+</pre>
+                            <p>
+                                That looks pretty good! We got our bytecount down to a much more reasonable size (an order of magnitude smaller!)…
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ ./hello
+Segmentation fault
+</pre>
+                            <p>
+                                …at the expense of segfaulting when it runs. Hrmph.
+                            </p>
+                            <p>
+                                For fun, let’s get our program to be actually runnable before digging into the assembly.
+                            </p>
+                            <p>
+                                So what is this <kbd>_start</kbd> entry symbol that appears to be required for our program to run? Where is it usually defined if you’re using libc?
+                            </p>
+                            <p>
+                                From the perspective of the <a href="http://en.wikipedia.org/wiki/Linker_%28computing%29">linker</a>, by default <kbd>_start</kbd> is the <i>actual</i> entry point to your program, not <kbd>main</kbd>. It is normally defined in the <kbd>crt1.o</kbd> <a href="http://en.wikipedia.org/wiki/Executable_and_Linkable_Format">ELF</a> relocatable. We can verify this by linking against <kbd>crt1.o</kbd> and noting that <kbd>_start</kbd> is now found (although we develop other problems by not having defined other necessary libc startup symbols):
+                            </p>
+                            <pre>
+# Compile the source files but don't link
+jesstess@kid-charlemagne:~/c$ gcc -Os -c hello.c
+# Now try to link
+jesstess@kid-charlemagne:~/c$ ld /usr/lib/crt1.o -o hello hello.o
+/usr/lib/crt1.o: In function `_start':
+/build/buildd/glibc-2.9/csu/../sysdeps/x86_64/elf/start.S:106: undefined reference to `__libc_csu_fini'
+/build/buildd/glibc-2.9/csu/../sysdeps/x86_64/elf/start.S:107: undefined reference to `__libc_csu_init'
+/build/buildd/glibc-2.9/csu/../sysdeps/x86_64/elf/start.S:113: undefined reference to `__libc_start_main'
+</pre>
+                            <p>
+                                This check conveniently also tells us where <kbd>_start</kbd> lives in the libc source: <kbd><a href="http://sourceware.org/git/?p=glibc.git;a=blob;f=sysdeps/x86_64/elf/start.S;h=3c2caf9d00a0396ef2b74adb648f76c6c74ff65f;hb=cvs/glibc-2_9-branch">sysdeps/x86_64/elf/start.S</a></kbd> for this particular machine. This delightfully well-commented file exports the <kbd>_start</kbd> symbol, sets up the stack and some registers, and calls <kbd>__libc_start_main</kbd>. If we look at the very bottom of <kbd><a href="http://sourceware.org/git/?p=glibc.git;a=blob;f=csu/libc-start.c;h=a14ed71616a3f63f092837e9c30780f8344b4fbe;hb=cvs/glibc-2_9-branch">csu/libc-start.c</a></kbd> we see the call to our program’s <kbd>main</kbd>:
+                            </p>
+                            <pre>
+/* Nothing fancy, just call the function.  */
+result = main (argc, argv, __environ MAIN_AUXVEC_PARAM);
+</pre>
+                            <p>
+                                and down the rabbit hole we go.
+                            </p>
+                            <p>
+                                So that’s what <kbd>_start</kbd> is all about. Conveniently, we can summarize what happens between <kbd>_start</kbd> and the call to <kbd>main</kbd> as “set up a bunch of stuff for libc and then call <kbd>main</kbd>”, and since we don’t care about libc, let’s just export our own <kbd>_start</kbd> symbol that just calls <kbd>main</kbd> and link against that:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ cat stubstart.S
+.globl _start
+
+_start:
+        call main
+</pre>
+                            <p>
+                                Compiling and running with our stub <kbd>_start</kbd> assembly file:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ gcc -nostdlib stubstart.S -o hello hello.c
+jesstess@kid-charlemagne:~/c$ ./hello
+Segmentation fault
+</pre>
+                            <p>
+                                Hurrah, our compilation problems go away! However, we still segfault. Why? Let’s compile with debugging information and take a look in gdb. We’ll set a breakpoint at <kbd>main</kbd> and step through until the segfault:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ gcc -g -nostdlib stubstart.S -o hello hello.c
+jesstess@kid-charlemagne:~/c$ gdb hello
+GNU gdb 6.8-debian
+Copyright (C) 2008 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu"...
+(gdb) break main
+Breakpoint 1 at 0x4000f4: file hello.c, line 3.
+(gdb) run
+Starting program: /home/jesstess/c/hello
+
+Breakpoint 1, main () at hello.c:5
+5         char *str = "Hello World";
+(gdb) step
+6         return 0;
+(gdb) step
+7       }
+(gdb) step
+0x00000000004000ed in _start ()
+(gdb) step
+Single stepping until exit from function _start,
+which has no line number information.
+main () at helloint.c:4
+4       {
+(gdb) step
+
+Breakpoint 1, main () at helloint.c:5
+5         char *str = "Hello World";
+(gdb) step
+6         return 0;
+(gdb) step
+7       }
+(gdb) step
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000000000000001 in ?? ()
+(gdb)
+</pre>
+                            <p>
+                                Wait, what? Why are we running through <kbd>main</kbd> twice? …It’s time to look at the assembly:
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ objdump -d hello
+
+hello:     file format elf64-x86-64
+
+Disassembly of section .text:
+
+00000000004000e8 &lt;_start&gt;:
+  4000e8:       e8 03 00 00 00          callq  4000f0
+  4000ed:       90                      nop
+  4000ee:       90                      nop
+  4000ef:       90                      nop    
+
+00000000004000f0 :
+  4000f0:       55                      push   %rbp
+  4000f1:       48 89 e5                mov    %rsp,%rbp
+  4000f4:       48 c7 45 f8 03 01 40    movq   $0x400103,-0x8(%rbp)
+  4000fb:       00
+  4000fc:       b8 00 00 00 00          mov    $0x0,%eax
+  400101:       c9                      leaveq
+  400102:       c3                      retq
+</pre>
+                            <p>
+                                D’oh! Let’s save a detailed examination of the assembly for later, but in brief: when we return from the <kbd>callq</kbd> to <kbd>main</kbd> we hit some <kbd>nop</kbd>s and run right back into <kbd>main</kbd>. Since we re-entered main without putting a return instruction pointer on the stack as part of the standard prologue for calling a function, the second call to <kbd>retq</kbd> tries to pop a bogus return instruction pointer off the stack and jump to it and we bomb out. We need an exit strategy.
+                            </p>
+                            <p>
+                                Literally. After the return from <kbd>callq</kbd>, push <kbd>1</kbd>, the <a href="http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=blob;f=arch/x86/include/asm/unistd_32.h;h=3baf379fa8402a0df08a1ea6ab7f388e3fdac081;hb=60b341b778cc2929df16c0a504c91621b3c6a4ad">syscall number</a> for <kbd>SYS_exit</kbd>, into <kbd>%eax</kbd>, and because we want to say that we’re exiting cleanly, put a status of <kbd>0</kbd>, <kbd>SYS_exit</kbd>’s only argument, into <kbd>%ebx</kbd>. Then make the interrupt to drop into the kernel with <kbd>int $0x80</kbd>.
+                            </p>
+                            <pre>
+jesstess@kid-charlemagne:~/c$ cat stubstart.S
+.globl _start
+
+_start:
+        call main
+        movl $1, %eax
+        xorl %ebx, %ebx
+        int $0x80
+jesstess@kid-charlemagne:~/c$ gcc -nostdlib stubstart.S -o hello hello.c
+jesstess@kid-charlemagne:~/c$ ./hello
+jesstess@kid-charlemagne:~/c$
+</pre>
+                            <p>
+                                Success! It compiles, it runs, and if we step through this new version under gdb it even exits normally.
+                            </p>
+                            <p>
+                                Hello from a libc-free world!
+                            </p>
+                            <p>
+                                Stay tuned for <a href="http://blog.ksplice.com/2010/04/libc-free-world-2/">Part 2</a>, where we’ll walk through the parts of the executable in earnest and watch what happens to it as we add complexity, in the process understanding more about x86 linking and calling conventions and the structure of an ELF binary.
+                            </p>
+                            <hr>
+                            <div>
+                                <h3>
+                                    Ksplice Uptrack: What Understanding Object Code Can Do For You
+                                </h3>
+                                <p>
+                                    <a href="http://www.ksplice.com/why">Ksplice Uptrack</a> lets you apply Linux security updates to your running kernel <i>without rebooting</i>. Say goodbye to wasted time, money, and sleep for scheduled downtimes and <a href="http://www.ksplice.com/why">try it today</a>.
+                                </p>
+                            </div><img src="http://feeds.feedburner.com/~r/Ksplice/~4/h6uT2V4hBf8" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.ksplice.com/2010/03/libc-free-world/">http://blog.ksplice.com/2010/03/libc-free-world/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

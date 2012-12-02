@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Using SystemConfiguration events within Python
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 14 Mar 2009 02:08:17 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2008-02-28T09:45:24-04:00">
+                    <meta itemprop="dateModified" content="2009-03-13T22:08:17-04:00"><time class="date" itemprop="datePublished" datetime="2009-03-14T02:08:17+00:00">Mar 14</time>
+                    <h2 itemprop="title">
+                        Using SystemConfiguration events within Python
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <p class="note">
+                        Since this post was originally written, I've been working on the <a href="http://pymacadmin.googlecode.com/">PyMacAdmin</a> project with <a href="http://explanatorygap.net/">Nigel Kersten</a>. The information below is still correct but the kicker-replacement script has gained the ability to handle filesystem events and workspace notifications and been renamed to <a href="http://code.google.com/p/pymacadmin/source/browse/trunk/bin/crankd.py">crankd</a>.
+                    </p>
+                    <p>
+                        In a perfect world software would gracefully network transitions. Unfortunately my users have encountered a fair number of things which don't always handle things like a laptop moving from ethernet to WiFi, a DHCP server taking awhile to respond, etc. While many programs have at least reached the point of eventually timing out and retrying it would be nice to automatically restart something as soon as the system network configuration changes. This is unfortunately system-specific and frequently required some hackish approach involving <code>tail -f</code> or equivalent to watch a log file, which is slow and tends to break on upgrades.
+                    </p>
+                    <p>
+                        OS X has a nice way to query the current system configuration and receive event notifications when things change: the <a href="http://developer.apple.com/documentation/Networking/Reference/SysConfig/index.html#//apple_ref/doc/framework/sysconfig_fw">SystemConfiguration Framework</a> (<a href="http://developer.apple.com/technotes/tn/tn1145.html">Technical Note TN1145: Living in a Dynamic TCP/IP Environment</a> is also of interest). You can explore this using the <a>scutil</a> command-line tool - in the example below, I've looked at the list of available events and chosen to watch for power-state changes, receiving a notice when I unplugged the power cable from my laptop:
+                    </p>
+                    <pre>
+chris@Enceladus:~ $ scutil
+
+&gt; list
+
+ subKey [0] = Plugin:IPConfiguration
+
+ subKey [1] = Plugin:InterfaceNamer
+
+ subKey [2] = Setup:
+
+ subKey [3] = Setup:/
+
+ subKey [4] = Setup:/Network/Global/IPv4
+
+ subKey [5] = Setup:/Network/HostNames
+
+…
+
+ subKey [21] = State:/IOKit/PowerManagement/CurrentSettings
+
+ subKey [22] = State:/IOKit/PowerSources/InternalBattery-0
+
+…
+
+&gt; n.add State:/IOKit/PowerSources/InternalBattery-0
+
+&gt; n.watch
+
+&gt; notification callback (store address = 0x1036c0).
+
+ changed key [0] = State:/IOKit/PowerSources/InternalBattery-0
+
+notification callback (store address = 0x1036c0).
+
+ changed key [0] = State:/IOKit/PowerSources/InternalBattery-0
+
+</pre>
+                    <p>
+                        This is pretty cool stuff but I'd like to do something smarter than scripting a copy of scutil. I could write an Objective-C application but OS X 10.5 included the very handy <a href="http://pyobjc.sourceforge.net/">PyObjC 2.0</a> which allows access to most of the native APIs directly from within Python. James Reynolds <a href="http://lists.psu.edu/cgi-bin/wa?A2=ind0802&amp;L=macenterprise&amp;T=0&amp;F=&amp;S=&amp;P=343876">posted a message to the MacEnterprise mailing list</a> which prompted me to stop procrastinating and actually write some code. A little poking around later and I have a Python script which is ready for me to add whatever custom actions I want to take when the network state changes - the version below is abbreviated so you'll want to download the full <a href="http://improbable.org/chris/Software/watch-network-config">watch-network-config.py</a> for your own use:
+                    </p>
+                    <pre class="textmate-source lazy">
+<span class="keyword keyword_control keyword_control_import keyword_control_import_from keyword_control_import_from_python">from</span> Cocoa <span class="keyword keyword_control keyword_control_import keyword_control_import_python">import</span> <span class="keyword keyword_operator keyword_operator_arithmetic keyword_operator_arithmetic_python">*</span>
+<span class="keyword keyword_control keyword_control_import keyword_control_import_from keyword_control_import_from_python">from</span> SystemConfiguration <span class="keyword keyword_control keyword_control_import keyword_control_import_python">import</span> <span class="keyword keyword_operator keyword_operator_arithmetic keyword_operator_arithmetic_python">*</span>
+<span class="storage storage_type storage_type_function storage_type_function_python">def</span> <span class="entity entity_name entity_name_function entity_name_function_python">handleNetworkConfigChange</span><span class="punctuation punctuation_definition punctuation_definition_parameters punctuation_definition_parameters_begin punctuation_definition_parameters_begin_python">(</span><span class="variable variable_parameter variable_parameter_function variable_parameter_function_python">store</span><span class="punctuation punctuation_separator punctuation_separator_parameters punctuation_separator_parameters_python">,</span> <span class="variable variable_parameter variable_parameter_function variable_parameter_function_python">changedKeys</span><span class="punctuation punctuation_separator punctuation_separator_parameters punctuation_separator_parameters_python">,</span> <span class="variable variable_parameter variable_parameter_function variable_parameter_function_python">info</span><span class="punctuation punctuation_definition punctuation_definition_parameters punctuation_definition_parameters_end punctuation_definition_parameters_end_python">)</span><span class="punctuation punctuation_section punctuation_section_function punctuation_section_function_begin punctuation_section_function_begin_python">:</span>
+<span class="keyword keyword_other keyword_other_python">print</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_python">"</span>Global network configuration changed: <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_python">"</span>, changedKeys
+
+        <span class="punctuation punctuation_definition punctuation_definition_comment punctuation_definition_comment_python">#</span> Kick a change-intolerant service in the head here
+
+
+
+store <span class="keyword keyword_operator keyword_operator_assignment keyword_operator_assignment_python">=</span> <span class="meta meta_function-call meta_function-call_python">SCDynamicStoreCreate</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_begin punctuation_definition_arguments_begin_python">(</span><span class="constant constant_language constant_language_python">None</span>, <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_python">"</span>global-network-watcher<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_python">"</span>, handleNetworkConfigChange, <span class="constant constant_language constant_language_python">None</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_end punctuation_definition_arguments_end_python">)</span>
+<span class="meta meta_function-call meta_function-call_python">SCDynamicStoreSetNotificationKeys</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_begin punctuation_definition_arguments_begin_python">(</span><span class="meta meta_function-call meta_function-call_arguments meta_function-call_arguments_python">store, </span><span class="constant constant_language constant_language_python">None</span>, <span class="punctuation punctuation_definition punctuation_definition_list punctuation_definition_list_begin punctuation_definition_list_begin_python">[</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_python">'</span>State:/Network/Global/IPv4<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_python">'</span><span class="punctuation punctuation_separator punctuation_separator_list punctuation_separator_list_python">,</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_python">'</span>State:/Network/Global/IPv6<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_python">'</span> <span class="punctuation punctuation_definition punctuation_definition_list punctuation_definition_list_end punctuation_definition_list_end_python">]</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_end punctuation_definition_arguments_end_python">)</span>
+<span class="meta meta_function-call meta_function-call_python">CFRunLoopAddSource</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_begin punctuation_definition_arguments_begin_python">(</span><span class="meta meta_function-call meta_function-call_python">CFRunLoopGetCurrent</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_begin punctuation_definition_arguments_begin_python">(</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_end punctuation_definition_arguments_end_python">)</span>, <span class="meta meta_function-call meta_function-call_python">SCDynamicStoreCreateRunLoopSource</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_begin punctuation_definition_arguments_begin_python">(</span><span class="constant constant_language constant_language_python">None</span>, store, <span class="constant constant_numeric constant_numeric_integer constant_numeric_integer_decimal constant_numeric_integer_decimal_python">0</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_end punctuation_definition_arguments_end_python">)</span>, kCFRunLoopCommonModes<span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_end punctuation_definition_arguments_end_python">)</span>
+<span class="meta meta_function-call meta_function-call_python">CFRunLoopRun</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_begin punctuation_definition_arguments_begin_python">(</span><span class="punctuation punctuation_definition punctuation_definition_arguments punctuation_definition_arguments_end punctuation_definition_arguments_end_python">)</span>
+</pre>
+                    <p>
+                        Geoff Franks took the time to have the event handler use a dictionary so you can listen for multiple events and run a specific command for each one; I added a little syslog support and am releasing this version as a replacement for the widely-used Kicker which was removed in 10.5: <a href="http://improbable.org/chris/Software/kicker-replacement">Download kicker-replacement</a>
+                    </p>
+                    <p class="aside">
+                        Fun lessons from the trenches: in versions of OS X prior to 10.5 there were several <strong>nasty</strong> bugs due to lookupd and DirectoryService not having real timeouts: we have some rigs which use DHCP on our public network and static IPs on a private experiment network. When the system booted the private interface didn't need to wait for a DHCP lease and thus came up slightly faster than the public interface — this should have been harmless except that DirectoryService immediately attempted to connect to our LDAP server which isn't reachable on the private network and network timeout values aren't actually used in any version prior to 10.5, causing network accounts and NFS mounts to be unavailable until someone manually killed DirectoryService!
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

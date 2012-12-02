@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Improving Memory Behaviour to Make Self-Hosted PyPy Translations Practical
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 26 Nov 2010 13:21:26 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-26T07:51:00-04:00">
+                    <meta itemprop="dateModified" content="2010-11-26T07:51:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-26T11:51:00+00:00">Nov 26</time>
+                    <h2 itemprop="title">
+                        Improving Memory Behaviour to Make Self-Hosted PyPy Translations Practical
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/2e2a8d29e8dd86b3">
+                        <blockquote>
+                            <p>
+                                In our <a href="http://morepypy.blogspot.com/2010/11/snake-which-bites-its-tail-pypy-jitting.html">previous blog post</a>, we talked about how fast PyPy can translate itself compared to CPython. However, the price to pay for the 2x speedup was an huge amount of memory: actually, it was so huge that a standard <tt><span>-Ojit</span></tt> compilation could not be completed on 32-bit because it required more than the 4 GB of RAM that are addressable on that platform. On 64-bit, it consumed 8.3 GB of RAM instead of the 2.3 GB needed by CPython.
+                            </p>
+                            <p>
+                                This behavior was mainly caused by the JIT, because at the time we wrote the blog post the generated assembler was kept alive forever, together with some big data structure needed to execute it.
+                            </p>
+                            <p>
+                                In the past two weeks Anto and Armin attacked the issue in the <tt><span>jit-free</span></tt> branch, which has been recently <a href="http://codespeak.net/pipermail/pypy-svn/2010-November/045019.html">merged</a> to trunk. The branch solves several issues. The main idea of the branch is that if a loop has not been executed for a certain amount of time (controlled by the new <tt>loop_longevity</tt> JIT parameter) we consider it "old" and no longer needed, thus we deallocate it.
+                            </p>
+                            <p>
+                                (In the process of doing this, we also discovered and fixed an oversight in the implementation of generators, which led to generators being freed only very slowly.)
+                            </p>
+                            <p>
+                                To understand the freeing of loops some more, let's look at how many loops are actually created during a translation. The purple line in the following graph shows how many loops (and bridges) are alive at any point in time with an infinite longevity, which is equivalent to the situation we had before the <tt><span>jit-free</span></tt> branch. By contrast, the blue line shows the number of loops that you get in the current trunk: the difference is evident, as now we never have more than 10000 loops alive, while previously we got up to about 37000 ones. The time on the X axis is expressed in "Giga Ticks", where a tick is the value read out of the <a href="http://en.wikipedia.org/wiki/Time_Stamp_Counter">Time Stamp Counter</a> of the CPU.
+                            </p><a href="http://3.bp.blogspot.com/_4gR6Ggu8oHQ/TO-wIZWQVmI/AAAAAAAAAKs/J4PKLIFxxOc/s1600/loop-longevity-64-gcdelta.png"><img style="width:600px;height:306px" src="http://3.bp.blogspot.com/_4gR6Ggu8oHQ/TO-wIZWQVmI/AAAAAAAAAKs/J4PKLIFxxOc/s600/loop-longevity-64-gcdelta.png" border="0" alt=""></a>
+                            <p>
+                                The grey vertical bars represent the beginning of each phase of the translation:
+                            </p>
+                            <ul>
+                                <li>
+                                    <tt>annotate</tt> performs control flow graph construction and type inference.
+                                </li>
+                                <li>
+                                    <tt>rtype</tt> lowers the abstraction level of the control flow graphs with types to that of C.
+                                </li>
+                                <li>
+                                    <tt>pyjitpl</tt> constructs the JIT.
+                                </li>
+                                <li>
+                                    <tt>backendopt</tt> optimizes the control flow graphs.
+                                </li>
+                                <li>
+                                    <tt>stackcheckinsertion</tt> finds the places in the call graph that can overflow the C stack and inserts checks that raise an exception instead.
+                                </li>
+                                <li>
+                                    <tt>database_c</tt> produces a database of all the objects the C code will have to know about.
+                                </li>
+                                <li>
+                                    <tt>source_c</tt> produces the C source code.
+                                </li>
+                                <li>
+                                    <tt>compile_c</tt> calls the compiler to produce the executable.
+                                </li>
+                            </ul>
+                            <p>
+                                You can nicely see, how the number of alive graphs drops shortly after the beginning of a new phase.
+                            </p>
+                            <p>
+                                Those two fixes, freeing loops and generators, improve the memory usage greatly: now, translating PyPy on PyPy on 32-bit consumes 2 GB of RAM, while on CPython it consumes 1.1 GB. This result can even be improved somewhat, because we are not actually freeing the assembler code itself, but only the large data structures around it; we can consider it as a residual memory leak of around 150 MB in this case. This will be fixed in the <a href="http://codespeak.net/svn/pypy/branch/jit-free-asm/">jit-free-asm</a> branch.
+                            </p>
+                            <p>
+                                The following graph shows the memory usage in more detail:
+                            </p>
+                            <blockquote>
+                                <ul>
+                                    <li>the blue line (<strong>cpython-scaled</strong>) shows the total amount of RAM that the OS allocates for CPython. Note that the X axis (the time) has been scaled down so that it spans as much as the PyPy one, to ease the comparison. Actually, CPython took more than twice as much time as PyPy to complete the translation
+                                    </li>
+                                    <li>the red line (<strong>VmRss</strong>) shows the total amount of RAM that the OS allocates for PyPy: it includes both the memory directly handled by our GC and the "raw memory" that we need to allocate for other tasks, such as the assembly code generated by the JIT
+                                    </li>
+                                    <li>the brown line (<strong>gc-before</strong>) shows how much memory is used by the GC before each major collection
+                                    </li>
+                                    <li>the yellow line (<strong>gc-after</strong>) shows how much memory is used by the GC after each major collection: this represent the amount of memory which is actually needed to hold our Python objects. The difference between gc-before and gc-after (the <em>GC delta</em>) is the amout of memory that the GC uses before triggering a new major collection
+                                    </li>
+                                </ul>
+                            </blockquote><a href="http://1.bp.blogspot.com/_4gR6Ggu8oHQ/TO-wX3gomAI/AAAAAAAAAK0/sQhn6oMjWdY/s1600/memory-32.png"><img style="width:600px;height:306px" src="http://1.bp.blogspot.com/_4gR6Ggu8oHQ/TO-wX3gomAI/AAAAAAAAAK0/sQhn6oMjWdY/s600/memory-32.png" border="0" alt=""></a>
+                            <p>
+                                By comparing <strong>gc-after</strong> and <strong>cpython-scaled</strong>, we can see that PyPy uses mostly the same amount of memory as CPython for storing the application objects (due to reference counting the memory usage in CPython is always very close to the actually necessary memory). The extra memory used by PyPy is due to the GC delta, to the machine code generated by the JIT and probably to some other external effect (such as e.g. <a href="http://en.wikipedia.org/wiki/Memory_fragmentation">Memory Fragmentation</a>).
+                            </p>
+                            <p>
+                                Note that the GC delta can be set arbitrarly low (another recent addition -- the default value depends on the actual RAM on your computer; it probably works to translate if your computer has precisely 2 GB, because in this case the GC delta and thus the total memory usage will be somewhat lower than reported here), but the cost is to have more frequent major collections and thus a higher run-time overhead. The same is true for the memory needed by the JIT, which can be reduced by telling the JIT to compile less often or to discard old loops more frequently. As often happens in computer science, there is a trade-off between space and time, and currently for this particular example PyPy runs twice as fast as CPython by doubling the memory usage. We hope to improve even more on this trade-off.
+                            </p>
+                            <p>
+                                On 64-bit, things are even better as shown by the the following graph:
+                            </p><a href="http://1.bp.blogspot.com/_4gR6Ggu8oHQ/TO-whfBmjLI/AAAAAAAAAK8/eUOmx59dA80/s1600/memory-64-gcdelta.png"><img style="width:600px;height:306px" src="http://1.bp.blogspot.com/_4gR6Ggu8oHQ/TO-whfBmjLI/AAAAAAAAAK8/eUOmx59dA80/s600/memory-64-gcdelta.png" border="0" alt=""></a>
+                            <p>
+                                The general shape of the lines is similar to the 32-bit graph. However, the relative difference to CPython is much better: we need about 3 GB of RAM, just 24% more than the 2.4 GB needed by CPython. And we are still more than 2x faster!
+                            </p>
+                            <p>
+                                The memory saving is due (partly?) to the vtable ptr optimization, which is enabled by default on 64-bit because it has no speed penalty (see <a href="http://morepypy.blogspot.com/2009/10/gc-improvements.html">Unifying the vtable ptr with the GC header</a>).
+                            </p>
+                            <p>
+                                The net result of our work is that now translating PyPy on PyPy is practical and takes less than 30 minutes. It's impressive how quickly you get used to translation taking half the time -- now we cannot use CPython any more for that because it feels too slow :-).
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3971202189709462152-856966667913962461?l=morepypy.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/PyPyStatusBlog/~4/4a7wXTD7mfE" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://morepypy.blogspot.com/2010/11/improving-memory-behaviour-to-make-self.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29">http://morepypy.blogspot.com/2010/11/improving-memory-behaviour-to-make-self.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Introduction to Distributed Filesystems
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 02 Feb 2011 13:00:08 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-02T08:00:08-04:00">
+                    <meta itemprop="dateModified" content="2011-02-02T08:00:08-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-02T12:00:08+00:00">Feb 02</time>
+                    <h2 itemprop="title">
+                        Introduction to Distributed Filesystems
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c6b3e5a252f21334">
+                        <blockquote>
+                            <p>
+                                When Alex Popescu wrote about <a href="http://nosql.mypopescu.com/post/2981240390/5-approaches-to-scalable-storage-solutions">scalable storage solutions</a> and I said that the omission of distributed filesystems made me cry, he suggested that I could write an introduction. OK. Here it is.
+                            </p>
+                            <p>
+                                All filesystems – even local ones – have a similar data model and API model. The data model consists of files inside directories, where both have user-assigned names. In most modern filesystems directories can be nested, file contents are byte-addressable, and names are free-form character sequences. The API model, commonly referred to as POSIX after the standard of the same name, includes two broad categories of calls – those that operate on files, and those that operate on the “namespace” of files within directories. Examples of the first category include open, close, read, write, and fsync. Examples of the second category include opendir, readdir, link, unlink, and rename. People who actually develop filesystems, especially in a Linux context, often talk in terms of a different three-way distinction (file/inode/dirent operations) but that has more to do with filesystem internals than with the API users see. The other thing about filesystems is that they’re integrated into the operating system. Any program should be able to use any filesystem without using special libraries. That makes real filesystems a bit harder to implement, but it also makes them more generally useful than <a href="http://www.danga.com/mogilefs/">impostors</a> that just have “FS” in the name to imply functionality they don’t have. There are many ways to categorize filesystems – according to how they’re accessed, how they’re implemented, what they’re good for, and so on. In the context of scalable storage solutions, though, the most important groupings are these.
+                            </p>
+                            <ul>
+                                <li>A local filesystem is local to a single machine, in the sense that only a process on the same machine can make POSIX calls to it. That process might in fact be a server for some “higher level” kind of filesystem, and in fact local filesystems are an essential building block for most others, but for this to work the server must make a <em>new</em> local-filesystem call which is not quite the same as continuing the client’s call.
+                                </li>
+                                <li>A network filesystem is one that can be shared, but where each client communicates with a single server. NFS (versions 2 and 3) and CIFS (a.k.a. SMB which is what gives Samba its name) are the best known examples of this type. Servers can of course be clustered and made highly available and so on, but this must be done transparently – almost behind the clients’ backs or under their noses. This approach fundamentally only allows vertical scaling, and the trickery necessary to scale horizontally within a single-server basic model can become quite burdensome.
+                                </li>
+                                <li>A distributed filesystem is one in which clients actually know about and directly communicate with multiple servers (of one or more types). Lustre, PVFS2, GlusterFS, and Ceph all fit into this category despite their other differences. Unfortunately, the term “distributed filesystem” makes no distinction between filesystems distributed across a fast and lossless LAN and those distributed across a WAN with exactly opposite characteristics. I sometimes use “near-distributed” and “far-distributed” to make this distinction, but as far as I know there’s no concise and commonly accepted terms. AFS is the best known example of a far-distributed filesystem, and one of the longest-lived filesystems in any category (still in active large-scale use at several places I know of).
+                                </li>
+                                <li>A parallel filesystem is a distributed filesystem in which a single file, or even a single I/O request, can be striped across multiple servers. This is primarily beneficial in terms of performance, but can also help to distribute capacity more evenly than if every file lives on exactly one server. I’ve often used the term to refer to near-distributed filesystems as distinct from their far-distributed cousins, because there’s a high degree of overlap, but it’s not technically correct. There are near-distributed filesystems that aren’t parallel filesystems (GlusterFS is usually configured this way) and parallel filesystems that are not near-distributed (Tahoe-LAFS and other crypto-oriented filesystems might fit this description).
+                                </li>
+                                <li>A cluster or shared-storage filesystem is one in which clients are directly attached to shared block storage. GFS2 and OCFS2 are the best known examples of this category, which also includes MPFS. Once touted as a performance- or scale-oriented solution, these are now positioned mainly as availability solutions with a secondary emphasis on strong data consistency (compared to the weak consistency offered by many other network and distributed filesystems). Due to this focus and the general characteristics of shared block storage, the distribution in this case is always near.
+                                </li>
+                            </ul>
+                            <p>
+                                This set of distinctions is certainly neither comprehensive nor ideal, as illustrated by pNFS which allows multiple “layout” types. With a file layout, pNFS would be a distributed filesystem by these definitions. With a block layout, it would be a cluster filesystem. With an object layout, a case could be made for either, and yet all three are really the same filesystem with (mostly) the same protocol and (definitely) the same warts.
+                            </p>
+                            <p>
+                                One of the most important distinctions among network/distributed/cluster filesystems, from a scalability point of view, is whether it’s just data that’s being distributed or metadata as well. One of the issues I have with Lustre, for example, is that it relies on a single metadata server (MDS). The Lustre folks would surely argue that having a single metadata server is not a problem, and point out that Lustre is in fact used at some of the most I/O-intensive sites in the world without issue. I would point out that I have actually watched the MDS melt down many times when confronted with any but the most embarrassingly metadata-light workloads, and also ask why they’ve expended such enormous engineering effort – on at least two separate occasions – trying to make the MDS distributed if it’s OK for it not to be. Similarly, with pNFS you get distributed data but only some pieces of the protocol (and none of any non-proprietary implementation) to distribute metadata as well. Anybody who wants a filesystem that’s scalable in the same way that non-filesystem data stores such as Cassandra/Riak/Voldemort are scalable would and should be very skeptical of claims made by advocates of a distributed filesystem with non-distributed metadata.
+                            </p>
+                            <p>
+                                A related issue here is of performance. While near-distributed parallel filesystems can often show amazing megabytes-per-second numbers on large-block large-file sequential workloads, as a group they’re notoriously poor for random or many-small-file workloads. To a certain extent this is the nature of the beast. If files live on dozens of servers, you might have to contact dozens of servers to list a large directory, or the coordination among those servers to maintain consistency (even if it’s just metadata consistency) can become overwhelming. It’s harder to do things this way than to blast bits through a simple pipe between one client and one server without any need for further coordination. Can Ma’s Pomegranate project deserves special mention here as an effort to overcome this habitual weakness of distributed filesystems, but in general it’s one of the reasons many have sought alternative solutions for this sort of data.
+                            </p>
+                            <p>
+                                So, getting back to Alex’s original article and my response to it, when should one consider using a distributed filesystem instead of an oh-so-fashionable key/value or table/document store for one’s scalable data needs? First, when the data and API models fit. Filesystems are good at hierarchical naming and at manipulating data within large objects (beyond the whole-object GET and PUT of S3-like systems), but they’re not so good for small objects and don’t offer the indices or querying of databases (SQL or otherwise). Second, it’s necessary to consider the performance/cost curve of a particular workload on a distributed filesystem vs. that on some other type of system. If there’s a fit for data model and API and performance, though, I’d say a distributed filesystem should often be preferred to other options. The advantage of having something that’s accessible from every scripting language and command-line tool in the world, without needing special libraries, shouldn’t be taken lightly. Getting data in and out, or massaging it in any of half a million ways, is a real problem that isn’t well addressed by any storage system with a “unique” API (including REST-based ones) no matter how cool that storage system might be otherwise.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://pl.atyp.us/wordpress/?p=3184">http://pl.atyp.us/wordpress/?p=3184</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

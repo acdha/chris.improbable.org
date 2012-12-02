@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Not super-thrilled with EC2
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 17 Feb 2009 05:16:02 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-17T00:16:02-04:00">
+                    <meta itemprop="dateModified" content="2009-02-17T00:16:02-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-17T04:16:02+00:00">Feb 17</time>
+                    <h2 itemprop="title">
+                        Not super-thrilled with EC2
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5ee127bd6f380e2d">
+                        <blockquote>
+                            I've got a reasonably large computation job—bigger than I can conveniently do on my own hardware—I need to do, and so naturally I thought <a href="http://aws.amazon.com/ec2/">EC2</a>. For those of you who don't know, the basic idea behind EC2 is that you have <i>Amazon Machine Images</i> (AMIs), which represent the state of a machine which is off (e.g., the disk drive state). You can activate as many instances as you want, booting off the same AMI, which gives you a bunch of nearly identical machines (except for the IP address, etc.) which you can then log into and use for whatever you want. All the management is via this Web services interface which you drive with client-side Java apps. So, for instance <code>ec2-run-instances XXX</code> brings up a single instance of image XXX.
+                            <p>
+                                After about 5 hours screwing around with it, I've figured out how to do what I want, but I have to say, they don't make it super-convenient.
+                            </p>
+                            <ul>
+                                <li>Nothing has a mnemonic name. So, for instance, all the images are names <code>ami-XXXXXXXX</code> where the Xs are hex digits. Running instances are similar. Now, I can totally understand why it's convenient to use numeric identifiers, but since they make you download their toolchain, you'd think they could at least let you assign symbolic names of your choosing to the objects.
+                                </li>
+                                <li>The tools are orthogonal but uh, fine grained. So, to bring up a new instance and log into it, you do (1) start the instance with <code>ec2-run-instances</code> (2) run <code>ec2-get-console-output</code> to see if it's booted and to get the SSH public key [repeat as necessary] (3) run <code>ec2-describe-instances</code> to get the domain name for the machine so you can log in (4) ssh in.
+                                </li>
+                                <li>The default images are fairly minimal: no Emacs, no compiler, no debugger, etc. Now, they have <code>yum</code>, so you can install this stuff easily, but this brings us to...
+                                </li>
+                                <li>The images don't have any persistent state. So, if you install Emacs, and shutdown the instance, it's back to the initial state when you start it again. And since you pay by the operating hour even if the machine is idle, you don't want to leave the machine running all the time. Amazon does provide a storage service (actually, two, S3 and EBS), but you still need to do some work on a machine-by-machine basis to make it connect automatically.
+                                </li>
+                                <li>Amazon does let you take a running machine and make a new image out of it, but the process is pretty slow, so what ends up happening is you get the machine in the state you think you want it, pickle the image, and then next time you boot it you realize you forgot something. I repeated this a few times before I got an image I liked.
+                                </li>
+                            </ul>
+                            <p>
+                                This probably all works OK as a replacement for your own data center where you would need to absorb all the installation cost anyway, but if what you need is a temporary pile of computrons for a single compute job, EC2 isn't that great a match. It'll get the job done but the overhead is awful high.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.educatedguesswork.org/2009/02/not_super-thrilled_with_ec2.html">http://www.educatedguesswork.org/2009/02/not_super-thrilled_with_ec2.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

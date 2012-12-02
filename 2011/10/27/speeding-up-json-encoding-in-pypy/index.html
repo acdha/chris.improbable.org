@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Speeding up JSON encoding in PyPy
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 27 Oct 2011 18:19:50 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-10-27T11:48:00-04:00">
+                    <meta itemprop="dateModified" content="2011-10-27T11:48:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-10-27T15:48:00+00:00">Oct 27</time>
+                    <h2 itemprop="title">
+                        Speeding up JSON encoding in PyPy
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/e233065549b63302">
+                        <blockquote>
+                            <p>
+                                Hi
+                            </p>
+                            <p>
+                                Recently I spent a bit of effort into speeding up JSON in PyPy. I started with writing a <a href="https://bitbucket.org/pypy/benchmarks/src/f04d6d63ba60/own/json_bench.py">benchmark</a>, which is admittedly not a very good one, but it's better than nothing (suggestions on how to improve it are welcome!).
+                            </p>
+                            <p>
+                                For this particular benchmark, the numbers are as follow. <strong>Note that CPython by default uses the optimized C extension, while PyPy uses the pure Python one</strong>. PyPy trunk contains another pure Python version which has been optimized specifically for the PyPy JIT. Detailed optimizations are described later in this post.
+                            </p>
+                            <p>
+                                The number reported is the time taken for the third run, when things are warmed up. Full session <a href="http://paste.pocoo.org/show/498988/">here</a>.
+                            </p>
+                            <table border="1">
+                                <colgroup>
+                                    <col width="68%">
+                                    <col width="32%">
+                                </colgroup>
+                                <tbody valign="top">
+                                    <tr>
+                                        <td>
+                                            CPython 2.6
+                                        </td>
+                                        <td>
+                                            22s
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            CPython 2.7
+                                        </td>
+                                        <td>
+                                            <strong>3.7s</strong>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            CPython 2.7 no C extension
+                                        </td>
+                                        <td>
+                                            44s
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            PyPy 1.5
+                                        </td>
+                                        <td>
+                                            34s
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            PyPy 1.6
+                                        </td>
+                                        <td>
+                                            22s
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            PyPy trunk
+                                        </td>
+                                        <td>
+                                            <strong>3.3s</strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p>
+                                Lessons learned:
+                            </p>
+                            <div>
+                                <h3>
+                                    Expectations are high
+                                </h3>
+                                <p>
+                                    A lot of performance critical stuff in Python world is already written in a hand optimized C. Writing C (especially when you interface with CPython C API) is ugly and takes significant effort. This approach does not scale well when there is a lot of code to be written or when there is a very tight coupling between the part to be rewritten and the rest of the code. Still, people would expect PyPy to be better at "tasks" and not precisely at running equivalent code, hence a comparison between the C extension and the pure python version is sound. Fortunately it's possible to outperform the C extension, but requires a bit of effort on the programmer side as well.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    Often interface between the C and Python part is ugly
+                                </h3>
+                                <p>
+                                    This is very clear if you look at json module as implemented in CPython's standard library. Not everything is in C (it would probably be just too much effort) and the interface to what is in C is guided via profiling not by what kind of interface makes sense. This especially is evident comparing CPython 2.6 to 2.7. Just adapting the code to an interface with C made the Python version slower. Removing this clutter improves the readability a lot and improves PyPy's version a bit, although I don't have hard numbers.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    JitViewer is crucial
+                                </h3>
+                                <p>
+                                    In case you're fighting with PyPy's performance, <a href="https://bitbucket.org/pypy/jitviewer">jitviewer</a> is worth a shot. While it's not completely trivial to understand what's going on, it'll definitely show you what kind of loops got compiled and how.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    No nice and fast way to build strings in Python
+                                </h3>
+                                <p>
+                                    PyPy has a custom thing called <tt>__pypy__.builders.StringBuilder</tt>. It has a few a features that make it much easier to optimize than other ways like <tt>str.join()</tt> or <tt>cStringIO</tt>.
+                                </p>
+                                <ul>
+                                    <li>You can specify the start size, which helps a lot if you can even provide a rough estimate on the size of the string (less copying)
+                                    </li>
+                                    <li>Only append and build are allowed. While the string is being built you can't seek or do anything else. After it's built you can never append any more.
+                                    </li>
+                                    <li>Unicode version available as well as <tt>__pypy__.builders.UnicodeBuilder</tt>.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3>
+                                    Method calls are ok, immutable globals are ok
+                                </h3>
+                                <p>
+                                    PyPy's JIT seems to be good enough for at least the simple cases. Calling methods for common infrastructure or loading globals (instead of rebinding as locals) is fast enough and improves code readability.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    String copying is expensive
+                                </h3>
+                                <p>
+                                    <b>Edit:</b> see the comment at the end
+                                </p>
+                                <p>
+                                    If you use <tt>re.sub</tt>, the current implementation will always create a copy of the string even if there was no match to replace. If you know your regexp is simple, first try to check if there is anything to replace. This is a pretty hard optimization to do automatically -- simply matching the regular expression can be too costly for it to make sense. In our particular example however, the regexp is really simple, checking ranges of characters. It also seems that this is by far the fastest way to escape characters as of now.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    Generators are slower than they should be
+                                </h3>
+                                <p>
+                                    I changed the entire thing to simply call <tt>builder.append</tt> instead of yielding to the main loop where it would be gathered. This is kind of a PyPy bug that using generators extensively is slower, but a bit hard to fix. Especially in cases where there is relatively little data being passed around (few bytes), it makes sense to gather it first. If I were to implement an efficient version of <tt>iterencode</tt>, I would probably handle chunks of predetermined size, about 1000 bytes instead of yielding data every few bytes.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    I must admit I worked around PyPy's performance bug
+                                </h3>
+                                <p>
+                                    For obscure (although eventually fixable) reasons, this:
+                                </p>
+                                <pre>
+for c in s: # s is string
+  del c
+</pre>
+                                <p>
+                                    is faster than:
+                                </p>
+                                <pre>
+for c in s:
+  pass
+</pre>
+                                <p>
+                                    This is a PyPy performance bug and should be fixed, but on a different branch ;-)
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    PyPy's JIT is good
+                                </h3>
+                                <p>
+                                    I was pretty surprised, but the JIT actually did make stuff work nicely. The changes that were done were relatively minor and straightforward, once the module was cleaned to the normal "pythonic" state. It is worth noting that it's possible to write code in Python and make it run really fast, but you have to be a bit careful. Again, jitviewer is your friend when determining why things are slow. I hope we can write more tools in the future that would more automatically guide people through potential performance pitfals.
+                                </p>
+                                <p>
+                                    Cheers, fijal
+                                </p>
+                                <p>
+                                    <b>Edit:</b> I was wrong about re.sub. It just seems to be that the JIT is figuring match better than sub, will be fixed soon
+                                </p>
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3971202189709462152-8937643890263223898?l=morepypy.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/PyPyStatusBlog/~4/-anuUT2hQ5I" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://morepypy.blogspot.com/2011/10/speeding-up-json-encoding-in-pypy.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29">http://morepypy.blogspot.com/2011/10/speeding-up-json-encoding-in-pypy.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

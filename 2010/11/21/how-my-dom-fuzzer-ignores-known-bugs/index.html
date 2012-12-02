@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How my DOM fuzzer ignores known bugs
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 22 Nov 2010 04:42:37 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-21T23:42:37-04:00">
+                    <meta itemprop="dateModified" content="2010-11-21T23:42:37-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-22T03:42:37+00:00">Nov 22</time>
+                    <h2 itemprop="title">
+                        How my DOM fuzzer ignores known bugs
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/6d4e38ffa6ad6791">
+                        <blockquote>
+                            <p>
+                                When my DOM fuzzer finds a new bug, I want it to <a href="http://www.squarefree.com/2007/09/15/introducing-lithium-a-testcase-reduction-tool/">make a reduced testcase</a> and notify me so I can file a bug report. To keep it from wasting time finding duplicates of known bugs, I maintain several <strong>ignore lists</strong>:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://www.squarefree.com/fuzzing-ignores-2010-11/crashes.txt">23 known crash signatures</a> for <a href="https://bugzilla.mozilla.org/buglist.cgi?bug_id=571653,574904,585745,588237,588278,600100,601261,601411,604262,604807,605264,610477">12 bugs</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.squarefree.com/fuzzing-ignores-2010-11/assertions.txt">435 known assertions</a> for <a href="https://bugzilla.mozilla.org/buglist.cgi?bug_id=136927,163838,180909,254181,255141,265084,266532,284594,303500,315549,322657,323498,324025,326625,327706,329891,345094,362649,367251,369179,370713,374680,382210,384504,385552,386010,387205,387754,391157,391879,393325,393501,393802,397568,398038,398043,398103,398121,399262,400789,402384,404115,407550,407649,408899,410166,410230,410267,410428,411319,414178,416639,417848,420776,421174,421829,422015,424225,424289,427322,427928,429454,429586,434559,434894,436006,436204,436470,437162,439204,439258,441680,443546,443655,444036,444702,444859,448083,451316,453871,454308,454746,456899,460209,461296,461907,462461,463356,463710,463711,464799,468202,468556,468557,468715,468967,469917,471064,472227,472256,473243,473481,473841,476021,477325,478135,479160,480686,481089,481097,481301,481557,482375,485893,493613,493641,493910,495546,495819,497734,499848,500532,500847,501870,505320,508394,508911,509562,512743,512749,513110,513397,516105,518739,521380,522174,522388,522515,526648,527825,527858,531550,531589,532145,536242,536654,536692,537027,537624,539348,540078,541620,542424,547003,550355,550364,560766,562510,563481,564047,564098,564099,564231,566159,569024,569193,570038,570082,570215,570386,570436,571020,571609,571610,571611,571612,571613,571959,572571,572617,572620,573321,573324,574889,575011,575464,576435,576719,576832,576931,580129,580481,580790,580796,581785,584208,587268,588237,588278,588627,589316,591075,591138,591480,591998,593302,593305,593550,593933,594634,595428,595613,595783,596876,596901,597240,597297,597317,597924,597935,600020,600100,600703,600783,601035,601046,601070,601076,601284,601289,601308,601392,601416,601434,601659,602661,603494,603524,603854,604262,604556,604841,605048,605979,606022,606432,606639,606642,606866,606914,606920,607001,608160,608191,608467,608573,608815,610331,610482,610483,610594,610952,611175,611532,611922,611927,612736,612994,613120,613122,613410,613421,613455,613629,613700,613793,613808,613816,613817,613889">280 bugs</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.squarefree.com/fuzzing-ignores-2010-11/rleak.txt">12 known types of small memory leaks</a> for <a href="https://bugzilla.mozilla.org/buglist.cgi?bug_id=102229,397206,403199,417630,419562,463724,584590,601341,603844,610094">10 bugs</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.squarefree.com/fuzzing-ignores-2010-11/valgrind.txt">Known valgrind warnings</a> for <a href="https://bugzilla.mozilla.org/buglist.cgi?bug_id=407860,499704,549224,566137,566168,571758,573190,573192,573688,580351,602447">11 bugs</a> and a bunch of library/compiler bugs.
+                                </li>
+                            </ul>
+                            <p>
+                                Some bugs are harder to distinguish based on output. In those cases, I use suppressions based on the fuzzer-generated input to Firefox:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://www.squarefree.com/fuzzing-ignores-2010-11/input-hangs.txt">34 inputs allowed to cause hangs</a> for <a href="https://bugzilla.mozilla.org/buglist.cgi?bug_id=312680,331334,408147,458659,460705,493910,513106,543078,543645,543648,543651,544453,557348,564889,573426,592129,595042,600042,612213">19 bugs</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.squarefree.com/fuzzing-ignores-2010-11/input-largeleaks.txt">6 inputs allowed cause large memory leaks</a> for <a href="https://bugzilla.mozilla.org/buglist.cgi?bug_id=605294,610571,613027">3 bugs</a>
+                                </li>
+                            </ul>
+                            <p>
+                                <strong>Fixing any bug on those lists improves the fuzzer's ability to find additional bugs.</strong> But I'd like to point out a few that I'd especially like fixed:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=531550">Bug 531550</a> has me ignoring the "invalid array index" assertion for <a href="https://developer.mozilla.org/en/XPCOM_array_guide#nsTArray.3cT.3e">nsTArrays</a>.
+                                </li>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=580790">Bug 580790</a> has me ignoring "recursion level" assertions for <a href="https://developer.mozilla.org/en/XPCOM_hashtable_guide#PLDHash_%28JSDHash%29">PLDHashes</a>.
+                                </li>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=588237">Bug 588237</a> has me ignoring a large number of crashes and assertions in layout.
+                                </li>
+                            </ul>
+                            <p>
+                                In rare cases, I'll temporarily tell the fuzzer to skip a feature entirely:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=571613">Bug 571613</a> has me not testing with accessibility enabled.
+                                </li>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=576927">Bug 576927</a> has me not testing text zoom.
+                                </li>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=605271">Bug 605271</a> has me not testing QueryInterface.
+                                </li>
+                            </ul>
+                            <p>
+                                Several bugs interfere with my ability to distinguish bugs. Luckily, they're all platform-specific, so they don't prevent me from finding cross-platform bugs.
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=610311">Bug 610311</a> makes it difficult to distinguish crashes on Linux, so I ignore crashes there.
+                                </li>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=612093">Bug 612093</a> makes it difficult to distinguish PR_Asserts and abnormal exits on Windows. (It's fixed in NSPR and needs to be merged to mozilla-central.)
+                                </li>
+                                <li>
+                                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=507876">Bug 507876</a> makes it difficult to distinguish too-much-recursion crashes on Mac. (But I don't currently know of any, so I'm not ignoring them at the moment!)
+                                </li>
+                            </ul>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.squarefree.com/2010/11/21/how-my-dom-fuzzer-ignores-known-bugs/">http://www.squarefree.com/2010/11/21/how-my-dom-fuzzer-ignores-known-bugs/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

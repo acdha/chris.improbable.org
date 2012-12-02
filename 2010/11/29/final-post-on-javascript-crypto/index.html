@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Final post on Javascript crypto
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 29 Nov 2010 15:00:45 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-29T10:00:45-04:00">
+                    <meta itemprop="dateModified" content="2010-11-29T10:00:45-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-29T14:00:45+00:00">Nov 29</time>
+                    <h2 itemprop="title">
+                        Final post on Javascript crypto
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/281826f92d1d6b84">
+                        <blockquote>
+                            <p>
+                                The talk I gave last year on <a href="http://rdist.root.org/2009/08/06/google-tech-talk-on-common-crypto-flaws/">common crypto flaws</a> still seems to generate comments. The majority of the discussion is by <a href="http://rdist.root.org/2009/08/06/google-tech-talk-on-common-crypto-flaws/#comment-5488">defenders of Javascript crypto</a>. I made JS crypto a very minor part of the talk because I thought it would be obvious why it is a bad idea. Apparently, I was wrong to underestimate the grip it seems to have on web developers.
+                            </p>
+                            <p>
+                                Rather than repeat the same rebuttals over and over, this is my final post on this subject. It ends with a challenge — if you have an application where Javascript crypto is more secure than traditional implementation approaches, post it in the comments. I’ll write a post citing you and explaining how you changed my mind. But since I expect this to be my last post on the matter, read this article carefully before posting.
+                            </p>
+                            <p>
+                                To illustrate the problems with JS crypto, let’s use a simplified example application: a secure note-taker. The user writes notes to themselves that they can access from multiple computers. The notes will be encrypted by a random key, which is itself encrypted with a key derived from a passphrase. There are three implementation approaches we will consider: traditional client-side app, server-side app, and Javascript crypto. We will ignore attacks that are common to all three implementations (e.g., weak passphrase, client-side keylogger) and focus on their differences.
+                            </p>
+                            <p>
+                                The traditional client-side approach offers the most security. For example, you could wrap PGP in a GUI with a notes field and store the encrypted files and key on the server. A client who is using the app is secure against future compromise of the server. However, they are still at risk of buggy or trojaned code each time they download the code. If they are concerned about this kind of attack, they can store a local copy and have a cryptographer audit it before using it.
+                            </p>
+                            <p>
+                                The main advantage to this approach is that PGP has been around almost 20 years. It is well-tested and the GUI author is unlikely to make a mistake in interfacing with it (especially if using <a href="http://www.gnupg.org/gpgme.html">GPGME</a>). The code is open-source and available for review.
+                            </p>
+                            <p>
+                                If you don’t want to install client-side code, a less-secure approach is a server-side app accessed via a web browser. To take advantage of existing crypto code, we’ll use PGP again but the passphrase will be sent to it via HTTP and SSL. The server-side code en/decrypts the notes using GPGME and pipes the results to the user.
+                            </p>
+                            <p>
+                                Compared to client-side code, there are a number of obvious weaknesses. The passphrase can be grabbed from the memory of the webserver process each time it is entered. The PGP code can be trojaned, possibly in a subtle way. The server’s <a href="http://rdist.root.org/2009/05/17/the-debian-pgp-disaster-that-almost-was/">/dev/urandom can be biased</a>, weakening any keys generated there.
+                            </p>
+                            <p>
+                                The most important difference from a client-side attack is that it takes effect immediately. An attacker who trojans a client app has to wait until users download and start using it. They can copy the ciphertext from the server, but it isn’t accessible until someone runs their trojan, exposing their passphrase or key. However, a server-side trojan takes effect immediately and all users who access their notes during this time period are compromised.
+                            </p>
+                            <p>
+                                Another difference is that the password is exposed to a longer chain of software. With a client-side app, the passphrase is entered into the GUI app and passed over local IPC to PGP. It can be wiped from RAM after use, protected from being swapped to disk via mlock(), and generally remains under the user’s control. With the server-side app, it is entered into a web browser (which can cache it), sent over HTTPS (which involves trusting hundreds of CAs and a complex software stack), hits a webserver, and is finally passed over local IPC to PGP. A compromise of any component of that chain exposes the password.
+                            </p>
+                            <p>
+                                The last difference is that the user cannot audit the server to see if an attack has occurred. With client-side code, the user can take charge of change management, refusing to update to new code until it can be audited. With a transport-level attack (e.g., <a href="http://www.thoughtcrime.org/software/sslstrip/">sslstrip</a>), there is nothing to audit after the fact.
+                            </p>
+                            <p>
+                                The final implementation approach is Javascript crypto. The trust model is similar to server-side crypto except the code executes in the user’s browser instead of on the server. For our note-taker app, the browser would receive a JS crypto library over HTTPS. The first time it is used, it generates the user’s encryption key and encrypts it with the passphrase (say, derived via <a href="http://en.wikipedia.org/wiki/PBKDF2">PBKDF2</a>). This encrypted key is persisted on the server. The notes files are en/decrypted by the JS code before being sent to the server.
+                            </p>
+                            <p>
+                                Javascript crypto has all the same disadvantages as server-side crypto, plus more. A slightly modified version of all the server-side attacks still works. Instead of trojaning the server app, an attacker can trojan the JS that is sent to the user. Any changes to the code immediately take effect for all active users. There’s the same long chain of software having access to critical data (JS code and the password processed by it).
+                            </p>
+                            <p>
+                                So what additional problems make JS crypto worse than the server-side approach?
+                            </p>
+                            <ol>
+                                <li>Numerous libraries not maintained by cryptographers — With a little searching, I found: clipperz, etherhack, Titaniumcore, Dojo, crypto-js, jsSHA, jscryptolib, pidCrypt, van Everdingen’s library, and Movable Type’s AES. All not written or maintained by cryptographers. One exception is Stanford SJCL, although that was written by grad students 6 months ago so it’s too soon to tell how actively tested/maintained it will be.
+                                </li>
+                                <li>New code has not been properly reviewed and no clear “best practices” for implementers — oldest library I can find is 2 years old. <a href="https://github.com/bitwiseshiftleft/sjcl/issues#issue/5">Major platform-level questions</a> still need to be resolved by even the better ones.
+                                </li>
+                                <li>Low-level primitives only — grab bag of AES, Serpent, RC4, and Caesar ciphers (yes, <a href="http://home.versatel.nl/MAvanEverdingen/Code/">in same library</a>). No high-level operations like GPGME. Now everyone can (and has to) be a crypto protocol designer.
+                                </li>
+                                <li>Browser is low-assurance environment — same-origin policy is not a replacement for ACLs, privilege separation, memory protection, mlock(), etc. JS DOM allows arbitrary eval on each element and language allows rebinding most operations (too much flexibility for crypto).
+                                </li>
+                                <li>Poor crypto support — JS has no secure PRNG such as /dev/urandom, side channel resistance is much more difficult if not impossible
+                                </li>
+                                <li>Too many platforms — IE, Firefox, Netscape, Opera, WebKit, Konqueror, and all versions of each. Crypto code tends to fail catastrophically in the face of platform bugs.
+                                </li>
+                                <li>Auditability — each user is served a potentially differing copy of the code. Old code may be running due to browser cache issues. Impossible for server maintainers to audit clients.
+                                </li>
+                            </ol>
+                            <p>
+                                JS crypto is not even better for client-side auditability. Since JS is quite lenient in allowing page elements to rebind DOM nodes, even “View Source” does not reveal the actual code running in the browser. You’re only as secure as the worst script run from a given page or any other pages it allows via <code>document.domain</code>.
+                            </p>
+                            <p>
+                                I have only heard of one application of JS crypto that made sense, but it wasn’t from a security perspective. A web firm processes credit card numbers. For cost reasons, they wanted to avoid PCI audits of their webservers, but PCI required any server that handled plaintext credit card numbers to be audited. So, their webservers send a JS crypto app to the browser client to encrypt the credit card number with an RSA public key. The corresponding private key is accessible only to the backend database. So based on the wording of PCI, only the database server requires an audit.
+                            </p>
+                            <p>
+                                Of course, this is a ludicrous argument from a security perspective. The webserver is a critical part of the chain of trust in protecting the credit card numbers. There are <a href="http://rdist.root.org/2009/10/06/why-rsa-encryption-padding-is-critical/">many subtle ways</a> to trojan RSA encryption code to disclose the plaintext. To detect trojans, the web firm has a client machine that repeatedly downloads and checksums the JS code from each webserver. But an attacker can serve the original JS to that machine while sending trojaned code to other users.
+                            </p>
+                            <p>
+                                While I agree this is a clever way to avoid PCI audits, it does not increase actual security in any way. It is still subject to the above drawbacks of JS crypto.
+                            </p>
+                            <p>
+                                If you’ve read this article and still think JS crypto has security advantages over server-side crypto for some particular application, describe it in a comment below. But the burden of proof is on you to explain why the above list of drawbacks is addressed or not relevant to your system. Until then, I am certain JS crypto does not make security sense.
+                            </p>
+                            <p>
+                                Just because something can be done doesn’t mean it should be.
+                            </p>
+                            <h3>
+                                Epilogue
+                            </h3>
+                            <h4>
+                                Auditability of client-side Javascript
+                            </h4>
+                            <p>
+                                I had overstated the auditability of JS in the browser environment by saying the code was accessible via “View Source”. It turns out the browser environment is even more malleable than I first thought. There is no user-accessible menu that tells what code is actually executing on a given page since DOM events can cause rebinding of page elements, including your crypto code. Thanks to Thomas Ptacek for pointing this out. I updated the corresponding paragraph above.
+                            </p>
+                            <p>
+                                JS libraries such as <a href="http://api.jquery.com/load/">jQuery</a>, <a href="http://www.prototypejs.org/api/ajax/updater">Prototype</a>, and <a href="http://developer.yahoo.com/yui/connection/">YUI</a> all have APIs for loading additional page elements, which can be HTML or JS. These elements can rebind DOM nodes, meaning each AJAX query can result in the code of a page changing, not just the data displayed. The APIs don’t make a special effort to filter out page elements, and instead trust that you know what you’re doing.
+                            </p>
+                            <p>
+                                The <a href="http://en.wikipedia.org/wiki/Same_origin_policy">same origin policy</a> is the only protection against this modification. However, this policy is applied at the page level, not script level. So if any script on a given page sets <code>document.domain</code> to a “safe” value like “example.net”, this would still allow JS code served from “ads.example.net” to override your crypto code on “www.example.net”. Your page is only as secure as the worst script loaded from it.
+                            </p>
+                            <p>
+                                Brendan Eich made an informative comment on how <code>document.domain</code> is not the worst issue, separation of privileges for cross-site scripts is:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Scripts can be sourced cross-site, so you could get jacked without <code>document.domain</code> entering the picture just by &lt;script src=”evil.ads.com”&gt;. This threat is real but it is independent of <code>document.domain</code> and it doesn’t make <code>document.domain</code> more hazardous. It does not matter where the scripts come from. They need not come from ads.example.net — if http://www.example.net HTML loads them, they’re #include’d into http://www.example.net’s origin (whether it has been modified by <code>document.domain</code> or not).
+                                </p>
+                                <p>
+                                    In other words, if you have communicating pages that set <code>document.domain</code> to join a common superdomain, they have to be as careful with cross-site scripts as a single page loaded from that superdomain would. This suggests that <code>document.domain</code> is not the problem — cross-site scripts having full rights is the problem. See <a rel="nofollow" href="http://w2spconf.com/2009/presentations/invited-slides.pdf">my W2SP 2009 slides</a>.
+                                </p>
+                            </blockquote>
+                            <h4>
+                                “Proof of work” systems
+                            </h4>
+                            <p>
+                                Daniel Franke suggested one potentially-useful application for JS crypto: <a href="http://www.wisdom.weizmann.ac.il/~naor/PAPERS/pvp_abs.html">“proof of work” systems</a>. These systems require the client to compute some difficult function to increase the effort required to send spam, cause denial of service, or bruteforce passwords. While I agree this application would not be subject to the security flaws listed in this article, it would have other problems.
+                            </p>
+                            <p>
+                                Javascript is many times slower than native code and much worse for crypto functions than general computation. This means the advantage an attacker has in creating a native C plus GPU execution environment will likely far outstrip any slowness legitimate users will accept. If the performance ratio between attacker and legitimate users is too great, Javascript can’t be used for this purpose.
+                            </p>
+                            <p>
+                                He recognized this problem and also suggested two ways to address it: increase the difficulty of the work function only when an attack is going on or only for guesses with weak passphrases. The problem with the first is that an attacker can scale up their guessing rate until the server slows down and then stay just below that threshold. Additionally, she can parallelize guesses for multiple users, depending on what the server uses for rate-limiting. One problem with the second is that it adds a round-trip where the server has to see the length of the attacker’s guess before selecting a difficulty for the proof-of-work function. In general, it’s better to select a one-size-fits-all parameter than to try to dynamically scale.
+                            </p>
+                            <h4>
+                                Browser plugin can checksum JS crypto code
+                            </h4>
+                            <p>
+                                This idea helps my argument, not hurts it. If you can deploy a custom plugin to clients, why not run the crypto there? If it can access the host environment, it has a real PRNG, crypto library (Mozilla NSS or Microsoft CryptoAPI), etc. Because of Javascript’s dynamism, no one knows a secure way to verify signatures on all page elements and DOM updates, so a checksumming plugin would not live up to its promise.
+                            </p>
+                            <div style="width:1px;height:1px;overflow:hidden">
+                                <p>
+                                    Scripts can be sourced cross-site, so you could get jacked without document.domain entering the picture just by &lt;script src=”evil.ads.com”&gt;&lt;/script&gt;. This threat is real but it is independent of document.domain and it doesn’t make document.domain more hazardous. It does not matter where the scripts come from. They need not come from ads.example.net — if <a rel="nofollow" href="http://www.example.net/">http://www.example.net</a> HTML loads them, they’re #include’d into <a rel="nofollow" href="http://www.example.net/">http://www.example.net</a>‘s origin (whether it has been modifeid by document.domain or not).
+                                </p>
+                                <p>
+                                    In other words, if you have communicating pages that set document.domain to join a common superdomain, they have to be as careful with cross-site scripts as a single page loaded from that superdomain would.
+                                </p>
+                                <p>
+                                    This suggests that document.domain is not the problem — cross-site scripts having full rights is the problem. See <a rel="nofollow" href="http://w2spconf.com/2009/presentations/invited-slides.pdf">my W2SP 2009 slides</a>.
+                                </p>
+                            </div><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/rdist.wordpress.com/667/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/rdist.wordpress.com/667/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/rdist.wordpress.com/667/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/rdist.wordpress.com/667/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/rdist.wordpress.com/667/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/rdist.wordpress.com/667/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/rdist.wordpress.com/667/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/rdist.wordpress.com/667/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/rdist.wordpress.com/667/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/rdist.wordpress.com/667/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/rdist.wordpress.com/667/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/rdist.wordpress.com/667/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/rdist.wordpress.com/667/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/rdist.wordpress.com/667/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=rdist.root.org&amp;blog=893473&amp;post=667&amp;subd=rdist&amp;ref=&amp;feed=1" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://rdist.root.org/2010/11/29/final-post-on-javascript-crypto/">http://rdist.root.org/2010/11/29/final-post-on-javascript-crypto/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

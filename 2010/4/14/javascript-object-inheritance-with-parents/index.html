@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            JavaScript object inheritance with parents
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 14 Apr 2010 15:37:58 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-14T11:37:58-04:00">
+                    <meta itemprop="dateModified" content="2010-04-14T11:37:58-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-14T15:37:58+00:00">Apr 14</time>
+                    <h2 itemprop="title">
+                        JavaScript object inheritance with parents
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5414c22023af8b0a">
+                        <p class="annotation">
+                            The hell that is implementing "super" in JS - I've done this too many times.
+                        </p>
+                        <blockquote>
+                            There are different ways to inherit functionality in JavaScript, including using mixins (mixing in all the properties of one object into another object) and the use of prototypes.<br>
+                            <br>
+                            In Dojo, there is <a href="http://dojotoolkit.org/reference-guide/dojo/mixin.html">dojo.mixin</a> for doing mixins, and dojo.delegate for inheriting properties via prototypes. <a href="http://dojotoolkit.org/reference-guide/dojo/delegate.html">dojo.delegate</a> is like ECMAScript 5/Crockford's <a href="http://javascript.crockford.com/prototypal.html">Object.create()</a>, but with a dojo.mixin convenience call.<br>
+                            <br>
+                            I really like the dojo.delegate or a Object.create+dojo.mixin combination for inheriting, but it makes it hard to call methods you override from your parent. I see this problem show up frequently with widgets, which typically inherit from each other:<br>
+                            <pre>
+<br>var MyWidget = Object.create(BaseWidget);<br><br>//BaseWidget also defines a postCreate method,<br>//But we want our widget to do work too.<br><br>MyWidget.prototype.postCreate = function () {<br> //Call BaseWidget's implementation<br> BaseWidget.prototype.postCreate.apply(this, arguments);<br><br> //Do MyWidget's postCreate work here.<br>};<br>
+</pre>Not too bad, but the BaseWidget.prototype.postCreate.apply junk is a bit much to type, and it gets a bit trickier when there are mixins that also contribute to the functionality.<br>
+                            <br>
+                            In Dojo, there is dojo.declare() that helps with this by defining an "inherited" method that can be used to find the BaseWidget's postCreate:<br>
+                            <pre>
+<br>var MyWidget = dojo.declare(BaseWidget, {<br>  postCreate: function () {<br>      //Call BaseWidget's implementation<br>      this.inherited("postCreate", arguments);<br><br>      //Do MyWidget's postCreate work here.<br>  }<br>});<br>
+</pre>This is an improvement as far as typing, but the implementation of dojo.declare has always scared me. My JavaScript Fu is not strong enough to follow it, and I am concerned it is actually a bit too complicated.<br>
+                            <br>
+                            So here is an experiment on something simpler:<br>
+                            <pre>
+<br>var MyWidget = object("BaseWidget", null, function (parent) {<br> return {<br>     postCreate: function () {<br>         //Call BaseWidget's implementation<br>         parent(this, "postCreate", arguments);<br><br>         //Do MyWidget's postCreate work here.<br>     }<br> };<br>});<br>
+</pre><a href="http://github.com/jrburke/blade/blob/master/blade/object.js">Here is the implementation of that object function</a>, and <a href="http://github.com/jrburke/blade/blob/master/tests/object/object-tests.js">here are some tests</a>. That implementation is wrapped in a <a href="http://requirejs.org/">RequireJS</a> module, but it can be extracted as a standalone script.<br>
+                            <br>
+                            The second argument to the object() function allows for specifying mixins.<br>
+                            <br>
+                            With two mixins, mixin1 and mixin2, the parent for MyWidget would be an object that inherits from BaseWidget with mixin1 and mixin2's properties mixed in:<br>
+                            <pre>
+<br>var MyWidget = object("BaseWidget", [mixin1, mixin2], function (parent) {<br>  return {<br>      postCreate: function () {<br>          //Call BaseWidget's postCreate, but if it<br>          //does not have a postCreate method, mixin1's<br>          //postCreate function will be used. If mixin1<br>          //does not have an implementation, then mixin2's<br>          //postCreate function will be used. If mixin2 does<br>          //not have an implementation an error is thrown.<br>          parent(this, "postCreate", arguments);<br><br>          //Do MyWidget's postCreate work here.<br>      }<br>  };<br>});<br>
+</pre>dojo.declare has the concept of calling a method called "constructor" if it is defined on the declared object, whenever a new object of the MyWidget type is created. I preserved that ability in object() but the property name for that function is "init" in the object() implementation.<br>
+                            <br>
+                            The object() implementation is simpler than dojo.declare, but still gives easy access for calling a parent implementation of a function. It is not has powerful as dojo.declare -- dojo.declare has the concept of postscript and a preamble and even auto-chaining calls. However, I feel the simplified approach is better. It is clearer to follow the code, and to predict how it will behave. I also expect it to perform better.<br>
+                            <br>
+                            I like the object() method because it uses closures and a function that accepts the parent function as an argument. Feels very JavaScripty. The prototype chain is a bit longer with the extra object.create() calls creating some intermediate objects, but I expect prototype walking is fast in JavaScript, particularly when you go to measure it in comparison to any DOM operation.<br>
+                            <br>
+                            Are there ways in which the object() function is broken or insufficient? Is there a better way to do this? Or even a different way, something that does not rely on a parent reference?<br>
+                            <br>
+                            There is <a href="http://www.traitsjs.org/">traits.js</a>, for using traits. <a href="http://alex.dojotoolkit.org/">Alex Russell</a> experimented with <a href="http://alex.dojotoolkit.org/2008/10/delegate-delegate-delegate/">a trait implementation inside dojo.delegate</a>. <a href="http://twitter.com/kriszyp">Kris Zyp</a> pointed out that Alex's implementation does not have conflict detection or method require support.<br>
+                            <br>
+                            I like the idea of mixing in just part of a mixin or remapping a method to fit some other API's expectations, so I can see adding support for the remapping features, similar to what Alex does in the dojo.delegate experiment. However, I am not sure how valuable conflict detection or method require support is.<br>
+                            <br>
+                            I can see in large systems it would help with detecting errors sooner, but then maybe the bigger problem is the complexity of the large system. And there is a balance to forcing strictness up front over ease of use. The trait.js syntax looks fairly wordy to me, and the extra benefit of the strictness may not be realized for most web apps.<br>
+                            <br>
+                            Also, I do not see an easy way to get the parent reference. It seems like you need to remap each overridden parent function you want to call to a new property name. It seems wordy, with more properties hanging off an object. And do you need to make sure you do not pick a name that is already in use by an ancestor? Seems like it could lead to a bunch of goofy names on an object.<br>
+                            <br>
+                            Reusing code effectively is an interesting topic. The traits approach is newer to me, and I keep wondering if there is a better way to do it. It has been fun to experiment with alternatives.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/19002723-2940803633134995118?l=tagneto.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://tagneto.blogspot.com/2010/04/javascript-object-inheritance-with.html">http://tagneto.blogspot.com/2010/04/javascript-object-inheritance-with.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

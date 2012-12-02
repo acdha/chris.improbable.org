@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Contrarianism on Sequoia's Disclosed Source Voting System
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 20 Nov 2009 13:57:13 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-20T08:57:13-04:00">
+                    <meta itemprop="dateModified" content="2009-11-20T08:57:13-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-20T12:57:13+00:00">Nov 20</time>
+                    <h2 itemprop="title">
+                        Contrarianism on Sequoia's Disclosed Source Voting System
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/27c13adff8755332">
+                        <blockquote>
+                            Sequoia Voting Systems recently <a href="http://www.sequoiavote.com/press.php?ID=85">announced</a> that it will be publishing the source code to their Frontier opscan voting system. Reaction in the security community seems generally positive. Here's <a href="http://www.freedom-to-tinker.com/blog/felten/sequoia-announces-voting-system-published-code">Ed Felten</a>:
+                            <blockquote>
+                                The trend toward publishing election system source code has been building over the last few years. Security experts have long argued that public scrutiny tends to increase security, and is one of the best ways to justify public trust in a system. Independent studies of major voting vendors' source code have found code quality to be disappointing at best, and vendors' all-out resistance to any disclosure has eroded confidence further. Add to this an increasing number of independent open-source voting systems, and secret voting technologies start to look less and less viable, as the public starts insisting that longstanding principles of election transparency be extended to election technology. In short, the time had come for this step.
+                            </blockquote>
+                            <p>
+                                I'm less sanguine. I'm not saying this is a bad thing necessarily, but I'm not sure it's a good thing either. As always, it's important to consider what threats we're trying to defend against. We need to consider two kinds of vulnerabilities that might be present in the code:
+                            </p>
+                            <ul>
+                                <li>Backdoors intentionally introduced by Sequoia or their engineers.
+                                </li>
+                                <li>Design and or implementation errors accidentally introduced by Sequoia engineers.
+                                </li>
+                            </ul>
+                            <p>
+                                A lot of the focus on open voting systems has focused on the first kind of threat (corporations are stealing your votes, etc.) I think there's certainly a credible argument to be made that having to publish the source code does make this form of attack somewhat harder. If people are looking at your code, then you probably can't put a naked backdoor ("if someone types 1111, give them operator control") into the code because that might get caught in a review. On the other hand, it would be a pretty risky move to put that kind of backdoor into a piece of software anyway, since even closed voting source code does get reviewed, both as part of the system certification process and in private reviews like those conducted by Califoria and Ohio. More likely, you'd want to hide your back door so it looked like an accidentally introduced vulnerability, both to make it harder to find and to give you plausible deniability.
+                            </p>
+                            <p>
+                                This brings us to the second form of vulnerability: those introduced as errors/misfeatures in Sequoia's development process. These aren't necessarily a sign of incompetence; as Steve Bellovin says, "all software has bugs and security software has security relevant bugs." Having access to the source code makes it easier to find those vulnerabilities (though as Checkoway et al. have <a href="http://cseweb.ucsd.edu/~hovav/papers/cfkhfs09.html">shown</a> it's quite possible to find exploitable vulnerabilities in voting systems without access to the source code). This of course applies both to attackers and defenders. There's an active debate about whether or not on balance this makes open source inherently more or less secure. I'm not aware of any data which settles the question definitively, but I don't think that anyone in the security community believes that a previously insecure piece of software will suddenly become substantially more secure just because the source is disclosed; there are just too many security vulnerabilities for the sort of low-level uncoordinated review that you get in practice to stamp out. On the other hand, it does provide a pretty clear near-term benefit to attackers, who, after all, just need to find one vulnerability.
+                            </p>
+                            <p>
+                                Now, that's not what Sequoia is doing. According to their press release, Frontier is an entirely new system which they say has been "developed from the ground up with the full intention of releasing all of the source code to any member of the public who wishes to download it - from computer scientists and election officials to students, security experts and the voting public". This syncs up better with another argument about why openness is important, which is more about incentives: if vendors know their code will be open to scrutiny they will be motivated to be more careful with their designs and implementations. <a href="http://www.sos.ca.gov/elections/voting_systems/ttbr/sequoia-source-public-jul26.pdf">Reviews</a> of Sequoia's previous systems have been pretty negative; it will be interesting to see if the new one is any better. On the other hand, we have the confounding factor that modern standards for what it means for a piece of software to be secure are a lot higher than those which applied when the original SVS system was written, so it will be hard to tell whether it's really openness which provided the value, or just that they started from scratch.
+                            </p>
+                            <p>
+                                One more thing: suppose that the source code is published and the code is full of problems. What then?
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.educatedguesswork.org/2009/11/contrarianism_on_sequoias_disc.html">http://www.educatedguesswork.org/2009/11/contrarianism_on_sequoias_disc.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

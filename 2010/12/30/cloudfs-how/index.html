@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            CloudFS: How
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 30 Dec 2010 17:33:54 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-30T12:33:54-04:00">
+                    <meta itemprop="dateModified" content="2010-12-30T12:33:54-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-30T16:33:54+00:00">Dec 30</time>
+                    <h2 itemprop="title">
+                        CloudFS: How
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/108bea7675df2208">
+                        <blockquote>
+                            <p>
+                                One fundamental tenet of CloudFS is that, with a modern horizontally scalable filesystem as a technology base, a single large filesystem on dedicated hardware and run by dedicated experts can be more robust and more efficient than having non-expert users configure and run their own filesystems on hardware provisioned primarily for a virtualized compute/network workload. To do this, though, we need to enable <em>secure</em> sharing of that filesystem resource, and that’s what CloudFS does for GlusterFS. To understand how it does that, it’s easiest to follow the steps in processing a single I/O request to see how the various GlusterFS and CloudFS components on both clients and servers work together. Before we do that, though, we have to nail down a single fundamental concept: the translator.
+                            </p>
+                            <p>
+                                A GlusterFS translator is an example of a filter or proxy pattern, where a software component takes a request expressed in some format and protocol, then translates it into one or more requests <em>in the same format and protocol</em> for further processing by the next component. This pattern allows many different kinds of functionality to be layered on top of one another in all sorts of different orders, and even to be relocated from one side to another of the client/server divide. It’s a lot like UNIX shell pipelines (using ssh/expect or similar to execute some commands elsewhere) or STREAMS/sockets except that the data items are filesystem requests instead of text lines or network messages. Most of GlusterFS’s functionality is implemented as translators using a common core and a common API to communicate with one another. For example, the “dht” or “distribute” translator takes a request and uses consistent hashing to direct it to one of several “subvolumes” which usually (but not necessarily) live on different servers. The “afr” or “replicate” translator takes a request and directs it to <em>multiple</em> subvolumes, bracketed by extended-attribute requests that it generates internally to ensure that the proper state can be recovered if the servers behind any of those subvolumes fail. Communication is handled by “client” and “server” translators, which are really kind of half-translators using the translator API on one side and an RPC protocol on the other. Then there are several other performance translators to do things like read-ahead, write-behind, directory/attribute prefetching and caching. These can all be added and removed and reordered and relocated, and even duplicated – e.g. caching both on the client and server – to suit users’ needs. In accordance with the “minimize communication” and “most work at the most numerous nodes” rules of scalable systems, translators that redirect or fan out requests among multiple subvolumes (such as dht or afr) are usually implemented at the client, while translators that pass requests through to single subvolume or turn them around internally (such as read-ahead or write-behind) can go anywhere – but that’s just a rule of thumb, not a restriction imposed by the software.
+                            </p>
+                            <p>
+                                So how does CloudFS fit in? If you were to look at the CloudFS git tree right now, you’d see three new translators. CloudFS also uses/enhances some existing (but infrequently used) translators. The easiest way to see how this all works is to follow a single request – let’s say it’s a simple write – through all of the translators it hits, and see what each one does.
+                            </p>
+                            <ol>
+                                <li>We start at the “fuse” translator on the client, which is really another half-translator converting FUSE (filesystem) calls into their translator-API equivalents. Once the conversion is made, this just gets passed “down the stack” to the next translator.
+                                </li>
+                                <li>The next stop in the CloudFS world is the existing “quota” translator, which keeps track of how much space the cloud tenant controlling this machine has allocated and generates an error if they try to use too much. This would ideally be done on the server side, but remember that there are many servers. It’s much more convenient to do this above some of the fan-out translators that will follow. Don’t worry, though; usage is tracked for billing purposes on the server, so nobody’s going to over-consume resources (and possibly deny them to others) without paying for them. Assuming we’re within our quota limit, we just pass the request on.
+                                </li>
+                                <li>Now we go through the standard client-side translator stack, consisting of several performance translators followed by DHT (to distribute data) and lastly AFR (to replicate it). At this point we’re actually dealing with multiple requests to multiple servers, but we’ll just follow one for the time being.
+                                </li>
+                                <li>Next up for this particular sub-request is the new “crypt” translator, which encrypts our data using a key that is never on any of the servers.
+                                </li>
+                                <li>Now we go through the new (in fact not written yet) “auth-helper” translator, which just passes the request straight through. Huh? The reason for this apparent no-op is that the auth-helper translator actually does most of its work at connection time, establishing that this connection is associated with a particular authenticated user (“tenant”). Because of the way translator configuration works we’re still in the request path after that, but all we do is hand requests straight through.
+                                </li>
+                                <li>At this point we finally cross the client/server divide, using the “client” translator on our side to contact the “server” translator for this sub-request’s target server. This gets us to a “brick” or translator stack that the server had previously exported for clients to use.
+                                </li>
+                                <li>This is where CloudFS really takes over from GlusterFS for a moment, through the new “cloud” translator. At this point we determine what tenant is associated with this connection, based on our earlier handshake with auth-helper. Using that identity, we map all of the tenant-specific filesystem identifiers (UIDs and GIDs) contained in the I/O request into their server-side counterparts, and redirect the whole request to a tenant-specific subvolume with its own translator. A lot of this is based on the configuration-rewriting filt-cloud.py script, which takes a single brick definition and effectively turns it into multiple bricks which get demultiplexed here.
+                                </li>
+                                <li>At the top of our tenant-specific translator stack is the new (in fact still to be written) “usage” translator, which updates the usage information – e.g. space used, requests and bytes in/out – for this tenant before passing through. This information will later be collected and aggregated across all servers by the provider to generate tenants’ bills.
+                                </li>
+                                <li>Now we go through the standard server-side translator stack, consisting of more performance translators before we finally get to the “posix” translator. This is another half-translator, converting translator-API requests into actual filesystem requests – in our case a write.
+                                </li>
+                                <li>Lastly, everything – especially status for the operation – starts flowing back. There’s no need to go through each step, but there are a few special cases worth noting. If this had been a read, then what comes back would include data to be decrypted by the crypt translator on the client. In other cases the returned information might contain global UID or GID information (as stored/retrieved by our local filesystem) to be mapped back into their tenant-specific forms by the cloud translator on the server. In most cases, the usage translator on the server and the quota translator on the client will also update their information as the request flies by.
+                                </li>
+                            </ol>
+                            <p>
+                                Phew. That sure is a lot of work, isn’t it? Make no mistake; there is a cost associated with all of this mapping and redirecting and de/multiplexing and encrypting and authenticating and everything else. TANSTAAFL. However, both the hand-offs between translators and a lot of the “fast paths” within translators have been heavily optimized so that the overhead is no more than for other ways of achieving the same functionality (where it exists). Also, some of that overhead gets “bought back” by running native I/O on dedicated and tuned I/O nodes instead of virtual I/O on compute nodes. Lastly, and most importantly, the whole idea of horizontal scalability is that you can add more I/O nodes to get near-linear scaling up to whatever aggregate I/O capability you need. That doesn’t work infinitely, of course, but for real-world problem sizes it’s enough to make good on the claim that it’s better to use the provider’s shared filesystem infrastructure instead of setting up your own.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://cloudfs.org/2010/12/cloudfs-how/">http://cloudfs.org/2010/12/cloudfs-how/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

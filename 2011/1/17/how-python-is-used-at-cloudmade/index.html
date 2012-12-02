@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How Python is Used at CloudMade
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 17 Jan 2011 12:09:02 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-17T07:09:02-04:00">
+                    <meta itemprop="dateModified" content="2011-01-17T07:09:02-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-17T11:09:02+00:00">Jan 17</time>
+                    <h2 itemprop="title">
+                        How Python is Used at CloudMade
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/abf213256c0ded47">
+                        <blockquote>
+                            <a href="http://blog.cloudmade.com/2011/01/17/958/">How Python is Used at CloudMade</a>
+                            <p>
+                                <em>This is a <a href="http://mishkovskyi.net/blog/2011/1/16/tile-server-implementation">repost</a> from my personal blog.</em>
+                            </p>
+                            <p>
+                                I’m starting a series on explaining how and why CloudMade uses Python. The following one explains why we ditched OSM’s stack in favour of in-house solution.
+                            </p>
+                            <h2>
+                                Intro
+                            </h2>
+                            <div>
+                                <p>
+                                    It’s been almost 2 years as CloudMade has ditched mod_tile and renderd as main rendering solution in favour of in-house solution. As the principle designer of the said alternative, I must say that this decision led to higher development pace. This article will try to cover the general architecture approach, reasons of decisions made and short comparison to other rendering alternatives.
+                                </p>
+                                <div>
+                                    <h2>
+                                        Before The Switch
+                                    </h2>
+                                    <p>
+                                        As some of you might know, CloudMade has its roots in OpenStreetMap and it was quite natural to adopt OSM’s software stack to have something to start with. But as CloudMade grew, the needs and requirements changed rapidly and the task of supporting and developing mod_tile became more of a burden, the decision to switch to more high-level language as the main was made. The language of choice was Python, due to its generous set of already existing spatial libraries (e.g. Shapely, GeoAlchemy, Mapnik bindings, etc), ease of deployment and its simpler support for cross-platform development. And, well, I knew it better than Scala, Ruby or Perl at that moment. Here goes a list of our tasks with mod_tile and renderd that we found easier to implement with Python:
+                                    </p>
+                                    <dl>
+                                        <dt>
+                                            Variable priorities
+                                        </dt>
+                                        <dd>
+                                            mod_tile has the notion of “dirty” and “general” requests, with dirty requests having lower priority and thus having the property of being rendered when there’s little-to-none on-demand rendering required. While this seems enough for most applications, it does has its warts, as it makes the priority system overall less general. What this means in practice, is that every time we need to add some special priority (i.e. in case we need to health-check system by forcing rendering) we get into adding quite a lot of code, rather than changing the “priority” property of the request. It might seem silly, but off the top of my head I can remember that we have at least 6 different priorities now
+                                        </dd>
+                                        <dt>
+                                            Replicating cache
+                                        </dt>
+                                        <dd>
+                                            When it comes to scaling rendering and serving of tiles, the simplest solution that comes to mind is adding more servers. It’s as simple, as pushing several links in web interface or even using automated process and Amazon Web Services API. But when you add new server with rendering stack installed you lose all the cache that has been on other servers and furthermore all the instances don’t share cache, which makes the cacheto use system less effective. There’re several solutions to this issue, each of them making use networking or database libraries, programming against which is tedious task in C (and C++).
+                                        </dd>
+                                        <dt>
+                                            Being tied to Apache
+                                        </dt>
+                                        <dd>
+                                            mod_tile is an Apache module, which makes it less interesting if you look at it from “commodity server” perspective. Having to program against a monster that is Apache, using its APR library is one giant leap into full-blown programmer depression. The autogenerated documentation make the matters even worse. And two last things about Apache are its comparatively slow serving of static files and complicated configuration scheme. One might say that Apache might be winning in other parts of comparison, but the things that have been mentioned were essential to our rendering services.
+                                        </dd>
+                                    </dl>
+                                    <p>
+                                        These were the main reasons to switch, as mod_tile and renderd didn’t seem like the right thing for CloudMade. Of course, there were a lot of others, more and less subjective reasons, but having even before mentioned ones, it was enough to seriously consider a switch.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h2>
+                                        The Switch
+                                    </h2>
+                                    <p>
+                                        With all the warts of the existing system and requirements for the future in mind, we decided to move on with the new approach. There were several things to consider in our system:
+                                    </p>
+                                    <dl>
+                                        <dt>
+                                            Decoupling
+                                        </dt>
+                                        <dd>
+                                            This was our main goal — thoroughly decoupled system, where every part does one thing and does it good. This makes scaling much easier, but also incurs additional penalty on the amount of code, because of the need to write communication utilities. This also makes the system as a whole seem much more stable, as every other part of the system can work as a replacement in case of failure. Of course, the price is having network overhead and supervising system parts.
+                                        </dd>
+                                        <dt>
+                                            Handling styles
+                                        </dt>
+                                        <dd>
+                                            One of the main CloudMade web-services is the style editor, which gives ability to edit map styles using WYSIWYG technique. Handling thousands of Mapnik styles wasn’t something any existing system was prepared for, so unique way of doing exactly this had to be devised. Of course, this meant that style state in every part of the system had to be consistent at any given moment of time, making this even harder to accomplish.
+                                        </dd>
+                                        <dt>
+                                            Cache expiry
+                                        </dt>
+                                        <dd>
+                                            To minimize load on the system, as much cache as possible has to be available. But for rapidly changing OpenStreetMap data, having all tiles cached for month wouldn’t work and at the same time rendering all images on the fly would be an enormously heavy goal to accomplish. Whatever cache update approach is taken, unless there’s a hardware possibility to render maps on the fly, someone will be unhappy about cache expiry scheme.
+                                        </dd>
+                                        <dt>
+                                            Health monitoring and high availability
+                                        </dt>
+                                        <dd>
+                                            In order to meet requirement of having usable web services, one of the most important things to consider is having as high service uptime as possible. Without having health monitoring which knows about state of every part of the system the said objective is almost unreachable. Of course, the ideal can not achieved, but having a setup that covers at least 80% of the nodes would satisfy our needs.
+                                        </dd>
+                                    </dl>
+                                    <p>
+                                        The system that’s currently in use at CloudMade has been developed with exactly these goals in mind, with minor additions and subtractions along the way. To summarize, the goal was the system where every part has a maximum level of independency from every other while succumbing to the general goal of having fast and easily-deployed rendering stack.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h2>
+                                        To Be Continued
+                                    </h2>
+                                    <p>
+                                        I’ll continue the talk about moving from mod_tile to our in-house system in follow-ups, where I’ll try to get into technical details, explain our shortcomings and issues that arised while developing.
+                                    </p>
+                                    <p>
+                                        Stay tuned.
+                                    </p>
+                                </div>
+                            </div><a href="http://blog.cloudmade.com/2011/01/17/958/">How Python is Used at CloudMade</a>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.cloudmade.com/2011/01/17/958/">http://blog.cloudmade.com/2011/01/17/958/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

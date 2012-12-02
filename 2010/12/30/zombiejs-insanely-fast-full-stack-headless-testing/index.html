@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Zombie.js: insanely fast, full-stack, headless testing
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 30 Dec 2010 10:04:55 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-30T05:04:55-04:00">
+                    <meta itemprop="dateModified" content="2010-12-30T05:04:55-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-30T09:04:55+00:00">Dec 30</time>
+                    <h2 itemprop="title">
+                        Zombie.js: insanely fast, full-stack, headless testing
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/dad0790209d05e8c">
+                        <blockquote>
+                            <p>
+                                <a title="101309 15 by tohoscope, on Flickr" href="http://www.flickr.com/photos/tohoscope/4011539488/"><img src="http://farm4.static.flickr.com/3482/4011539488_7e36154eda.jpg" alt="101309 15" width="500" height="375"></a>
+                            </p>
+                            <p>
+                                <strong>How It Started</strong>
+                            </p>
+                            <p>
+                                If, like me, you’re developing Web applications that have a lot of client-side JavaScript, you’ve already asked yourself “how the hell do I test this thing?”
+                            </p>
+                            <p>
+                                To test client-side JavaScript — how it responds to user actions and what changes it makes — you’re going to have to run it in a browser. There are tools that let you do that, I tried a few and they were so bad I considered a career change.
+                            </p>
+                            <p>
+                                It turns out, though, that you can test a lot of stuff by having a good enough approximation of a browser. You need a reliable HTML parser, a DOM implementation that can manage the document tree in memory, and a JavaScript engine to run the client-side code. A browser that doesn’t render anything: a headless browser.[1]
+                            </p>
+                            <p>
+                                To run such a headless browser you’re going to need an environment that can load, parse and execute JavaScript real fast. Speed is a feature because there’s no bigger waste of time than waiting for your tests to finish.[2] You’ll also need a DOM implementation you can easily hack, so you can add new features (say, HTML5 Web Storage) and remove features (say, HTML5 Web Storage, because we’re testing compatibility with older browsers).
+                            </p>
+                            <p>
+                                That got me thinking, “why not Node.js?” &nbsp;Node is built on Google Chrome’s V8 engine, which is insanely fast and optimized for loading, parsing and executing JavaScript. A perfect fit.
+                            </p>
+                            <p>
+                                What about the DOM? Fortunately, much of that work was already done by&nbsp;<a href="http://tmpvar.com/">Elijah</a> <a href="http://tmpvar.com/">Insua</a> who created <a href="http://jsdom.org/">JSDOM</a>, a DOM Level 3 implementation, and <a href="http://dinhe.net/~aredridel/">Aria</a> <a href="http://dinhe.net/~aredridel/">Stewart</a> who wrote the <a href="https://github.com/aredridel/html5">HTML5 parser</a>.[3] I then set to build a browser environment on top of that.
+                            </p>
+                            <blockquote>
+                                <div>
+                                    Why <a href="http://zombie.labnotes.org/">Zombie.js</a>? &nbsp;If you’re going to write an insanely fast, headless, browser, how can you not call it Zombie?
+                                </div>
+                            </blockquote>
+                            <h3>
+                                Zombie Action
+                            </h3>
+                            <p>
+                                Let’s see the Zombie in action. We’re going to start by setting up a new browser. The Browser object maintains state between page requests, things like cookies, Web Storage, history and (when implemented) caching. We’re typically going to use one browser instance for each session (test scenario):
+                            </p>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#003366;font-weight:bold">var</span> zombie <span style="color:#339933">=</span> require<span style="color:#009900">(</span><span style="color:#3366CC">"zombie"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> browser <span style="color:#339933">=</span> <span style="color:#003366;font-weight:bold">new</span> zombie.<span style="color:#660066">Browser</span><span style="color:#339933">;</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                Next we’re going to point the browser at the Web page we want to test and wait for stuff to happen.
+                            </p>
+                            <p>
+                                Much of what happens as the browser loads the page is asynchronous: getting the HTTP response, grabbing JavaScript files, running <em>jQuery.onready</em>, firing timers, making AJAX requests for additional contents, etc. We also have to anticipate that our request might error.
+                            </p>
+                            <p>
+                                Let’s see what that looks like:
+                            </p>
+                            <div>
+                                <div>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+3
+4
+5
+6
+7
+8
+9
+</pre>
+                                                </td>
+                                                <td>
+                                                    <pre style="font-family:monospace">
+browser.<span style="color:#660066">on</span><span style="color:#009900">(</span><span style="color:#3366CC">"error"</span><span style="color:#339933">,</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span>err<span style="color:#009900">)</span> <span style="color:#009900">{</span>
+  console.<span style="color:#660066">log</span><span style="color:#009900">(</span><span style="color:#3366CC">"Error:"</span><span style="color:#339933">,</span> err<span style="color:#009900">)</span><span style="color:#339933">;</span>
+<span style="color:#009900">}</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+browser.<span style="color:#660066">on</span><span style="color:#009900">(</span><span style="color:#3366CC">"loaded"</span><span style="color:#339933">,</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+  console.<span style="color:#660066">log</span><span style="color:#009900">(</span><span style="color:#3366CC">"Loaded:"</span><span style="color:#339933">,</span> browser.<span style="color:#660066">html</span><span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+<span style="color:#009900">}</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+browser.<span style="color:#660066">window</span>.<span style="color:#660066">location</span> <span style="color:#339933">=</span> <span style="color:#3366CC">"http://localhost:3000"</span><span style="color:#339933">;</span>
+</pre>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <p>
+                                This example illustrates three things you’ll see often when working with Node:
+                            </p>
+                            <ul>
+                                <li>Nothing blocks, everything happens asynchronously, which is why you don’t wait for things to happen, you register callbacks.
+                                </li>
+                                <li>The <em>Browser</em> object is an <a href="http://nodejs.org/api.html#eventemitter-13">EventEmitter</a> that can fire different events to multiple listeners. Many Node objects are event emitters: having a uniform API simplifies composing smaller pieces into larger applications.
+                                </li>
+                                <li>The <em>error</em> event is special. If you don’t catch it, Node terminates and dumps the exception stack trace. It may sound harsh, but it’s a wonderful <a href="http://jlouisramblings.blogspot.com/2010/11/on-erlang-state-and-crashes.html">approach to failure</a>.
+                                </li>
+                            </ul>
+                            <p>
+                                Let’s simplify that further by following another Node convention:
+                            </p>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <pre>
+3
+4
+5
+6
+7
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+zombie.<span style="color:#660066">visit</span><span style="color:#009900">(</span><span style="color:#3366CC">"http://localhost:3000/"</span><span style="color:#339933">,</span> <span style="color:#003366;font-weight:bold">function</span> <span style="color:#009900">(</span>err<span style="color:#339933">,</span> browser<span style="color:#009900">)</span> <span style="color:#009900">{</span>
+  <span style="color:#000066;font-weight:bold">if</span> <span style="color:#009900">(</span>err<span style="color:#009900">)</span>
+    <span style="color:#000066;font-weight:bold">throw</span><span style="color:#009900">(</span>err.<span style="color:#660066">message</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+  console.<span style="color:#660066">log</span><span style="color:#009900">(</span><span style="color:#3366CC">"Loaded:"</span><span style="color:#339933">,</span> browser.<span style="color:#660066">html</span><span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+<span style="color:#009900">}</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                I prefer that, higher level, API.
+                            </p>
+                            <p>
+                                Now we have a single callback that handles both cases. If there’s an error, the callback is invoked with a single argument containing the error. If there’s no error, the callback is invoked with <em>null</em>, and sometimes and additional value (in this case, a reference to the browser). All it takes is checking the first argument to figure whether we’re handling success or failure.
+                            </p>
+                            <p>
+                                Again having this convention makes it easier to compose code. For example, let’s write a test case using <a href="http://vowsjs.org/">Vows</a>:[4]
+                            </p>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#3366CC">"this page"</span><span style="color:#339933">:</span> <span style="color:#009900">{</span>
+  topic<span style="color:#339933">:</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+    zombie.<span style="color:#660066">visit</span><span style="color:#009900">(</span><span style="color:#3366CC">"http://localhost:8080/"</span><span style="color:#339933">,</span> <span style="color:#000066;font-weight:bold">this</span>.<span style="color:#660066">callback</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+  <span style="color:#009900">}</span><span style="color:#339933">,</span>
+  <span style="color:#3366CC">"should have a title"</span><span style="color:#339933">:</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span>browser<span style="color:#009900">)</span> <span style="color:#009900">{</span>
+    assert.<span style="color:#660066">equal</span><span style="color:#009900">(</span>browser.<span style="color:#660066">text</span><span style="color:#009900">(</span><span style="color:#3366CC">"title"</span><span style="color:#009900">)</span><span style="color:#339933">,</span> <span style="color:#3366CC">"Hi there"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+  <span style="color:#009900">}</span>
+<span style="color:#009900">}</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div>
+                                <p>
+                                    The <em>topic</em> function is a combination setup/subject, but instead of returning a value, it wires the Vows callback to the browser <em>visit</em> method. If there’s an error, Vows will catch and report it. Otherwise, it passes the second callback argument (here,&nbsp;<em>browser</em>) to the test case.
+                                </p>
+                                <p>
+                                    Clean, simple and easy to use.
+                                </p>
+                                <h3>
+                                    Getting Smarter
+                                </h3>
+                                <div>
+                                    <div>
+                                        Let’s try something more sophisticated. A lot of tests simulate a user clicking links, filling forms, pressing buttons. We’re going to submit a form:
+                                    </div>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+</pre>
+                                                </td>
+                                                <td>
+                                                    <pre style="font-family:monospace">
+<span style="color:#006600;font-style:italic">// Fill email, password and submit form</span>
+browser.
+  fill<span style="color:#009900">(</span><span style="color:#3366CC">"email"</span><span style="color:#339933">,</span> <span style="color:#3366CC">"zombie@underworld.dead"</span><span style="color:#009900">)</span>.
+  fill<span style="color:#009900">(</span><span style="color:#3366CC">"password"</span><span style="color:#339933">,</span> <span style="color:#3366CC">"eat-the-living"</span><span style="color:#009900">)</span>.
+  pressButton<span style="color:#009900">(</span><span style="color:#3366CC">"Sign Me Up!"</span><span style="color:#339933">,</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span>err<span style="color:#339933">,</span> browser<span style="color:#009900">)</span> <span style="color:#009900">{</span>
+   <span style="color:#006600;font-style:italic">// Form submitted, new page loaded.</span>
+   assert.<span style="color:#660066">equal</span><span style="color:#009900">(</span>browser.<span style="color:#660066">text</span><span style="color:#009900">(</span><span style="color:#3366CC">"title"</span><span style="color:#009900">)</span><span style="color:#339933">,</span> <span style="color:#3366CC">"Welcome to Brains Depot"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+  <span style="color:#009900">}</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        This portion of the <a href="http://zombie.labnotes.org/api.html">Zombie API</a> is influenced by <a href="https://github.com/brynary/webrat">Webrat</a>. Chances are you’re familiar with Webrat or one of the many APIs that follow this pattern. As much as possible, Zombie.js tries to behave like tools you’re already know.
+                                    </p>
+                                    <p>
+                                        Once we get the response back, we’ll want to inspect the page and make sure it has the right contents. We do this after any client-side JavaScript modifications. Since Zombie.js is built on a DOM, you can use any of the DOM methods, for example:
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+1
+2
+3
+4
+</pre>
+                                                </td>
+                                                <td>
+                                                    <pre style="font-family:monospace">
+<span style="color:#000066;font-weight:bold">item</span> <span style="color:#339933">=</span> document.<span style="color:#660066">getElementById</span><span style="color:#009900">(</span><span style="color:#3366CC">"item-32"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+firstLink <span style="color:#339933">=</span> document.<span style="color:#660066">links</span><span style="color:#009900">[</span><span style="color:#CC0000">0</span><span style="color:#009900">]</span>.<span style="color:#660066">href</span><span style="color:#339933">;</span>
+field <span style="color:#339933">=</span> document.<span style="color:#660066">querySelector</span><span style="color:#009900">(</span><span style="color:#3366CC">":input[name=email]"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+rows <span style="color:#339933">=</span> table.<span style="color:#660066">querySelectorAll</span><span style="color:#009900">(</span><span style="color:#3366CC">"tr:even"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        The last two statements use <a href="http://zombie.labnotes.org/selectors.html">CSS selectors</a>. If you worked with jQuery before, you’ve practiced using CSS selectors to locate HTML elements.[5] In fact, Zombie uses <a href="http://sizzlejs.com/">Sizzle.js</a>, the selector engine that powers jQuery. Like I said, tools you already know.
+                                    </p>
+                                    <p>
+                                        There’s a lot more to the&nbsp;<a href="http://zombie.labnotes.org/api.html">Zombie API</a>. You can check boxes, click links, fire DOM events, manage cookies and Web storage, play with the system clock, trace requests and more will be coming.
+                                    </p>
+                                    <h3>
+                                        Is It Fast?
+                                    </h3>
+                                    <p>
+                                        Let’s find out.&nbsp;I’ll use a test case I wrote for <a href="https://github.com/flowtown/rack-oauth2-server/blob/92a81a604399189f63a08d5c8b2807ff53986f10/spec/admin-spec.coffee">Rack OAuth 2 Server</a>. We’re actually going to test a Ruby application.[6]
+                                    </p>
+                                    <p>
+                                        Fire up the practice server, a&nbsp;<span style="font-size:13.3333px">small Sinatra app that listens on port 8080<span style="font-size:13.3333px">:</span></span>
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+1
+</pre>
+                                                </td>
+                                                <td>
+                                                    <pre style="font-family:monospace">
+$ oauth2-server practice <span style="color:#660033">--db</span> <span style="color:#7a0874;font-weight:bold">test</span>
+</pre>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        The test case starts by loading the admin console. Since we’re not signed in, we’re redirected to the authorization page. The practice server has a simple authorization page with two buttons, “grant” and “deny”, and we’re going to click on “grant”. That will redirect us back to the admin console, with an access token that we’re going to store in <em>localStorage</em>. Finally, we’re going to verify that the admin consoles displays a list of client applications (see <a href="http://labnotes.org/2010/11/23/rack-oauth-2-0-server-goes-2-0/">screenshot</a>).
+                                    </p>
+                                    <p>
+                                        That probably doesn’t sound like much, but let’s see what’s really going on behind the scenes.
+                                    </p>
+                                    <p>
+                                        The admin console is a client-side application. It’s a bare HTML page, which loads jQuery, Sammy.js, Underscore.js, Protovis, a bunch of Sammy plugins, and eventually application.js. Once loaded, it changes the location hash to “#/” (the Zombie supports <em>hashchange</em> events), which triggers a Sammy route, which runs some application code that makes an XHR request to the server, retrieves the client list (as JSON), makes another request to load a jQuery template, and finally uses the template to render the data as HTML.
+                                    </p>
+                                    <p>
+                                        Phfew.
+                                    </p>
+                                    <p>
+                                        Looking at the Sinatra log I counted 33 HTTP requests from that test.
+                                    </p>
+                                    <p>
+                                        On my 2.4GHz ’09 MacBook Pro, the entire test runs in just under 0.9 seconds. That includes loading Node, Zombie and its dependencies, compiling the test code from CoffeeScript to JavaScript, hammering Sinatra and dumping output to the console. Because that’s how we run tests in the real world:
+                                    </p>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <pre>
+1
+2
+3
+4
+5
+</pre>
+                                                </td>
+                                                <td>
+                                                    <pre style="font-family:monospace">
+$ <span style="color:#000000;font-weight:bold">time</span> vows spec<span style="color:#000000;font-weight:bold">/</span>admin-spec.coffee <span style="color:#660033">--spec</span>
+ 
+real    0m0.909s
+user    0m0.763s
+sys     0m0.077s
+</pre>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <p>
+                                        Fast enough for you?
+                                    </p>
+                                    <p>
+                                        Maybe you noticed that every&nbsp;<a href="http://zombie.labnotes.org/changelog.html">changelog</a> entry records the number of tests in the Zombie.js test suite, and how long it took to run. That’s how we’ll know if it gets any slower.
+                                    </p>
+                                    <p>
+                                        So there you are, ready to get started with <a href="http://zombie.labnotes.org/">Zombie.js</a>. Have fun and may your test suite always run fast.
+                                    </p>
+                                    <p>
+                                        —-
+                                    </p>
+                                </div>
+                            </div>
+                            <p>
+                                [1] I explained the headless part. As for the full-stack: Zombie.js makes HTTP requests to your test server, exercising every layer of the stack, from HTTP header parsing to database access to response rendering.
+                            </p>
+                            <p>
+                                [2] I don’t know about you, but if the tests take too long to run, I lose <a href="http://en.wikipedia.org/wiki/Flow_(psychology)">the flow</a>. The speed is not just to spend less time waiting, but to stay in the flow.
+                            </p>
+                            <p>
+                                [3] Initially looked as<a href="http://www.envjs.com/">Envjs</a>, but it needed a lot of work to fit into the asynchronous model of Node.
+                            </p>
+                            <p>
+                                [4] I use Zombie in combination with Vows, an <a href="http://vowsjs.org/">asynchronous BDD framework</a>. The “asynchronous” part sounds like buzzword bingo, right until you start using Vows and realize a) it fits your mental model when writing the code you’re about to test, and b) it uses the common idioms and that make test writing easier.
+                            </p>
+                            <p>
+                                [5] If you worked with Rails, you’ll know&nbsp;<a href="http://guides.rubyonrails.org/testing.html#testing-views">assert_select</a> and how to use CSS selectors to test rendered HTML. I released it&nbsp;<a href="http://labnotes.org/2006/07/03/assert_select-plugin-for-rails/">over 4 years ago</a>, so consider Zombie.js your new &amp; improved, faster &amp; smarter assert_select.
+                            </p>
+                            <p>
+                                [6] Zombie.js is not just for Node.js, in fact my first two uses cases are for testing Rails and Sinatra applications.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://labnotes.org/2010/12/30/zombie-js-insanely-fast-full-stack-headless-testing/">http://labnotes.org/2010/12/30/zombie-js-insanely-fast-full-stack-headless-testing/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

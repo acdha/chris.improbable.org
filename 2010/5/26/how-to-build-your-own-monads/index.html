@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How to build your own Monads
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 26 May 2010 18:27:10 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-26T14:27:10-04:00">
+                    <meta itemprop="dateModified" content="2010-05-26T14:27:10-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-26T18:27:10+00:00">May 26</time>
+                    <h2 itemprop="title">
+                        How to build your own Monads
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0ed95f99b9e3bbbf">
+                        <blockquote>
+                            <div style="float:right">
+                                <a href="http://www.flickr.com/photos/art-monad/2333462940/"><img src="http://amix.dk/uploads/monad.png" alt="Monad"></a>
+                            </div>
+                            <p>
+                                Monads are beautiful, misunderstood and useful. In this post we will explore how to build your own monads in JavaScript. We will rebuild <a href="http://jquery.com/">jQuery</a>'s method chaining functionality and implement a monadic Google client for <a href="http://nodejs.org/">node.js</a>.
+                            </p>
+                            <p>
+                                Before we begin, I think we should address why monads are useful by looking at where they are used. Let's take some popular examples:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://importantshock.wordpress.com/2009/01/18/jquery-is-a-monad/">jQuery is a monad</a>: One of the most popular JavaScript libraries is a monad! And jQuery's API is quite powerful, because of its monadic structure - a structure that we will rebuild in this post.
+                                </li>
+                                <li>
+                                    <a href="http://api.dojotoolkit.org/jsdoc/1.3/dojo.Deferred">dojo.Deferred</a> and <a href="http://twistedmatrix.com/documents/current/core/howto/defer.html">Twisted Deferred</a> are monads. Deferreds remove some of the complexities surrounding non-blocking code.
+                                </li>
+                                <li>
+                                    <a href="http://www.haskell.org/haskellwiki/Monad">Haskell Monads</a>: Haskell is filled with monads and they are used to handle and abstract things like state and I/O.
+                                </li>
+                            </ul>
+                            <h3>
+                                The three laws of monads
+                            </h3>
+                            <p>
+                                There are three simple laws of monads:
+                            </p>
+                            <ul>
+                                <li>1) Monads wraps themselves around other data types.
+                                </li>
+                                <li>2) Monads have an operation, called <span>return</span>, that performs the wrapping.
+                                </li>
+                                <li>3) Monads have an operation, called <span>bind</span>, that allows to feed the value wrapped inside the monad into another function (these functions should return a monad).
+                                </li>
+                            </ul>
+                            <p>
+                                How do these laws apply to jQuery?
+                            </p>
+                            <ul>
+                                <li>$ function wraps itself around DOM elements (satisfies law 1 and 2)
+                                </li>
+                                <li>
+                                    <span>$('#some_div').html('test').fadeOut() == $('#some_div')</span>. In other words a function like <span>$(...).html</span> returns <span>$(...)</span> which satisfies law 3
+                                </li>
+                            </ul>
+                            <p>
+                                I won't say that much more about laws of monads, but I will link for some further reading if you are interested to know more details:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://importantshock.wordpress.com/2009/01/18/jquery-is-a-monad/">jQuery is a monad</a>
+                                </li>
+                                <li>
+                                    <a href="http://en.wikipedia.org/wiki/Monad_(functional_programming)">Monads in functional programming</a> - Wikipedia entry
+                                </li>
+                                <li>
+                                    <a href="http://en.wikipedia.org/wiki/Monad_(category_theory)">Mathematical monad</a> - Wikipedia entry
+                                </li>
+                            </ul>
+                            <h3>
+                                Implementing jQuery method chaining
+                            </h3>
+                            <p>
+                                Method chaining is quite powerful in jQuery and it allows you to do following:
+                            </p>
+                            <div>
+                                <pre>
+<span>$</span><span>(</span><span>"p.neat"</span><span>).</span><span>addClass</span><span>(</span><span>"ohmy"</span><span>).</span><span>show</span><span>(</span><span>"slow"</span><span>).</span><span>fadeIn</span><span>()</span>
+</pre>
+                            </div>
+                            <p>
+                                We will now proceed to implement method chaining just for id selectors. Our implementation will allow following functionality:
+                            </p>
+                            <div>
+                                <pre>
+<span>$</span><span>(</span><span>'some_div'</span><span>).</span>
+    <span>html</span><span>(</span><span>'This is a test'</span><span>).</span>
+    <span>css</span><span>(</span><span>'backgroundColor'</span><span>,</span> <span>'#ffffcc'</span><span>).</span>
+    <span>css</span><span>(</span><span>'color'</span><span>,</span> <span>'#999999'</span><span>)</span>
+</pre>
+                            </div>
+                            <p>
+                                It's actually quite simple to build this, here is the code:
+                            </p>
+                            <div>
+                                <pre>
+<span>$</span> <span>=</span> <span>function</span><span>(</span><span>elm_id</span><span>)</span> <span>{</span>
+    <span>return</span> <span>new</span> <span>MonadIdSelector</span><span>(</span><span>elm_id</span><span>);</span>
+<span>}</span>
+
+<span>MonadIdSelector</span> <span>=</span> <span>function</span><span>(</span><span>elm_id</span><span>)</span> <span>{</span>
+    <span>this</span><span>.</span><span>elm</span> <span>=</span> <span>document</span><span>.</span><span>getElementById</span><span>(</span><span>elm_id</span><span>);</span>
+    <span>return</span> <span>this</span><span>;</span>
+<span>}</span>
+<span>MonadIdSelector</span><span>.</span><span>prototype</span> <span>=</span> <span>{</span>
+
+    <span>html</span><span>:</span> <span>function</span><span>(</span><span>html</span><span>)</span> <span>{</span>
+        <span>this</span><span>.</span><span>elm</span><span>.</span><span>innerHTML</span> <span>=</span> <span>html</span><span>;</span>
+        <span>return</span> <span>this</span><span>;</span>
+    <span>}</span><span>,</span>
+
+    <span>css</span><span>:</span> <span>function</span><span>(</span><span>prop</span><span>,</span> <span>value</span><span>)</span> <span>{</span>
+        <span>this</span><span>.</span><span>elm</span><span>.</span><span>style</span><span>[</span><span>prop</span><span>]</span> <span>=</span> <span>value</span><span>;</span>
+        <span>return</span> <span>this</span><span>;</span>
+    <span>}</span>
+    
+<span>}</span>
+</pre>
+                            </div>
+                            <p>
+                                The most important aspect to notice about the code is that all methods of MonadIdSelector return itself! This allows method chaining and satisfies the 3. law of monads. If you check out jQuery code you will find a similar pattern, for example let's see how <span>$(...).empty</span> is implemented:
+                            </p>
+                            <div>
+                                <pre>
+<span>empty</span><span>:</span> <span>function</span><span>()</span> <span>{</span>
+    <span>for</span> <span>(</span> <span>var</span> <span>i</span> <span>=</span> <span>0</span><span>,</span> <span>elem</span><span>;</span> <span>(</span><span>elem</span> <span>=</span> <span>this</span><span>[</span><span>i</span><span>])</span> <span>!=</span> <span>null</span><span>;</span> <span>i</span><span>++</span> <span>)</span> <span>{</span>
+        <span>// Remove element nodes and prevent memory leaks</span>
+        <span>if</span> <span>(</span> <span>elem</span><span>.</span><span>nodeType</span> <span>===</span> <span>1</span> <span>)</span> <span>{</span>
+            <span>jQuery</span><span>.</span><span>cleanData</span><span>(</span> <span>elem</span><span>.</span><span>getElementsByTagName</span><span>(</span><span>"*"</span><span>)</span> <span>);</span>
+        <span>}</span>
+
+        <span>// Remove any remaining nodes</span>
+        <span>while</span> <span>(</span> <span>elem</span><span>.</span><span>firstChild</span> <span>)</span> <span>{</span>
+            <span>elem</span><span>.</span><span>removeChild</span><span>(</span> <span>elem</span><span>.</span><span>firstChild</span> <span>);</span>
+        <span>}</span>
+    <span>}</span>
+    
+    <span>return</span> <span>this</span><span>;</span>
+<span>}</span><span>,</span>
+</pre>
+                            </div>
+                            <h3>
+                                Implementing a monadic Google client for node.js
+                            </h3>
+                            <p>
+                                In the last example we will implement a monadic client to access Google from <a href="http://nodejs.org/">node.js</a>. The implementation isn't really complete since I want to showcase the core of monads (and not how to build HTTP clients in node.js ;-)). The implementation will allow us to do following:
+                            </p>
+                            <div>
+                                <pre>
+<span>googleClient</span><span>(</span><span>'/'</span><span>).</span>
+    <span>addCallback</span><span>(</span><span>function</span><span>(</span><span>response</span><span>)</span> <span>{</span>
+        <span>sys</span><span>.</span><span>puts</span><span>(</span><span>'Successful request done!'</span><span>)</span>
+        <span>sys</span><span>.</span><span>puts</span><span>(</span><span>'HEADERS: '</span> <span>+</span> <span>JSON</span><span>.</span><span>stringify</span><span>(</span><span>response</span><span>.</span><span>headers</span><span>));</span>
+    <span>}).</span>
+    <span>addErrback</span><span>(</span><span>function</span><span>(</span><span>response</span><span>)</span> <span>{</span>
+        <span>sys</span><span>.</span><span>puts</span><span>(</span><span>'Unsuccessful request done?'</span><span>)</span>
+        <span>sys</span><span>.</span><span>puts</span><span>(</span><span>'HEADERS: '</span> <span>+</span> <span>JSON</span><span>.</span><span>stringify</span><span>(</span><span>response</span><span>.</span><span>headers</span><span>));</span>
+    <span>}).</span>
+    <span>sendReq</span><span>()</span>
+</pre>
+                            </div>
+                            <p>
+                                So basically we will build the <a href="http://twistedmatrix.com/documents/current/core/howto/defer.html">deferred</a> monad! The implementation is again quite simple and is very similar to <span>MonadIdSelector</span>:
+                            </p>
+                            <div>
+                                <pre>
+<span>var</span> <span>sys</span> <span>=</span> <span>require</span><span>(</span><span>'sys'</span><span>)</span><span>,</span>
+   <span>http</span> <span>=</span> <span>require</span><span>(</span><span>'http'</span><span>);</span>
+
+<span>googleClient</span> <span>=</span> <span>function</span><span>(</span><span>path</span><span>)</span> <span>{</span>
+    <span>return</span> <span>new</span> <span>MonadGoogleClient</span><span>(</span><span>path</span><span>);</span>
+<span>}</span>
+
+<span>MonadGoogleClient</span> <span>=</span> <span>function</span><span>(</span><span>path</span><span>)</span> <span>{</span>
+    <span>this</span><span>.</span><span>path</span> <span>=</span> <span>path</span>
+    <span>this</span><span>.</span><span>callbacks</span> <span>=</span> <span>[]</span>
+    <span>this</span><span>.</span><span>errbacks</span> <span>=</span> <span>[]</span>
+    <span>return</span> <span>this</span>
+<span>}</span>
+<span>MonadGoogleClient</span><span>.</span><span>prototype</span> <span>=</span> <span>{</span>
+
+    <span>addCallback</span><span>:</span> <span>function</span><span>(</span><span>cb</span><span>)</span> <span>{</span>
+        <span>this</span><span>.</span><span>callbacks</span><span>.</span><span>push</span><span>(</span><span>cb</span><span>)</span>
+        <span>return</span> <span>this</span>
+    <span>}</span><span>,</span>
+
+    <span>addErrback</span><span>:</span> <span>function</span><span>(</span><span>cb</span><span>)</span> <span>{</span>
+        <span>this</span><span>.</span><span>errbacks</span><span>.</span><span>push</span><span>(</span><span>cb</span><span>)</span>
+        <span>return</span> <span>this</span>
+    <span>}</span><span>,</span>
+
+    <span>sendReq</span><span>:</span> <span>function</span><span>()</span> <span>{</span>
+        <span>var</span> <span>self</span> <span>=</span> <span>this</span>
+
+        <span>var</span> <span>google</span> <span>=</span> <span>http</span><span>.</span><span>createClient</span><span>(</span><span>80</span><span>,</span> <span>'www.google.com'</span><span>);</span>
+
+        <span>var</span> <span>request</span> <span>=</span> <span>google</span><span>.</span><span>request</span><span>(</span><span>'GET'</span><span>,</span> <span>this</span><span>.</span><span>path</span><span>);</span>
+        <span>request</span><span>.</span><span>addListener</span><span>(</span><span>'response'</span><span>,</span> <span>function</span><span>(</span><span>response</span><span>)</span> <span>{</span>
+            <span>var</span> <span>status</span> <span>=</span> <span>response</span><span>.</span><span>statusCode</span>
+            <span>if</span><span>(</span><span>status</span> <span>==</span> <span>302</span> <span>||</span> <span>status</span> <span>==</span> <span>200</span><span>)</span>
+                <span>self</span><span>.</span><span>callbacks</span><span>.</span><span>forEach</span><span>(</span><span>function</span><span>(</span><span>cb</span><span>)</span> <span>{</span>
+                    <span>cb</span><span>(</span><span>response</span><span>)</span>
+                <span>})</span>
+            <span>else</span>
+                <span>self</span><span>.</span><span>errbacks</span><span>.</span><span>forEach</span><span>(</span><span>function</span><span>(</span><span>cb</span><span>)</span> <span>{</span>
+                    <span>cb</span><span>(</span><span>response</span><span>)</span>
+                <span>})</span>
+        <span>})</span>
+        <span>request</span><span>.</span><span>end</span><span>()</span>
+
+        <span>return</span> <span>this</span>
+    <span>}</span>
+    
+<span>}</span>
+</pre>
+                            </div>
+                            <p>
+                                If you look at the code you should notice <span>return this</span>. Also do check the similarities with <span>MonadIdSelector</span> - they basically have the same structure!
+                            </p>
+                            <h3>
+                                Last words!
+                            </h3>
+                            <p>
+                                I hope you found this useful and that you will use monads in your own code.
+                            </p>
+                            <p>
+                                Happy monad hacking ;-)
+                            </p><img src="http://feeds.feedburner.com/~r/amixdk/~4/2DA0Qhz29EI" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://amix.dk/blog/post/19509?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+amixdk+%28amix.dk+blog%29">http://amix.dk/blog/post/19509?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+amixdk+%28amix.dk+blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

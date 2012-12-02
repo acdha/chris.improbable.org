@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Speeding up Django unit test runs with MySQL
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 07 Dec 2010 14:22:21 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-07T09:22:21-04:00">
+                    <meta itemprop="dateModified" content="2010-12-07T09:22:21-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-07T13:22:21+00:00">Dec 07</time>
+                    <h2 itemprop="title">
+                        Speeding up Django unit test runs with MySQL
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5977ff9627e789b8">
+                        <blockquote>
+                            <p>
+                                When I'm developing Django sites, my database of choice is usually PostgreSQL. However, lots of clients use MySQL. And there lies a problem: table creation on MySQL seems to be an order of magnitude slower on Mac OS X than on Linux. This makes repeated unit test runs extremely painful.
+                            </p>
+                            <p>
+                                I researched this a little bit a while ago, and noticed that it had been <a href="http://bugs.mysql.com/bug.php?id=56550">reported as a bug</a> in the MySQL tracker. At the time, there were no fixes or workarounds.
+                            </p>
+                            <p>
+                                A recent update, however, has revealed the use of the skip-sync-frm option. Put it in your MySQL config file in the [mysqld] section for a quick speedup:
+                            </p>
+                            <pre>
+[mysqld]<br>default-table-type=innodb<br>transaction-isolation=READ-COMMITTED<br>default-character-set=utf8<br>skip-sync-frm=OFF
+</pre>
+                            <p>
+                                Of course, nothing in this life is free, as Daniel Fischer explains in a comment:
+                            </p>
+                            <p>
+                                The reason why it's slower on Mac OS X than on Linux is that on Mac OS X, fcntl(F_FULLFSYNC) is available, and mysqld prefers this call to fsync(). The difference is that fsync() only flushes data to the disk - both on Linux and Mac OS X -, while fcntl(F_FULLFSYNC) also asks the disk to flush its own buffers and blocks until the data is physically written to the disk.<br>
+                                <br>
+                                In a nutshell, it's slower because it's safer.
+                            </p>
+                            <p>
+                                So, we're trading data integrity for performance - but this is a development machine, so trashing and recreating databases (or the MySQL installation for that matter) is fine, if necessary.
+                            </p>
+                            <h3>
+                                Et tu, Linux?
+                            </h3>
+                            <p>
+                                My colleague was having similar problems on the latest Ubuntu, 10.10. The tweak above helped him too, but his test runs were also painfully slow. He'd already added the 'noatime' option to fstab.
+                            </p>
+                            <p>
+                                It turns out that the newest Ubuntu ships with ext4 as the default file system. By default, ext4 makes absolutely sure that all data has been written out to the filesystem journal before writing the journal commit record. This is done through the use of filesystem barriers. Again - this is done to prefer data integrity over performance. Since this is a dev machine, it's disposable, and performance is more important. So, we can turn this off in /etc/fstab:
+                            </p>
+                            <pre>
+/dev/sda3 on / type ext4 (noatime,rw,errors=remount-ro,barrier=0)
+</pre>
+                            <p>
+                                Read more about the <a href="http://kernelnewbies.org/Ext4#head-25c0a1275a571f7332fa196d4437c38e79f39f63">barrier setting on Kernelnewbies.org</a>.
+                            </p>
+                            <p>
+                                Just to reiterate - it's probably best not to do this on a machine that's important without thinking about it carefully. Those settings have conservative defaults for a reason!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.stereoplex.com/blog/speeding-up-django-unit-test-runs-with-mysql">http://www.stereoplex.com/blog/speeding-up-django-unit-test-runs-with-mysql</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

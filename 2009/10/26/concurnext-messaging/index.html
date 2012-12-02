@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Concur.next — Messaging
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 27 Oct 2009 12:08:22 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-10-26T15:00:00-04:00">
+                    <meta itemprop="dateModified" content="2009-10-26T15:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-10-26T19:00:00+00:00">Oct 26</time>
+                    <h2 itemprop="title">
+                        Concur.next — Messaging
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/287b9e91313095c4">
+                        <blockquote>
+                            <div>
+                                <p>
+                                    The more I look at <a href="http://clojure.org/">Clojure</a>, the more I think it’s a heroic attempt to Do The Right Thing, in fact All The Right Things, as we move toward the lots-of-not-particularly-fast-cores future. I’m still working my head around Clojure’s concurrency primitives. We come to understand the things we don’t by contrast with the things we do; so I’m finding contrast between the Clojure and Erlang approaches to messaging instructive.
+                                </p>
+                                <p>
+                                    [This is part of the <a href="http://www.tbray.org/ongoing/When/200x/2009/09/27/Concur-dot-next">Concur.next series</a>. By way of motivation, consider the recent <a href="http://www.theregister.co.uk/2009/10/26/tilera_third_gen_mesh_chips/">100-core processor from Tilera</a>. I quote from the coverage, which says that the new chip should offer “somewhere between seven and eight times the performance of the original Tile64 chip that debuted two years ago. That is well above and beyond the Moore’s Law curve, provided your workload can scale across lots of cores.” Which, absent a good Concur.next solution, most workloads can’t.]
+                                </p>
+                                <p>
+                                    Let’s suppose we’ve got a program we want to smash across lots of cores, and we want it to count things. The counts aren’t going to be reported out till the program finishes, so there’s no reason for the main workload to wait for the counting arithmetic. So the obvious thing to do is to run the counters off in their own thread(s), send them please-count messages (no need to wait for the answers), and the numbers will all get added up eventually.
+                                </p>
+                                <h2>
+                                    In Erlang
+                                </h2>
+                                <p>
+                                    Here’s how you might do it. Let’s take the simplest possible approach and have a separate process for each item you’re counting.
+                                </p>
+                                <pre>
+<code> 1 -module(counter).
+ 2 -export([new/0, incr/1, count/1, counter/0]).
+ 3
+ 4 new() -&gt;
+ 5     Counter = spawn(fun counter:counter/0),
+ 6     Counter.
+ 7
+ 8 incr(Counter) -&gt;
+ 9     Counter ! { incr }.
+10
+11 count(Counter) -&gt;
+12     Counter ! { count, self() },
+13     receive
+14      { count, Count } -&gt;
+15          Count
+16     end.
+17
+18 %- The counter process -------------------
+19 counter() -&gt;
+20     counter_loop(0).
+21
+22 counter_loop(Count) -&gt;
+23     receive
+24      { incr } -&gt;
+25          counter_loop(Count + 1);
+26      { count, Requestor } -&gt;
+27          Requestor ! { count, Count },
+28          counter_loop(Count)
+29     end.</code>
+</pre>
+                                <p>
+                                    When a user calls the <code>incr</code> function, line 8, that just sends off a one-element tuple in fire-and-forget mode. The counter’s main loop, starting at line 22, receives that message at line 24, increments its counter and waits for the next message.
+                                </p>
+                                <p>
+                                    To find out what the count is, the <code>count</code> function at line 11 sends off a tuple with the symbol <code>count</code> and your process ID, and waits for the counter to report.
+                                </p>
+                                <p>
+                                    This probably isn’t the world’s most idiomatic Erlang, but I think it illustrates message-passing pretty clearly.
+                                </p>
+                                <h2>
+                                    In Clojure
+                                </h2>
+                                <p>
+                                    You’d use an <a href="http://clojure.org/agents">agent</a>, which is a reference to some data; here’s an example from Stuart Halloway’s <a href="http://www.pragprog.com/titles/shcloj/programming-clojure">Programming Clojure</a> book. First, you get a reference to the agent:
+                                </p>
+                                <pre>
+<code>(def counter (agent 0))</code>
+</pre>
+                                <p>
+                                    Then, to increment it, you send it a function; since Clojure has a built-in <code>inc</code> function, this is pretty easy.
+                                </p>
+                                <pre>
+<code>(send counter inc)</code>
+</pre>
+                                <p>
+                                    Now, you could have sent any old function over there that could apply to whatever <code>counter</code> referred to, in this case an integer, and have that function applied; you can send arguments too. Clojure takes care of maintaining a thread pool and sequencing the messages to the agent. If there’s a chance that the function might block, you can use <code>send-off</code> rather than <code>send</code>; it uses an expandable thread pool.
+                                </p>
+                                <p>
+                                    Anyhow, to find the current value, you just ask; either of these will do.
+                                </p>
+                                <pre>
+<code>(deref counter)
+@counter</code>
+</pre>
+                                <h2>
+                                    Different Strokes
+                                </h2>
+                                <p>
+                                    The differences between these two approaches are extremely interesting. I’m wondering if the class of things you can do with one but not the other is very big or interesting; I suspect that both can be made isomorphic to the <a href="http://en.wikipedia.org/wiki/Actor_model">Actor</a> model of computation, although the mapping from Erlang is more direct.
+                                </p>
+                                <p>
+                                    <i>[Update:]</i> Thanks to <a href="http://technomancy.us/">Phil Hagelberg</a> for <a href="http://www.tbray.org/ongoing/When/200x/2009/10/26/Messaging#c1256613291.952544">this comment</a>, which links to a <a href="http://bc.tech.coop/blog/081201.html">detailed discussion of the Clojure/Erlang trade-offs</a> hosted by <a href="http://bc.tech.coop/">Bill Clementson</a>. I see lots of stuff to argue about there...
+                                </p>
+                                <p>
+                                    I’ll dig into this some more (I’m doing a Wide Finder in Clojure to get some hands-on), but I place a certain value on first impressions and thought it might be useful to capture some.
+                                </p>
+                                <h2>
+                                    This Is Important
+                                </h2>
+                                <p>
+                                    Not all the practical sane lock-free solutions to the concurrency conundrum involve message-passing; for example, see Clojure’s <a href="http://clojure.org/atoms">Atoms</a> and <a href="http://clojure.org/refs">Refs</a>. But I do think that message-passing is important; it presents a relatively simple mental model that isn’t terribly hard to think about, it scales naturally outside the shared-global-memory space, and it maps reasonably well onto the semantics actually provided by the underlying operating systems.
+                                </p>
+                                <h2>
+                                    Ceremony
+                                </h2>
+                                <p>
+                                    Clojure has a lot less. You don’t have to create threads or take care of sending and receiving messages. That counter function involves three lines of code, as opposed to 29 in Erlang. This is good.
+                                </p>
+                                <p>
+                                    To be fair, a <em>user</em> of the Counter module would only ever have to say <code>incr(Counter)</code> and <code>count(Counter)</code>. But still, the whole implementation of both sides is just three lines of Clojure.
+                                </p>
+                                <p>
+                                    I do wonder if there are cases where I’d miss Erlang’s direct control over the process inventory? Sometimes I might be counting twelve things and sometimes twelve thousand.
+                                </p>
+                                <h2>
+                                    Coupling
+                                </h2>
+                                <p>
+                                    Erlang has a lot less. I don’t need to know what kind of a thing I’m talking to, the messages I send it are just chunks of data, and it gets to decide how to deal with them. In particular, it can trivially ignore those it doesn’t care about.
+                                </p>
+                                <p>
+                                    This seems good to me. But maybe I’m kidding myself here; As a developer, normally wouldn’t I be controlling both sides of the conversation? And as I look at actual Erlang code, I notice that in practice, a lot of the messages are along the lines of <code>{&nbsp;opcode,&nbsp;argument,&nbsp;argument,&nbsp;...&nbsp;}</code>&nbsp;—&nbsp;they smell a lot like dressed-up function calls.
+                                </p>
+                                <h2>
+                                    Pattern Matching
+                                </h2>
+                                <p>
+                                    I think this is actually the <em>important</em> difference between the approaches. The message you send to a Clojure agent is just a function, and the system goes about applying it like any other. On the other hand, the receiving end in Erlang gets to pattern-match, which feels natural and looks readable. Is this the proverbial Computer Science one-more-level-of-indirection which turns out to solve an important problem?
+                                </p>
+                                <h2>
+                                    Scaling
+                                </h2>
+                                <p>
+                                    My use-case here, counting integers, is awfully limited. I’ve built up a “feel” for what Erlang message wrangling feels like in practice at significant-program scale. It’s one of the reasons I’m positive on Erlang: it’s easy to explain and easy to understand (well, compared to locking). When I stress Clojure a bit, if I find it even easier, that’d be a big selling point.
+                                </p>
+                                <p>
+                                    If only Clojure weren’t a Lisp...
+                                </p>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.tbray.org/ongoing/When/200x/2009/10/26/Messaging">http://www.tbray.org/ongoing/When/200x/2009/10/26/Messaging</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

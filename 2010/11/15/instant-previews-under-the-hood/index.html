@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Instant Previews: Under the hood
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 15 Nov 2010 16:00:03 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-15T11:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-11-15T11:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-15T15:00:00+00:00">Nov 15</time>
+                    <h2 itemprop="title">
+                        Instant Previews: Under the hood
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c1b116269508d4f5">
+                        <blockquote>
+                            <img src="http://www.google.com/images/icons/feature/search-b16.png" align="right">
+                            <p>
+                                If you’ve used Google Search recently, you may have noticed a new feature that we’re calling <a href="http://www.google.com/instantpreviews">Instant Previews</a>. By clicking on the (<a href="http://www.stevesouders.com/blog/2009/09/14/spriteme/">sprited</a>) magnifying glass icon next to a search result you see a preview of that page, often with the relevant content highlighted. Once activated, you can mouse over the rest of the results and quickly (instantly!) see previews of those search results, too.
+                            </p>
+                            <p>
+                                Adding this feature to Google Search involved a lot of client-side Javascript. Being Google, we had to make sure we could deliver this feature without slowing down the page. We know <a href="http://googleresearch.blogspot.com/2009/06/speed-matters.html">our users want their results fast</a>. So we thought we’d share some techniques involved in making this new feature fast.
+                            </p>
+                            <h3>
+                                JavaScript compilation
+                            </h3>
+                            <p>
+                                This is nothing new for Google Search: all our Javascript is compiled to make it as small as possible. We use the open-sourced <a href="http://code.google.com/closure/compiler/">Closure Compiler</a>. In addition to minimizing the Javascript code, it also re-writes expressions, reuses variables, and prunes out code that is not being used. The Javascript on the search results page is deferred, and also cached very aggressively on the client side so that it’s not downloaded more than once per version.
+                            </p>
+                            <h3>
+                                On-demand JSONP
+                            </h3>
+                            <p>
+                                When you activate Instant Previews, the result previews are requested by your web browser. There are several ways to fetch the data we need using Javascript. The most popular techniques are <a href="http://en.wikipedia.org/wiki/XMLHttpRequest">XmlHttpRequest</a> (XHR) and <a href="http://en.wikipedia.org/wiki/JSON#JSONP">JSONP</a>. XHR generally gives you better control and error-handling, but it has two drawbacks: browsers caching tends to be less reliable, and only <a href="http://en.wikipedia.org/wiki/Same_origin_policy">same-origin requests</a> are permitted (this is starting to change with modern browsers and <a href="http://www.w3.org/TR/cors/">cross-origin resource sharing</a>, though). With JSONP, on the other hand, the requested script returns the desired data as a JSON object wrapped in a Javascript callback function, which in our case looks something like
+                            </p>
+                            <p>
+                                <code>google.vs.r({"dim":[302,585],"url":"http://example.com",ssegs:[...]}).</code>
+                            </p>
+                            <p>
+                                Although error handling with JSONP is a bit harder to do compared to XHR (not all browsers support <code>onerror</code> events), JSONP can be cached aggressively by the browser, and is not subject to same-origin restrictions. This last point is important for Instant Previews because <a href="http://www.stevesouders.com/blog/2008/03/20/roundup-on-parallel-connections/">web browsers restrict the number of concurrent requests</a> that they send to any one host. Using a different host for the preview requests means that we don’t block other requests in the page.
+                            </p>
+                            <p>
+                                There are a couple of tricks when using JSONP that are worth noting:
+                            </p>
+                            <ul>
+                                <li>If you insert the script tag directly, e.g. using document.createElement, some browsers will show the page as still “loading” until all script requests are finished. To avoid that, make your DOM call to insert the script tag inside a window.setTimeout call.
+                                </li>
+                                <li>After your requests come back and your callbacks are done, it’s a good idea to set your script src to null, and remove the tag. On some browsers, allowing too many script tags to accumulate over time may slow everything down.
+                                </li>
+                            </ul>
+                            <h3>
+                                Data URIs
+                            </h3>
+                            <p>
+                                At this point you are probably curious as to what we’re returning in our JSONP calls, and in particular, why we are using JSON and not just plain images. Perhaps you even used Firebug or your browser’s Developer Tools to examine the Instant Previews requests. If so, you will have noticed that we send back the image data as sets of <a href="http://en.wikipedia.org/wiki/Data_URI_scheme">data URIs</a>. Data URIs are base64 encodings of image data, that modern browsers (IE8+, Chrome, Safari, Firefox, Opera, etc) can use to display images, instead of loading them from a server as usual.
+                            </p>
+                            <p>
+                                To show previews, we need the image, and the relevant content of the page for the particular query, with bounding boxes that we draw on top of the image to show where that content appears on the page. If we used static images, we’d need to make one request for the content and one request for the image; using JSONP with data URIs, we make just one request. Data URIs are limited to 32K on IE8, so we send “slices” that are all under that limit, and then use Javascript to generate the necessary image tags to display them. And even though base64 encoding adds about 33% to the size of the image, our tests showed that gzip-compressed data URIs are comparable in size to the original JPEGs.
+                            </p>
+                            <p>
+                                We use caching throughout our implementation, but it’s important to not forget about client-side caching as well. By using JSONP and data URIs, we limit the number of requests made, and also make sure that the browser will cache the data, so that if you refresh a page or redo a query, you should get the previews, well... instantly!
+                            </p><span style="font-style:italic">By Matías Pelenur, Instant Previews team</span>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/11300808-3482389665869486609?l=googlecode.blogspot.com" alt="">
+                            </div>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/blogspot/Dcni?a=PWcwo5qxQuw:XcnuAo7L2VU:-BTjWOF_DHI"><img src="http://feeds.feedburner.com/~ff/blogspot/Dcni?i=PWcwo5qxQuw:XcnuAo7L2VU:-BTjWOF_DHI" border="0"></a> <a href="http://feeds.feedburner.com/~ff/blogspot/Dcni?a=PWcwo5qxQuw:XcnuAo7L2VU:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/blogspot/Dcni?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/blogspot/Dcni?a=PWcwo5qxQuw:XcnuAo7L2VU:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/blogspot/Dcni?i=PWcwo5qxQuw:XcnuAo7L2VU:V_sGLiPBpWU" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/blogspot/Dcni/~4/PWcwo5qxQuw" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://googlecode.blogspot.com/2010/11/instant-previews-under-hood.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+blogspot%2FDcni+%28Google+Code+Blog%29">http://googlecode.blogspot.com/2010/11/instant-previews-under-hood.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+blogspot%2FDcni+%28Google+Code+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

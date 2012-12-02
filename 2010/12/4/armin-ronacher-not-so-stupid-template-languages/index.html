@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Armin Ronacher: Not So Stupid Template Languages
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 05 Dec 2010 00:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-04T19:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-12-04T19:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-04T23:00:00+00:00">Dec 04</time>
+                    <h2 itemprop="title">
+                        Armin Ronacher: Not So Stupid Template Languages
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a0eb7be0bfecc1ca">
+                        <blockquote>
+                            <p>
+                                Daniel Greenfeld <a href="http://pydanny.blogspot.com/2010/12/stupid-template-languages.html">recently criticized</a> templating languages such as Mako, Genshi, Jinja2 or others for being more than a stupid template language. That of course might be valid criticism, but there seems to be some major misunderstanding out there about what Jinja2 compared to Django's templating system actually is.
+                            </p>
+                            <p>
+                                As said by Daniel:
+                            </p>
+                            <blockquote>
+                                I often work on projects crafted by others, some who decided for arcane/brilliant/idiotic reasons to mix the kernel of their applications in template function/macros. This is only possible in Smart Template Languages! If they were using a Stupid Template Language they would have been forced put their kernel code in a Python file where it applies, not in a template that was supposed to just render HTML or XML or plain text.
+                            </blockquote>
+                            <p>
+                                I suppose the macro part there is written especially with Jinja2 in mind there because I know very few templating systems calling things “macros”. In fact, the only reason Jinja2 calls its functions “macros” is that “enddef” sounded stupid as a keyword and “endfunction” was past the threshold of keyword lengths I was happy with.
+                            </p>
+                            <p>
+                                So what is a macro in Jinja2 and why does it exist in the first place? A macro is basically nothing more than a template that is meant for including, but with the additional information about what variables it wants. It's the Python principle of “explicit is better than implicit” applied for templating languages.
+                            </p>
+                            <p>
+                                Take the following Django template as example:
+                            </p>
+                            <div>
+                                <pre>
+<span>&lt;ul&gt;</span>
+<span>{%</span> <span>for</span> <span>user</span> <span>in</span> <span>users</span> <span>%}</span>
+    <span>&lt;li&gt;</span><span>{%</span> <span>include</span> <span>"_render_user.html"</span> <span>%}</span><span>&lt;/li&gt;</span>
+<span>{%</span> <span>endfor</span> <span>%}</span>
+<span>&lt;/ul&gt;</span>
+</pre>
+                            </div>
+                            <p>
+                                From looking at that specific code it's completely impossible to figure out what variables the included template depends on. One might guess that user is used, but there are two other variables available for sure: first of all “users” is clearly available for the included template, however django also adds “forloop” implicitly into the context, so the template that was included could use that too. Additionally however it might access the current request, current user or tons of other variables.
+                            </p>
+                            <p>
+                                Jinja2 makes this an explicit thing: don't use includes, import macros and explicitly pass the variables there. It's a little bit more to write but comes with three nice advantages:
+                            </p>
+                            <ol>
+                                <li>it's explicit which makes it a lot easier to figure out what exactly is happening in a template. Especially if you want to look over templates written by someone else it's a huge time saver.
+                                </li>
+                                <li>it allows the templating system to apply huge performance improvements. “forloop” / “loop” is never referenced? No point in creating an object then.
+                                </li>
+                                <li>Macros are functions and thus can be used in an expression context. This – among other things – makes it possible to expand / call macros in the context of internationalized blocks.
+                                </li>
+                            </ol>
+                            <p>
+                                This example here makes this pretty obvious:
+                            </p>
+                            <div>
+                                <pre>
+<span>{%</span> <span>from</span> <span>"_user.html"</span> <span>import</span> <span>render_user</span> <span>%}</span>
+<span>&lt;ul&gt;</span>
+<span>{%</span> <span>for</span> <span>user</span> <span>in</span> <span>users</span> <span>%}</span>
+    <span>&lt;li&gt;</span><span>{{</span> <span>render_user</span><span>(</span><span>user</span><span>)</span> <span>}}</span><span>&lt;/li&gt;</span>
+<span>{%</span> <span>endfor</span> <span>%}</span>
+<span>&lt;/ul&gt;</span>
+</pre>
+                            </div>
+                            <p>
+                                Here Daniel is just wrong:
+                            </p>
+                            <blockquote>
+                                What it comes down to is that Smart Template Languages designers assume that developers are smart enough to avoid making this mistake. Stupid Template Languages designers assume that developers generally lack the discipline to avoid creating horrific atrocities that because of unnecessary complexity have a bus factor of 1.
+                            </blockquote>
+                            <p>
+                                I don't know about how other template engine authors are handling the issue, but I am well aware of the fact that users will find ways to shoot themselves into the foot with any tool you give them which obviously includes Jinja2. Which is why Jinja2 also provides much superior ways to Django to prevent this from happening.
+                            </p>
+                            <p>
+                                Ever had the problem that a template accidentally triggered a database query? In Django land this is a very, very common problem and the exact location of that query can be hard to pinpoint. If you are passing arbitrary Python models into the template there will always be ways to trigger queries.
+                            </p>
+                            <p>
+                                Jinja2 allows you to easily prevent accidental queries by using a sandboxed environment and overriding the callback functions. In fact, preventing queries from model attributes could probably be implemented in less than 10 lines of code. If one would argue that the sandbox adds inacceptable overhead, I could generally agree. At least for some kinds of applications. At the same time however there is no reason why you shouldn't use such a sandbox during development and disable it for the production system.
+                            </p>
+                            <p>
+                                I have seen some really horrible and bad abuse of the Django template language which leads me to the believe that the bus factor is a much harder problem in the Django template world than anywhere else. Undocumented custom template tags written by someone on the project doing some things in one way and other things in a different way, not behaving as intended but still in use are very, very common. It becomes especially hairy if people start using custom template tags in internationalized applications where suddenly they can't use particular constructs in block translation blocks. Then tags are extended to now also write into variables and not render anything. Worse: because the intended syntax clashes due to the custom parsing code with stuff that was already valid before leads to inconsistent syntax rules. A giant mess.
+                            </p>
+                            <p>
+                                I'm not arguing there that Django's template system would be bad, I think it's good enough for what it does. I however disagree strongly with the fact that “non stupid template languages” are too complex for people to handle or give them additional power to make your code unmaintainable.
+                            </p>
+                            <p>
+                                Those are different systems with different ideas and different consequences. The “unrestricted template languages are bad and result in PHP spaghetti code” straw man argument is just that: a straw man. I have seen equally bad Django, PHP, Jinja2 and Mako templates.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://lucumr.pocoo.org/2010/12/5/not-so-stupid-template-languages">http://lucumr.pocoo.org/2010/12/5/not-so-stupid-template-languages</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

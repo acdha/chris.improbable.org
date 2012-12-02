@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Large Problems in Django, Mostly Solved: APIs
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 11 Nov 2009 21:42:40 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-11T16:42:40-04:00">
+                    <meta itemprop="dateModified" content="2009-11-11T16:42:40-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-11T20:42:40+00:00">Nov 11</time>
+                    <h2 itemprop="title">
+                        Large Problems in Django, Mostly Solved: APIs
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/b86a05b1840d2119">
+                        <blockquote>
+                            <p>
+                                This is the third part of my Large Problems Series. The first two were <a href="http://ericholscher.com/blog/2009/nov/2/large-problems-django-mostly-solved/">Search</a> and <a href="http://ericholscher.com/blog/2009/nov/6/large-problems-database-migrations/">Database Migrations</a>.
+                            </p>
+                            <p>
+                                A lot of efforts have come and gone in the Django space, trying to provide a API's that do various things. Some have tried to give you automatic CRUD based off your models or by abstracting the admin, others have extended Django serializers to provide some kind of functionality, and there have been lots of other approaches.
+                            </p>
+                            <p>
+                                I think that <a href="http://bitbucket.org/jespern/django-piston/overview/">Piston</a> hits a sweet spot for creating APIs. It has a lot of nice little features, and handles the general use case well. It is also abstract enough that it allows you to provide your own layer on top of it with ease.
+                            </p>
+                            <h3>
+                                Piston
+                            </h3>
+                            <p>
+                                <a href="http://bitbucket.org/jespern/django-piston/">Piston</a> has three major philosophical concepts that are important; Resources, Handlers, and Emitters. A Resource is the "thing" that you are trying to represent in your API, the domain object. This could be a blog post, a user, or anything else. A Handler is how you do something with that resource. It is a lot like a view, where you get the request and it delegates to different functions based on what you want to do (create, update, read) with it. The Handler will return some kind of object, and the Emitter's job is to output this. It is where you choose the format (xml, json, yaml) and other information about how the data is returned.
+                            </p>
+                            <p>
+                                The way these things are abstracted makes it really easy to create a REST API. In fact, the documentation has a <a href="http://bitbucket.org/jespern/django-piston/wiki/Home#fully-functional-example">full working example</a>.
+                            </p>
+                            <p>
+                                I would like to talk about some of the nicer features and abilities of Piston. <strong>This is not a tutorial, but more a pointer, so that you know it exists and kicks ass.</strong> The <a href="http://bitbucket.org/jespern/django-piston/wiki/Documentation#piston-documentation">Piston Documentation</a> is decent in regard to getting you going.
+                            </p>
+                            <h3>
+                                Useful Features
+                            </h3>
+                            <h4>
+                                Authentication: OAuth, Basic Auth
+                            </h4>
+                            <p>
+                                I have found <a href="http://bitbucket.org/jespern/django-piston/wiki/Documentation#authentication">OAuth</a> something of a pain to implement when I tried to do it on my sites. Piston handles this for you, and does a good job of it! This gives you a really nice authentication scheme for your API users for free. If you need something simpler, HTTP Basic Auth is provided out of the box as well. The Authentication is also tied in automatically to the Django Authentication scheme, making this relatively hard problem of API's incredibly simple. This gives you both ranges of Authentication mechanisms, simple and advanced, without touching a line of code.
+                            </p>
+                            <h4>
+                                Automatically handles different serialization formats
+                            </h4>
+                            <p>
+                                Out of the box you also get <a href="http://bitbucket.org/jespern/django-piston/wiki/Documentation#emitters">serializers</a> for JSON, YAML, Python Pickle, XML, and Django's own model serialization format. By default, if you append ?format=X to a URL of a piston resource, it will automatically return the data in that format. Thinking about serialization formats is basically non-existent.
+                            </p>
+                            <h4>
+                                Guides you towards proper REST practices
+                            </h4>
+                            <p>
+                                Piston by default and convention returns the <a href="http://bitbucket.org/jespern/django-piston/wiki/Documentation#helpers-utils-decorators">correct status</a> codes for events. It even has a convinent <code>rc</code> module that maps response codes to names, to make it super simple to know what you want to return. You have to try to not follow proper REST convention.
+                            </p>
+                            <pre>
+<code>if not request.user == post.author:
+    return rc.FORBIDDEN # returns HTTP 401
+</code>
+</pre>
+                            <h4>
+                                API isn't tied to models
+                            </h4>
+                            <p>
+                                Tying your API to your models seems like a good idea at first. However, you quickly want to return objects from other models, results of methods, and other data that isn't related to your model. Piston to start out lets you define a model to tie it to, but this simply sets sane defaults for the handler methods. Once you override these methods, the fact that parts of the handler is tied to a model doesn't matter. You can keep providing the basic parts that you don't want to write, but extend where you need more advanced functionality.
+                            </p>
+                            <h4>
+                                Lots more, built in
+                            </h4>
+                            <p>
+                                Piston has just a ton of really useful things that you need built in, and well configured. Among the things that I haven't mentioned, but that you will appreciate:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://bitbucket.org/jespern/django-piston/wiki/Documentation#throttling">Throttling</a> (by view, user, or IP)
+                                </li>
+                                <li>
+                                    <a href="http://bitbucket.org/jespern/django-piston/wiki/Documentation#streaming">Streaming Responses</a>
+                                </li>
+                                <li>
+                                    <a href="http://bitbucket.org/jespern/django-piston/wiki/Documentation#form-validation">Form Validation</a> (using Django's form library)
+                                </li>
+                                <li>
+                                    <a href="http://bitbucket.org/jespern/django-piston/wiki/Documentation#generating-documentation">Generated Documentation</a> (allowing you to document the methods you have available)
+                                </li>
+                            </ul>
+                            <h4>
+                                Conclusion
+                            </h4>
+                            <p>
+                                Piston is just incredibly well configured by default. You can write a couple of lines of code, and most of the features that you expect in an API are there for you. However, this doesn't mean that it is limiting you from doing complex things as well. All of the important bits are sanely configured, but easily pluggable. It is a really amazing piece of work when you dig down into it and realize that most things you want to change are simple.
+                            </p>
+                            <p>
+                                Like Django and Python, <strong>piston makes doing the correct thing simple and obvious.</strong> If you end up fighting against the app, you're more than likely doing something wrong.
+                            </p>
+                            <p>
+                                I know I didn't get all the way into piston, and it is amazingly well written. There are lots of little niceties hiding in dark corners, instead of demons. I would love to see this project get more attention, tutorials, and blog posts in the community. Are you using Piston? Is there something you love or hate? Let me know, or even better, blog about it!
+                            </p><img src="http://feeds.feedburner.com/~r/EricsThoughts/~4/gbYvCT8EbUc" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ericholscher.com/blog/2009/nov/11/large-problems-django-mostly-solved-rest-api/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EricsThoughts+%28Eric%27s+Thoughts%29">http://ericholscher.com/blog/2009/nov/11/large-problems-django-mostly-solved-rest-api/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EricsThoughts+%28Eric%27s+Thoughts%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

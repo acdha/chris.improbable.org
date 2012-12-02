@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Ruby Proxies for Scale and Monitoring
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 20 Apr 2009 19:33:14 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-20T15:33:14-04:00">
+                    <meta itemprop="dateModified" content="2009-04-20T15:33:14-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-20T19:33:14+00:00">Apr 20</time>
+                    <h2 itemprop="title">
+                        Ruby Proxies for Scale and Monitoring
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/6c178e342bb7f109">
+                        <blockquote>
+                            <p>
+                                <img src="http://www.igvita.com/posts/09/duplex-proxy.png" align="left" style="margin-right:1em">Lift the curtain behind any modern web application and you will find at least a few proxy servers orchestrating the show. Caching proxies such as <a href="http://varnish.projects.linpro.no/">Varnish</a> and <a href="http://www.squid-cache.org/">Squid</a> help us take the load of our application servers; reverse proxies such as <a href="http://haproxy.1wt.eu/">Haproxy</a> and <a href="http://wiki.nginx.org/Main">Nginx</a> help us partition and distribute the workload to multiple workers, all without revealing the underlying architecture to the user. In the Ruby world, <a href="http://railscasts.com/episodes/151-rack-middleware">Rack middleware</a> and <a href="http://weblog.rubyonrails.org/2008/12/17/introducing-rails-metal">Rails Metal</a> are sister concepts: both allow the programmer to inject functionality in the pre or post-processing step of the HTTP request.
+                            </p>
+                            <p>
+                                However, nobody said that we should limit ourselves to HTTP, or that the proxy server has to be transparent to the user! After all, there is a great number of other potential use cases which we can use in our infrastructure: intercepting data, validating requests, benchmarking, logging, etc. In fact, a proxy server can be a powerful swiss-army knife in the right hands. Want to intercept SMTP traffic to detect spam? Maybe encrypt or decrypt a datastream on the fly? It’s all surprisingly simple with Ruby.
+                            </p>
+                            <h4>
+                                <strong>Proxy language: Transparent, Intercepting, Cut-through ...</strong>
+                            </h4>
+                            <div style="width:600px;text-align:left">
+                                <iframe src="http://reader.googleusercontent.com/reader/embediframe?src=http://static.slidesharecdn.com/swf/ssplayer2.swf?doc%3Digvita-gogaruco-proxies-090417152908-phpapp01%26stripped_title%3Druby-proxies-for-scale-performance-and-monitoring-gogaruco-igvitacom&amp;width=600&amp;height=490" width="600" height="490"></iframe>
+                            </div>
+                            <p>
+                                Proxy servers can be placed in numerous places between the user and the destination, they can be chained and they can even alter the data at will. A transparent proxy will not modify the request or response and is commonly used for load balancing, authentication, or validation. On the other hand, an intercepting proxy is often used to modify the request or response to provide some added service to user or architect: transform data on the fly, encryption, extending a protocol, etc. Needless to say, intercepting proxies are a wonderful tool!
+                            </p>
+                            <p align="center">
+                                <img src="http://www.igvita.com/posts/09/proxy-server.png">
+                            </p>
+                            <h4>
+                                <strong>Ruby Proxy: Duplex Benchmarking</strong>
+                            </h4>
+                            <p>
+                                With minimal overhead, a proxy server can allow us to duplicate a request to multiple servers, for example to production and staging. Instead of the "<a href="http://www.igvita.com/2008/09/30/load-testing-with-log-replay/">record and replay headache</a>" we can instrument ourselves with a real-time performance debugging and monitoring tool: a request gets forked but only the production response is forwarded back to the client. From there, we can analyze the response time in realtime, compare the response bodies, or even alter the data at will:
+                            </p>
+                            <p>
+                                <a href="javascript:void(0);"><b>&gt; em-proxy.rb</b></a>
+                            </p>
+                            <div style="background:white">
+                                <pre>
+options = <span style="color:#006600;font-weight:bold">{</span>
+  <span style="color:#ff3333;font-weight:bold">:proxy</span> =&gt; <span style="color:#006600;font-weight:bold">{</span>:port =&gt; <span style="color:#006666">9000</span>, <span style="color:#ff3333;font-weight:bold">:host</span> =&gt; <span style="color:#996600">"10.2.1.0"</span><span style="color:#006600;font-weight:bold">}</span>,
+  <span style="color:#ff3333;font-weight:bold">:production</span> =&gt; <span style="color:#006600;font-weight:bold">{</span>:port =&gt; <span style="color:#006666">9000</span>, <span style="color:#ff3333;font-weight:bold">:host</span> =&gt; <span style="color:#996600">"10.2.1.1"</span><span style="color:#006600;font-weight:bold">}</span>,
+  <span style="color:#ff3333;font-weight:bold">:benchmark</span> =&gt; <span style="color:#006600;font-weight:bold">{</span>:post =&gt; <span style="color:#006666">9000</span>, <span style="color:#ff3333;font-weight:bold">:host</span> =&gt; <span style="color:#996600">"10.2.1.2"</span><span style="color:#006600;font-weight:bold">}</span>
+<span style="color:#006600;font-weight:bold">}</span>
+ 
+EventMachine.<span style="color:#9900CC">run</span> <span style="color:#9966CC;font-weight:bold">do</span>
+  <span style="color:#6666ff;font-weight:bold">EventMachine::ProxyServer</span>.<span style="color:#9900CC">new</span><span style="color:#006600;font-weight:bold">(</span>options<span style="color:#006600;font-weight:bold">)</span>.<span style="color:#9900CC">start</span>
+<span style="color:#9966CC;font-weight:bold">end</span>
+</pre>
+                            </div>
+                            <p align="center">
+                                <img src="http://www.igvita.com/posts/09/live-benchmark.png">
+                            </p>
+                            <div>
+                                <a href="http://www.igvita.com/download.php?file=http://www.github.com/igrigorik/em-proxy/tree/master/.git"><img alt="Download" src="http://www.igvita.com/wp-content/plugins/dBeautifier/icons/github.png"></a>
+                                <h4>
+                                    <a href="http://www.igvita.com/download.php?file=http://www.github.com/igrigorik/em-proxy/tree/master/.git">em-proxy (Ruby EventMachine Duplex Proxy)</a>
+                                </h4>
+                                <p>
+                                    Downloads: 540 File Size: 0.0 KB
+                                </p>
+                            </div>
+                            <p>
+                                EM-Proxy is a barebones proxy implemented with <a href="http://rubyeventmachine.com/">Ruby EventMachine</a> which uses the reactor pattern for handling network connections. The performance overhead in the simplest proxy implementation is roughly 3-5% in the latency - a very low cost for the added functionality. Best of all, it is only ~300 lines of Ruby start to finish, and easily extensible. Take a <a href="http://github.com/igrigorik/em-proxy/tree/9310a9d3c14c064585947e83e98560e1221f6af1/lib/em-proxy">look through the source</a>, it's a powerful and wonderful hammer!
+                            </p>
+                            <p>
+                                Updated <a href="http://www.slideshare.net/igrigorik/ruby-proxies-for-scale-performance-and-monitoring-gogaruco-igvitacom-1396734">slides from RailsConf 2009</a> and updated code for <a href="http://github.com/igrigorik/em-proxy/tree/master">EM-Proxy on Github</a>.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=vIPemocY9bk:7EXEdQXBrYw:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=vIPemocY9bk:7EXEdQXBrYw:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=vIPemocY9bk:7EXEdQXBrYw:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=vIPemocY9bk:7EXEdQXBrYw:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=vIPemocY9bk:7EXEdQXBrYw:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=vIPemocY9bk:7EXEdQXBrYw:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=vIPemocY9bk:7EXEdQXBrYw:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=vIPemocY9bk:7EXEdQXBrYw:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=vIPemocY9bk:7EXEdQXBrYw:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/vIPemocY9bk" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2009/04/20/ruby-proxies-for-scale-and-monitoring/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2009/04/20/ruby-proxies-for-scale-and-monitoring/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

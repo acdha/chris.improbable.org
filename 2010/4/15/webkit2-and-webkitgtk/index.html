@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            WebKit2 and WebKitGTK+
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 15 Apr 2010 13:13:22 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-15T09:13:22-04:00">
+                    <meta itemprop="dateModified" content="2010-04-15T09:13:22-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-15T13:13:22+00:00">Apr 15</time>
+                    <h2 itemprop="title">
+                        WebKit2 and WebKitGTK+
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/d865b0dc4d6ed81c">
+                        <blockquote>
+                            <p>
+                                So you’ve seen people talking about <a href="http://trac.webkit.org/wiki/WebKit2">WebKit2</a>, perhaps have seen someone claiming it “<a href="http://news.ycombinator.com/item?id=1251452">drops support for Linux</a>“, and you’ve been wondering what the hell that means for WebKitGTK+. Well, welcome to the preemptive Q&amp;A section with WebKitGTK+ maintainers =D. Let’s first explore some history so we can better understand what exactly is going on.
+                            </p>
+                            <h2>
+                                What exactly <strong><em>is</em></strong>WebKit2?
+                            </h2>
+                            <p>
+                                Currently, when we say “WebKit” we really mean one of the ports that are built on top of WebCore using the WebKit layer. WebCore is the part that does all of the hard Web-related work, WebKit an API layer that exposes WebCore functionality in a coherent way, so that the platform-specific ports can expose a public API layer for their applications to use, which is usually also called “WebKit”. This WebKit layer was designed by Apple to build the Mac, and Windows ports it maintains, and was later released as Free Software so that other ports, such as the GTK+, Qt, EFL ports could be built on top of it, instead of having to do all the heavy lifting from WebCore directly.
+                            </p>
+                            <p>
+                                <img src="http://kov.eti.br/media/webkit/current-webkit.svg" alt="Current WebKit model" width="488" height="213">
+                            </p>
+                            <p>
+                                WebKit2 is nothing more than the second version of that interface, with a whole lot of changes on what you can expect from it, and on how it interacts with WebCore, and the platform-specific API and UI. First of all, the first WebKit was not API stable, and that interface was usually not made public by the various ports - they only exposed their platform-specific APIs. WebKit2 is being designed to provide a stable, cross-platform, C-based, non-blocking public API. This is huge. It will allow cross-platform code to be written without having to consider language, and port differences for basic functionality.
+                            </p>
+                            <p>
+                                The second big change is the API will be made fully non-blocking. Currently most things you do are asynchronous already, but some of them may be completed in a synchronous ways (like, loading a string into WebKit instead of an URI). This is important for responsiveness, and is also a very important need for what comes next: process splitting.
+                            </p>
+                            <p>
+                                WebKit2 will bring into WebKit proper the concept of splitting the UI process from the Web process, similar to what Chromium has. It also much more awesome than what Chrome has for a large number of reasons, including, but not limited to:
+                            </p>
+                            <ol>
+                                <li>It’s being contributed directly to the WebKit project, in a cross-platform way that lets ports such as WebKitGTK+ take advantage of it, instead of being shipped directly into Safari, like Google does with Chrome;
+                                </li>
+                                <li>The process separation goes bellow the API layer, meaning that all complexity involved in managing the process separation is handled by the library, and hopefully none of it leaks to the application using it; that means that applications like Devhelp and Yelp will be able to take advantage of this without having to make their lives more complicated;
+                                </li>
+                            </ol>
+                            <div>
+                                There’s a much better diagram in WebKit2’s wiki page, but here goes a simplified version that demonstrates what I’m talking about:
+                            </div>
+                            <div>
+                                <img src="http://kov.eti.br/media/webkit/webkit2.svg" alt="WebKit2 model" width="550" height="366">
+                            </div>
+                            <h2>
+                                What WebKit2 <em>is not</em>?
+                            </h2>
+                            <p>
+                                WebKit2 is NOT a rewrite of the whole WebKit stack. Webcore will continue mostly unchanged, and all ports currently building on top of it will keep working. It is also not a fork - the code lives in the same tree as the current version of WebKit, which will allow us to progressively move towards using this new, improved layer. WebKit2 is not Apple-only, and it is not dropping Linux support. Initial builds of the code that is being landed will likely show up building on Linux in the near future (specially because us porters are already eager to play with it).
+                            </p>
+                            <h2>
+                                What happens to WebKitGTK+?
+                            </h2>
+                            <p>
+                                In the near future, nothing special. We will continue working towards making it feature-complete, more stable, faster, and rocking on it as always. We will, though, start <a title="Enabling WebKit2 for GTK+" href="https://bugs.webkit.org/show_bug.cgi?id=37369">working out</a> how we can best take advantage of WebKit2 in order to provide an even more awesome library for the G world. What this means is you can expect us to have a library that will provide a nice GTK+ widget, just like we have today, with a GObject-based API, like we have today, but that is built on top of this new WebKit2 infrastructure, taking advantage of the process-splitting, and the bigger focus on not blocking the UI thread. This should give us a platform that is more stable, and faster and more responsive than what we already have today.
+                            </p>
+                            <p>
+                                The API is bound to change, of course, but the WebKit2 version of WebKitGTK+ will be a separate, parallel-installable library, and we will keep supporting the WebKit1 version while we work on making the new one at least as good as the current one. This is long term we’re talking here. We’ll likely see WebKitGTK+ 1.4, and 1.6 come to life before we are satisfied enough with WebKitGTK+2.
+                            </p>
+                            <p>
+                                We hope this clears some of the doubts up, and lightens your hearts!
+                            </p>
+                            <p>
+                                The WebKitGTK+ maintainers.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.kov.eti.br/?p=110">http://blog.kov.eti.br/?p=110</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Xen Live Migration with MCollective
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 07 May 2010 02:52:36 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-06T22:52:36-04:00">
+                    <meta itemprop="dateModified" content="2010-05-06T22:52:36-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-07T02:52:36+00:00">May 07</time>
+                    <h2 itemprop="title">
+                        Xen Live Migration with MCollective
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/703ac56d86b8b400">
+                        <p class="annotation">
+                            Really good seeing this sort of thing: VMWare's hypervisor is nice but the tools are a vile, buggy mess. I'm far more comfortable building on top of something using a sane foundation.
+                        </p>
+                        <blockquote>
+                            <p>
+                                I retweeted this on twitter, but it's just too good to not show. <a href="http://www.rottenbytes.info/?p=291">Over at rottenbytes.com</a> Nicolas is showing some proof of concept code he wrote with <a href="http://code.google.com/p/mcollective/">MCollective</a> that monitors the load on his dom0 machines and initiate live migrations of virtual machines to less loaded servers.
+                            </p>
+                            <p>
+                                This is the kind of crazy functionality I wanted to enable with MCollective and it makes me very glad to see this kind of thing. The server side and client code combined is only 230 lines - very very impressive.
+                            </p>
+                            <p>
+                                This is a part of what VMWare DRS does Nico has some ideas to add other sexy features as well as this was just a proof of concept. The logic for what to base migrations on will be driven by a small DSL for example.
+                            </p>
+                            <p>
+                                I asked him how long it took to knock this together: time taken to get acquainted with MCollective combined with time to write the agent and client was only 2 days, that's very impressive. He already knew Ruby well though <img src="http://www.devco.net/wp-includes/images/smilies/icon_smile.gif" alt=":)"> And has a Ruby gem to integrate with Xen.
+                            </p>
+                            <p>
+                                I'm copying the output from his code below, but <a href="http://www.rottenbytes.info/?p=291">absolutely head over to his blog to check it out</a> he has the source up there too:
+                            </p>
+                            <blockquote>
+                                <div>
+                                    <div>
+                                        <pre style="font-family:monospace">
+[mordor:~] ./mc-xen-balancer
+[+] hypervisor2 : 0.0 load and 0 slice(s) running
+[+] init/reset load counter for hypervisor2
+[+] hypervisor2 has no slices consuming CPU time
+[+] hypervisor3 : 1.11 load and 3 slice(s) running
+[+] added test1 on hypervisor3 with 0 CPU time (registered 18.4 as a reference)
+[+] added test2 on hypervisor3 with 0 CPU time (registered 19.4 as a reference)
+[+] added test3 on hypervisor3 with 0 CPU time (registered 18.3 as a reference)
+[+] sleeping for 30 seconds
+ 
+[+] hypervisor2 : 0.0 load and 0 slice(s) running
+[+] init/reset load counter for hypervisor2
+[+] hypervisor2 has no slices consuming CPU time
+[+] hypervisor3 : 1.33 load and 3 slice(s) running
+[+] updated test1 on hypervisor3 with 0.0 CPU time eaten (registered 18.4 as a reference)
+[+] updated test2 on hypervisor3 with 0.0 CPU time eaten (registered 19.4 as a reference)
+[+] updated test3 on hypervisor3 with 1.5 CPU time eaten (registered 19.8 as a reference)
+[+] sleeping for 30 seconds
+ 
+[+] hypervisor2 : 0.16 load and 0 slice(s) running
+[+] init/reset load counter for hypervisor2
+[+] hypervisor2 has no slices consuming CPU time
+[+] hypervisor3 : 1.33 load and 3 slice(s) running
+[+] updated test1 on hypervisor3 with 0.0 CPU time eaten (registered 18.4 as a reference)
+[+] updated test2 on hypervisor3 with 0.0 CPU time eaten (registered 19.4 as a reference)
+[+] updated test3 on hypervisor3 with 1.7 CPU time eaten (registered 21.5 as a reference)
+[+] hypervisor3 has 3 threshold overload
+[+] Time to see if we can migrate a VM from hypervisor3
+[+] VM key : hypervisor3-test3
+[+] Time consumed in a run (interval is 30s) : 1.7
+[+] hypervisor2 is a candidate for being a host (step 1 : max VMs)
+[+] hypervisor2 is a candidate for being a host (step 2 : max load)
+trying to migrate test3 from hypervisor3 to hypervisor2 (10.0.0.2)
+Successfully migrated test3 !
+</pre>
+                                    </div>
+                                </div>
+                            </blockquote>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.devco.net/archives/2010/04/14/xen_live_migration_with_mcollective.php">http://www.devco.net/archives/2010/04/14/xen_live_migration_with_mcollective.php</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

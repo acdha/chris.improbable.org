@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            An Executable Semantics For C Is Useful
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 27 Apr 2011 05:26:32 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-27T01:26:32-04:00">
+                    <meta itemprop="dateModified" content="2011-04-27T01:26:32-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-27T05:26:32+00:00">Apr 27</time>
+                    <h2 itemprop="title">
+                        An Executable Semantics For C Is Useful
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/bdda6eabf2d7b584">
+                        <blockquote>
+                            <p>
+                                The goal of a C/C++ compiler is to turn every sequence of ASCII characters into executable instructions. OK, not really — though it does seem that way sometimes. The real goal of a C/C++ compiler is to map every conforming input into executable instructions that correspond to a legal interpretation of that input. The qualifiers “conforming” and “legal interpretation” are very important. First, the compiler has extremely weak requirements about what it should do with non-conforming inputs, such as programs that contain undefined behaviors (array bounds violations, etc.). Second, all realistic C/C++ programs have a large number of possible interpretations, for example corresponding to different integer sizes, different orders of evaluation for function arguments, etc. The compiler chooses a convenient or efficient one, and the remaining interpretations are latent. They may emerge later on if the compiler options are changed, if the compiler is upgraded, or if a different compiler is used. The point is that the compiler has no obligation to tell us whether the input is conforming or not, nor how many possible interpretations it has.
+                            </p>
+                            <p>
+                                Thus, while C/C++ compilers are very good at turning conforming programs into efficient executables, they are just about useless for other answering other kinds of questions:
+                            </p>
+                            <ul>
+                                <li>Does the program ever execute undefined behaviors, causing it (in principle) to have no meaning and (in practice) to execute attack code or crash?
+                                </li>
+                                <li>Does the program rely on unspecified behaviors, making it non-portable across compilers, compiler versions, and changes in compiler options?
+                                </li>
+                                <li>Does the program rely on implementation-defined behaviors, affecting its portability to other compilers and platforms?
+                                </li>
+                                <li>Why does the program behave in a certain way? In other words, what part of the standard forced that interpretation?
+                                </li>
+                            </ul>
+                            <p>
+                                To answer these questions, a wide variety of static analyzers, model checkers, runtime verifiers, and related tools have been developed. These tools are great. However, even taken all together, they are incomplete: there exist plenty of bad (or interesting) program behaviors that few or none of them can find. For example:
+                            </p>
+                            <ul>
+                                <li>Very few tools exist that can <a href="http://blog.regehr.org/archives/519">reliably detect uses of uninitialized storage</a>.
+                                </li>
+                                <li>Few, if any, tools can correctly diagnose problems resulting from C/C++’s unspecified order of evaluation of function arguments.
+                                </li>
+                                <li>An lvalue must not be modified multiple times, or be both read and written, in between sequence points. I’m not aware of many tools that can correctly detect that evaluating this function results in undefined behavior when p1 and p2 are aliases:
+                                </li>
+                            </ul>
+                            <blockquote>
+                                <pre>
+<strong>int foo (int *p1, int *p2) {
+  return (*p1)++ % (*p2)++;
+}</strong>
+</pre>
+                            </blockquote>
+                            <ul>
+                                <li>There exists C code subtle enough that <a href="http://blog.regehr.org/archives/482">multiple independent compiler teams get it wrong</a>. Miscompilations are, by definition, out of reach for source-level analysis tools.
+                                </li>
+                            </ul>
+                            <h1>
+                                The Missing Tool
+                            </h1>
+                            <p>
+                                The missing tool (or one of them, at any rate) is an executable semantics for C. An executable semantics is an extremely careful kind of interpreter where every action it takes directly corresponds to some part of the language standard. Moreover, an executable semantics can be designed to tell us whether the standard assigns any meaning at all to the program being interpreted. In other words, it can explicitly check for all (or at least most) undefined, unspecified, and implementation-defined behaviors. For example, when an executable semantics evaluates (*p1)++ % (*p2)++, it won’t assign a meaning to the expression until it has checked that:
+                            </p>
+                            <ul>
+                                <li>both pointers are valid
+                                </li>
+                                <li>neither addition overflows (if the promoted types are signed)
+                                </li>
+                                <li>p1 and p2 are not aliases
+                                </li>
+                                <li>*p2 is not 0
+                                </li>
+                                <li>either *p1 is not INT_MIN or *p2 is not -1
+                                </li>
+                            </ul>
+                            <p>
+                                Moreover, the tool should make explicit all of the implicit casts that are part of the “usual arithmetic conversions.” And it needs to do about 500 other things that we usually don’t think about when dealing with C code.
+                            </p>
+                            <h1>
+                                Who Needs an Executable Semantics?
+                            </h1>
+                            <p>
+                                Regular programmers won’t need it very often, but they will occasionally find it useful for settling the kinds of annoying arguments that happen when people don’t know how to read the all-too-ambiguous English text in the standard. Of course, the executable semantics can only settle arguments if we agree that it has captured the sense of the standard. Better yet, we would treat the executable semantics as definitive and the document as a derivative work.
+                            </p>
+                            <p>
+                                Compiler developers need an executable semantics. It would provide a simple, automated filter to apply to programs that purportedly trigger compiler bugs. <a href="http://www.keil.com/support/bugreport.asp">A web page at Keil</a> states that “Fewer than 1% of the bug reports we receive are actually bugs.” An executable semantics would rapidly find code fragments that contain undefined or unspecified behaviors — these are a common source of bogus bug reports. Currently, compiler developers do this checking by hand. The GCC bug database contains 4966 bug reports that have been marked as INVALID. Not all of these could be automatically detected, but some of them certainly could be.
+                            </p>
+                            <p>
+                                People developing safety-critical software may get some benefit from an executable semantics. Consider CompCert, a verified compiler that provably preserves the meaning of C code when translating it into assembly. CompCert’s guarantee, however, is conditional on the C code containing no undefined behaviors. How are we supposed to verify the absence of undefined behaviors when existing tools don’t reliably check for initialization and multiple updates to lvalues? Moreover, CompCert is free to choose any legitimate interpretation of a C program that relies on unspecified behaviors, and it does not need to tell us which one it has chosen. We need to verify up-front that (under some set of implementation-defined behaviors) our safety-critical C program has a single interpretation.
+                            </p>
+                            <p>
+                                My students and I need an executable semantics, because we are constantly trying to figure out whether random C functions are well-defined or not. This is surprisingly hard. We also need a reliable, automated way to detect undefined behavior because this enables automated test case reduction.
+                            </p>
+                            <h1>
+                                An Executable Semantics for C Exists
+                            </h1>
+                            <p>
+                                I spent a few years lamenting the non-existence of an executable C semantics, but no longer: as of recently, the tool exists. It was created by <a href="http://fsl.cs.uiuc.edu/index.php/Chucky_Ellison">Chucky Ellison</a>, a PhD student at the University of Illinois working under the supervision of <a href="http://fsl.cs.uiuc.edu/index.php/Grigore_Rosu">Grigore Rosu</a>. They have written a <a href="http://fsl.cs.uiuc.edu/pubs/ellison-rosu-2010-tr.pdf">TR about it</a> and also <a href="http://code.google.com/p/c-semantics/">the tool can be downloaded</a>. Hopefully Chucky does not mind if I provide this link — the tool is very much a research prototype (mainly, it is not very fast). But it works:
+                            </p>
+                            <blockquote>
+                                <pre>
+<strong>regehr@home:~/svn/code$ cat lval.c
+int foo (int *p1, int *p2) {
+  return (*p1)++ % (*p2)++;
+}
+
+int main (void) {
+  int a = 1;
+  return foo (&amp;a, &amp;a);
+}
+regehr@home:~/svn/code$ kcc lval.c
+regehr@home:~/svn/code$ ./a.out
+=============================================================
+ERROR! KCC encountered an error while executing this program.
+=============================================================
+Error: 00003
+Description: Unsequenced side effect on scalar object with value computation of same object.
+=============================================================
+File: /mnt/z/svn/code/lval.c
+Function: foo
+Line: 2
+============================================================</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                As I mentioned earlier, very few tools for analyzing C code find this error. Chucky’s tool can also perform a state space exploration to find order of evaluation problems and problems in concurrent C codes. Finally, it can run in profile mode. Unlike a regular profiler, this one profiles the rules from the C semantics that fire when the program is interpreted. This is really cool and we plan to use it to figure out what parts of the C standard are not exercised by Csmith.
+                            </p>
+                            <p>
+                                Chucky’s tool is already an integral part of one of our test case reducers. This reducer takes as input a huge, ugly, bug-triggering C program generated by Csmith. It then uses Delta debugging to output a much smaller bug-triggering program that (ideally) can be included in a compiler bug report without further manual simplification. Before Chucky’s tool arrived, we had spent several years trying to deal with the fact that Delta always introduces undefined behavior. We now seem to have a bulletproof solution to that problem.
+                            </p>
+                            <p>
+                                The benefits of executable semantics have long been recognized in the PL community. The new thing here is a tool that actually works, for the C language. Hopefully, as Chucky’s tool matures people will find more uses for it, and perhaps it can even evolve into a sort of de facto litmus test for ascertaining the meaning — or lack thereof — of difficult C programs.
+                            </p><img src="http://feeds.feedburner.com/~r/EmbeddedInAcademia/~4/uaXH1uQEAvQ" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.regehr.org/archives/523?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29">http://blog.regehr.org/archives/523?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

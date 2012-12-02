@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Extending built-in native objects. Evil or not?
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 08 Aug 2011 18:56:22 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-08-08T14:56:22-04:00">
+                    <meta itemprop="dateModified" content="2011-08-08T14:56:22-04:00"><time class="date" itemprop="datePublished" datetime="2011-08-08T18:56:22+00:00">Aug 08</time>
+                    <h2 itemprop="title">
+                        Extending built-in native objects. Evil or not?
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/37db24f709ba0402">
+                        <blockquote>
+                            <p>
+                                Few days ago, Nick Morgan <a href="https://twitter.com/#!/skilldrick/status/96950919014518785">asked my opinion</a> on extending native objects. The <a href="http://www.reddit.com/r/programming/comments/j32gc/easy_functional_programming_in_javascript_with/c28qyxm">question came up</a> when trying to answer — “why doesn’t <a href="http://documentcloud.github.com/underscore">underscore.js</a> extend built-ins”? Why doesn’t it define all those Array methods — like <code>map</code>, <code>forEach</code>, <code>every</code> — on <code>Array.prototype</code>. Why does it put them under <code>_</code> “namespace” — <code>_.each</code>, <code>_.map</code>, <code>_.every</code>, etc. Is it because extending built-in natives is evil? Or is it not? The thread quickly filled with conflicting ideas…
+                            </p>
+                            <p>
+                                I often see this confusion about extending things in Javascript.
+                            </p>
+                            <p>
+                                There’s a <strong>big difference</strong> between extending <strong>native</strong> built-in objects and extending <strong>host</strong> objects. I tried to explain what’s wrong with extending host objects <a href="http://perfectionkills.com/whats-wrong-with-extending-the-dom/">in a blog post, a while back</a>. Now, if you look at the list of problems with extending host objects it’s easy to see that most of them don’t really apply to native, built-in objects.
+                            </p>
+                            <p>
+                                To avoid any confusion, by native, built-in objects I’m talking about objects and methods introduced in ES5 — <code>Array.prototype</code> extensions (<code>forEach</code>, <code>map</code>, <code>reduce</code>, etc.), <code>Object</code> extensions (<code>Object.create</code>, <code>Object.keys</code>, etc.), <code>Function.prototype.bind</code>, <code>String.prototype.trim</code>, <code>JSON.*</code>, etc. These are the things that are shimmed most often. And the question is — is it OK to extend native, built-in objects with these standardized methods?
+                            </p>
+                            <p>
+                                Well, let’s quickly go over problems with host objects extension:
+                            </p>
+                            <h3>
+                                Host vs. Native
+                            </h3>
+                            <ul>
+                                <li>
+                                    <p>
+                                        <a href="http://perfectionkills.com/whats-wrong-with-extending-the-dom/#lack_of_specification">“Lack of specification”</a> doesn’t apply here, as long as methods that are being shimmed are <strong>part of ES5 (or ES3)</strong>. ES5 is a standard. There’s a <a href="http://es5.github.com/">publicly available specification</a>. Implementing ES5 methods according to spec is doable (except certain <a href="https://github.com/kriskowal/es5-shim/blob/master/es5-shim.js#L487-544">edge-ish cases</a>).
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="http://perfectionkills.com/whats-wrong-with-extending-the-dom/#host_objects_have_no_rules">“Host objects have no rules”</a> doesn’t apply either. This is <strong>native</strong> objects we’re dealing with, and semantics of native objects are very well defined in those same ECMA-262 specifications. What this means in practice is that unless we’re dealing with faulty implementations, adding method <code>bind</code> to <code>Function.prototype</code> should allow us to add it. There’s no uncertainty about <code>Function.prototype</code> throwing error on extension, or silently ignoring our command (after all, the spec says: <a href="http://es5.github.com/#x15.3.4">“The initial value of the [[Extensible]] internal property of the Function prototype object is true”</a>). Ditto for other objects.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="http://perfectionkills.com/whats-wrong-with-extending-the-dom/#chance_of_collisions">“Chance of collisions”</a> is non-existent as well. Since the methods that are being shimmed are part of a standard, and we’re shimming them according to standard, there’s no chance of collisions of any sort. Either implementation has those methods, or it doesn’t. If it doesn’t, methods are shimmed. That’s it.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="http://perfectionkills.com/whats-wrong-with-extending-the-dom/#performance_overhead">“Performance overhead”</a> not only doesn’t exist, but could actually be the opposite of what happens. It’s likely that <code>[].forEach(...)</code> will be faster then <code>_.forEach([], ...)</code>, but even if it isn’t, there should certainly be no performance hit with former version. Contrary to DOM objects that might not have [[Prototype]]’s exposed for public extension, there’s no need to manually extend arrays, objects and strings with these methods. Conceptually, there’s no performance overhead there.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="http://perfectionkills.com/whats-wrong-with-extending-the-dom/#ie_dom_is_a_mess">“IE DOM is a mess”</a> doesn’t apply. We’re not dealing with DOM. And native objects are extension-friendly in IE, as far as I know.
+                                    </p>
+                                </li>
+                            </ul>
+                            <p>
+                                So what do we have?
+                            </p>
+                            <p>
+                                Well, it looks like properly extending native objects — unlike <strong>host</strong> ones — is actually not all that bad. This is of course considering that we’re talking about <strong>standard objects and methods</strong>. Extending native built-ins with <strong>custom methods</strong> immediately makes “collision” problem apparent. It violates <a href="http://www.nczonline.net/blog/2010/03/02/maintainable-javascript-dont-modify-objects-you-down-own/">“don’t modify objects you don’t own” principle</a>, and makes code not future-proof.
+                            </p>
+                            <h3>
+                                Downsides
+                            </h3>
+                            <p>
+                                Are there any downsides?
+                            </p>
+                            <p>
+                                Well, for once, there are cases when certain scripts mess up native objects/methods in a <strong>non-compliant way</strong>. Kind of like what Prototype.js does with some of its methods (e.g. <a href="https://github.com/sstephenson/prototype/blob/1fb9728/src/lang/enumerable.js#L250-257"><code>Array.prototype.map</code></a> or <a href="https://github.com/sstephenson/prototype/blob/1fb9728ed109cfd682225a13eda13acfb91a94dc/src/lang/array.js#L321-323"><code>Array.prototype.reverse</code></a>; standard-compliance is planned for future releases, as far as I know). If the shim adds standard-compliant methods, and application expects those methods to be non-compliant (but script/library-specific), then there could obviously be problems.
+                            </p>
+                            <p>
+                                Second, as I mentioned above, while we know that native objects are free for extension, there’s always a risk of running into an oddball environment which doesn’t conform to spec. Keeping methods on a standalone (user-defined) object can avoid such scenarios. Whether this could be considered an issue depends on how paranoid you are.
+                            </p>
+                            <p>
+                                Finally, you have to be careful when shimming methods that are not universally shimmable. Like <code>Object.create</code>, which had a very popular <a href="http://stackoverflow.com/questions/3075308/what-modernizer-scripts-exist-for-the-new-ecmascript-5-functions/3075818#3075818">non-compliant shim floating around</a> for a while. The method was defined directly on an <code>Object</code>, but silently failed to do anything useful with second argument — a set of property descriptors. Adding cross-browser support for property descriptors is a <a href="https://github.com/kriskowal/es5-shim/blob/master/es5-shim.js#L487-544">rather complicated endeavor</a>, which is why defining such methods on a standalone object could save you some trouble (you could just implement a subset of <code>Object.create</code> functionality and call it a day).
+                            </p>
+                            <p>
+                                Don’t forget that <a href="https://gist.github.com/1120592">writing proper, compliant shims is hard</a>. When in doubt, use standalone object. When the method you’re shimming is part of the unfinished spec, use standalone object. Only when you’re certain about method compliance and method is part of the finished, future-proof specification, is it safe to shim native object directly.
+                            </p>
+                            <h3>
+                                Enumerability
+                            </h3>
+                            <p>
+                                Another interesting, but likely insignificant difference is enumerability of shimmed methods. Unless methods are added using ES5 additions that allow to specify property enumerability (<code>Object.defineProperty</code> or <code>Object.defineProperties</code>), methods end up being enumerable:
+                            </p>
+                            <pre lang="javascript">
+<code>
+if (!Array.prototype.map) {
+  Array.prototype.map = function() { /* ... */ };
+}
+Object.keys(Array.prototype); // ["map"]
+
+// can be worked around:
+
+if (!Array.prototype.map) {
+  Object.defineProperty(Array.prototype, 'map', {
+    value: function() { /* ... */ }
+  });
+}
+Object.keys(Array.prototype); // []
+</code>
+</pre>
+                            <h3>
+                                Underscore.js and API consistency
+                            </h3>
+                            <p>
+                                Getting back to underscore.js, I see an important aspect of <strong>consistency</strong>. Underscore adds not only standard methods like <code>map</code>, <code>reduce</code> and <code>trim</code>, but also its own, custom ones — <code>values</code>, <code>extend</code>, <code>clone</code>, etc. By adding <code>map</code>, <code>reduce</code>, and <code>trim</code> to standalone object, it keeps its API consistent.
+                            </p>
+                            <p>
+                                I’d like to also mention that I do <a href="https://github.com/kangax/fabric.js/blob/gh-pages/src/util/lang_array.js#L18-49">extend <code>Array.prototype</code> in fabric.js</a> with methods like <code>forEach</code>, <code>map</code>, <code>every</code>. I make sure those methods are spec-compliant, and I take a risk of conflicts with libraries that shim methods in non-compliant way. Methods that are non-standard, on the other hand, are <a href="https://github.com/kangax/fabric.js/blob/gh-pages/src/util/lang_array.js#L179-183">defined under standalone utility object</a>. I’m not worried much about inconsistency, since — unlike in underscore.js — there’s only a handful of shimmed methods.
+                            </p>
+                            <p>
+                                So there you have it. It should be now clear that extending native built-ins is definitely not as risky as messing with host objects. Do it carefully, follow spec closely, and use your reasonable judgement. For a spec-compliant shims, <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/map#Compatibility">MDN is a good place to start with</a> (but don’t trust it blindly either, as there were cases of non-compliance there as well).
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/PerfectionKills?a=KY_urCReX7U:TCFZYg5rMas:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/PerfectionKills?i=KY_urCReX7U:TCFZYg5rMas:D7DqB2pKExk" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/PerfectionKills/~4/KY_urCReX7U" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://perfectionkills.com/extending-built-in-native-objects-evil-or-not/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PerfectionKills+%28Perfection+kills%29">http://perfectionkills.com/extending-built-in-native-objects-evil-or-not/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PerfectionKills+%28Perfection+kills%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

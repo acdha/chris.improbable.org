@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Why IIS, ASP.NET, WebForm and EPiServer is the worst web stack I’ve ever
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 22 Feb 2009 23:34:51 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-22T18:34:51-04:00">
+                    <meta itemprop="dateModified" content="2009-02-22T18:34:51-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-22T22:34:51+00:00">Feb 22</time>
+                    <h2 itemprop="title">
+                        Why IIS, ASP.NET, WebForm and EPiServer is the worst web stack I’ve ever
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/3fddb2762e701ec8">
+                        <p class="annotation">
+                            One of the puzzling things about the Microsoft web ecosystem is that nobody involved seems to understand the web at all - and that's after the failure of the earlier generations, where pretty much everyone else found at least one cautionary example.<br>
+                            <br>
+                            Even something as simple as debugging just doesn't work reliably with the current ASP.Net - I shouldn't need to know how to use advanced tools because the built-in debugger and logging simply Do Not Work At All. Other environments may not be all of that much more advanced (mmmm - printf) but I don't need to live in the debugger the way, say, LINQ's failure-at-a-distance requires.
+                        </p>
+                        <blockquote>
+                            <p>
+                                Disclaimer: Can’t be bothered to proofread it, relied on firefox’s spelling correction so it’s probably a horrible piece of text that will gauge your eyes out, if you want to read it anyway - go ahead.
+                            </p>
+                            <p>
+                                First of all, don’t get me wrong - .NET and C# overall is awesome and one of my favorite platforms to work on, however the combination of ASP.NET/WebForms + EPiServer + IIS + A static language for web development just.. well.. you’ll get it after reading this.
+                            </p>
+                            <ol>
+                                <li>ASP.NET/WebForms as a technology is just horrible in every way.
+                                    <ul>
+                                        <li>Non standard markup output (yes I’m aware that this can be overridden but why should I have to correct the framework I’m using?)
+                                        </li>
+                                        <li>Inability to use DOM #ids due to ASP.NET requiring them for controllers (id$12sadase12$esada instead of “username” anyone?)
+                                        </li>
+                                        <li>Every request that has any type of effect on the output of a page is practically a POST request due to the curse of PostBack
+                                        </li>
+                                        <li>Code behind, “the code separation that isn’t”
+                                        </li>
+                                        <li>Page life cycle? Honestly, wtf.
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>The data structure in EPiServer is something called a “PageData”-object (basically everything in EPiServer is a “Page”)
+                                    <ul>
+                                        <li>It has to be defined in several places (code behind, asp.net markup, episerver admin backend)
+                                        </li>
+                                        <li>It’s always referenced by it’s <em>explicit string name</em> so if you ever want to change it you have to do it manually by going through every line of code
+                                        </li>
+                                        <li>No proper (built in) way to create, define or query relationships between different “PageData” objects other then “belongs to”
+                                        </li>
+                                        <li>The first thing they taught us at the three day episerver course I went on last summer was think of PageTypes as “Tables” and PageData as “Rows” from SQL, fine - except they basically took all the bad parts from relational databases, ignored all the good ones and then put it all in a hashtable, with a RDBMS backend (MS SQL)… that you can’t query if you wan’t to remain insane.
+                                        </li>
+                                        <li>All “Domain Objects” (i.e. PageData-objects) are the same, they are all an instance of PageData - I wonder what the django/rails/zend framework people would say if the framework developers once said that “hey guys, you know what henceforth all your database object will be of the type “DataObject”, no more of this ‘inheritance’ you speak of”
+                                        </li>
+                                        <li>If you ever want to query for pages based on a criteria, you’ll have to do something like this:
+                                            <pre>
+PropertyCriteriaCollection criterias =
+  new PropertyCriteriaCollection();
+
+startPublishCriteria.Condition = CompareCondition.LessThan;
+startPublishCriteria.Name = "PageStartPublish";
+startPublishCriteria.Value = DateTime.Now.ToString();
+startPublishCriteria.Type = PropertyDataType.Date;
+criterias.Add(startPublishCriteria);
+
+PropertyCriteria stopPublishCriteria = new PropertyCriteria();
+stopPublishCriteria.Condition = CompareCondition.GreaterThan;
+stopPublishCriteria.Name = "PageStopPublish";
+stopPublishCriteria.Value = DateTime.Now.ToString();
+stopPublishCriteria.Type = PropertyDataType.Date;
+criterias.Add(stopPublishCriteria);
+
+PageDataCollection pages =
+  Global.EPDataFactory.FindPagesWithCriteria(
+  Global.EPConfig.StartPage,
+  criterias);
+</pre>
+                                            <p>
+                                                And here’s the SQL (which easily can be translated into LINQ, etc.) equivalent:
+                                            </p>
+                                            <pre>
+SELECT * FROM Pages WHERE PageStartPublish &gt; ? and PageStopPublish &lt; ?
+</pre>
+                                        </li>
+                                        <li>There is some other type of object storage in EPiServer called the “Object Store”… but there is no documentation on this basically anywhere and here’s a quote from someone (http://stevecelius.spaces.live.com/) that works on episerver on it <em>“Truthfully, only a few developers outside of EPiServer know how to use it, and quite alot of us inside have no clue whatsoever.”</em> - sounds great? really, it does.
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>EPiServer has this annoyance that part of the application configuration that in reality should be done in C# code so it can be tested and commited to svn/etc. is done in the actual back end interface (for example the definition of the PageData-objects are actually done in the backend, so it’s not just enough deploying your code you have to export parts of your dev-environments episerver backend and import it on the live site)
+                                </li>
+                                <li>Integrating AJAX with EPiServer in a *nice* way is well, to put it nicely - an exercise in futility which usually leads to a bunch of copy-pasted code and hacks.
+                                </li>
+                                <li>Ever tried returning a correct 404 http response code and a nicely formatted + dynamic 404 page? Not possible. (and honestly if it is possible then it’s so un-obvious that it’s not even listed on the official blogs on labs.episerver.com - yes I’m aware of http://labs.episerver.com/en/Blogs/Ted-Nyberg/Dates/112276/2/Programmatically-configure-customErrors-redirects/ but it doesn’t work in every case needed. And even considering the previous link, why can’t we just be allowed to return a 404 page in a simple way that doesn’t involve 100 lines of code and 4 changes in web.config?)
+                                </li>
+                                <li>Having a compile/build/deploy step on a web environment is, well, “not optimal” to put it nicely, some of our larger projects take upwards 5-10 minutes to compile and deploy.
+                                </li>
+                                <li>The VS.NET integration of EPiServer is pretty quirky, I shouldn’t have to “setup the setup” of my tools - they should just <em>work</em>
+                                </li>
+                                <li>EPiServer has something called a VPP-folder where it stores all the files you upload to it, in theory this isn’t such a bad idea - but the thing is that it’s impossible to use this folder without going through EPiServer because it hashes all file names and uses some indescribable directory hierarchy to store them. And well, this in itself isn’t such a big flaw until you want to:
+                                    <ul>
+                                        <li>Use the uploaded files in some other type of application
+                                        </li>
+                                        <li>Copy the files needed to setup a development environment (say the first page of images in the image archive you’ve just built so you can see how it looks when you’re making changes to it)
+                                        </li>
+                                        <li>Use the files in <em>any way</em> other then through episerver.
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>The expressive power (http://en.wikipedia.org/wiki/Expressive_power) of C# compared to Python/PHP/Ruby/Groovy is well, a joke - don’t get me wrong, where C# is great it really is GREAT (WinForms, XNA, generic windows programming, etc.) - but web apps is not one of them. We don’t need the raw speed we get from having every single line of code in a static language. Not by a long shot. So why should we? really, why?
+                                </li>
+                                <li>It feels as if the developers of EPiServer read the four first pages of the GoF book, got to the singleton pattern and though “hey this is the answer to everything”. Want to Unit…what? Just forget it.
+                                </li>
+                                <li>We wanted to remove the “/en”, “/sv”, etc. language prefix that episerver seems hell bent to prefix all our paths with, we even talked to the EPiServer support several times and not even they could help us, we came up with a solution that works but I’m ashamed I wrote it because it’s such a horrible hack.
+                                </li>
+                            </ol>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://loveandtheft.org/2009/02/18/why-iis-aspnet-webform-and-episerver-is-the-worst-web-stack-ive-ever-worked-with/">http://loveandtheft.org/2009/02/18/why-iis-aspnet-webform-and-episerver-is-the-worst-web-stack-ive-ever-worked-with/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

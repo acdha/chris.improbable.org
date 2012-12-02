@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Divide and Concur
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 20 Apr 2011 14:36:56 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-20T10:36:56-04:00">
+                    <meta itemprop="dateModified" content="2011-04-20T10:36:56-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-20T14:36:56+00:00">Apr 20</time>
+                    <h2 itemprop="title">
+                        Divide and Concur
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/39f0777dd493a92c">
+                        <blockquote>
+                            <p>
+                                <em>By Noah Sussman and Laura Beth Denker.</em>
+                            </p>
+                            <h3>
+                                Splitting Up A Large Test Suite
+                            </h3>
+                            <p>
+                                Lately we’ve been <a title="Chad Dickerson's post about how Etsy manages engineering and ops" href="http://codeascraft.etsy.com/2011/02/04/how-does-etsy-manage-development-and-operations/">deploying code 25 times a day or more,</a> and running automated tests every time we deploy. Conservatively, we run our tests about 25 times on a normal business day.
+                            </p>
+                            <p>
+                                At Etsy, deployments are <a title="Erik Kastner's post about Deployinator, Etsy's continuous deployment tool" href="http://codeascraft.etsy.com/2010/05/20/quantum-of-deployment/">managed by engineers,</a> not by ops or a release management team. The idea is: you write code, and then you deploy it to production. Even <strong>dogs deploy code.</strong> By the time 8am rolls around on a normal business day, 15 or so people and dogs are starting to queue up, all of them expecting to collectively deploy up to 25 changesets before the day is done.
+                            </p>
+                            <p>
+                                <a href="http://www.flickr.com/photos/zsqr0000/5269002895"><img src="http://etsycodeascraft.files.wordpress.com/2011/04/milo-deploys1.jpg?w=536&amp;h=375" alt="Milo, one of our office dogs, pushes the deploy button with some help from an engineer" title="Milo, one of our office dogs, pushes the deploy button with some help from an engineer" width="536" height="375"></a>
+                            </p>
+                            <h3>
+                                If 15 Engineers Deploy 25 Changesets In 24 Hours…
+                            </h3>
+                            <p>
+                                Deploys generally take about 20 minutes. Any longer than that and the people at the back of the queue can wind up waiting a really long time before they get to deploy. In our world, “a really long time” means you waited <em>two hours</em> or more before you could make a production deployment.
+                            </p>
+                            <p>
+                                We call the tests that get run before deployment <strong>“trunk tests”</strong> because they test Etsy’s production functionality. There are 7,000 trunk tests, and we’re adding more all the time. In truth, we have more tests than that, but we <a href="http://www.quora.com/What-kind-of-automated-testing-does-Facebook-do" title="being selective about which tests are push-blocking, is becoming a standard practice in the industry: Facebook does the same thing">don’t run all of them when we deploy</a> (more on that in just a moment).
+                            </p>
+                            <p>
+                                If the trunk tests fail, deployment pauses while the engineers look for the source of the problem. Usually this takes under 5 minutes and ends with someone sheepishly making a fixing commit. The tests are then re-run, and if they pass, deployment continues.
+                            </p>
+                            <p>
+                                Through trial-and-error, we’ve settled on about 11 minutes as the longest that the automated tests can run during a push. That leaves time to re-run the tests once during a deployment, without going too far past the 20 minute time limit.
+                            </p>
+                            <p>
+                                Run end-to-end, the 7,000 trunk tests would take about half an hour to execute. We split these tests up into subsets, and distribute those onto the 10 machines in our <a title="setting up a CI cluster is just a matter of giving Jenkins SSH access on the slave machines" href="http://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin">Jenkins cluster,</a> where all the subsets can run concurrently. Splitting up our test suite and running many tests in parallel, gives us the desired 11 minute runtime.
+                            </p>
+                            <h3>
+                                Keep Tests That Are Similar, Together
+                            </h3>
+                            <p>
+                                We decided to use <a title="@group annotations are just comments" href="http://www.phpunit.de/manual/current/en/appendixes.annotations.html#appendixes.annotations.group">PHPUnit’s @group annotations</a> (really just a special form of comments) to logically divide the test suite into different subsets. <a title="the CI server formerly known as Hudson" href="http://wiki.jenkins-ci.org/pages/viewpage.action?pageId=53608972">Jenkins</a> and PHPUnit group annotations turned out to be a simple and powerful combination.
+                            </p>
+                            <p>
+                                Each <a title="Jenkins' xUnit plugin supports XML output from PHPUnit" href="http://wiki.jenkins-ci.org/display/JENKINS/xUnit+Plugin">PHPUnit job we set up in Jenkins</a> has its own XML configuration file that looks something like this:
+                            </p>
+                            <pre>
+<code>    &lt;groups&gt;
+      &lt;include&gt;
+        &lt;group&gt;dbunit&lt;/group&gt;
+      &lt;/include&gt;
+      &lt;exclude&gt;
+        &lt;group&gt;database&lt;/group&gt;
+        &lt;group&gt;network&lt;/group&gt;
+        &lt;group&gt;flaky&lt;/group&gt;
+        &lt;group&gt;sleep&lt;/group&gt;
+        &lt;group&gt;slow&lt;/group&gt;
+      &lt;/exclude&gt;
+    &lt;/groups&gt;
+</code>
+</pre>
+                            <p>
+                                This particular config block means that this PHPUnit job will run tests tagged as <em>dbunit</em>. And this job will <em>not</em> run tests tagged <em>database, network, flaky, sleep,</em> or <em>slow.</em>
+                            </p>
+                            <h3>
+                                Test Classification: the Good, the Fast and the Intermittent
+                            </h3>
+                            <p>
+                                If you feel like 11 minutes should be enough to run 7,000 <a title="Unit Test defined at the xUnit Patterns Web site" href="http://xunitpatterns.com/unit%20test.html">unit tests,</a> you’re right. But not all of our automated tests are unit tests. Or at least, they’re not what <em>we</em> call unit tests. Every shop seems to have its own terminology for describing kinds of tests, and… so do we.
+                            </p>
+                            <p>
+                                Here’s how we classify the different kinds of tests that run in our CI system.
+                            </p>
+                            <h4>
+                                Unit Tests
+                            </h4>
+                            <p>
+                                We define a <strong>unit test</strong> as a test for one-and-only one class, and that has no database interaction at all, not even fixtures.
+                            </p>
+                            <p>
+                                You may have noticed above that we didn’t define a PHPUnit annotation for unit tests. Unit tests are the default.
+                            </p>
+                            <p>
+                                We run the unit tests on a server where MySQL and Postgres aren’t even available. That way we find out right away if a database dependency was added accidentally.
+                            </p>
+                            <p>
+                                As of today, we have about 4,500 unit tests, which run in about a minute.
+                            </p>
+                            <h4>
+                                Integration Tests
+                            </h4>
+                            <p>
+                                For the most part when we say a test is an <strong>integration test,</strong> this implies that the test uses fixtures. Usually our fixtures-backed tests are built with the PHPUnit port of DBUnit. We’ve even provided some <a href="https://github.com/etsy/phpunit-extensions" title="Etsy PHPUnit extensions, including some convenient tools for creating fixtures with DBUnit">PHPUnit extensions of our own</a> to make testing with DBUnit easier.
+                            </p>
+                            <p>
+                                We also apply the term “integration tests” to test cases that depend on any external service (eg Memcache or Gearman).
+                            </p>
+                            <p>
+                                The integration tests are the slowest part of our suite. If we ran them all sequentially, the integration tests alone would take about 20 minutes for every deployment. Instead, we spend about 8 minutes per deploy running them concurrently.
+                            </p>
+                            <h5>
+                                Network Tests
+                            </h5>
+                            <p>
+                                Some integration tests may also access network resources. For instance, a test might assert that our libraries can properly send an email using a third-party service.
+                            </p>
+                            <p>
+                                For the most part, we try to avoid tests like this. When a test depends on a network request, it can fail just because the request was unsuccessful. That can occur for a number of reasons, one of which <em>may</em> be that the service being tested against is actually down. But you never really know.
+                            </p>
+                            <h4>
+                                Smoke Tests
+                            </h4>
+                            <p>
+                                <strong>Smoke tests</strong> are system level tests that use Curl.
+                            </p>
+                            <p>
+                                For the most part, our smoke tests are PHPUnit test cases that execute Curl commands against a running server. As the response from each request comes back, we assert that the proper headers and other data were returned from the server.
+                            </p>
+                            <h4>
+                                Functional Tests
+                            </h4>
+                            <p>
+                                Like smoke tests, <strong>end-to-end GUI-driven functional tests</strong> are also run against a live server, usually our QA environment. For these tests we use <a title="at Etsy, we are all about stories" href="https://github.com/aslakhellesoy/cucumber/wiki">Cucumber</a> and <a href="http://seleniumhq.org/projects/remote-control/">Selenium,</a> driving a Firefox instance that runs in an Xvfb virtual desktop environment.
+                            </p>
+                            <p>
+                                Since they are very labor-intensive to develop and maintain, end-to-end functional tests are reserved for testing only the most mission-critical parts of Etsy. We get a lot of confidence from running our unit, integration and smoke tests. But at the end of the day, it’s good to know that the site is so easy to use, even a robot user agent can do it.
+                            </p>
+                            <h3>
+                                Zero Tolerance for Intermittent Tests
+                            </h3>
+                            <p>
+                                Sometimes tests fail for no good reason. It’s no big deal, <a title="IMVU's experience with intermittent tests" href="http://engineering.imvu.com/2011/01/19/buildbot-and-intermittent-tests/">it happens.</a> A test can be a bit flaky and still be helpful during development. And such tests can be useful to keep around for reference during maintenance.
+                            </p>
+                            <p>
+                                <a title="Here we can see that this test failed a lot during the period shown. To determine if the test fails intermittently, we just have to check whether a fixing commit was made at build #1850." href="http://www.flickr.com/photos/thefangmonster/5512452626"><img src="http://farm6.static.flickr.com/5132/5512452626_2c618207ea.jpg" alt="Jenkins' xUnit plugin provides trend graphs of test performance data"></a>
+                            </p>
+                            <p>
+                                But running tests before deployment is different than running tests during maintenance or development. A test that only fails 2% of the time will fail about every other day if run before each of our 25 deployments. That’s 2-3 failures a week. And in practice each failure of the trunk tests translates to around 10 minutes of lost developer time — for every developer currently waiting to make a deployment!
+                            </p>
+                            <p>
+                                So a single test that fails only 2% of the time can easily <a href="http://martinfowler.com/articles/nonDeterminism.html" title="Martin Fowler recently wrote in-depth about the causes and the impact of intermittency in automated regression tests">incur a cost</a> of about 5 wasted work-hours per week. We therefore provide a few other PHPUnit group annotations which anyone is free to use when they encounter a test that <a href="http://xunitpatterns.com/Test%20Smells.html">isn’t quite robust enough</a> to block deployment.
+                            </p>
+                            <h4>
+                                Intermittent Tests
+                            </h4>
+                            <p>
+                                We use the annotation <code>@group flaky</code> to denote a test that has been observed to fail intermittently. Tests so annotated are automatically excluded from running during deployment.
+                            </p>
+                            <p>
+                                This has worked out better for us than skipping or commenting out intermittent tests. Tests annotated as flaky can still be run (and are still useful) in some contexts.
+                            </p>
+                            <h4>
+                                Slow Tests
+                            </h4>
+                            <p>
+                                Observation has repeatedly shown that our slowest tests roughly exhibit a power law distribution: a very few tests account for a great deal of the overall runtime of the test suite.
+                            </p>
+                            <p>
+                                Periodically we ask that engineers identify very long-running tests and tag them as <code>@group slow</code>. Identifying and “retiring” our top 20 slowest tests (out of 7,000) usually results in a noticeable speedup of the test suite overall.
+                            </p>
+                            <p>
+                                Again, tests so annotated may still be run (and are still useful) in some contexts, just not before deployment.
+                            </p>
+                            <p>
+                                <a href="http://www.flickr.com/photos/thefangmonster/5511840371"><img src="http://farm6.static.flickr.com/5092/5511840371_ec9e3c4840_o.png" alt="a graph showing that our 20 slowest integration tests, consume about 30% of the overall runtime for the 2,000 tests in that suite"></a>
+                            </p>
+                            <h4>
+                                Sleep Tests and Time Tests
+                            </h4>
+                            <p>
+                                Good tests don’t <code>sleep()</code> nor do they depend on the system clock.
+                            </p>
+                            <p>
+                                Sometimes getting test coverage at all means writing less-than-good tests (this is especially true when writing new tests for legacy code). We accept this reality — but we still don’t run such tests before deployment.
+                            </p>
+                            <h3>
+                                Fast, Reliable Tests
+                            </h3>
+                            <p>
+                                Our CI system is still relatively new (most tests are under two years old and the Jenkins instance only dates back to July) so we still have a lot of work to do in terms of building <a title="Mike Brittain's post on Data Driven Development" href="http://codeascraft.etsy.com/2010/12/08/track-every-release/">awesome dashboards</a>. And in the future we’d like to <a title="Ian Malpass' post on StatsD, our all-purpose data daemon" href="http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/">harvest more realtime data</a> from both the tests, and from Jenkins itself.
+                            </p>
+                            <p>
+                                But so far we’ve been very happy with the CI system that has resulted from using PHPUnit annotations to identify subsets of functionally similar tests and running the subsets concurrently on a cluster of servers. This strategy has enabled us to quadruple the speed of our deployment pipeline and given us fine-grained control over which tests are run before each of our 25 or more daily deploys. It’s a <strong>lightweight process</strong> that empowers anyone who knows how to write a comment to have input into how tests are run on Etsy’s deployment pipeline.
+                            </p>
+                            <p>
+                                <em>If this article was interesting to you, catch up with us at the <a href="http://phpcon.org/speakers#denker" title="Laura Beth Denker will be talking about Etsy's CI system at PHPComConf in Nashville on Friday">PHP Community Conference</a> in Nashville later this week!</em>
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/etsycodeascraft.wordpress.com/866/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/etsycodeascraft.wordpress.com/866/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/etsycodeascraft.wordpress.com/866/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/etsycodeascraft.wordpress.com/866/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/etsycodeascraft.wordpress.com/866/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/etsycodeascraft.wordpress.com/866/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/etsycodeascraft.wordpress.com/866/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/etsycodeascraft.wordpress.com/866/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/etsycodeascraft.wordpress.com/866/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/etsycodeascraft.wordpress.com/866/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/etsycodeascraft.wordpress.com/866/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/etsycodeascraft.wordpress.com/866/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/etsycodeascraft.wordpress.com/866/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/etsycodeascraft.wordpress.com/866/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=codeascraft.etsy.com&amp;blog=16220466&amp;post=866&amp;subd=etsycodeascraft&amp;ref=&amp;feed=1" width="1" height="1"><img src="http://feeds.feedburner.com/~r/codeascraft/~4/ZCv8joRi7yU" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://codeascraft.etsy.com/2011/04/20/divide-and-concur/">http://codeascraft.etsy.com/2011/04/20/divide-and-concur/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

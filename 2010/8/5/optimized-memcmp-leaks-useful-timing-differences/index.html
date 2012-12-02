@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Optimized memcmp leaks useful timing differences
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 05 Aug 2010 13:00:58 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-05T09:00:58-04:00">
+                    <meta itemprop="dateModified" content="2010-08-05T09:00:58-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-05T13:00:58+00:00">Aug 05</time>
+                    <h2 itemprop="title">
+                        Optimized memcmp leaks useful timing differences
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a48c087234be370d">
+                        <blockquote>
+                            <p>
+                                One of the main questions raised after our Blackhat talk on <a href="http://rdist.root.org/2010/07/19/exploiting-remote-timing-attacks/">exploiting remote timing attacks</a> was how memcmp() optimizations might affect our results.
+                            </p>
+                            <p>
+                                Our talk focused on a particular timing vulnerability. If an HMAC comparison exits early when a mismatch is found, it reveals information to an attacker about the correct HMAC for the forged message. This early-exit behavior is desirable in general but can leak timing information about secret data, allowing an attacker to iteratively guess the secret.
+                            </p>
+                            <p>
+                                In C, memcmp() is almost always used for comparisons of binary data. Its API specifies that it compares two fixed-length buffers and returns the difference between them or zero if they are identical. In most implementations, memcmp() exits as soon as a difference is found in the two buffers.
+                            </p>
+                            <p>
+                                Even if memcmp() exits early, the size of comparisons might affect how exploitable this timing delta is. For example, an optimized memcmp() may work in units of 64-bit quad words. Such an implementation might not be exploitable even if the timing delta of a mismatch was 1 second since you would have to brute-force 64-bits before seeing the timing delta increase due to a match. However, things aren’t so simple and using an optimized memcmp() does not always save you.
+                            </p>
+                            <p>
+                                To prepare for our talk, we disassembled a few memcmp() implementations and found a surprising number were byte-based. This gives an attacker only 256 possibilities per guess, which is quite tractable. We decided to follow up with more detailed results for various operating systems.
+                            </p>
+                            <p>
+                                We found two things:
+                            </p>
+                            <ol>
+                                <li>Even an optimized memcmp() usually leaks bytewise timing differences. In fact, it is often required by its API to do so.
+                                </li>
+                                <li>OS and compiler settings often select a bytewise compare even when a more-optimized version is available.
+                                </li>
+                            </ol>
+                            <p>
+                                Anyone who is assuming particular compiler behavior is advised to review their disassembly. It’s almost always best to use a constant-time comparison instead of memcmp() when working with secret data.
+                            </p>
+                            <h3>
+                                Windows XP SP3 (32-bit)
+                            </h3>
+                            <p>
+                                We disassembled all .exes and DLLs in the system32 directory. All of them import memcmp() from either ntdll.dll or msvcrt.dll. All of them were compiled with some version of MSVC.
+                            </p>
+                            <p>
+                                The msvcrt.dll memcmp() is 32-bit optimized. It compares 32-bit words if both pointers are 32-bit aligned (rep cmpsd). The remainder is compared with up to a 3-byte series of individual byte compares (cmp/jnz). If either of the input pointers is not 32-bit aligned, it goes into an unrolled loop that compares single bytes and exits early if any mismatch. ntdll.dll has the same memcmp() implementation.
+                            </p>
+                            <p>
+                                Even with this optimization, the Windows memcmp() leaks bytewise timing information. When a difference is found in the 32-bit compares, it goes through each byte of the 32-bit word to find which byte differs. This means there is a 2-instruction timing delta per byte the attacker got correct, even though the original compare was in 32-bit chunks.
+                            </p>
+                            <p>
+                                Windows memcmp() doesn’t actually have to do this set of bytewise comparisons. MSDN states the following behavior:
+                            </p>
+                            <blockquote>
+                                <table border="1">
+                                    <tbody>
+                                        <tr align="left">
+                                            <th width="25%">
+                                                Return value
+                                            </th>
+                                            <th>
+                                                Relationship of first count bytes of buf1 and buf2
+                                            </th>
+                                        </tr>
+                                        <tr align="left">
+                                            <td width="25%">
+                                                &lt; 0
+                                            </td>
+                                            <td>
+                                                <em>buf1</em> less than <em>buf2</em>
+                                            </td>
+                                        </tr>
+                                        <tr align="left">
+                                            <td width="25%">
+                                                0
+                                            </td>
+                                            <td>
+                                                <em>buf1</em> identical to <em>buf2</em>
+                                            </td>
+                                        </tr>
+                                        <tr align="left">
+                                            <td width="25%">
+                                                &gt; 0
+                                            </td>
+                                            <td>
+                                                <em>buf1</em> greater than <em>buf2</em>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </blockquote>
+                            <p>
+                                The cygwin man page for memcmp() states:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    The function returns an integer greater than, equal to or less than zero according to whether the object pointed to by S1 is greater than, equal to or less than the object pointed to by S2.
+                                </p>
+                            </blockquote>
+                            <p>
+                                Since neither implementation requires identifying the bytewise difference, the implementation could just subtract the two 32-bit words. Only the sign of the return value matters, not the magnitude. This is analogous to treating the two buffers as multi-precision integers, just like in an RSA implementation.
+                            </p>
+                            <p>
+                                We also compiled our own code using the cygwin and mingw gcc compilers. With no optimization flags, the cygwin gcc links to cygwin1.dll, which has a 32-bit optimized memcmp() similar to msvcrt.dll. It returns the bytewise difference and checks the input pointers for 32-bit alignment. The mingw compiler links to the msvcrt.dll version of memcmp() when no optimization flags are specified.
+                            </p>
+                            <p>
+                                However, if an optimization level higher than default is used (-O1, -O2, -O3), both cygwin and mingw gcc use a 1-byte compare loop (rep cmpsb). This is surprising. If the -fno-builtin flag is specified, both cygwin and mingw gcc revert to the previous behavior, calling the external implementation in their respective DLLs.
+                            </p>
+                            <p>
+                                We disassembled the default cygwin system utilities and libraries and found they all used a 1-byte compare loop. This is likely because they were compiled with optimization enabled but without the -fno-builtin flag.
+                            </p>
+                            <h4>
+                                Summary
+                            </h4>
+                            <p>
+                                The default Windows memcmp() (msvcrt.dll or ntdll.dll) leaks bytewise timing information even for chunks of 32-bits due to its search for the differing byte once a mismatch is found. It also leaks bytewise information if either input pointer is not 32-bit aligned. MSVC always uses an external DLL memcmp().
+                            </p>
+                            <p>
+                                Both cygwin and mingw gcc use a 1-byte compare loop if optimization is enabled (-O1 or higher). If no optimization is enabled, gcc links to a DLL (cygwin1.dll or msvcrt.dll) that has a 32-bit optimized memcmp(). This memcmp() leaks the bytewise difference just like msvcrt.dll.
+                            </p>
+                            <h3>
+                                Windows 7 (64-bit)
+                            </h3>
+                            <p>
+                                This memcmp() implementation in msvcrt.dll compares buffers longer than 8 bytes in 64-bit chunks. It does not return the bytewise difference if it finds a mismatch. It returns the difference of the trailing 32-bits.&nbsp;The only bytewise timing leak occurs if the input length is not a multiple of 8. In this case, the remainder of the bytes are compared one at a time.
+                            </p>
+                            <h3>
+                                Linux (32 and 64-bit, Ubuntu 10.04 with glibc 2.12.1)
+                            </h3>
+                            <p>
+                                The x86 32-bit memcmp() is a long unrolled set of 32-bit compares. When it finds some difference, it jumps to find_diff which, like Windows, identifies exactly which byte differs. This leaks a bytewise timing delta.
+                            </p>
+                            <p>
+                                Like Windows, the Linux memcmp() does not require finding the differing byte:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    The memcmp() function returns an integer less than, equal to, or greater than zero if the first n bytes of s1 is found, respectively, to be less than, to match, or be greater than the first n bytes of s2.
+                                </p>
+                            </blockquote>
+                            <p>
+                                The 64-bit memcmp() uses a tricky combination of a bit-set instruction (bsf) and shifts to identify the first byte difference without branching. So if the input is a multiple of 4, 8, or 16, it should not reveal a timing delta for any smaller units. If the input length is not a multiple of these values, smaller differences are visible.
+                            </p>
+                            <p>
+                                Linux has optimized versions for other architectures as well, but we did not examine them.
+                            </p>
+                            <h4>
+                                Summary
+                            </h4>
+                            <p>
+                                Only the Linux 64-bit memcmp() does not reveal bytewise timing deltas. The 32-bit version behaves the same as Windows.
+                            </p>
+                            <h3>
+                                FreeBSD 8.0 (32 and 64-bit, gcc 4.2.1)
+                            </h3>
+                            <p>
+                                The system libc.so and libc.a have an optimized memcmp() for the most popular CPU architectures (i386, amd64, and arm). For i386, it consists of a 32-bit compare for the length in chunks of 4 (rep cmpsd), and a single-byte rep cmpsb for the remaining up to 3 bytes. There is no check for alignment first, so behavior with unaligned pointers is identical. The amd64 version has the same behavior as i386 but the libc memcmp() works in units of 8-byte quadwords (rep cmpsq).
+                            </p>
+                            <p>
+                                If a difference is found in the word comparison, all implementations of memcmp() back up and find the first different byte using rep cmpsb. This required by the man page:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    The memcmp() function returns zero if the two strings are identical, otherwise returns the difference between the first two differing bytes (treated as unsigned char values, so that ‘\200′ is greater than ‘\0′, for example). Zero-length strings are always identical.
+                                </p>
+                            </blockquote>
+                            <p>
+                                For all other platforms (sparc, mips, ia64), the generic implementation of memcmp() is used. It is a loop of 1-byte compares, implemented in C.
+                            </p>
+                            <p>
+                                GCC does not use the libc version of memcmp() by default. It uses a built-in version that consists of a rep cmpsb for the entire input. This occurred no matter what the optimization level (-O1, -O2, -O3). If we added the -fno-builtin flag, gcc generated calls to the libc memcmp(). Nothing changed based on optimization level.
+                            </p>
+                            <p>
+                                We disassembled the default system utilities on FreeBSD 8.0 and found none of them were compiled with -fno-builtin, and thus all used the 1-byte memcmp.
+                            </p>
+                            <h4>
+                                Summary
+                            </h4>
+                            <p>
+                                By default, gcc on FreeBSD uses a completely timeable memcmp() that works in 1-byte units. This is regardless of optimization level. If the -fno-builtin flag is used, the libc memcmp() is linked in instead. The libc memcmp() is not more resistant to timing attacks because it finds the first differing byte. The sparc, mips, and ia64 platforms always use a 1-byte loop.
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/rdist.wordpress.com/602/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/rdist.wordpress.com/602/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/rdist.wordpress.com/602/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/rdist.wordpress.com/602/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/rdist.wordpress.com/602/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/rdist.wordpress.com/602/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/rdist.wordpress.com/602/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/rdist.wordpress.com/602/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/rdist.wordpress.com/602/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/rdist.wordpress.com/602/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/rdist.wordpress.com/602/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/rdist.wordpress.com/602/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/rdist.wordpress.com/602/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/rdist.wordpress.com/602/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=rdist.root.org&amp;blog=893473&amp;post=602&amp;subd=rdist&amp;ref=&amp;feed=1" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://rdist.root.org/2010/08/05/optimized-memcmp-leaks-useful-timing-differences/">http://rdist.root.org/2010/08/05/optimized-memcmp-leaks-useful-timing-differences/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

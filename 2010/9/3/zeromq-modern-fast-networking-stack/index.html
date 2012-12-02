@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            ZeroMQ: Modern &amp; Fast Networking Stack
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 03 Sep 2010 17:13:45 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-09-03T13:13:45-04:00">
+                    <meta itemprop="dateModified" content="2010-09-03T13:13:45-04:00"><time class="date" itemprop="datePublished" datetime="2010-09-03T17:13:45+00:00">Sep 03</time>
+                    <h2 itemprop="title">
+                        ZeroMQ: Modern &amp; Fast Networking Stack
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c8e66e2eefafb002">
+                        <blockquote>
+                            <p>
+                                <img align="left" src="http://www.igvita.com/posts/10/zmq-osi.png" style="margin-right:1em"><a href="http://en.wikipedia.org/wiki/Berkeley_sockets">Berkeley Sockets</a> (BSD) are the de facto API for all network communication. With roots from the early 1980's, it is the original implementation of the TCP/IP suite, and arguably one of the most widely supported and critical components of any operating system today. BSD sockets that most of us are familiar with are <strong>peer-to-peer connections</strong>, which require explicit setup, teardown, choice of transport (TCP, UDP), error handling, and so on. And once you solve all of the above, then you are into the world of application protocols (ex: HTTP), which require additional framing, buffering and processing logic. In other words, it is no wonder that a high-performance network application is anything but trivial to write.
+                            </p>
+                            <p>
+                                Wouldn't it be nice if we could abstract some of the low-level details of different socket types, connection handling, framing, or even routing? This is exactly where the <strong><a href="http://www.zeromq.org/">ZeroMQ</a> (ØMQ/ZMQ)</strong> networking library comes in: <em>"it gives you sockets that carry whole messages across various transports like inproc, IPC, TCP, and multicast; you can connect sockets N-to-N with patterns like fanout, pubsub, task distribution, and request-reply"</em>. That's a lot buzzwords, so lets dissect some of these concepts in more detail.
+                            </p>
+                            <h4>
+                                <strong>Message-Oriented vs. Streams &amp; Datagrams</strong>
+                            </h4>
+                            <p>
+                                ZeroMQ sockets provide a layer of abstraction on top of the traditional socket API, which allows it to hide much of the everyday boilerplate complexity we are forced to repeat in our applications. To begin, instead of being <a href="http://en.wikipedia.org/wiki/Transmission_Control_Protocol">stream (TCP)</a>, or <a href="http://en.wikipedia.org/wiki/User_Datagram_Protocol">datagram (UDP)</a> oriented, <strong>ZeroMQ communication is message-oriented</strong>. This means that if a client socket sends a 150kb message, then the server socket will receive a complete, identical message on the other end without having to implement any explicit buffering or framing. Of course, we could still implement a streaming interface, but doing so would require an explicit application-level protocol.
+                            </p>
+                            <div style="background:white">
+                                <pre>
+<span style="color:#008000;font-style:italic"># create zeromq request / reply socket pair</span>
+ctx = <span style="color:#6666ff;font-weight:bold">ZMQ::Context</span>.<span style="color:#9900CC">new</span>
+req = ctx.<span style="color:#9900CC">socket</span> <span style="color:#6666ff;font-weight:bold">ZMQ::REQ</span>
+rep = ctx.<span style="color:#9900CC">socket</span> <span style="color:#6666ff;font-weight:bold">ZMQ::REP</span>
+ 
+<span style="color:#008000;font-style:italic"># connect sockets: notice that reply can connect first even with no server!</span>
+rep.<span style="color:#9900CC">connect</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">'tcp://127.0.0.1:5555'</span><span style="color:#006600;font-weight:bold">)</span>
+req.<span style="color:#9900CC">bind</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">'tcp://127.0.0.1:5555'</span><span style="color:#006600;font-weight:bold">)</span>
+req.<span style="color:#9900CC">send</span> <span style="color:#6666ff;font-weight:bold">ZMQ::Message</span>.<span style="color:#9900CC">new</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">'hello'</span> * <span style="color:#006600;font-weight:bold">(</span><span style="color:#006666">1024</span>*<span style="color:#006666">1024</span><span style="color:#006600;font-weight:bold">)</span><span style="color:#006600;font-weight:bold">)</span>
+ 
+msg = <span style="color:#6666ff;font-weight:bold">ZMQ::Message</span>.<span style="color:#9900CC">new</span>
+rep.<span style="color:#9900CC">recv</span><span style="color:#006600;font-weight:bold">(</span>msg<span style="color:#006600;font-weight:bold">)</span>
+msg.<span style="color:#9900CC">copy_out_string</span>.<span style="color:#9900CC">size</span> <span style="color:#008000;font-style:italic"># =&gt; 5242880</span>
+ 
+</pre>
+                            </div>
+                            <p>
+                                Switching from a streaming/datagram to a message-oriented model is seemingly a minor change, but one that carries a lot of implications. Because ZeroMQ will handle all of the buffering and framing for you, the client and server applications become an order of magnitude simpler, more secure, and much easier to write.
+                            </p>
+                            <h4>
+                                <strong>Transport Agnostic Sockets</strong>
+                            </h4>
+                            <p>
+                                <img align="left" src="http://www.igvita.com/posts/10/zmq-transport.png" style="margin-right:1em">ZeroMQ sockets are also transport agnostic: there is a single, unified API for sending and receiving messages across all protocols. By default, there is support for <a href="http://api.zeromq.org/zmq_inproc.html">in-process</a>, <a href="http://api.zeromq.org/zmq_ipc.html">IPC</a>, <a href="http://api.zeromq.org/zmq_pgm.html">multicast</a>, and <a href="http://api.zeromq.org/zmq_tcp.html">TCP</a>, and switching between all of them is as simple as changing the prefix on your connection string. This means we can start with IPC for fast local communication, and then switch to TCP at any point for distributed cases with minimal effort. As an added benefit, ZeroMQ handles all connection setup, teardown, and reconnect logic under the hood. That's about as simple as it gets.
+                            </p>
+                            <h4>
+                                <strong>Routing &amp; Topology Aware Sockets</strong>
+                            </h4>
+                            <p>
+                                ZeroMQ sockets are routing and network topology aware. Since we don't have to explicitly manage the peer-to-peer connection state - all of that is abstracted by the library, as we saw above - <strong>nothing stops a single ZeroMQ socket from binding to two distinct ports to listen to for inbound requests</strong>, or in reverse, send data to two distinct sockets via a single API call. How does ZeroMQ know who to listen to or push data to? That depends on the type of the socket pair we pick for our application: <em>Request/Reply</em>, <em>Publish/Subscribe</em>, <em>Pipeline</em>, and <em>Pair</em> (alpha).
+                            </p>
+                            <div style="background:white">
+                                <pre>
+ctx = <span style="color:#6666ff;font-weight:bold">ZMQ::Context</span>.<span style="color:#9900CC">new</span>
+ 
+<span style="color:#008000;font-style:italic"># create publisher socket, and publish to two pipes!</span>
+pub = ctx.<span style="color:#9900CC">socket</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#6666ff;font-weight:bold">ZMQ::PUB</span><span style="color:#006600;font-weight:bold">)</span>
+pub.<span style="color:#9900CC">bind</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">'tcp://127.0.0.1:5000'</span><span style="color:#006600;font-weight:bold">)</span>
+pub.<span style="color:#9900CC">bind</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">'inproc://some.pipe'</span><span style="color:#006600;font-weight:bold">)</span>
+ 
+<span style="color:#008000;font-style:italic"># generate random message, ex: '1 9'</span>
+<span style="color:#CC00FF;font-weight:bold">Thread</span>.<span style="color:#9900CC">new</span> <span style="color:#006600;font-weight:bold">{</span> <span style="color:#CC0066;font-weight:bold">loop</span> <span style="color:#006600;font-weight:bold">{</span> pub.<span style="color:#9900CC">send</span> <span style="color:#006600;font-weight:bold">[</span><span style="color:#CC0066;font-weight:bold">rand</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#006666">2</span><span style="color:#006600;font-weight:bold">)</span>, <span style="color:#CC0066;font-weight:bold">rand</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#006666">10</span><span style="color:#006600;font-weight:bold">)</span><span style="color:#006600;font-weight:bold">]</span>.<span style="color:#9900CC">join</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">' '</span><span style="color:#006600;font-weight:bold">)</span> <span style="color:#006600;font-weight:bold">}</span> <span style="color:#006600;font-weight:bold">}</span>
+ 
+<span style="color:#008000;font-style:italic"># create a consumer, and listen for messages whose key is '1'</span>
+<span style="color:#CC0066;font-weight:bold">sub</span> = ctx.<span style="color:#9900CC">socket</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#6666ff;font-weight:bold">ZMQ::SUB</span><span style="color:#006600;font-weight:bold">)</span>
+<span style="color:#CC0066;font-weight:bold">sub</span>.<span style="color:#9900CC">connect</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">'inproc://some.pipe'</span><span style="color:#006600;font-weight:bold">)</span>
+<span style="color:#CC0066;font-weight:bold">sub</span>.<span style="color:#9900CC">setsockopt</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#6666ff;font-weight:bold">ZMQ::SUBSCRIBE</span>, <span style="color:#996600">'1'</span><span style="color:#006600;font-weight:bold">)</span>
+ 
+<span style="color:#CC0066;font-weight:bold">loop</span> <span style="color:#006600;font-weight:bold">{</span> <span style="color:#CC0066;font-weight:bold">p</span> <span style="color:#CC0066;font-weight:bold">sub</span>.<span style="color:#9900CC">recv</span> <span style="color:#006600;font-weight:bold">}</span> <span style="color:#008000;font-style:italic"># =&gt; "1 9" ...</span>
+ 
+</pre>
+                            </div>
+                            <p>
+                                In the case of a <a href="http://api.zeromq.org/2-1-1:zmq-socket#toc8">Publish/Subscribe</a> socket pair (unidirectional communication from publisher to subscribers), the publisher socket will replicate the message to all connected clients (local IPC clients, remote TCP listeners, etc). In the case of a <a href="http://api.zeromq.org/2-1-1:zmq-socket#toc3">Request/Reply</a> socket pair (bi-directional communication: server, client), the messages will be automatically load balanced by the socket generating the request to one of the connected clients. Finally, a <a href="http://api.zeromq.org/2-1-1:zmq-socket#toc11">Push/Pull</a> socket pair (pipeline: unidirectional, load-balanced) will allow you to simulate a staged message passing architecture with built-in load balancing.
+                            </p>
+                            <p>
+                                <img align="left" src="http://www.igvita.com/posts/10/rrd-zmq.png" style="margin-right:1em">ZeroMQ allows us to encode the topology of our services directly via the socket API, without having to define and maintain a separate coordination layer of routers, load balancers, and message brokers. Of course, nothing stops us from using any of these tools in combination with ZeroMQ, but in many cases, the ZeroMQ route can yield <a href="http://www.zeromq.org/area:results">better performance</a> and much simpler operational complexity.
+                            </p>
+                            <h4>
+                                <strong>ZeroMQ under the hood</strong>
+                            </h4>
+                            <p>
+                                By default, all communication in ZeroMQ is done in <a href="http://api.zeromq.org/zmq_socket.html#toc2">asynchronous fashion</a>. To enable this, anytime you create an application with ZeroMQ, you will have to explicitly declare the number of background I/O threads - in most cases, a single dedicated I/O thread will suffice. All of the thread logic is handled by the C++ core of the library itself, but it does mean that at very minimum, your application will have two scheduled threads.
+                            </p>
+                            <p>
+                                <img align="left" src="http://www.igvita.com/posts/10/zmq-async-io.png" style="margin-right:1em">This asynchronous processing model allows ZeroMQ to abstract all connection setup, teardown, reconnect logic, and also to minimize message delivery latency: no blocking means the messages can be dispatched, delivered and queued (sender or receiver side) in parallel to the regular processing done by your application. Of course, you can also control the queuing behavior of ZeroMQ sockets by setting an <a href="http://api.zeromq.org/2-1-1:zmq-setsockopt#toc3">allowed memory bound</a> and even a <a href="http://api.zeromq.org/2-1-1:zmq-setsockopt#toc4">swap size</a> for each socket. Hence, you can simulate the blocking API if desired, but asynchronous I/O is the default. Combined with zero copy semantics, optimized framing, and no locking data structures, the end result is a high performance and throughput oriented messaging middleware with a modern API.
+                            </p>
+                            <h4>
+                                <strong>ZeroMQ in the Wild: Mongrel 2</strong>
+                            </h4>
+                            <p>
+                                <img align="left" src="http://www.igvita.com/posts/10/zmq-mongrel2.png" style="margin-right:1em"><a href="http://mongrel2.org/home">Mongrel2</a> offers an interesting case-study of applying ZeroMQ to the world of web-servers: all inbound requests are routed by Mongrel2 via a "Push" socket which automatically load-balances the requests to connected handlers. The handlers, in turn, process the incoming requests (via Pull socket) and publish them to a "Pub" socket, to which the Mongrel2 server itself is subscribed to and is listening for its process ID (via a <a href="http://api.zeromq.org/2-1-1:zmq-setsockopt#toc7">topic filter</a>).
+                            </p>
+                            <p>
+                                Hence, the processing is not tied to a simple request-response cycle we are commonly used to, where a single backend has to handle the full request start to finish. Instead, we can setup <a href="http://mongrel2.org/doc/tip/docs/manual/book.wiki#x1-660005.3">several processing stages</a> (via pipeline pattern), and emit our reply only after it is processed by all stages.
+                            </p>
+                            <h4>
+                                <strong>Ambitious and worth exploring</strong>
+                            </h4>
+                            <p>
+                                Needless to say, ZeroMQ is an ambitious project, and this short introduction only scratches the surface of the full feature set. The stated goal of ZeroMQ is to <em>"become part of the standard networking stack, and then the Linux kernel"</em>. Whether they will succeed, remains to be seen, but it is definitely a very promising and arguably a much needed layer of abstraction on top of the "traditional" BSD sockets. ZeroMQ makes writing high performance networking applications incredibly easy and fun.
+                            </p>
+                            <p>
+                                The best way to get started with ZeroMQ is to work through some hands-on examples - the concepts are not new, but the ease with which you can compose them takes some getting use to. For Rubyists, Andrew Cholakian has put together a <a href="http://github.com/andrewvc/learn-ruby-zeromq">great set of examples</a> to get you started (check out <a href="http://github.com/andrewvc/dripdrop">dripdrop</a> as well), and for everyone else, head to the ZeroMQ site, grab <a href="http://www.zeromq.org/bindings:_start">your language bindings</a> and dive into the code.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=RjFi09Hw3io:iwUrveZAhHc:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=RjFi09Hw3io:iwUrveZAhHc:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=RjFi09Hw3io:iwUrveZAhHc:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=RjFi09Hw3io:iwUrveZAhHc:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=RjFi09Hw3io:iwUrveZAhHc:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=RjFi09Hw3io:iwUrveZAhHc:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=RjFi09Hw3io:iwUrveZAhHc:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=RjFi09Hw3io:iwUrveZAhHc:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=RjFi09Hw3io:iwUrveZAhHc:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/RjFi09Hw3io" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2010/09/03/zeromq-modern-fast-networking-stack/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2010/09/03/zeromq-modern-fast-networking-stack/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

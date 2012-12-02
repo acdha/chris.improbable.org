@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            A memory efficient way to remove low-abundance k-mers from large (metagenomic?) DNA data sets
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 07 Jul 2010 15:09:20 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-07-07T11:09:20-04:00">
+                    <meta itemprop="dateModified" content="2010-07-07T11:09:20-04:00"><time class="date" itemprop="datePublished" datetime="2010-07-07T15:09:20+00:00">Jul 07</time>
+                    <h2 itemprop="title">
+                        A memory efficient way to remove low-abundance k-mers from large (metagenomic?) DNA data sets
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a417bfb1de40ebd1">
+                        <blockquote>
+                            <div>
+                                <p>
+                                    I've spent the last few weeks working on a simple solution to a challenging problem in DNA sequence assembly, and I think we've got a nice simple theoretical solution with an actual implementation. I'd be interested in comments!
+                                </p>
+                                <div>
+                                    <h1>
+                                        <a name="introduction" id="introduction">Introduction</a>
+                                    </h1>
+                                    <p>
+                                        Briefly, the algorithmic challenge is this:
+                                    </p>
+                                    <p>
+                                        We have a bunch of DNA sequences in (let's say) FASTA format,
+                                    </p>
+                                    <pre>
+&gt;850:2:1:1145:4509/1
+CCGAGTCGTTTCGGAGGGACCCCGCCATCATACTCGGGGAATTCATCTGAAAGCATGATCATAGAGTCACCGAGCA
+&gt;850:2:1:1145:4509/2
+AGCCAAGAGCACCCCAGCTATTCCTCCCGGACTTCATAACGTAACGGCCTACCTCGCCATTAAGACTGCGGCGGAG
+&gt;850:2:1:1145:14575/1
+GACGCAAAAGTAATCGTTTTTTGGGAACATGTTTTCATCCTGATCATGTTCCTGCCGATTCTGATCTCGCGACTGG
+&gt;850:2:1:1145:14575/2
+TAACGGGCTGAATGTTCAGGACCACGTTTACTACCGTCGGGTTGCCATACTTCAACGCCAGCGTGAAAAAGAACGT
+&gt;850:2:1:1145:2219/1
+GAAGACAGAGTGGTCGAAAGCTATCAGACGCGATGCCTAACGGCATTTTGTAGGGCGTCTGCGTCAGACGCCAACC
+&gt;850:2:1:1145:2219/2
+GAAGGCGGGTAATGTCCGACAAACATTTGACGTCAAAGCCGGCTTTTTTGTAGTGGGTTTGACTCTTTCGCTTCCG
+&gt;850:2:1:1145:5660/1
+GATGGCGTCGTCCGGGTGCCCTGGTGGAAGTTGCGGGGATGCGGATTCATCCGGGACGCGCAGACGCAGGCGGTGG
+</pre>
+                                    <p>
+                                        and we want to pre-filter these sequences so that only sequences containing high-abundance DNA words of length k ("k-mers"), remain. For example, given a set of DNA sequences, we might want to remove any sequence that does not contain a k-mer present at least 5 times in the entire data set.
+                                    </p>
+                                    <p>
+                                        This is very straightforward to do for small numbers of sequences, or for small k. Unfortunately, we are increasingly confronted by data sets containing 250 million sequences (or more), and we would like to be able to do this for large k (k &gt; 20, at least).
+                                    </p>
+                                    <p>
+                                        You can break the problem down into two basic steps: first, counting k-mers; and second, filtering sequences based on those k-mer counts. It's not immediately obvious how you would parallelize this task: the counting should be very quick (basically, it's I/O bound) while the filtering is going to rely on wide-reaching lookups that aren't localized to any subset of k-mer space.
+                                    </p>
+                                    <p>
+                                        tl; dr? we've developed a way to do this for arbitrary k, in linear time and constant memory, efficiently utilizing as many computers as you have available. It's open source and works today, but, uhh, could use some documentation...
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="digression-the-bioinformatics-motivation" id="digression-the-bioinformatics-motivation">Digression: the bioinformatics motivation</a>
+                                    </h1>
+                                    <p>
+                                        (You can skip this if you're not interested in the biological motivation ;)
+                                    </p>
+                                    <p>
+                                        What we <em>really</em> want to do with this kind of data is assemble it, using a <a href="http://en.wikipedia.org/wiki/De_Bruijn_graph">De Bruijn graph approach</a> a la <a href="http://genome.cshlp.org/content/18/5/821.full">Velvet</a>, <a href="http://www.bcgsc.ca/platform/bioinfo/software/abyss">ABySS</a>, or <a href="http://soap.genomics.org.cn/soapdenovo.html">SOAPdenovo</a>. However, De Bruijn graphs all rely on building a graph of overlapping k-mers in memory, which means that their memory usage scales as a function of the number of unique k-mers. This is good in general, but Bad in certain circumstances -- in particular, whenever the data set you're trying to assemble has a lot of genomic novelty. (See <a href="http://www.ncbi.nlm.nih.gov/pubmed/20211242">this fantastic review</a> and my <a href="http://ged.msu.edu/angus/files/lecture5-assembly.pdf">assembly lecture</a> for some background here.)
+                                    </p>
+                                    <p>
+                                        One particular circumstance in which De Bruijn graph-based assemblers flail is in <a href="http://en.wikipedia.org/wiki/Metagenomics">metagenomics</a>, the isolation and sequencing of genetic material from "the wild", e.g. soil or the human gut. This is largely because the diversity of bacteria present in soil is so huge (although the relatively high error rate of next-gen platforms doesn't help).
+                                    </p>
+                                    <p>
+                                        Prefiltering can help reduce this memory usage by removing erroneous sequences as well as not-so-useful sequences. First, any sequence arising as the result of a sequencing error is going to be extremely rare, and abundance filtering will remove those. Second, genuinely "rare" (shallowly-sequenced) sequences will generally not contribute much to the assembly, and so removing them is a good heuristic for reducing memory usage.
+                                    </p>
+                                    <p>
+                                        We are currently playing with dozens (probably hundreds, soon) of gigabytes of metagenomic data, and we really need to do this prefiltering in order to have a chance at getting a useful assembly out of it.
+                                    </p>
+                                    <p>
+                                        It's worth noting that this is in no way an original thought: in particular, the Beijing Genome Institute (BGI) did this kind of prefiltering in their landmark Human Microbiome paper (<a href="http://www.nature.com/nature/journal/v464/n7285/full/nature08821.html">ref</a>). We want to do it, too, and the BGI wasn't obliging enough to give us source code (booooooo hisssssssssssssss).
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="existing-approaches" id="existing-approaches">Existing approaches</a>
+                                    </h1>
+                                    <p>
+                                        Existing approaches are inadequate to our needs, as far as we can tell from a literature survey and private conversations. Everyone seems to rely on big-RAM machines, which are nice if you have them, but shouldn't be necessary.
+                                    </p>
+                                    <p>
+                                        There are two basic approaches.
+                                    </p>
+                                    <p>
+                                        First, you can build a large table in memory, and then map k-mers into it. This involves writing a simple hash function that converts DNA words into numbers. However, this approach scales poorly with k: for example, there are 4**k unique DNA sequences of length k (or roughly (4**k) / 2 + (4**(k/2))/2, considering reverse complements). So the table for k=17 needs 4**17 entries -- that's 17 gb at 1 byte per counter, which stretches the memory of cheaply available commodity hardware. And we want to use bigger k than 17 -- most assemblers will be more effective for longer k, because it's more specific. (We've been using k values between 30 and 70 for our assemblies, and we'd like to filter on the same k.)
+                                    </p>
+                                    <p>
+                                        Second, you can observe that k-mer space (for sufficiently large k) is likely to be quite sparsely occupied -- after all, there's only so many actual 30-mers present in a 100gb data set! So, you can do something clever like use a tree representation of k-mers and then attach counters to the end nodes of the tree (see, for example, <a href="http://www.ncbi.nlm.nih.gov/pubmed/18976482">tallymer</a>. The problem here that you need to use pointers to connect nodes in the tree, which means that while the tree size is going to scale with the amount of novel k-mers -- ok! -- it's going to have a big constant in front of it -- bad!. In our experience this has been prohibitive for real metagenomic data filtering.
+                                    </p>
+                                    <p>
+                                        These seem to be the two dominant approaches, although if you don't need to actually <em>count</em> the k-mers but only assess presence or absence, you can use something like a <a href="http://en.wikipedia.org/wiki/Bloom_filter">Bloom filter</a> -- for example, see <a href="http://bioinformatics.oxfordjournals.org/cgi/content/full/26/13/1595">Classification of DNA sequences using a Bloom filter</a>, which uses Bloom filters to look for novel sequences (the exact opposite of what we want to do here!). References to other approaches welcome...
+                                    </p>
+                                    <p>
+                                        Note that you really, really, really want to avoid disk access by keeping everything in memory. These are ginormous data sets and we would like to be able to quickly explore different parameters and methods of sequence selection. So we want to come up with a good counting scheme for k-mers that involves relatively small amounts of memory and as little disk access as possible.
+                                    </p>
+                                    <p>
+                                        I think this is a really fun kind of problem, actually. The more clever you are, the more likely you are to come up with a completely inappropriate data structure, given the amount of data and the basic algorithmic requirements. It demands KISS! Read on...
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="an-approximate-approach-to-counting" id="an-approximate-approach-to-counting">An approximate approach to counting</a>
+                                    </h1>
+                                    <p>
+                                        So, we've come up with a solution that scales with the amount of genomic novelty, and efficiently uses your available memory. It can also make effective use of multiple computers (although not multiple processors). What is this magic approach?
+                                    </p>
+                                    <p>
+                                        <a href="http://en.wikipedia.org/wiki/Hash_table">Hash tables</a>. Yep. Map k-mers into a fixed-size table (presumably one about as big as your available memory), and have the table entries be counters for k-mer abundance.
+                                    </p>
+                                    <p>
+                                        This is an obvious solution, except for one problem: collisions. The big problem with hash tables is that you're going to have collisions, wherein multiple k-mers are mapped into a single counting bin. Oh noes! The traditional way to deal with this is to keep track of each k-mer individually -- e.g. when there's a collision, use some sort of data structure (like a linked list) to track the actual k-mers that mapped to a particular bin. But now you're stuck with using gobs of memory to keep these structures around, because each collision requires a new pointer of some sort. It may be possible to get around this efficiently, but I'm not smart enough to figure out how.
+                                    </p>
+                                    <p>
+                                        Instead of becoming smarter, I reconfigured my brain to look at the problem differently. (Think Different?)
+                                    </p>
+                                    <p>
+                                        The big realization here is that collisions <strong>may not matter</strong> all that much. Consider the situation where you're filtering on a maximum abundance of 5 -- that is, you want at least one k-mer in each sequence to be present five or more times across the data set. Well, if you look at the hash bin for a specific k-mer and see the number <strong>4</strong>, you immediately know that whether or not there are any collisions, that particular k-mer isn't present five or more times, and can be discarded! That is, the count for a particular hash bin is the sum of the (non-negative) individual counts for k-mers mapping to that bin, and hence that sum is an upper bound on any individual k-mer's abundance.
+                                    </p><img alt="http://ivory.idyll.org/permanent/kmer-hashtable.png" src="http://ivory.idyll.org/permanent/kmer-hashtable.png" style="width:20%">
+                                    <p>
+                                        The tradeoff is false positives: as k-mer space fills up, the hash table is going to be hit by more and more collisions. In turn, more of the k-mers are going to be falsely reported as being over the minimum abundance, and more of the sequences will be kept. You can deal with this partly by doing iterative filtering with different prime hash table sizes, but that will be of limited utility if you have a really saturated hash table.
+                                    </p>
+                                    <p>
+                                        Note that the counting and filtering is still O(N), while the false positives grow as a function of k-mer space occupancy -- which is to say that the more diversity you have in your data, the more trouble you're in. That's going to be a problem no matter the approach, however.
+                                    </p>
+                                    <p>
+                                        You can see a simple example of approximate and iterative filtering here, for k=15 (a k-mer space of approximately 1 billion) and hash table sizes ranging from 50m to 100m. The curves all approach the correct final number of reads (which we can calculate exactly, for this data set) but some take longer than others. (The code for this is <a href="http://github.com/ctb/khmer/blob/master/scripts/ctb-iterative-bench-2.py">here</a>.)
+                                    </p><img alt="http://ivory.idyll.org/permanent/kmer-filtering-iterative.png" src="http://ivory.idyll.org/permanent/kmer-filtering-iterative.png" style="width:50%">
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="making-use-of-multiple-computers" id="making-use-of-multiple-computers">Making use of multiple computers</a>
+                                    </h1>
+                                    <p>
+                                        While I was working out the details of the (really simple) approximate counting approach, I was bugged by my inability to make effective use of all the juicy computers to which I have access. I don't have many <em>big</em> computers, but I do have lots of medium sized computers with memory in the ~10-20 gb range. How can I use them?
+                                    </p>
+                                    <p>
+                                        This is not a pleasantly parallel problem, for at least two reasons. First, it's I/O bound -- reading the DNA sequences in takes more time than breaking them down into k-mers and counting them. And since it's really memory bound -- you want to use the biggest hash table possible to minimize collisions -- it doesn't seem like using multiple processors on a single machine will help. Second, the hash table is going to be too big to effectively share between computers: 10-20 gb of data per computer is too much to send over the network. So what do we do?
+                                    </p>
+                                    <p>
+                                        I was busy explaining to <a href="http://en.wikipedia.org/wiki/Charles_Ofria">a colleague</a> that this was impossible -- always a useful way for me to solve problems ;) -- when it hit me that you could use <em>multiple chassis</em> (RAM + CPU + disk) to decrease the false positive rate with only a small amount of communication overhead. Basically, my approach is to partition k-mer space into Z subsets (one for each chassis) and have each computer count only the k-mers that fall into their partition. Then, after the counting stage, each chassis records a max k-mer abundance per partition per sequence, and communicates <em>that</em> to a central node. This central node in turn calculates the max k-mer abundance across all partitions.
+                                    </p>
+                                    <p>
+                                        The partitioning trick is a more general form of the specific 'prefix' approach -- that is, separately count and get max abundances/sequence for all k-mers starting with 'A', then 'C', then 'G', and then 'T'. For each sequence you will then have four values (the max abundance/sequence for k-mers start with 'A', 'C', 'G', and 'T'), which can be cheaply stored on disk or in memory. Now you can do a single-pass integration and figure out what sequences to keep.
+                                    </p>
+                                    <p>
+                                        This approach effectively multiplies your working memory by a factor of Z, decreasing your false positive rate equivalently - no mean feat!
+                                    </p><img alt="http://ivory.idyll.org/permanent/kmer-hashtable-par.png" src="http://ivory.idyll.org/permanent/kmer-hashtable-par.png" style="width:20%"><img alt="http://ivory.idyll.org/permanent/kmer-filter-process-2.png" src="http://ivory.idyll.org/permanent/kmer-filter-process-2.png" style="width:40%">
+                                    <p>
+                                        The communication load is significant but not prohibitive: replicate a read-only sequence data set across Z computers, and then communicate max values (1 byte for each sequence) back -- 50-500 mb of data per filtering round. The result of each filtering round can be returned to each node as a readmask against the already-replicated initial sequence set, with one bit per sequence for ignore or process. You can even do it on a single computer, with a local hard drive, in multiple iterations.
+                                    </p>
+                                    <p>
+                                        You can see a simple in-memory implementation of this approach <a href="http://github.com/ctb/khmer/blob/master/python/khmer/split.py">here</a>, and some tests <a href="http://github.com/ctb/khmer/blob/master/python/test_split.py">here</a>. I've implemented this using readmask tables and min/max tables (serializable data structures) more generally, too; see "the actual code", below.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="similar-approaches" id="similar-approaches">Similar approaches</a>
+                                    </h1>
+                                    <p>
+                                        By allowing for false positives, I've effectively turned the hash table into a probabilistic data structure. The closest analog I've seen is the <a href="http://en.wikipedia.org/wiki/Bloom_filter">Bloom filter</a> which records presence/absence information using multiple hash functions for arbitrary k. The hash approach outlined above devolves into a maximally efficient Bloom filter for fixed k when only presence/absence information is recorded.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="the-actual-code" id="the-actual-code">The actual code</a>
+                                    </h1>
+                                    <p>
+                                        Theory and practice are the same, in theory. In practice, of course, they differ. A whole host of minor interface and implementation design decisions needed to be made. The result can be seen at the 'khmer' project, here: <a href="http://github.com/ctb/khmer">http://github.com/ctb/khmer</a>. It's slim on documentation, but there are some example scripts and a reasonable amount of tests. It requires nothing but Python 2.6 and a compiler; nose if you want to run the tests.
+                                    </p>
+                                    <p>
+                                        The implementation is in C++ with a Python wrapper, much like the paircomp and motility software packages.
+                                    </p>
+                                    <p>
+                                        It will filter 1m 70-mer sequences in about 45 seconds, and 80 million sequences in less than an hour, on a 3 GHz Xeon with 16 gbs of RAM.
+                                    </p>
+                                    <p>
+                                        Right now it's limited to k &lt;= 32, because we encode each DNA k-mer in a 64-bit 'long long'.
+                                    </p>
+                                    <p>
+                                        You can see an exact filtering script here: <a href="http://github.com/ctb/khmer/blob/master/scripts/filter-exact.py">http://github.com/ctb/khmer/blob/master/scripts/filter-exact.py</a> . By varying the hash table size (second arg to new_hashtable) you can turn it into an <em>inexact</em> filtering script quite easily.
+                                    </p>
+                                    <p>
+                                        Drop me a note if you want help using the code, or a specific example. We're planning to write documentation, doctests, examples, robust command line scripts, etc. prior to publication, but for now we're primarily trying to use it.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="other-uses" id="other-uses">Other uses</a>
+                                    </h1>
+                                    <p>
+                                        It has not escaped our notice that you can use this approach for a bunch of other k-mer based problems, such as repeat discovery and calculating abundance distributions... but right now we're focused on actually using it for filtering metagenomic data sets prior to assembly.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="acks" id="acks">Acks</a>
+                                    </h1>
+                                    <p>
+                                        I talked a fair bit with Prof. Rich Enbody about this approach, and he did a wonderful job of double-checking my intuition. Jason Pell and Qingpeng Zhang are co-authors on this project; in particular, Jason helped write the C++ code, and Qingpeng has been working with k-mers in general and tallymer in specific on some other projects, and provided a lot of background help.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h1>
+                                        <a name="conclusions" id="conclusions">Conclusions</a>
+                                    </h1>
+                                    <p>
+                                        We've taken a previously hard problem and made it practically solvable: we can filter ~88m sequences in a few hours on a single-processor computer with only 16gb of RAM. This seems useful.
+                                    </p>
+                                    <p>
+                                        Our main challenge now is to come up with a better hashing function. Our current hash function is not uniform, even for a uniform distribution of k-mers, because of the way it handles reverse complements.
+                                    </p>
+                                    <p>
+                                        The approach scales reasonably nicely. Doubling the amount of data doubles the compute time. However, if you have double the novelty, you'll need to do double the partitions to keep the same false positive rate, in which case you quadruple the compute time. So it's O(N^2) for the worst case (unending novelty) but should be something better for real-world cases. That's what we'll be looking at over the next few months.
+                                    </p>
+                                    <p>
+                                        I haven't done enough background reading to figure out if our approach is particularly novel, although in the space of bioinformatics it seems to be reasonably so. That's less important than actually solving our problem, but it would be nice to punch the "publication" ticket if possible. We're thinking of writing it up and sending it to BMC Bioinformatics, although suggestions are welcome.
+                                    </p>
+                                    <p>
+                                        It would be particularly ironic if the first publication from my lab was this computer science-y, given that I have no degrees in CS and am in the CS department by kind of a fluke of the hiring process ;).
+                                    </p>
+                                </div>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ivory.idyll.org/blog/jul-10/kmer-filtering">http://ivory.idyll.org/blog/jul-10/kmer-filtering</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

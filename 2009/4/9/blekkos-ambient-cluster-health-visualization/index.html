@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            blekko's ambient cluster health visualization
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 10 Apr 2009 03:56:50 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-09T15:39:49-04:00">
+                    <meta itemprop="dateModified" content="2009-04-09T15:39:49-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-09T19:39:49+00:00">Apr 09</time>
+                    <h2 itemprop="title">
+                        blekko's ambient cluster health visualization
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7dda0a8b5b61fc44">
+                        <blockquote>
+                            <img src="http://www.skrenta.com/blekko-status/monitors.jpg">
+                            <p>
+                                When you have several hundred servers in a cluster, knowing the state and health of all of them can be a challenge. Traditional pager alert systems can often either log too many events, which makes people tune them out, or they miss non-fatal but still serious server sickness, such as degraded disk/cpu/network performance or subtle application errors.
+                            </p>
+                            <p>
+                                This becomes especially true when the cluster and application are designed for high availability. If the application is doing its best to hide server failures from the user, it's often not apparent when a serious problem is developing until the site fails in a more public or obvious way.
+                            </p>
+                            <p>
+                                We called these "analog failures" at Topix. There was a fairly complicated chain of processing for incoming stories that had been crawled. Crawl, categorize, cluster, dedup, roboedit, push to front ends, and push to incremental search system. Once an engineer mistakenly deleted half of the sources from our crawl, and it took us a disturbingly long time to notice. The problem was that, while overall we had half as many stories on the site, most pages still had new stories coming in, so we didn't notice that anything was wrong.
+                            </p>
+                            <p>
+                                Sometimes a server has a messed up failure, like its networking card starts losing 50% of its packets, but stuff is still getting through. Or a drive is in the process of failing, and its read/write rate is 10% of normal, but it hasn't failed enough to be removed from service yet. The cpu overheated and is running at a fraction of its normal speed. There seem to be limitless numbers of unusual ways that servers can fail.
+                            </p>
+                            <p>
+                                At blekko, there are dozens of stats we'd ideally like to track per host:
+                            </p>
+                            <ul>
+                                <li>How full are each of the disks?
+                                </li>
+                                <li>Are there any SMART errors being reported from the drives?
+                                </li>
+                                <li>Are we getting read or write errors?
+                                </li>
+                                <li>What is the read/write throughput rate? Sometimes failures degrade the rate substantially, but the disk continues to function
+                                </li>
+                                <li>What is the current disk read latency?
+                                </li>
+                                <li>Is packet loss occurring to the node?
+                                </li>
+                                <li>What is the read/write network throughput?
+                                </li>
+                                <li>What is the cpu load?
+                                </li>
+                                <li>How much memory is in use?
+                                </li>
+                                <li>How much swap is being use?
+                                </li>
+                                <li>How big is the kernel's dirty page cache?
+                                </li>
+                                <li>What are the internal/external temperature sensors reading?
+                                </li>
+                                <li>How many live filesystems are on the host vs. dead disks?
+                                </li>
+                            </ul>
+                            <p>
+                                Others stats pertain to our cluster datastore:
+                            </p>
+                            <ul>
+                                <li>How many buckets are on each host?
+                                </li>
+                                <li>Is the host above or below goal for its number of buckets?
+                                </li>
+                                <li>What is the outbound write lag from the host?
+                                </li>
+                                <li>What is the maximum seek depth for a given path/bucket?
+                                </li>
+                                <li>Do we have three copies of every bucket (R3)?
+                                </li>
+                                <li>If we're not at R3, how many bucket copies are occurring?
+                                </li>
+                                <li>For running mapjobs, what is their ETA + read/write/error rate?
+                                </li>
+                                <li>Are the ram caches fully loaded?
+                                </li>
+                                <li>Are we crawling/indexing, what is the rate compared with historical?
+                                </li>
+                            </ul>
+                            <p>
+                                <img src="http://www.skrenta.com/blekko-status/bstat10.png">
+                            </p>
+                            <p>
+                                The first step is to start putting the stats you want to be able to see into a big status table. But at 175 hosts, the table is kind of long, and it's hard to spot developing problems in the middle of the table.
+                            </p>
+                            <p>
+                                So we have been experimenting with mapping system stats onto different visualizations, so we can tell at a glance the overall state of hundreds of servers, and spot minor problems before they grow.
+                            </p>
+                            <p>
+                                <img src="http://www.skrenta.com/blekko-status/bstat11.png">
+                            </p>
+                            <p>
+                                A table with 175 rows is pretty long, but you can fit 175 squares into a very small picture. This table shows overall disk usage by host. The color of the tile shows the disk usage: red is 90%, orange is 80%, yellow is 70%, blue is below 60%. Dead filesystems on the node are represented by grey bars inside the tile. The whole grid is sorted worst-to-best, so it's easy to see the fraction of hosts at a given level of usage.
+                            </p>
+                            <p>
+                                <img src="http://www.skrenta.com/blekko-status/bstat6.png">
+                            </p>
+                            <p>
+                                Our datastore uses a series of buckets (4096 in our current map) to spread the data across the servers. Each bucket is stored three times. If we have three copies of every bucket, we're at "R3". This is the standard healthy state of the system.
+                            </p>
+                            <p>
+                                Because fetch/store operations will route around failures, it's not at all apparent from the view of the application if some buckets do not have three copies, and the cluster is degraded. So we have a grid of the buckets in our system, color coded to show whether there are 0/1/2/3 copies of the bucket.
+                            </p>
+                            <p>
+                                <img src="http://www.skrenta.com/blekko-status/bstat5.png">
+                            </p>
+                            <p>
+                                In the above picture, the set of buckets in red have only 1 copy. The yellow buckets have 2 copies, and the green have three. We have a big monitor with this display in our office, if it ever shows anything but a big green "3" folks notice and can investigate.
+                            </p>
+                            <p>
+                                <img src="http://www.skrenta.com/blekko-status/bstat12.png">
+                            </p>
+                            <p>
+                                For variety we've experimented with other ways to show data. This display is showing the fraction of a path in our datastore which has been loaded into the ram cache. Ram cache misses will fall back to disk, so it's not necessarily apparent to the user if the ram cache isn't loaded or working. But the disk fetch is much slower than the ram cache, so it's good to know if some machines have crashed and the ram cache isn't at 100%.
+                            </p>
+                            <p>
+                                <img src="http://www.skrenta.com/blekko-status/bstat14.png"><img src="http://www.skrenta.com/blekko-status/bstat15.png">
+                            </p>
+                            <p>
+                                Other parts of the display are standard graphs for data aggregated across all of the servers. These are super useful to spot overall load issues.
+                            </p>
+                            <p>
+                                We're still experimenting with finding the best data to collect and show. But the ambient displays so far are a big win. Obvious issues are immediately visible to everyone in our offfice. And people will walk by and look at the deeper graphs and sometimes spot issues. Taking the data from being something where you would have to proactively type a cli command or click around on some web forms, to displays that engineers will stop and look at for a few minutes on their way to/from getting a coffee or soda has been big improvement in our awareness and response to cluster issues.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.skrenta.com/2009/04/blekkos_ambient_cluster_health.html">http://www.skrenta.com/2009/04/blekkos_ambient_cluster_health.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

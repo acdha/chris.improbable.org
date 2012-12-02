@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Python 3: Informal String Formatting Performance Comparison
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 03 Jan 2011 04:03:06 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-02T23:03:06-04:00">
+                    <meta itemprop="dateModified" content="2011-01-02T23:03:06-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-03T03:03:06+00:00">Jan 03</time>
+                    <h2 itemprop="title">
+                        Python 3: Informal String Formatting Performance Comparison
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/91bb0a21ca8b3b6d">
+                        <blockquote>
+                            <p>
+                                If you haven’t heard the news, <a href="http://dabeaz.blogspot.com/">Dave Beazley</a> and I have officially begun work on the next edition of the Python Cookbook, which will be <a href="http://www.protocolostomy.com/2010/12/16/good-things-come-in-threes-python-cookbook-third-edition/">completely overhauled using absolutely nothing but Python 3</a>. Yay!
+                            </p>
+                            <p>
+                                Right now, I’m going through some string formatting recipes from the 2nd edition to see if they still work, and if Python 3 offers any preferred alternatives to the solutions provided. As usual, it turns out that the answer to that is often ‘it depends’. For example, you might decide on a slower solution that’s more readable. Conversely, you might need to run an operation in a loop a million times and really need the speed.
+                            </p>
+                            <p>
+                                New string formatting operations like the built-in format() function (separate from the str.format method) and the format mini-language are available in 2.6, and made nicer in 2.7. All of it is backported from the 3.x tree to my knowledge, and I’ll be using a Python 3.2b2 interpreter session for my examples.
+                            </p>
+                            <p>
+                                I want to focus specifically on string alignment here, because there are very obviously multiple ways to solve alignment needs. <a href="http://books.google.com/books?id=1Shx_VXS6ioC&amp;lpg=PT45&amp;ots=BBa02CZ9M8&amp;dq='hej'.ljust(20&amp;pg=PT45#v=onepage&amp;q&amp;f=false">Here’s an example solution from the 2nd edition</a>:
+                            </p>
+                            <pre>
+&gt;&gt;&gt; print '|' , 'hej'.ljust(20) , '|' , 'hej'.rjust(20) , '|' , 'hej'.center(20) , '|'
+| hej             |             hej |       hej       |
+</pre>
+                            <p>
+                                Note that this is of course in Python 2.x syntax, but this works in Python 3.2 if you just make it a function call instead of a statement (so, just add parens and it works). The string methods used here are still in Python 3.2, with no notices of deprecation or preference for newer methods available now. That said, this looks messy to me, and so I wondered if I could make it more readable without losing performance, or at least without losing so much performance that it’s not worth any gains in the area of readability.
+                            </p>
+                            <h3>
+                                Single String Formatting
+                            </h3>
+                            <p>
+                                Here are three ways to get the same string alignment behavior in Python 3.2b2:
+                            </p>
+                            <pre>
+&gt;&gt;&gt; '{:+&lt;20s}'.format('hej')
+'hej+++++++++++++++++'
+&gt;&gt;&gt; format('hej', '+&lt;20s')
+'hej+++++++++++++++++'
+&gt;&gt;&gt; 'hej'.ljust(20, '+')
+'hej+++++++++++++++++'
+</pre>
+                            <p>
+                                Ok, so they all work the same. Now I’m going to wrap each one in a function and use the timeit module to help me get an idea what the difference is in terms of performance.
+                            </p>
+                            <pre>
+&gt;&gt;&gt; def runit():
+...     format('hej', '+&lt;20s')
+...
+&gt;&gt;&gt; def runit2():
+...     'hej'.ljust(20, '+')
+...
+&gt;&gt;&gt; def runit3():
+...     '{:+&lt;20s}'.format('hej')
+...
+&gt;&gt;&gt; timeit(stmt=runit3, number=1000000)
+0.6168370246887207
+&gt;&gt;&gt; timeit(stmt=runit3, number=1000000)
+0.6109819412231445
+&gt;&gt;&gt; timeit(stmt=runit3, number=1000000)
+0.6166291236877441
+&gt;&gt;&gt; timeit(stmt=runit2, number=1000000)
+0.49651098251342773
+&gt;&gt;&gt; timeit(stmt=runit2, number=1000000)
+0.4870288372039795
+&gt;&gt;&gt; timeit(stmt=runit2, number=1000000)
+0.49135899543762207
+&gt;&gt;&gt; timeit(stmt=runit, number=1000000)
+0.7751290798187256
+&gt;&gt;&gt; timeit(stmt=runit, number=1000000)
+0.7771239280700684
+&gt;&gt;&gt; timeit(stmt=runit, number=1000000)
+0.7805869579315186
+</pre>
+                            <p>
+                                Turns out using the old, tried and true str.* methods are fastest in this case, though I think in a more complex case like the recipe from the 2nd edition I’d opt for something more readable if I had the chance.
+                            </p>
+                            <h3>
+                                One String, Three Ways
+                            </h3>
+                            <p>
+                                Let’s look at a more complex case. Let’s take each of the methodologies used in runit, runit2, and runit3, and see how things pan out when we want to do something like the 2nd edition recipe. I’ll start with the bare interpreter operation to compare the output:
+                            </p>
+                            <pre>
+
+&gt;&gt;&gt; '|' + format('hej', '+&lt;20s') + '|' + format('hej', '+^20s') + '|' + format('hej', '+&gt;20s') + '|'
+'|hej+++++++++++++++++|++++++++hej+++++++++|+++++++++++++++++hej|'
+&gt;&gt;&gt; '|' + 'hej'.ljust(20, '+') + '|' + 'hej'.center(20, '+') + '|' + 'hej'.rjust(20, '+') + '|'
+'|hej+++++++++++++++++|++++++++hej+++++++++|+++++++++++++++++hej|'
+&gt;&gt;&gt; '|{0:+&lt;20s}|{0:+^20s}|{0:+&gt;20s}|'.format('hej')
+'|hej+++++++++++++++++|++++++++hej+++++++++|+++++++++++++++++hej|'
+</pre>
+                            <p>
+                                Unless you go through the rigamarole of creating a sequence and using ‘|’.join(myseq), the last method seems the most readable to me. I’d really just like to use the built-in print function with a “sep=’|'” argument, but that won’t cover the pipes at the beginning and end of the string unless I’ve missed something.
+                            </p>
+                            <p>
+                                Here are the functions and timings:
+                            </p>
+                            <pre>
+
+&gt;&gt;&gt; def threeways():
+...     '|' + format('hej', '+&lt;20s') + '|' + format('hej', '+^20s') + '|' + format('hej', '+&gt;20s') + '|'
+...
+
+&gt;&gt;&gt; def threeways2():
+...     '|' + 'hej'.ljust(20, '+') + '|' + 'hej'.center(20, '+') + '|' + 'hej'.rjust(20, '+') + '|'
+...
+
+&gt;&gt;&gt; def threeways3():
+...     '|{0:+&lt;20s}|{0:+^20s}|{0:+&gt;20s}|'.format('hej')
+...
+
+&gt;&gt;&gt; timeit(stmt=threeways, number=1000000)
+2.4910600185394287
+&gt;&gt;&gt; timeit(stmt=threeways, number=1000000)
+2.50291109085083
+&gt;&gt;&gt; timeit(stmt=threeways, number=1000000)
+2.4913830757141113
+&gt;&gt;&gt; timeit(stmt=threeways2, number=1000000)
+1.9027390480041504
+&gt;&gt;&gt; timeit(stmt=threeways2, number=1000000)
+1.8975908756256104
+&gt;&gt;&gt; timeit(stmt=threeways2, number=1000000)
+1.8957319259643555
+&gt;&gt;&gt; timeit(stmt=threeways3, number=1000000)
+1.311446189880371
+&gt;&gt;&gt; timeit(stmt=threeways3, number=1000000)
+1.3099820613861084
+&gt;&gt;&gt; timeit(stmt=threeways3, number=1000000)
+1.3031558990478516
+</pre>
+                            <p>
+                                The <code>threeways3</code> function has a bit of an advantage in not having to muck with concatenation at all, and this probably explains the difference. Changing <code>threeways()</code> to use a list and <code>'|'.join()</code> brought it from about 2.50 to about 2.30. Better. Changing <code>threeways2()</code> in the same way was also a small improvement from ~1.90 to ~1.77. No big wins there, and they’re not particularly readable in either case. For this one arguably trivial corner case, the new formatting mini-language wins in both performance and (IMO) readability.
+                            </p>
+                            <h3>
+                                Big Assumptions
+                            </h3>
+                            <p>
+                                This of course assumes I didn’t overlook something in creating the comparison functions, that there’s not yet a different way to do this that blows all of my work out of the water. If you see a completely different way to do this that’s both readable and performant, or I did something bone-headed, please let me know in the comments. <img src="http://www.protocolostomy.com/wp-includes/images/smilies/icon_smile.gif" alt=":)">
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?a=hkGlleLct5Q:YCKljQtWekg:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?a=hkGlleLct5Q:YCKljQtWekg:bcOpcFrp8Mo"><img src="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?d=bcOpcFrp8Mo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?a=hkGlleLct5Q:YCKljQtWekg:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?i=hkGlleLct5Q:YCKljQtWekg:V_sGLiPBpWU" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/MusingsOfAnAnonymousGeek/~4/hkGlleLct5Q" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.protocolostomy.com/2011/01/02/python-3-informal-string-formatting-performance-comparison/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+MusingsOfAnAnonymousGeek+%28Musings+of+an+anonymous+geek%29">http://www.protocolostomy.com/2011/01/02/python-3-informal-string-formatting-performance-comparison/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+MusingsOfAnAnonymousGeek+%28Musings+of+an+anonymous+geek%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

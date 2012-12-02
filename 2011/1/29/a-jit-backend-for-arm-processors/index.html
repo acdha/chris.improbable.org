@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            A JIT Backend for ARM Processors
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 29 Jan 2011 14:30:53 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-29T09:19:00-04:00">
+                    <meta itemprop="dateModified" content="2011-01-29T09:19:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-29T13:19:00+00:00">Jan 29</time>
+                    <h2 itemprop="title">
+                        A JIT Backend for ARM Processors
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7e3349b16bee2413">
+                        <blockquote>
+                            <div>
+                                <p>
+                                    In the past few months, I have been developing as a part of my master thesis the ARM backend for the the PyPy JIT, in the <a href="https://bitbucket.org/pypy/pypy/src/arm-backend-2">arm-backend</a> branch. Currently, it is still work in progress: all integer and object operations are working and the support for <a href="https://bitbucket.org/pypy/pypy/src/arm-backed-float">floating point</a> is also under development.
+                                </p>
+                                <p>
+                                    ARM processors are very widely used, beeing deployed in servers, some netbooks and mainly mobile devices such as phones and tablets. One of our goals is to be able to run PyPy on phones, specially on Android. Currently is not yet possible to translate and compile PyPy for Android automatically, but there has been some <a href="http://pyppet.blogspot.com/2011/01/android-and-rpython.html">work</a> on using Android's NDK to compile PyPy's generated C code.
+                                </p>
+                                <p>
+                                    The JIT Backend targets the application profile of the ARMv7 instruction set architecture which is found for example in the Cortex-A8 processors used in many Android powered devices and in Apple's <a href="http://en.wikipedia.org/wiki/Apple_A4">A4 processors</a> built into the latest iOS devices. To develop and test the backend we are using a <a href="http://beagleboard.org/hardware-xM">BeagleBoard-xM</a> which has a 1 GHz ARM Cortex-A8 and 512 MB of RAM running the <a href="https://wiki.ubuntu.com/ARM">ARM port</a> of Ubuntu 10.10.
+                                </p>
+                                <p>
+                                    Currently on Linux it is possible to translate and cross-compile PyPy's Python interpreter as well as other interpreters with the ARM JIT backend enabled using Scratchbox 2 to provide a build environment and the GNU ARM cross compilation toolchain. So far the backend only supports the <a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/">Boehm</a> garbage collector which does not produce the best results combined with the JIT, but we plan to add support for the other GCs in the future, doing so should increase the performance of PyPy on ARM.
+                                </p>
+                                <p>
+                                    While still debugging the last issues with the backend we already can run some simple benchmarks on <a href="https://bitbucket.org/cfbolz/pyrolog">Pyrolog</a>, a prolog interpreter written in RPython. Even using Boehm as the GC the results look very promising. In the benchmarks we compare Pyrolog to <a href="http://www.swi-prolog.org/">SWI-Prolog</a>, a prolog interpreter written in C, which is available from the package repositories for Ubuntu's ARM port.
+                                </p>
+                                <p>
+                                    The benchmarks can be found in the <a href="https://bitbucket.org/cfbolz/pyrolog-benchmark">pyrolog-bench</a> repository.
+                                </p>
+                                <table border="1">
+                                    <colgroup></colgroup>
+                                    <colgroup>
+                                        <col width="32%">
+                                    </colgroup>
+                                    <colgroup>
+                                        <col width="30%">
+                                    </colgroup>
+                                    <colgroup>
+                                        <col width="25%">
+                                    </colgroup>
+                                    <colgroup>
+                                        <col width="13%">
+                                    </colgroup>
+                                    <thead valign="bottom">
+                                        <tr>
+                                            <th>
+                                                Benchmark
+                                            </th>
+                                            <th>
+                                                SWI-Prolog in ms.
+                                            </th>
+                                            <th>
+                                                Pyrolog in ms.
+                                            </th>
+                                            <th>
+                                                Speedup
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody valign="top">
+                                        <tr>
+                                            <td>
+                                                iterate
+                                            </td>
+                                            <td>
+                                                60.0
+                                            </td>
+                                            <td>
+                                                6.0
+                                            </td>
+                                            <td>
+                                                12.0
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                iterate_assert
+                                            </td>
+                                            <td>
+                                                130.0
+                                            </td>
+                                            <td>
+                                                6.0
+                                            </td>
+                                            <td>
+                                                21.67
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                iterate_call
+                                            </td>
+                                            <td>
+                                                3310.0
+                                            </td>
+                                            <td>
+                                                5.0
+                                            </td>
+                                            <td>
+                                                662.0
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                iterate_cut
+                                            </td>
+                                            <td>
+                                                60.0
+                                            </td>
+                                            <td>
+                                                359.0
+                                            </td>
+                                            <td>
+                                                0.16713
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                iterate_exception
+                                            </td>
+                                            <td>
+                                                4950.0
+                                            </td>
+                                            <td>
+                                                346.0
+                                            </td>
+                                            <td>
+                                                14.306
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                iterate_failure
+                                            </td>
+                                            <td>
+                                                400.0
+                                            </td>
+                                            <td>
+                                                127.0
+                                            </td>
+                                            <td>
+                                                3.1496
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                iterate_findall
+                                            </td>
+                                            <td>
+                                                740.0
+                                            </td>
+                                            <td>
+                                                No res.
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                iterate_if
+                                            </td>
+                                            <td>
+                                                140.0
+                                            </td>
+                                            <td>
+                                                6.0
+                                            </td>
+                                            <td>
+                                                23.333
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <p>
+                                    The iterate_call benchmark, which constructs a predicate and calls it at runtime, with a speedup of 662 times over SWI-Prolog is an example where the JIT can show its strength. The Pyrolog interpreter and the JIT treat dynamically defined predicates as static ones and can generate optimezed code in both cases. Whereas SWI only compiles statically defined rules and has to fall back to interpretation on dynamic ones.
+                                </p>
+                                <p>
+                                    For simple benchmarks running on PyPy's Python intepreter we see some speedups over CPython, but we still need to debug the backend bit more before we can show numbers on more complex benchmarks. So, stay tuned.
+                                </p>
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3971202189709462152-5994810755839586463?l=morepypy.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/PyPyStatusBlog/~4/yVeQN8jgOYI" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://morepypy.blogspot.com/2011/01/jit-backend-for-arm-processors.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29">http://morepypy.blogspot.com/2011/01/jit-backend-for-arm-processors.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

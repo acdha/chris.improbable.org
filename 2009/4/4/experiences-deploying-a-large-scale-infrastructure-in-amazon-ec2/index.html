@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Experiences deploying a large-scale infrastructure in Amazon EC2
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 04 Apr 2009 07:14:57 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-04T03:13:00-04:00">
+                    <meta itemprop="dateModified" content="2009-04-04T03:13:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-04T07:13:00+00:00">Apr 04</time>
+                    <h2 itemprop="title">
+                        Experiences deploying a large-scale infrastructure in Amazon EC2
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a604895139dc937b">
+                        <blockquote>
+                            At OpenX we recently completed a large-scale deployment of one of our server farms to Amazon EC2. Here are some lessons learned from that experience.<br>
+                            <br>
+                            <span style="font-weight:bold">Expect failures; what's more, embrace them</span><br>
+                            <br>
+                            Things are bound to fail when you're dealing with large-scale deployments in any infrastructure setup, but especially when you're deploying virtual servers 'in the cloud', outside of your sphere of influence. You must then be prepared for things to fail. This is a Good Thing, because it forces you to think about failure scenarios upfront, and to design your system infrastructure in a way that minimizes single points of failure.<br>
+                            <br>
+                            As an aside, I've been very impressed with the reliability of EC2. Like many other people, I didn't know what to expect, but I've been pleasantly surprised. Very rarely does an EC2 instance fail. In fact I haven't yet seen a total failure, only some instances that were marked as 'deteriorated'. When this happens, you usually get a heads-up via email, and you have a few days to migrate your instance, or launch a similar one and terminate the defective one.<br>
+                            <br>
+                            Expecting things to fail at any time leads to and relies heavily on the next lesson learned, which is...<br>
+                            <br>
+                            <span style="font-weight:bold">Fully automate your infrastructure deployments</span><br>
+                            <br>
+                            There's simply no way around this. When you need to deal with tens and even hundreds of virtual instances, when you need to scale up and down on demand (after all, this is THE main promise of cloud computing!), then you need to fully automate your infrastructure deployment (servers, load balancers, storage, etc.)<br>
+                            <br>
+                            The way we achieved this at OpenX was to write our own custom code on top of the EC2 API in order to launch and destroy AMIs and EBS volumes. We rolled our own AMI, which contains enough bootstrap code to make it 'call home' to a set of servers running slack. When we deploy a machine, we specify a list of slack 'roles' that the machine belongs to (for example 'web-server' or 'master-db-server' or 'slave-db-server'). When the machine boots up, it will run a script that belongs to that specific slack role. In this script we install everything the machine needs to do its job -- pre-requisite packages and the actual application with all its necessary configuration files.<br>
+                            <br>
+                            I will blog separately about how exactly slack works for us, but let me just say that it is an extremely simple tool. It may seem overly simple, but that's exactly its strength, since it forces you to be creative with your postinstall scripts. I know that other people use puppet, or fabric, or cfengine. Whatever works for you, go ahead and use, just use SOME tool that helps with automated deployments.<br>
+                            <br>
+                            The beauty of fully automating your deployments is that it truly allows you to scale infinitely (for some value of 'infinity' of course ;-). It almost goes without saying that your application infrastructure needs to be designed in such a way that allows this type of scaling. But having the building blocks necessary for automatically deploying any type of server that you need is invaluable.<br>
+                            <br>
+                            Another thing we do which helps with automating various pieces of our infrastructure is that we keep information about our deployed instances in a database. This allows us to write tools that inspect the database and generate various configuration files (such as the all-important role configuration file used by slack), and other text files such as DNS zone files. This database becomes the one true source of information about our infrastructure. The DRY principle applies to system infrastructure, not only to software development.<br>
+                            <br>
+                            Speaking of DNS, specifically in the context of Amazon EC2, it's worth rolling out your own internal DNS servers, with zones that aren't even registered publicly, but for which your internal DNS servers are authoritative. Then all communication within the EC2 cloud can happen via internal DNS names, as opposed to IP addresses. Trust me, your tired brain will thank you. This would be very hard to achieve though if you were to manually edit BIND zone files. Our approach is to automatically generate those files from the master database I mentioned. Works like a charm. Thanks to Jeff Roberts for coming up with this idea and implementing it.<br>
+                            <br>
+                            While we're on the subject of fully automated deployments, I'd like to throw an idea out there that I first heard from Mike Todd, my boss at OpenX, who is an ex-Googler. One of his goals is for us never to have to ssh into any production server. We deploy the server using slack, the application gets installed automatically, monitoring agents get set up automatically, so there should really be no need to manually do stuff on the server itself. If you want to make a change, you make it in a slack role on the master slack server, and it gets pushed to production. If the server misbehaves or gets out of line with the other servers, you simply terminate that server instance and launch another one. Since you have everything automated, it's one command line for terminating the instance, and another one for deploying a brand new replacement. It's really beautiful.<br>
+                            <br>
+                            <span style="font-weight:bold">Design your infrastructure so that it scales horizontally</span><br>
+                            <br>
+                            There are generally two ways to scale an infrastructure: vertically, by deploying your application on more powerful servers, and horizontally, by increasing the number of servers that support your application. For 'infinite' scaling in a cloud computing environment, you need to design your system infrastructure so that it scales horizontally. Otherwise you're bound to hit limits of individual servers that you will find very hard to get past. Horizontal scaling also eliminates single points of failure.<br>
+                            <br>
+                            Here are a few ideas for deploying a Web site with a database back-end so that it uses multiple tiers, with each tier being able to scale horizontally:<br>
+                            <br>
+                            1) Deploy multiple Web servers behind one or more load balancers. This is pretty standard these days, and this tier is the easiest to scale. However, you also want to maximize the work done by each Web server, so you need to find the sweet spot of that particular type of server in terms of httpd processes it can handle. Too few processes and you're wasting CPU/RAM on the server, too many and you're overloading the server. You also need to be cognizant of the fact that each EC2 instance costs you money. It can become so easy to launch a new instance that you don't necessarily think of getting the most out of the existing instances. Don't go wild unless absolutely necessary if you don't want to have a sticker shock when you get the bill from Amazon at the end of the month.<br>
+                            <br>
+                            2) Deploy multiple load balancers. Amazon doesn't yet offer load balancers, so what we've been doing is using HAProxy-based load balancers. Let's say you have an HAProxy instance that handles traffic for www.yourdomain.com. If your Web site becomes wildly successful, it is imaginable that a single HAProxy instance will not be able to handle all the incoming network traffic. One easy solution for this, which is also useful for eliminating single points of failure, is to use round-robin DNS, pointing www.yourdomain.com to several IP addresses, with each IP address handled by a separate HAProxy instance. All HAProxy instances can be identical in terms of back-end configuration, so your Web server farm will get 1/N of the overall traffic from each of your N load balancers. It worked really well for us, and the traffic was spread out very uniformly among the HAProxies. You do need to make sure the TTL on the DNS record for www.yourdomain.com is low.<br>
+                            <br>
+                            3) Deploy several database servers. If you're using MySQL, you can set up a master DB server for writes, and multiple slave DB servers for reads. The slave DBs can sit behind an HAProxy load balancer. In this scenario, you're limited by the capacity of the single master DB server. One thing you can do is to use sharding techniques, meaning you can partition the database into multiple instances that each handle writes for a subset of your application domain. Another thing you can do is to write to local databases deployed on the Web servers, either in memory or on disk, and then periodically write to the master DB server (of course, this assumes that you don't need that data right away; this technique is useful when you have to generate statistics or reports periodically for example).<br>
+                            <br>
+                            4) Another way of dealing with databases is to not use them, or at least to avoid the overhead of making a database call each time you need something from the database. A common technique for this is to use memcache. Your application needs to be aware of memcache, but this is easy to implement in all of the popular programming languages. Once implemented, you can have your Web servers first check a value in memcache, and only if it's not there have them hit the database. The more memory you give to the memcached process, the better off you are.<br>
+                            <br>
+                            <span style="font-weight:bold">Establish clear measurable goals</span><br>
+                            <br>
+                            The most common reason for scaling an Internet infrastructure is to handle increased Web traffic. However, you need to keep in mind the quality of the user experience, which means that you need to keep the response time of the pages your serve under a certain limit which will hopefully meet and surpass the user's expectations. I found it extremely useful to have a very simple script that measures the response time of certain pages and that graphs it inside a dashboard-type page (thanks to Mike Todd for the idea and the implementation). As we deployed more and more servers in order to keep up with the demands of increased traffic, we always kept an eye on our goal: keep reponse time/latency under N milliseconds (N will vary depending on your application). When we would see spikes in the latency chart, we knew we need to act at some level of our infrastructure. And this brings me to the next point...<br>
+                            <br>
+                            <span style="font-weight:bold">Be prepared to quickly identify and eliminate bottlenecks</span><br>
+                            <br>
+                            As I already mentioned in the design section above, any large-scale Internet infrastructure will have different types of servers: web servers, application servers, database servers, memcache servers, and the list goes on. As you scale the servers at each tier/level, you need to be prepared to quickly identify bottlenecks. Examples:<br>
+                            <br>
+                            1) Keep track of how many httpd processes are running on your Web servers; this depends on the values you set for MaxClients and ServerLimit in your Apache configuration files. If you're using an HAProxy-based load balancer, this also depends on the connection throttling that you might be doing at the backend server level. In any case, the more httpd processes are running on a given server, the more CPU and RAM they will use up. At some point, the server will run out of resources. At that point, you either need to scale the server up (by deploying to a larger EC2 instance, for example an m1.large with more RAM, or a c1.medium with more CPU), or you need to scale your Web server farm horizontally by adding more Web servers, so the load on each server decreases.<br>
+                            <br>
+                            2) Keep track of the load on your database servers, and also of slow queries. A great tool for MySQL database servers is innotop, which allows you to see the slowest queries at a glance. Sometimes all it takes is a slow query to throw a spike into your latency chart (can you tell I've been there, done that?). Also keep track of the number of connections into your database servers. If you use MySQL, you will probably need to bump up the max_connections variable in order to be able to handle an increased number of concurrent connections from the Web servers into the database.<br>
+                            <br>
+                            Since we're discussing database issues here, I'd be willing to bet that if you were to discover your single biggest bottleneck in your application, it would be at the database layer. That's why it is especially important to design that layer with scalability in mind (think memcache, and load balanced read-only slaves), and also to monitor the database servers carefully, with an eye towards slow queries that need to be optimized (thanks to Chris Nutting for doing some amazing work in this area!)<br>
+                            <br>
+                            3) Use your load balancer's statistics page to keep track of things such as concurrent connections, queued connections, HTTP request or response errors, etc. One of your goals should be never to see queued connections, since that means that some user requests couldn't be serviced in time.<br>
+                            <br>
+                            I should mention that a good monitoring system is essential here. We're using Hyperic, and while I'm not happy at all with its limits (in the free version) in defining alerts at a global level, I really like its capabilities in presenting various metrics in both list and chart form: things like Apache bytes and requests served/second, memcached hit ratios, mysql connections, and many other statistics obtained by means of plugins specific to these services.<br>
+                            <br>
+                            As you carefully watch various indicators of your systems' health, be prepared to....<br>
+                            <br>
+                            <span style="font-weight:bold">Play wack-a-mole for a while, until things get stable</span><br>
+                            <br>
+                            There's nothing like real-world network traffic, and I mean massive traffic -- we're talking hundreds of millions of hits/day -- to exercise your carefully crafted system infrastructure. I can almost guarantee that with all your planning, you'll still feel that a tsunami just hit you, and you'll scramble to solve one issue after another. For example, let's say you notice that your load balancer starts queuing HTTP requests. This means you don't have enough Web server in the pool. You scramble to add more Web servers. But wait, this increases the number of connections to your database pool! What if you don't have enough servers there? You scramble to add more database servers. You also scramble to increase the memcache settings by giving more memory to memcached, so more items can be stored in the cache. What if you still see requests taking a long time to be serviced? You scramble to optimize slow database queries....and the list goes on.<br>
+                            <br>
+                            You'll say that you've done lots of load testing before. This is very good....but it still will not prepare you for the sheer amount of traffic that the internets will throw at your application. That's when all the things I mentioned before -- automated deployment of new instances, charting of the important variables that you want to keep track of, quick identification of bottlenecks -- become very useful.<br>
+                            <br>
+                            That's it for this installment. Stay tuned for more lessons learned, as I slowly and sometimes painfully learn them :-) Overall, it's been a blast though. I'm really happy with the infrastructure we've built, and of course with the fact that most if not all of our deployment tools are written in Python.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/9238405-3512442652567090812?l=agiletesting.blogspot.com">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://agiletesting.blogspot.com/2009/04/experiences-deploying-large-scale.html">http://agiletesting.blogspot.com/2009/04/experiences-deploying-large-scale.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

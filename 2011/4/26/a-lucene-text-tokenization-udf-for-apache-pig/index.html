@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            A Lucene Text Tokenization UDF for Apache Pig
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 27 Apr 2011 03:41:52 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-26T23:20:00-04:00">
+                    <meta itemprop="dateModified" content="2011-04-26T23:20:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-27T03:20:00+00:00">Apr 27</time>
+                    <h2 itemprop="title">
+                        A Lucene Text Tokenization UDF for Apache Pig
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/e5b2f1cc77c45c39">
+                        <blockquote>
+                            As much as I loathe to admit it, sometimes java is called for. One of those times is tokenizing raw text. You'll notice in the post about tfidf how I used a Wukong script, written in ruby, to accomplish the task of tokenizing a large text corpus with Hadoop and Pig. There are a couple of problems with this:<br>
+                            <br>
+                            1. Ruby is <span style="font-style:italic">slow</span> at this.<br>
+                            <br>
+                            2. All the gem dependencies (wukong itself, extlib, etc) must exist on all the machines in the cluster and be available in the RUBYLIB (yet another environment variable to manage).<br>
+                            <br>
+                            There is a better way.<br>
+                            <br>
+                            <h2>
+                                A Pig UDF
+                            </h2><br>
+                            <br>
+                            Pig UDFs (User Defined Functions) come in a variety of flavors. The simplest type is the EvalFunc whose function 'exec()' essentially acts as the Wukong 'process()' method or the java hadoop Mapper's 'map()' function. Here we're going to write an EvalFunc that takes a raw text string as input and outputs a pig DataBag. Each Tuple in the DataBag will be a single token. Here's what it looks like as a whole:<br>
+                            <br>
+                            <pre>
+<br><br>import java.io.IOException;<br>import java.io.StringReader;<br>import java.util.Iterator;<br><br>import org.apache.pig.EvalFunc;<br>import org.apache.pig.data.Tuple;<br>import org.apache.pig.data.TupleFactory;<br>import org.apache.pig.data.DataBag;<br>import org.apache.pig.data.BagFactory;<br><br>import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;<br>import org.apache.lucene.util.Version;<br>import org.apache.lucene.analysis.Token;<br>import org.apache.lucene.analysis.TokenStream;<br>import org.apache.lucene.analysis.standard.StandardAnalyzer;<br>import org.apache.lucene.analysis.standard.StandardTokenizer;<br><br>public class TokenizeText extends EvalFunc {<br><br>    private static TupleFactory tupleFactory = TupleFactory.getInstance();<br>    private static BagFactory bagFactory = BagFactory.getInstance();<br>    private static String NOFIELD = "";<br>    private static StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_31);<br><br>    public DataBag exec(Tuple input) throws IOException {<br>        if (input == null || input.size() &lt; 1 || input.isNull(0))<br>            return null;<br><br>        // Output bag<br>        DataBag bagOfTokens = bagFactory.newDefaultBag();<br><br>        StringReader textInput = new StringReader(input.get(0).toString());<br>        TokenStream stream = analyzer.tokenStream(NOFIELD, textInput);<br>        CharTermAttribute termAttribute = stream.getAttribute(CharTermAttribute.class);<br><br>        while (stream.incrementToken()) {<br>            Tuple termText = tupleFactory.newTuple(termAttribute.toString());<br>            bagOfTokens.add(termText);<br>            termAttribute.setEmpty();<br>        }<br>        return bagOfTokens;<br>    }<br>}<br>
+</pre><br>
+                            <br>
+                            There's absolutely nothing special going on here. Remember, the 'exec' function gets called on every Pig Tuple of input. bagOfTokens will be the Pig DataBag returned. First, the lucene library tokenizes the input string. Then all the tokens in the resulting stream are turned into Pig Tuples and added to the result DataBag. Finally the resulting DataBag is returned. A document is truly a bag of words.<br>
+                            <br>
+                            <h2>
+                                Example Pig Script
+                            </h2><br>
+                            <br>
+                            And here's an example script to use that UDF:<br>
+                            <br>
+                            <pre>
+<br>documents    = LOAD 'documents' AS (doc_id:chararray, text:chararray);<br>tokenized    = FOREACH documents GENERATE doc_id AS doc_id, FLATTEN(TokenizeText(text)) AS (token:chararray);<br>
+</pre><br>
+                            <br>
+                            <br>
+                            And that's it. It's blazing fast text tokenization for Apache Pig.<br>
+                            <br>
+                            Hurray.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/2875432366090970056-3220777689266815975?l=thedatachef.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://thedatachef.blogspot.com/2011/04/lucene-text-tokenization-udf-for-apache.html">http://thedatachef.blogspot.com/2011/04/lucene-text-tokenization-udf-for-apache.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

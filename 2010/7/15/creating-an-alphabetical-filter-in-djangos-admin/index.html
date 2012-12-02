@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Creating an Alphabetical Filter in Django's Admin
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 15 Jul 2010 14:00:44 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-07-15T10:00:44-04:00">
+                    <meta itemprop="dateModified" content="2010-07-15T10:00:44-04:00"><time class="date" itemprop="datePublished" datetime="2010-07-15T14:00:44+00:00">Jul 15</time>
+                    <h2 itemprop="title">
+                        Creating an Alphabetical Filter in Django's Admin
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c7fd122ea79e2401">
+                        <p class="annotation">
+                            Looking forward to discussing this at the hack night this evening
+                        </p>
+                        <blockquote>
+                            <p>
+                                Django's admin includes a great date hierarchy filter for navigating date data in a model. I've come into a few situations where it would be nice to have a similar filter for the alphabet.
+                            </p><br>
+                            <p>
+                                If you are managing hundreds or hundreds of thousands of names, tags or other alphabetical data, it would be nice to filter things alphabetically.
+                            </p><br>
+                            <p>
+                                Using the date hierarchy as the template, I've implemented an alphabetical filter for the admin.
+                            </p><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        The code and sample project is available on <a href="http://github.com/coordt/django-alphabetfilter">github</a> and will soon be on PyPi.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <h1>
+                                Implementing the Alphabet Filter
+                            </h1><br>
+                            <p>
+                                There are three parts:
+                            </p><br>
+                            <ul>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>The admin <code>change_list.html</code> template
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>The alphabet filter template tag
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>The <code>alphabet.html</code> template
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                            </ul><br>
+                            <h1>
+                                The change_list.html Template
+                            </h1><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        This template is easy to override on a per-model basis or per-application basis simply by where you save it. The current change_list.html template cannot be installed on a project wide basis as it extends <code>admin/change_list.html</code> and doing so leads to an infinite loop.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        <strong>Per Model:</strong> <code>&lt;application&gt;/templates/admin/&lt;application&gt;/&lt;model&gt;/change_list.html</code> or <code>&lt;project&gt;/templates/admin/&lt;application&gt;/&lt;model&gt;/change_list.html</code>
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        <strong>Per Application:</strong> <code>&lt;application&gt;/templates/admin/&lt;application&gt;/change_list.html</code> or <code>&lt;project&gt;/templates/admin/&lt;application&gt;/change_list.html</code>
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        <strong>Project Wide:</strong> Would have to copy <code>contrib/admin/templates/admin/change_list.html</code> to <code>&lt;project&gt;/templates/admin/change_list.html</code> and apply the appropriate changes.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        The template extends <code>admin/change_list.html</code> adding in some extra styling and overriding the <code>date_hierarchy</code> block.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <div>
+                                <pre>
+<span>{%</span> <span>extends</span> <span>"admin/change_list.html"</span> <span>%}</span><br><span>{%</span> <span>load</span> <span>admin_list</span> <span>alphafilter</span> <span>%}</span><br><span>{%</span> <span>block</span> <span>extrastyle</span> <span>%}</span><br><span>{{</span><span>block</span><span>.super</span><span>}}</span><br><span>&lt;style</span> <span>type=</span><span>"text/css"</span> <span>media=</span><span>"screen"</span><span>&gt;</span><br>    .change-list ul.alphabetfilter li {<br>        width: 0.7em;<br>    }<br>    .inactive {<br>        color: #999;<br>    }<br>    .selected {<br>        color: red;<br>    }<br><span>&lt;/style&gt;</span><br><span>{%</span> <span>endblock</span> <span>%}</span><br><span>{%</span> <span>block</span> <span>date_hierarchy</span> <span>%}{%</span> <span>date_hierarchy</span> <span>cl</span> <span>%}{%</span> <span>alphabet</span> <span>cl</span> <span>%}{%</span> <span>endblock</span> <span>%}</span><br>
+</pre>
+                            </div>
+                            <h1>
+                                The <code>alphafilter</code> Template Tag
+                            </h1><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        The simplest part of the template tag renders the <code>alphabet.html</code> template with letters, with each letter linking to the same page and adding a query string in the format <code>&lt;field&gt;__istartswith=&lt;letter&gt;</code>.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        In order to know which field to query, we'll look for an <code>alphabet_filter</code> attribute on the model's admin object, just as you would have a <code>date_hierarchy</code> attribute.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        We'll get all this information through the <code>ChangeList</code> object the admin template passes. The primary attributes we'll be using are:
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <ul>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>
+                                    <strong>model_admin:</strong> The <code>ModelAdmin</code> object for the model
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>
+                                    <strong>params:</strong> The <code>GET</code> parameters
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>
+                                    <strong>get_query_string:</strong> A method to generate a query string based on the current query string.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                            </ul><br>
+                            <p>
+                                The first part of our template tag looks like:
+                            </p><br>
+                            <div>
+                                <pre>
+def alphabet(cl):<br>    if not getattr(cl.model_admin, 'alphabet_filter', False):<br>        return<br>    field_name = cl.model_admin.alphabet_filter<br>    alpha_field = '%s__istartswith' % field_name<br>    alpha_lookup = cl.params.get(alpha_field, '')<br>    link = lambda d: cl.get_query_string(d)<br>
+</pre>
+                            </div>
+                            <p>
+                                Django's date hierarchy only allows the selection of data that is in the database. It doesn't show every year, it shows the years that have data behind them. While the alphabet is pretty static and we might get away with just listing the alphabet with the query string links, what about numbers, punctuation, foreign languages and the plethora of characters that can be in today's strings? And wouldn't it also be nice to know which characters have data behind them and which don't?
+                            </p><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        To accomplish this, we're going to have to look in the database. We'll create a new function called <code>_get_available_letters</code> to query the distinct leading characters of the field specified.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <div>
+                                <pre>
+def _get_available_letters(field_name, db_table):<br>    from django.db import connection, transaction<br>    from django.conf import settings<br>    qn = connection.ops.quote_name<br>    sql = "SELECT DISTINCT UPPER(SUBSTR(%s, 1, 1)) as letter FROM %s" \<br>                % (qn(field_name), qn(db_table))<br>    cursor = connection.cursor()<br>    cursor.execute(sql)<br>    rows = cursor.fetchall() or ()<br>    return set([row[0] for row in rows])<br>
+</pre>
+                            </div>
+                            <table>
+                                <tr>
+                                    <td>
+                                        The custom query should work for all database engines. The function returns a <code>set</code> instead of a list to make it easy to keep the list of characters unique.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        Going back to the <code>alphabet</code> function, we'll deal with the variability in characters and showing which characters are used.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <div>
+                                <pre>
+def alphabet(cl):<br>    if not getattr(cl.model_admin, 'alphabet_filter', False):<br>        return<br>    field_name = cl.model_admin.alphabet_filter<br>    alpha_field = '%s__istartswith' % field_name<br>    alpha_lookup = cl.params.get(alpha_field, '')<br>    link = lambda d: cl.get_query_string(d)
+</pre>
+                            </div>
+                            <p>
+                                import string<br>
+                                letters_used = _get_available_letters(field_name, cl.model._meta.db_table)<br>
+                                all_letters = list(set([x for x in string.uppercase+string.digits]) | letters_used)<br>
+                                all_letters.sort()<br>
+                            </p>
+                            <table>
+                                <tr>
+                                    <td>
+                                        We end up with two collections: the characters used in the database and all the characters available. The collection of all characters is created by taking a base set of uppercase letters and digits and joining it with the characters used set. The Python <code>string</code> module has locale-aware constants to handle foreign languages. <em>(Being an Ameri-centric a-hole, I can't verify this works in other languages. Please let me know!)</em>
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        The <code>all_letters</code> variable now is a list that will contain at least digits and letters, but also any other character that happens to be in the database. The <code>letters_used</code> is a <code>set</code> of characters found in the data.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <table>
+                                <tr>
+                                    <td>
+                                        The last part of the template tag is setting up the context. We will supply the template with a list of dictionaries, each with <code>link</code>, <code>title</code>, <code>active</code>, and <code>has_entries</code>. We'll create the list of choices using a list comprehension and add in a choice of "All" at the beginning.
+                                    </td>
+                                </tr>
+                            </table><br>
+                            <div>
+                                <pre>
+def alphabet(cl):<br>    if not getattr(cl.model_admin, 'alphabet_filter', False):<br>        return<br>    field_name = cl.model_admin.alphabet_filter<br>    alpha_field = '%s__istartswith' % field_name<br>    alpha_lookup = cl.params.get(alpha_field, '')<br>    link = lambda d: cl.get_query_string(d)
+</pre>
+                            </div>
+                            <p>
+                                import string<br>
+                                letters_used = _get_available_letters(field_name, cl.model._meta.db_table)<br>
+                                all_letters = list(set([x for x in string.uppercase+string.digits]) | letters_used)<br>
+                                all_letters.sort()
+                            </p>
+                            <p>
+                                choices = [{<br>
+                                'link': link({alpha_field: letter}),<br>
+                                'title': letter,<br>
+                                'active': letter == alpha_lookup,<br>
+                                'has_entries': letter in letters_used,} for letter in all_letters]<br>
+                                all_letters = [{<br>
+                                'link': cl.get_query_string(None,alpha_field),<br>
+                                'title': _('All'),<br>
+                                'active': '' == alpha_lookup,<br>
+                                'has_entries': True<br>
+                                },]<br>
+                                return {'choices': all_letters + choices}<br>
+                                alphabet = register.inclusion_tag('admin/alphabet.html')(alphabet)<br>
+                            </p>
+                            <h1>
+                                The alphabet.html Template
+                            </h1><br>
+                            <p>
+                                The alphabet.html template is pretty basic. Here it is with some extra formatting for readability:
+                            </p><br>
+                            <div>
+                                <pre>
+<span>&lt;div</span> <span>class=</span><span>"xfull"</span><span>&gt;</span><br><span>&lt;ul</span> <span>class=</span><span>"toplinks alphabetfilter"</span><span>&gt;</span><br><span>{%</span> <span>for</span> <span>choice</span> <span>in</span> <span>choices</span> <span>%}</span><br><span>&lt;li&gt;</span><br><span>{%</span> <span>if</span> <span>choice.has_entries</span> <span>%}</span><br><span>&lt;a</span> <span>href=</span><span>"</span><span>{{</span> <span>choice.link</span> <span>}}</span><span>"</span><span>&gt;</span><br><span>{%</span> <span>else</span> <span>%}</span><br><span>&lt;span</span> <span>class=</span><span>"inactive"</span><span>&gt;</span><br><span>{%</span> <span>endif</span> <span>%}</span><br><span>{%</span> <span>if</span> <span>choice.active</span> <span>%}</span><span>&lt;span</span> <span>class=</span><span>"selected"</span><span>&gt;</span><span>{%</span> <span>endif</span> <span>%}</span><br><span>{{</span> <span>choice.title</span> <span>}}</span><br><span>{%</span> <span>if</span> <span>choice.active</span> <span>%}</span><span>&lt;/span&gt;</span><span>{%</span> <span>endif</span> <span>%}</span><br><span>{%</span> <span>if</span> <span>choice.link</span> <span>%}</span><span>&lt;/a&gt;</span><span>{%</span> <span>else</span> <span>%}</span><span>&lt;/span&gt;</span><span>{%</span> <span>endif</span> <span>%}</span><br><span>&lt;/li&gt;</span><br><span>{%</span> <span>endfor</span> <span>%}</span><br><span>&lt;/ul&gt;&lt;br</span> <span>class=</span><span>"clear"</span> <span>/&gt;</span><br><span>&lt;/div&gt;</span><br>
+</pre>
+                            </div>
+                            <p>
+                                There's a few conditions to check so we can have proper formatting.
+                            </p><br>
+                            <ol>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>
+                                    <br>
+                                    <table>
+                                        <tr>
+                                            <td>
+                                                If the choice has entries, render the character within a link, otherwise render the character within a <code>span</code>.
+                                            </td>
+                                        </tr>
+                                    </table><br>
+                                    <br>
+                                </li>
+                                <li>
+                                    <br>
+                                    <p>
+                                        If the choice is currently selected, render the character within a <code>span</code>
+                                    </p><br>
+                                    <br>
+                                </li>
+                            </ol><br>
+                            <h1>
+                                The Final Product
+                            </h1><br>
+                            <p>
+                                <img alt="The implemented alphabet filter" src="http://media.washtimes.com/media/image/2010/07/15/Screen_shot_2010-07-15_at_5.23.49_AM.png" title="Here is the alphabet filter used in the example project.">
+                            </p><br>
+                            <p>
+                                The example project included with the alphafilter source includes an app called testtags. It has the alphabet filter applied to the "sorted_name" field. In the screen shot you see that 'All' is currently selected and all the characters are grey except '#' and 'O'. The '#' symbol was added to the list only because it exists in the database.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://opensource.washingtontimes.com/blog/post/coordt/2010/07/creating-alphabetical-filter-djangos-admin/">http://opensource.washingtontimes.com/blog/post/coordt/2010/07/creating-alphabetical-filter-djangos-admin/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

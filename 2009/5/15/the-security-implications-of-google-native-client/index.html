@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The Security Implications Of Google Native Client
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 15 May 2009 06:19:35 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-05-15T02:19:35-04:00">
+                    <meta itemprop="dateModified" content="2009-05-15T02:19:35-04:00"><time class="date" itemprop="datePublished" datetime="2009-05-15T06:19:35+00:00">May 15</time>
+                    <h2 itemprop="title">
+                        The Security Implications Of Google Native Client
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/b7e571ac29e97d14">
+                        <blockquote>
+                            <p>
+                                <strong>What would it look like if Google tried to unseat Flash and obsolete all desktop applications?</strong>
+                            </p>
+                            <p>
+                                It would look a lot like Google <a href="http://code.google.com/p/nativeclient/?tbbrand=GZEZ&amp;utm_campaign=en&amp;utm_source=en-et-osrcblog&amp;utm_medium=et">Native Client</a> (<a href="http://nativeclient.googlecode.com/svn/trunk/nacl/googleclient/native_client/documentation/nacl_paper.pdf">NaCl</a>): a mechanism to download a game written in C/C++ from Id Software and run it in your browser, without giving Id Software the ability to take control of your computer.
+                            </p>
+                            <p>
+                                Google NaCl is, on its face, a crazy-talk idea. It’s a browser plugin that downloads native x86 code from a website and runs it on your machine. If this sounds familiar, it’s because Microsoft tried it over a decade ago with ActiveX. If you’re skeptical about the idea, it’s because <a href="http://www.cs.princeton.edu/sip/java-vs-activex.html">ActiveX was a security calamity</a>; O.K. an ActiveX control, and it owns your machine almost completely.
+                            </p>
+                            <p>
+                                So the primary obstacle between Google and the future of software delivery is security. Google has a lot of interesting ideas about how to overcome that obstacle. But security people unlikely to take Google’s word for it. <a href="http://code.google.com/contests/nativeclient-security/">So Google held a contest</a>: “we’ll publish the source code, you’ll find flaws. The winner gets $0x2000 USD.”
+                            </p>
+                            <p>
+                                We took the bait. And things were looking great for us.
+                            </p>
+                            <p>
+                                Then Skynet noticed Google, decided it was a threat, and sent a Mark Dowd unit back through time to terminate it. The contest winner hasn’t been declared yet, but as we aren’t a murderous robot made out of liquid metal, we’re guessing we didn’t take first place.
+                            </p>
+                            <p>
+                                But we learned lots of stuff in the process, and so we have stuff to say. And when you get right down to it, isn’t that worth a lot more than money? Think about that, while we share some lessons about NaCl and cry into our discount beers.
+                            </p>
+                            <h2>
+                                What is NaCl, and why do I care?
+                            </h2>
+                            <p>
+                                Absent any innovations in browsers or HTML, within 5 years, every application normal people use will be run off a web server and rendered via Javascript, HTML, or Flash. That trend is inexorable. You know it and I know it.
+                            </p>
+                            <p>
+                                But what if we want to ship a game title? We need a faster runtime, real graphics, and a decent interaction model. Until recently, if we wanted to run “real” programs behind a browser, we had two options: ActiveX and Java.
+                            </p>
+                            <center>
+                                <b>.</b>
+                            </center>
+                            <p>
+                                Consider ActiveX. It’s a really simple idea. In your HTML code, you can specify a URI to a library file. The same kind of libraries your desktop applications use. They’re written in whatever language makes sense to the authors, but they’re delivered as native X86 instructions. They talk to your computer the same way any application does.
+                            </p>
+                            <p>
+                                <a href="http://www.matasano.com/log/wp-content/uploads/2009/05/ax.png"><img src="http://www.matasano.com/log/wp-content/uploads/2009/05/ax.png" alt="" title="ax" width="300" height="202"></a>
+                            </p>
+                            <p>
+                                This is a powerful concept. Virtually anything a desktop app can do, an ActiveX control can do. Unfortunately, read that last sentence again.
+                            </p>
+                            <p>
+                                So that’s a problem. Most security-conscious people aren’t willing to trust random native executables running on their computers off web pages.
+                            </p>
+                            <center>
+                                <b>.</b>
+                            </center>
+                            <p>
+                                Consider Java.
+                            </p>
+                            <p>
+                                <a href="http://www.matasano.com/log/wp-content/uploads/2009/05/java.png"><img src="http://www.matasano.com/log/wp-content/uploads/2009/05/java.png" alt="" title="java" width="300" height="237"></a>
+                            </p>
+                            <p>
+                                Java does something that ups the security ante significantly. Instead of delivering raw X86 opcodes, it’s delivering JVM bytecode. The Java plugin either interprets or compiles that bytecode, but either way, the actual instructions executing on your computer and talking to your OS belong to Java. You only have to trust the one native program.
+                            </p>
+                            <p>
+                                But wait, there’s more! Because Java programs don’t execute directly on the CPU, there’s an architectural opportunity to improve security: you can put a security layer in between the program and the operating system. Java calls this the “applet sandbox”. The applet sandbox basically says, “applets can’t talk directly to the OS; instead, they have to use a set of interfaces we created specifically for allowing applets to talk directly to the OS”.
+                            </p>
+                            <p>
+                                You can’t do this with ActiveX, because you’re executing raw X86 instructions. From userland, on an X86 chip, with any reasonable performance, there’s no way to put a layer between Win32 userland (or OS X) and the kernel. If you want that layer there, you have to not execute code off the Internet directly on the CPU.
+                            </p>
+                            <p>
+                                But wait, there’s still more! Because the JVM designers got to design their own virtual machine and controlled the whole runtime, they were able to make Java bytecode very “regular” and very easy to analyze. Java is so easy to analyze that 99% of compiled Java binaries can be decompiled right back to source code.
+                            </p>
+                            <p>
+                                X86 is not regular and easy to analyze.
+                            </p>
+                            <p>
+                                For one thing, X86 instructions come in various shapes and sizes. The shortest X86 instructions (such as “INCR EAX”, or “add 1 to the EAX register”) are one byte long. Because X86 instructions can accept prefixes that change their meanings, the largest X86 instructions are over 10 bytes long.
+                            </p>
+                            <p>
+                                The irregularity of X86 instruction lengths does more than just make instructions tedious to recognize. It also means that, unlike in a RISC architecture where instructions are always, say, 32 bits long, an X86 instruction is not necessarily at an aligned offset in the file. Byte 1024 of an X86 executable is as likely to be the middle of an instruction as it is the beginning of one.
+                            </p>
+                            <p>
+                                Why does this matter?
+                            </p>
+                            <p>
+                                You can’t easily put a layer between a bare-metal X86 program and the OS kernel to keep that program from calling “execve” and running any program it wants. So, instead say you wanted to write an X86 “verifier” that would check programs you ran to make sure they don’t try to call “execve”. You’d have some problems.
+                            </p>
+                            <p>
+                                <a href="http://www.matasano.com/log/wp-content/uploads/2009/05/middle.png"><img src="http://www.matasano.com/log/wp-content/uploads/2009/05/middle.png" alt="" title="middle" width="300" height="141"></a>
+                            </p>
+                            <p>
+                                For starters, because X86 programs can jump pretty much anywhere in their instruction streams, even if you disassembled the program and checked for calls to execve, a malicious program could make a series of innocuous instructions which, when the program jumped into the middle of them, actually executed execve.
+                            </p>
+                            <p>
+                                <a href="http://www.matasano.com/log/wp-content/uploads/2009/05/data.png"><img src="http://www.matasano.com/log/wp-content/uploads/2009/05/data.png" alt="" title="data" width="300" height="192"></a>
+                            </p>
+                            <p>
+                                Second, as anyone who’s ever written overflow shellcode knows, X86 programs can execute out of data. So even if you verified the instruction stream perfectly, the program could use innocuous instructions to create malicious instructions in data that the verifier couldn’t reasonable check.
+                            </p>
+                            <center>
+                                <b>.</b>
+                            </center>
+                            <p>
+                                And now we come to the part where we explain why we’re telling you all of this.
+                            </p>
+                            <p>
+                                <a href="http://www.matasano.com/log/wp-content/uploads/2009/05/nacl.png"><img src="http://www.matasano.com/log/wp-content/uploads/2009/05/nacl.png" alt="" title="nacl" width="300" height="231"></a>
+                            </p>
+                            <p>
+                                Behold, Google NaCl!
+                            </p>
+                            <p>
+                                Repurposing an <a href="http://crypto.stanford.edu/cs155/papers/sfi.pdf">idea from the mid-’90s</a>, NaCl employs a very simple trick to make native X86 programs reliably verifiable. And if you can verify an X86 program, you don’t need a layer between the program and the OS: you can just have rules, and refuse programs that break the rules.
+                            </p>
+                            <p>
+                                The trick is: restrict X86 programs to those that are verifiable.
+                            </p>
+                            <p>
+                                What are those programs? Well, among other things:
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        They must admit to simple disassembly, yielding a stream of recognizable opcodes. This wouldn’t be a strict requirement for an X86 program, but most programs adhere to it anyways.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        Those opcodes must not jump to anything but the beginning of an instruction recognized by that simple disassembly. Easy to say, tricky to implement, but not a huge design change for most X86 code.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        They can’t modify the program text itself.
+                                    </p>
+                                </li>
+                            </ul>
+                            <p>
+                                (<em>Note that we’re butchering this concept a little; in the literature, it makes a big difference whether you patch a candidate program to safety, or whether you detect unsafeness and halt. But we digress.</em>)
+                            </p>
+                            <p>
+                                With those constraints in place, it turns out NaCl can reliably analyze X86 instructions. The verifier can then add rules:
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        You can’t muck with memory management to fool the verifier.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        You can’t talk directly to the operating system. Instead, you can call into trusted code in the first 64k of the binary that will make selected system calls for you, just like with a Java applet.
+                                    </p>
+                                </li>
+                            </ul>
+                            <p>
+                                There is a very important difference between what NaCl is doing and what Java is doing. Java’s security measures are chaperones. They’re always there and always checking your actions. NaCl’s mechanisms are just rules. They’re checked once, and then the program is on its own. NaCl promises to be faster than Java.
+                            </p>
+                            <p>
+                                More importantly, to build a NaCl program for your customers browsers, you don’t have to port to Java; you just have to use the NaCl build environment (a patched GCC that targets a simple ELF module) on your existing C code.
+                            </p>
+                            <p>
+                                Google, for instance, ported Quake.
+                            </p>
+                            <p>
+                                <a href="http://www.matasano.com/log/wp-content/uploads/2009/05/quake.png"><img src="http://www.matasano.com/log/wp-content/uploads/2009/05/quake.png" alt="" title="quake" width="186" height="143"></a>
+                            </p>
+                            <center>
+                                <b>.</b>
+                            </center>
+                            <p>
+                                It is worth mentioning here —- and this is to NaCl’s credit —- that this isn’t a new idea. The fundamental approach dates back to <a href="http://crypto.stanford.edu/cs155/papers/sfi.pdf">Wahbe et al</a>, from SOSP in 1993 (!). The core ideas that make the approach work on X86 (Write/Jump sandboxing vs. full Read/W/J isolation) are in an <a href="http://people.csail.mit.edu/smcc/projects/pittsfield/pubs/tr-2005/pittsfield-tr.pdf">05 MIT TR and Usenix article</a> by Stephen McCamant (then a grad student at MIT) and Greg Morrisett at Harvard. And in 2008, Bryan Ford and Russ Cox released a version of the same idea, <a href="http://pdos.csail.mit.edu/papers/vx32:usenix08.pdf">called Vx32</a>, that runs on Linux and FreeBSD.
+                            </p>
+                            <p>
+                                Google NaCl would be the first mainstream implementation of the idea.
+                            </p>
+                            <p>
+                                That’s a bit scary, but if you generalize a little bit, the ideas at play here aren’t really all that different from the ideas VMWare relied on; in fact, Vx32 runs code out of basic block caches just like VMWare (and <a href="http://www.cag.lcs.mit.edu/dynamorio/">DynamoRIO</a> before it) and oh my god we need to stop geeking out about this now.
+                            </p>
+                            <h2>
+                                What could possibly go wrong?
+                            </h2>
+                            <center>
+                                <b>.</b>
+                            </center>
+                            <p>
+                                First: assume the X86 verification all just worked. You’re still doomed.
+                            </p>
+                            <p>
+                                That’s because X86 ELF modules are much more complex than most of the file formats browsers already deal with. Any of a million little mistakes in the parser and loader code are going to be game-over security vulnerabilities. Remember Mark Dowd’s <a href="http://www.matasano.com/log/1032/this-new-vulnerability-dowds-inhuman-flash-exploit/">crazy Flash vulnerability</a> from last year? The core problem was just a silly parser bug.
+                            </p>
+                            <p>
+                                We <a href="http://code.google.com/p/nativeclient/issues/detail?id=85">found</a> <a href="http://code.google.com/p/nativeclient/issues/detail?id=44">several</a> of these <a href="http://code.google.com/p/nativeclient/issues/detail?id=70">types</a> of problems. So did <a href="http://code.google.com/p/nativeclient/issues/detail?id=86">Dowd’s team</a>. They were what we focused on.
+                            </p>
+                            <p>
+                                It’s worth noting that Java had these types of vulnerabilities too. But Java is over a decade old, and this part of Java’s attack surface has been pretty heavily tested. We don’t think it scares security people that much anymore in 2009 (these are famous last words).
+                            </p>
+                            <center>
+                                <b>.</b>
+                            </center>
+                            <p>
+                                Second: assume the loader code is audited several times over, and that it reaches the same level of trustworthiness as the image loading code in your browser already. You’re still doomed.
+                            </p>
+                            <p>
+                                That’s because NaCl programs still need to be able to talk to the operating system to draw and communicate and manage memory. The NaCl verifier rules keep programs from doing this directly; instead, NaCl programs use virtual system calls through special callgates in a small block of trusted code.
+                            </p>
+                            <p>
+                                This trusted code base is architecturally similar to the system interfaces in the JVM, but it’s also in many ways more complicated. The JVM needs to provide services to Java programs in terms of Java classes and data types, which is a straightforward prospect. NaCl needs to provide many of those same services in terms of raw memory and state. Screw any of this up, and the contract that keeps NaCl programs bound up in the sandbox can be broken. Programs can escape the sandbox.
+                            </p>
+                            <p>
+                                Dowd’s team found one of these problems. The NaCl SDK exposes mmap() and munmap(), and allows it to unmap and remap the text segment. But by the time these calls were executed, the program had already been verified. By remapping in code, it was possible to get code into the text segment that wasn’t verified, and could contain real system calls.
+                            </p>
+                            <p>
+                                Now again, it’s worth noting that Java has these problems too. Most famously, Dino Dai Zovi <a href="http://www.matasano.com/log/806/hot-off-the-matasano-sms-queue-cansec-macbook-challenge-won/">found a really bad integer mishandling problem</a> in the Java QuickTime extensions that would allow Java programs to directly manipulate raw memory. And unlike the loader bugs, which might be sussed out of the JVM by now, there are probably more problems like this in Java. There’s a lot of action in this part of the attack surface.
+                            </p>
+                            <center>
+                                <b>.</b>
+                            </center>
+                            <p>
+                                Third: assume the loader works and the trusted code base that gates the operating system works. But stop assuming the verifier works right. Because it might not.
+                            </p>
+                            <p>
+                                In what’s probably the best finding of the contest, Dowd’s team broke the verifier.
+                            </p>
+                            <p>
+                                As we mentioned earlier, X86 instructions can carry prefixes that alter their operating. The most notable things these prefixes do is change the way the CPU interprets addresses mentioned by the instructions. For instance, the <a href="http://pdos.csail.mit.edu/6.828/2006/readings/i386/s03_06.htm">segment override prefixes</a> can tell the CPU to refer to offsets into the data segment (outside the sandbox) instead of the code segment.
+                            </p>
+                            <p>
+                                So you don’t want to allow those prefixes in NaCl jump instructions. And NaCl didn’t allow them. For jumps with 8 bit relative addressing. But the 16/32 bit addressing variants —- the two byte ones that start with 0Fh? Not so much. Missed that one. In the contest build, there were instruction sequences found that could jailbreak you from the sandbox.
+                            </p>
+                            <p>
+                                Now if you go through the history of the Java applet sandbox, there are comparably bad flaws —- though none have been found in awhile. But you could also argue that NaCl is at a disadvantage here, because they aren’t implementing the operation of the entire X86 instruction set, but rather a security retrofit of it. When they miss problems like this, they’ll end up with verifier-level jailbreaks.
+                            </p>
+                            <p>
+                                On the other hand, there’s nothing in the CS literature that suggests those jailbreaks will be that much harder to fix than bugs in the trusted code base. So you could argue that they’re at increased risk of implementation flaws because of this design, but that the design itself isn’t really in any way flawed.
+                            </p>
+                            <center>
+                                <b>.</b>
+                            </center>
+                            <p>
+                                Fourth: Get everything else right, and you still have an architectural flaw: side channels.
+                            </p>
+                            <p>
+                                Now our lawyers instruct us that we’re required to inform you that Google disclaimed side channel attacks, saying NaCl in its current incarnation was specifically not designed to handle them. Side channel attacks were excluded from the contest rules.
+                            </p>
+                            <p>
+                                But that doesn’t mean they aren’t a problem. What’s that problem? NaCl programs have access to fine-grained time, and raw access to memory for instructions and data.
+                            </p>
+                            <p>
+                                The problem is that for the past 6-odd years, crypto-systems researchers (like Dan Boneh, Eran Tromer, Dan Bernstein, Onur Aciicmez and Colin Percival) have been generating research results showing how attackers can extract private keys from systems using fine-grained timers. Some of the most interesting work in this vein shows what attackers that reside on the same hardware as their targets (like in a shared hosting environment) can do by timing microarchitecture features like caches.
+                            </p>
+                            <p>
+                                Concrete example? Ok. You’re a NaCl program running alongside an SSL implementation being coerced into running over and over again. The SSL code is deciding to jump to different locations in its code based on bits in a secret key. The X86 caches branch targets to implement branch prediction. NaCl programs can’t —- in fact no program can —- directly access the BTB caches. But they can implement code sequences that will time differently depending on what’s in them.
+                            </p>
+                            <p>
+                                <a href="http://www.matasano.com/log/460/modern-cpu-architecture-threat-or-menace-the-case-of-branch-prediction/">In the canonical exploit</a>, the attacker writes a “spy” program that continuously generates traces based on predicted cache contents. Those traces can be downloaded and used to reconstruct guesses about private keys. They don’t need to be exactly right; they just need to drastically reduce the search space of a brute-force attack.
+                            </p>
+                            <p>
+                                The contest rules didn’t stop <a href="http://code.google.com/p/nativeclient/issues/detail?id=84&amp;can=1&amp;sort=-id">Ralf Philipp Weinmann from submitting</a> a side channel bug (the obvious one, that NaCl exposes the RDTSC instruction for 64 bit fine-grained cycle timings). Google disqualified the finding. We’re looking forward to seeing how that plays out, and we have more to say about this problem.
+                            </p>
+                            <h2>
+                                What does it all mean?
+                            </h2>
+                            <p>
+                                To our knowledge, flaws were found in all the exposed attack surface except for the secure ELF loader. So, that happened.
+                            </p>
+                            <p>
+                                But what did we expect? The <a href="http://www.matasano.com/log/989/thoughts-on-ten-years-of-qmail-security/">smartest people in the world</a> can’t get software 100% correct, even when security is the key design goal, and the software is tested for over 10 years.
+                            </p>
+                            <p>
+                                It’s too early to say whether we like the NaCl approach more than the Java approach, or the Flash approach. It might be fair to summarize the approaches as follows:
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        Java and Flash have a more resilient architecture, but a lot of moving parts.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        NaCl has fewer moving parts —- most of the work is done by content-controlled x86 code —- but those parts are at greater risk.
+                                    </p>
+                                </li>
+                            </ul>
+                            <p>
+                                What’s hard to argue right now is that NaCl’s code is at an early stage. It’s not secure yet.
+                            </p>
+                            <p>
+                                So was it smart for Google to hold this contest?
+                            </p>
+                            <p>
+                                We reserve judgement on the marketing side of things, but from a practical perspective, we’re very glad Google did this. We can all put a bead on where the NaCl implementation is today, and more importantly, the NaCl team has a good idea of what the hotspots are for shoring up security and improving dev practices.
+                            </p>
+                            <p>
+                                Does NaCl matter? After all, it’s just a beta research project! Well, it has the potential to bring thousands of preexisting C/C++ applications straight to the browser. Think of it this way: all Google has to do is convince one top-tier game developer to release a title on NaCl exclusively for a couple months. It’ll hit critical mass.
+                            </p>
+                            <p>
+                                Whether it matters or not, wow is it fun stuff. Getting to spend a day on the clock going through SOSP program transformation papers, looking at compilers, and thinking about verification: this is why we got into the business. So as security researchers, we have to thank Google for the opportunity.
+                            </p>
+                            <p>
+                                The winners of the contest haven’t been announced yet, but unless Dowd disqualifies his team by staging an assault on the Googleplex with automatic weapons in an attempt to defend Skynet from a future Google threat, you’ve gotta assume they’re taking this one. Our congrats to Mark Dowd and Ben Hawkes.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.matasano.com/log/1674/the-security-implications-of-google-native-client/">http://www.matasano.com/log/1674/the-security-implications-of-google-native-client/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Testing Javascript and Reporting in Python
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 04 Oct 2010 10:15:04 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-10-04T06:15:04-04:00">
+                    <meta itemprop="dateModified" content="2010-10-04T06:15:04-04:00"><time class="date" itemprop="datePublished" datetime="2010-10-04T10:15:04+00:00">Oct 04</time>
+                    <h2 itemprop="title">
+                        Testing Javascript and Reporting in Python
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/1ce4a126b133b47a">
+                        <blockquote>
+                            <p>
+                                When we started this project, we knew we were going to be writing quite a lot of Javascript, so we went in search of a Javascript unit testing framework. We chose <a href="http://developer.yahoo.com/yui/yuitest/">YUI Test</a> because a quick review of code samples and documentation from a variety of projects indicated that it has all the features we need and integrating it into our build process seemed easier than the others.
+                            </p>
+                            <p>
+                                The rest of this post covers how we use Python’s unittest module to run Javascript tests in Selenium and report the results in the same format that unittest does. On the whole, it was fairly straight-forward; with only a few weird hacks that I’ll describe. Here’s a simplified diagram of the process:
+                            </p>
+                            <p style="text-align:left">
+                                <a href="http://blog.projectdirigible.com/wp-content/uploads/2010/09/Javascript_Python_unittest.png"><img title="Running Javascript tests from Python" src="http://blog.projectdirigible.com/wp-content/uploads/2010/09/Javascript_Python_unittest1.png" alt="Running Javascript tests from Python" width="580" height="418"><br></a>Each Javascript test suite is encapsulated in an HTML page that runs the tests, converts the results into JSON and inserts the JSON into the page. We find all the HTML files in the test folder and create a test suite from them. The test suite we create is a subclass of unittest.BaseTestSuite where we provide methods that:
+                            </p>
+                            <ul>
+                                <li>Run the tests in Selenium
+                                </li>
+                                <li>Wait for and retrieve the JSON results
+                                </li>
+                                <li>Interpret the JSON results as unittest results
+                                </li>
+                            </ul>
+                            <p>
+                                The test results returned by YUI Test look like this:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#009900">{</span>
+    <span style="color:#3366CC">"passed"</span><span style="color:#339933">:</span> <span style="color:#CC0000">2</span><span style="color:#339933">,</span>
+    <span style="color:#3366CC">"failed"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span>
+    <span style="color:#3366CC">"ignored"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span><span style="color:#339933">,</span>
+    <span style="color:#3366CC">"total"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span><span style="color:#339933">,</span>
+    <span style="color:#3366CC">"type"</span><span style="color:#339933">:</span> <span style="color:#3366CC">"report"</span><span style="color:#339933">,</span>
+    <span style="color:#3366CC">"name"</span><span style="color:#339933">:</span> <span style="color:#3366CC">"Test Results"</span><span style="color:#339933">,</span>
+ 
+    <span style="color:#3366CC">"yuisuite"</span><span style="color:#339933">:</span><span style="color:#009900">{</span>
+        <span style="color:#3366CC">"passed"</span><span style="color:#339933">:</span> <span style="color:#CC0000">2</span><span style="color:#339933">,</span>
+        <span style="color:#3366CC">"failed"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span>
+        <span style="color:#3366CC">"ignored"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span><span style="color:#339933">,</span>
+        <span style="color:#3366CC">"total"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span><span style="color:#339933">,</span>
+        <span style="color:#3366CC">"type"</span><span style="color:#339933">:</span> <span style="color:#3366CC">"testsuite"</span><span style="color:#339933">,</span>
+        <span style="color:#3366CC">"name"</span><span style="color:#339933">:</span> <span style="color:#3366CC">"yuisuite"</span><span style="color:#339933">,</span>
+ 
+        <span style="color:#3366CC">"YAHOO.util.Anim"</span><span style="color:#339933">:</span><span style="color:#009900">{</span>
+            <span style="color:#3366CC">"passed"</span><span style="color:#339933">:</span> <span style="color:#CC0000">2</span><span style="color:#339933">,</span>
+            <span style="color:#3366CC">"failed"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span>
+            <span style="color:#3366CC">"ignored"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span><span style="color:#339933">,</span>
+            <span style="color:#3366CC">"total"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span><span style="color:#339933">,</span>
+            <span style="color:#3366CC">"type"</span><span style="color:#339933">:</span><span style="color:#3366CC">"testcase"</span><span style="color:#339933">,</span>
+            <span style="color:#3366CC">"name"</span><span style="color:#339933">:</span><span style="color:#3366CC">"YAHOO.util.Anim"</span><span style="color:#339933">,</span>
+ 
+            <span style="color:#3366CC">"test_getEl"</span><span style="color:#339933">:</span><span style="color:#009900">{</span>
+                <span style="color:#3366CC">"result"</span><span style="color:#339933">:</span><span style="color:#3366CC">"pass"</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"message"</span><span style="color:#339933">:</span><span style="color:#3366CC">"Test passed."</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"type"</span><span style="color:#339933">:</span><span style="color:#3366CC">"test"</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"name"</span><span style="color:#339933">:</span><span style="color:#3366CC">"test_getEl"</span>            
+            <span style="color:#009900">}</span><span style="color:#339933">,</span>
+            <span style="color:#3366CC">"test_isAnimated"</span><span style="color:#339933">:</span><span style="color:#009900">{</span>
+                <span style="color:#3366CC">"result"</span><span style="color:#339933">:</span><span style="color:#3366CC">"pass"</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"message"</span><span style="color:#339933">:</span><span style="color:#3366CC">"Test passed."</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"type"</span><span style="color:#339933">:</span><span style="color:#3366CC">"test"</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"name"</span><span style="color:#339933">:</span><span style="color:#3366CC">"test_isAnimated"</span>            
+            <span style="color:#009900">}</span><span style="color:#339933">,</span>
+            <span style="color:#3366CC">"test_stop"</span><span style="color:#339933">:</span><span style="color:#009900">{</span>
+                <span style="color:#3366CC">"result"</span><span style="color:#339933">:</span><span style="color:#3366CC">"fail"</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"message"</span><span style="color:#339933">:</span><span style="color:#3366CC">"Test passed."</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"type"</span><span style="color:#339933">:</span><span style="color:#3366CC">"test"</span><span style="color:#339933">,</span>
+                <span style="color:#3366CC">"name"</span><span style="color:#339933">:</span><span style="color:#3366CC">"test_stop"</span>            
+            <span style="color:#009900">}</span>
+        <span style="color:#009900">}</span>
+    <span style="color:#009900">}</span>
+<span style="color:#009900">}</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Here is the HTMLFileTestSuiteClass in all its glory (the <code>HTMLFileTestCase</code> mentioned here is a simple class that provides a nice __str__ and aliases failureException as an AssertionError):
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">class</span> HTMLFileTestSuite<span style="color:black">(</span><span style="color:#dc143c">unittest</span>.<span style="color:black">BaseTestSuite</span><span style="color:black">)</span>:
+ 
+    <span style="color:#ff7700;font-weight:bold">def</span> <span style="color:#0000cd">__init__</span><span style="color:black">(</span><span style="color:#008000">self</span>, html_file<span style="color:black">)</span>:
+        <span style="color:#008000">self</span>.<span style="color:black">html_file</span> = html_file
+ 
+ 
+    <span style="color:#ff7700;font-weight:bold">def</span> <span style="color:#0000cd">__iter__</span><span style="color:black">(</span><span style="color:#008000">self</span><span style="color:black">)</span>:
+        <span style="color:#483d8b">"""
+        unittest uses a "crude method" to distinguish between test
+        suites and test cases; test suites, it says, are things that
+        do not raise a TypeError when asked to iterate.  We don't
+        have a list of test cases until we've been run, so we indicate
+        our suite-ness (sorry) by returning None.
+        """</span>
+        <span style="color:#ff7700;font-weight:bold">return</span> <span style="color:#008000">None</span>
+ 
+ 
+    <span style="color:#ff7700;font-weight:bold">def</span> collect_test_results<span style="color:black">(</span><span style="color:#008000">self</span>, dictionary, test_case_name, result<span style="color:black">)</span>:
+        test_case = HTMLFileTestCase<span style="color:black">(</span>test_case_name, dictionary<span style="color:black">[</span><span style="color:#483d8b">"name"</span><span style="color:black">]</span><span style="color:black">)</span>
+        result.<span style="color:black">startTest</span><span style="color:black">(</span>test_case<span style="color:black">)</span>
+        <span style="color:#ff7700;font-weight:bold">try</span>:
+            <span style="color:#ff7700;font-weight:bold">if</span> dictionary<span style="color:black">[</span><span style="color:#483d8b">"type"</span><span style="color:black">]</span> == <span style="color:#483d8b">"test"</span>:
+                <span style="color:#ff7700;font-weight:bold">if</span> dictionary<span style="color:black">[</span><span style="color:#483d8b">"result"</span><span style="color:black">]</span> == <span style="color:#483d8b">"pass"</span>:
+                    result.<span style="color:black">addSuccess</span><span style="color:black">(</span>test_case<span style="color:black">)</span>
+                <span style="color:#ff7700;font-weight:bold">elif</span> dictionary<span style="color:black">[</span><span style="color:#483d8b">"result"</span><span style="color:black">]</span> == <span style="color:#483d8b">"fail"</span>:
+                    <span style="color:#ff7700;font-weight:bold">try</span>:
+                        <span style="color:#ff7700;font-weight:bold">raise</span> test_case.<span style="color:black">failureException</span><span style="color:black">(</span>dictionary<span style="color:black">[</span><span style="color:#483d8b">"message"</span><span style="color:black">]</span><span style="color:black">)</span>
+                    <span style="color:#ff7700;font-weight:bold">except</span>:
+                        result.<span style="color:black">addFailure</span><span style="color:black">(</span>test_case, <span style="color:#dc143c">sys</span>.<span style="color:black">exc_info</span><span style="color:black">(</span><span style="color:black">)</span><span style="color:black">)</span>
+                <span style="color:#ff7700;font-weight:bold">else</span>:
+                    <span style="color:#ff7700;font-weight:bold">raise</span> <span style="color:#008000">Exception</span><span style="color:black">(</span><span style="color:#483d8b">"Unexpected test results in JSON"</span><span style="color:black">)</span>
+        <span style="color:#ff7700;font-weight:bold">finally</span>:
+            result.<span style="color:black">stopTest</span><span style="color:black">(</span>test_case<span style="color:black">)</span>
+ 
+ 
+    <span style="color:#ff7700;font-weight:bold">def</span> collect_test_case_results<span style="color:black">(</span><span style="color:#008000">self</span>, dictionary, result<span style="color:black">)</span>:
+        test_case_name = dictionary<span style="color:black">[</span><span style="color:#483d8b">"name"</span><span style="color:black">]</span>
+        <span style="color:#ff7700;font-weight:bold">for</span> key, value <span style="color:#ff7700;font-weight:bold">in</span> dictionary.<span style="color:black">items</span><span style="color:black">(</span><span style="color:black">)</span>:
+            <span style="color:#ff7700;font-weight:bold">if</span> <span style="color:#008000">type</span><span style="color:black">(</span>value<span style="color:black">)</span> == <span style="color:#008000">dict</span> <span style="color:#ff7700;font-weight:bold">and</span> value<span style="color:black">[</span><span style="color:#483d8b">"type"</span><span style="color:black">]</span> == <span style="color:#483d8b">"test"</span>:
+                <span style="color:#008000">self</span>.<span style="color:black">collect_test_results</span><span style="color:black">(</span>value, test_case_name, result<span style="color:black">)</span>
+ 
+ 
+    <span style="color:#ff7700;font-weight:bold">def</span> collect_test_report_results<span style="color:black">(</span><span style="color:#008000">self</span>, dictionary, result<span style="color:black">)</span>:
+        <span style="color:#ff7700;font-weight:bold">for</span> key, value <span style="color:#ff7700;font-weight:bold">in</span> dictionary.<span style="color:black">items</span><span style="color:black">(</span><span style="color:black">)</span>:
+            <span style="color:#ff7700;font-weight:bold">if</span> <span style="color:#008000">type</span><span style="color:black">(</span>value<span style="color:black">)</span> == <span style="color:#008000">dict</span> <span style="color:#ff7700;font-weight:bold">and</span> value<span style="color:black">[</span><span style="color:#483d8b">"type"</span><span style="color:black">]</span> == <span style="color:#483d8b">"testcase"</span>:
+                <span style="color:#008000">self</span>.<span style="color:black">collect_test_case_results</span><span style="color:black">(</span>value, result<span style="color:black">)</span>
+ 
+ 
+    <span style="color:#ff7700;font-weight:bold">def</span> run<span style="color:black">(</span><span style="color:#008000">self</span>, result<span style="color:black">)</span>:
+        js_to_get_results = <span style="color:#483d8b">'selenium.browserbot.getCurrentWindow().document.getElementById("id_results").innerHTML'</span>
+        selenium = Selenium<span style="color:black">(</span>HOST, PORT, BROWSER, <span style="color:#008000">self</span>.<span style="color:black">html_file</span><span style="color:black">)</span>
+        selenium.<span style="color:black">start</span><span style="color:black">(</span><span style="color:black">)</span>
+        <span style="color:#ff7700;font-weight:bold">try</span>:
+            selenium.<span style="color:#008000">open</span><span style="color:black">(</span><span style="color:#008000">self</span>.<span style="color:black">html_file</span><span style="color:black">)</span>
+            selenium.<span style="color:black">wait_for_page_to_load</span><span style="color:black">(</span><span style="color:#ff4500">10000</span><span style="color:black">)</span>
+            selenium.<span style="color:black">wait_for_condition</span><span style="color:black">(</span><span style="color:#483d8b">'%s != "Please wait"'</span> <span style="color:#66cc66">%</span> <span style="color:black">(</span>js_to_get_results,<span style="color:black">)</span>, <span style="color:#ff4500">30000</span><span style="color:black">)</span>
+            results = selenium.<span style="color:black">get_eval</span><span style="color:black">(</span>js_to_get_results<span style="color:black">)</span>
+            parsed_results = json.<span style="color:black">loads</span><span style="color:black">(</span>results<span style="color:black">)</span>
+            <span style="color:#008000">self</span>.<span style="color:black">collect_test_report_results</span><span style="color:black">(</span>parsed_results, result<span style="color:black">)</span>
+        <span style="color:#ff7700;font-weight:bold">finally</span>:
+            selenium.<span style="color:black">stop</span><span style="color:black">(</span><span style="color:black">)</span>
+</pre>
+                                </div>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.projectdirigible.com/?p=464">http://blog.projectdirigible.com/?p=464</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

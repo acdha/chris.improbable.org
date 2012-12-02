@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Why ESI is Still Important, and How to Make it Better
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 21 Oct 2011 10:51:49 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-10-21T06:51:43-04:00">
+                    <meta itemprop="dateModified" content="2011-10-21T06:51:43-04:00"><time class="date" itemprop="datePublished" datetime="2011-10-21T10:51:43+00:00">Oct 21</time>
+                    <h2 itemprop="title">
+                        Why ESI is Still Important, and How to Make it Better
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7d6dbbe97940245d">
+                        <blockquote>
+                            <p>
+                                More than ten years ago, I was working at Akamai and got involved in the specification of&nbsp;<a href="http://en.wikipedia.org/wiki/Edge_Side_Includes">Edge Side Includes</a> (ESI), sort of a templating language for intermediaries.
+                            </p>
+                            <p>
+                                In that time, interest in ESI has grown, waned and been reborn. As far as I can tell, it's implemented not only by Akamai and Oracle (the main forces behind it), but also in Varnish, Squid, and lots of other places too.
+                            </p>
+                            <p>
+                                Back then, I had a strong suspicion that it'd die because people would see it as locking them into Akamai (or some other vendor). Why, then, is this limited, funny, embarrassingly simple little templating language still around?
+                            </p>
+                            <p>
+                                In a word, it's&nbsp;<em>concurrency</em>.
+                            </p>
+                            <p>
+                                In the last couple of years, it's become hot to build massively scalable Web servers by re-thinking how they handle concurrency; often using asynchronous, non-blocking single-process servers, rather than threads or multiple processes.
+                            </p>
+                            <p>
+                                The benefits of this approach have been known for a long time; way before Dan Kegel wrote the&nbsp;<a href="http://www.kegel.com/c10k.html">C10K page</a>, Web proxy servers like&nbsp;<a href="http://www.squid-cache.org/">Squid</a> (and its predecessor,&nbsp;<a href="http://www.cs.princeton.edu/courses/archive/fall03/cs518/papers/harvest.pdf">Harvest</a>) were using this approach because it's the only sensible way to scale for them.
+                            </p>
+                            <p>
+                                However, as folks are finding out when they use newer tools that implement these methods (e.g., Twisted, Node.JS), writing event-driven code is something you either love or hate. Many developers can't stand it, especially for debugging (personally, I love it, but that's just me).
+                            </p>
+                            <p>
+                                So, ESI is a way to offer the massive concurrency of non-blocking, asynchronous servers in a way that's easy to digest. Since fetching a URI doesn't block, the only overhead is in stitching the page together, and you can control the overhead of that by limiting the language's capability.
+                            </p>
+                            <p>
+                                This makes ESI a great tool for building highly scalable dynamic Web sites without writing and debugging new code. Win.
+                            </p>
+                            <h3 style="font-size:1.17em">
+                                Making ESI Better
+                            </h3>
+                            <p>
+                                ESI is, as mentioned, more than a decade old, and the Web has changed a lot in the intervening time. Even putting that aside, ESI isn't exactly what we'd call Web-friendly. We can do better.
+                            </p>
+                            <p>
+                                Over that time, I've had a number of thoughts about how to improve ESI as a language, which I've shared with some interested people privately. One of my back-burner projects has been to implement this, but I have to admit that this isn't going to happen soon, since I'm busy doing several other things.
+                            </p>
+                            <p>
+                                Instead, I'm going to dump those ideas here, and hope someone runs with them. Here are a few:
+                            </p>
+                            <p>
+                                The biggest single way I can see to improve ESI is to make it possible to source variables from a URI. In other words, it should be possible to fetch a URI, parse the response (probably in JSON), and then reference the data returned when evaluating the template.
+                            </p>
+                            <p>
+                                This would enable some really exciting things. Because variables are now just state, you can do things like cache user preferences -- using plain old HTTP caching -- and have that state be local to where it's needed. When you update that state, it can be invalidated. ESI expressions now can have arbitrary, application-relevant input, instead of being limited to a few paltry request headers.
+                            </p>
+                            <p>
+                                This could be what it looks like:
+                            </p>
+                            <blockquote style="border-left-width:4px;border-left-style:solid;border-left-color:#777777;margin-left:34px;padding-left:10px">
+                                <p>
+                                    &lt;esi:load name="user_prefs" src="http://prefs.example.com/{request.cookie.userid}"/&gt;<br>
+                                    &lt;!-- … --&gt;<br>
+                                    &lt;esi:include src="/{user_prefs.top_left_module}"/&gt;
+                                </p>
+                            </blockquote>
+                            <p>
+                                Here, you see some JSON being loaded into the user_prefs variable, form a URI that's templates using a cookie that identifies the user, to drive how the page loads. This is very similar to&nbsp;<a href="http://www.mnot.net/blog/2006/05/16/web_2_caching">a set of techniques I discussed a while back</a> for composing services "RESTfully", and it still works.
+                            </p>
+                            <p>
+                                JSON also presents a way to clean up the variable model generally; instead of the random collection of variables, ESI 2.0 could instantiate a request object, with appropriate members like .method, .cookie, .headers, and so forth. It also brings about the possibility of making response attributes available as well, at least in the context of an include.
+                            </p>
+                            <p>
+                                Going even further, JavaScript presents an opportunity to rally around a common, well-understood syntax for things like variable references, operators, and even common functions (e.g., string manipulation).
+                            </p>
+                            <p>
+                                ESI:include desperately needs a timeout parameter, and a sensible means of specifying fallback content (probably as a child of the include element).
+                            </p>
+                            <p>
+                                Deeper integration with HTTP is necessary; not only should it be possible to access arbitrary aspects of the incoming request, but it should be possible to affect more of the outgoing response; e.g., the status code. Likewise, finer-grained control over outgoing requests (generated by include as well as load) would be good (e.g., via attributes on the element).
+                            </p>
+                            <p>
+                                There are lots of smaller, easier wins. Not requiring valid XML is an obvious one; integrating URI Templates is likewise a no-brainer. Cleaning up some of the cruft in the syntax would be nice; there are some elements that people just don't need in there (e.g., esi:inline, the alt attribute).
+                            </p>
+                            <p>
+                                Anybody up for it?
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.mnot.net/blog/2011/10/21/why_esi_is_still_important_and_how_to_make_it_better">http://www.mnot.net/blog/2011/10/21/why_esi_is_still_important_and_how_to_make_it_better</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Passwords in the wild, part II: failures in the market
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 28 Jul 2010 15:15:02 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-07-28T11:15:02-04:00">
+                    <meta itemprop="dateModified" content="2010-07-28T11:15:02-04:00"><time class="date" itemprop="datePublished" datetime="2010-07-28T15:15:02+00:00">Jul 28</time>
+                    <h2 itemprop="title">
+                        Passwords in the wild, part II: failures in the market
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7169831b192fa4eb">
+                        <blockquote>
+                            <p>
+                                <em>This is the second part in a series on password implementations at real websites, based on my paper at <a href="http://www.cl.cam.ac.uk/%7Ejcb82/doc/password_thicket_bonneau_preibusch.pdf">WEIS 2010</a></em> <em>with Sören Preibusch.</em>
+                            </p>
+                            <p>
+                                As we <a href="http://www.lightbluetouchpaper.org/2010/07/27/passwords-in-the-wild-part-i-the-gap-between-theory-and-implementation/">discussed yesterday</a>, dubious practices abound within real sites’ password implementations. Password insecurity isn’t only due to random implementation mistakes, though. When we scored sites’ passwords implementations on a 10-point aggregate scale it became clear that a wide spectrum of implementation quality exists. Many web authentication giants (Amazon, eBay, Facebook, Google, LiveJournal, Microsoft, MySpace, Yahoo!) scored near the top, joined by a few unlikely standouts (IKEA, CNBC). At the opposite end were a slew of lesser-known merchants and news websites. Exploring the factors which lead to better security confirms the basic tenets of security economics: sites with more at stake tend to do better. However, doing better isn’t enough. Given users’ <a href="http://research.microsoft.com/apps/pubs/?id=74164">well-documented tendency</a> to <a href="http://portal.acm.org/citation.cfm?id=1143127">re-use passwords</a>, the varying levels of security may represent a serious market failure which is undermining the security of password-based authentication.
+                            </p>
+                            <p>
+                                For websites, popularity (measured by Alexa traffic data), maturity (measured by years of existence), and technical skill and expenditure (measured by low average server latency) all positively correlate with better security. The simplest explanation is that global sites can afford more (and more skilled) developers to work out the details of their password implementation than local players like the The Nashville Scene can. Controlling for this influence though, we still see sharp differences between market segments. We studied three major use-cases for passwords online: content websites like newspapers, which use them to customise content for frequent readers and speed up commenting (sometimes making them mandatory), e-commerce websites which use passwords to protect shipping and payment data and allow for order-tracking, and “identity” websites like email and social networks which use passwords to protect persistent online identities. Below is a plot of password scores showing both traffic rank and market category for each site:
+                            </p>
+                            <p style="text-align:left"></p>
+                            <p style="text-align:center">
+                                <a href="http://www.lightbluetouchpaper.org/wp-content/uploads/2010/07/pspvc2.png"><img title="Password scores vs. site traffic, categories color-coded" src="http://www.lightbluetouchpaper.org/wp-content/uploads/2010/07/pspvc2.png" alt="Password scores vs. site traffic, categories color-coded" width="440" height="340"></a>
+                            </p>
+                            <p>
+                                Many significant trends emerged between categories. E-commerce websites are significantly more likely to deploy TLS and notify users of changes to their account. Identity websites are significantly more likely to prevent brute-forcing of users and passwords, to block the use of dictionary words as passwords, and to require CAPTCHAs to make account changes. These differences probably relate to the core implementation skills required to succeed in the two segments: social networks and webmail providers have to block automated interaction to prevent spam and false account creation while e-commerce sites have to use encryption to protect payment details. The sites we studied which store payment card details (not only e-commerce sites, but many social networking and email sites) we see significant improvement across the board. Such sites bear a direct risk of fraud if passwords are compromised, so this isn’t surprising.News websites, unfortunately, fare worse than average in every measurable aspect of security, and indeed represented most of the worst practices we found. Interestingly, news sites offering premium content behind pay-walls didn’t fare significantly better despite having a revenue stream from limiting access. They even managed to take some very simple measures less often, like <a href="http://www.bugmenot.com/report.php">opting-out of the Bugmenot database</a> to prevent users sharing subscriptions.
+                            </p>
+                            <p>
+                                We only studied websites offering free accounts, so we missed a few important segments. <a href="http://portal.acm.org/citation.cfm?id=1408664.1408680">Falk et al.</a> studied bank websites specifically in 2008, and found problems at a rate comparable to the e-commerce websites we studied. <a href="http://research.microsoft.com/apps/pubs/?id=132623">Flôrencio and Herley</a> recently compared the password policies at government and university websites to commercial ones and found that commercial websites impose less strict password strength requirements because usability is more critical to their business. This was confirmed by our data-we found no significant variation in password strength requirements between the segments we studied (all commercial).
+                            </p>
+                            <p>
+                                It’s not surprising that sites with different security motivations perform differently. Password security is not an isolated phenomenon though and bad practices at one site can affect unrelated websites because users reuse passwords. It’s <a href="http://portal.acm.org/citation.cfm?id=975820">long been said in the security community</a> that password re-use is dangerous because it enables attackers to compromise an account at a low-security site and gain access to a higher-security one. This is increasingly true as most websites today use email addresses as identifiers (87% in our study), meaning an email/password combination can unlock many online accounts. The RockYou hacker indicated that <a href="http://www.readwriteweb.com/archives/rockyou_hacker_30_of_sites_store_plain_text_passwords.php">10% of the email/password combinations</a> registered at RockYou were also PayPal accounts (external compromise isn’t the only threat here: a malicious insider could certainly try to profit from a database at sites like this). This very attack scenario played out earlier <a href="http://www.eweek.com/c/a/Security/Twitter-Details-Phishing-Attacks-Behind-Password-Reset-273647/">this year at Twitter</a>, which forced many users to change their accounts after a torrent website’s database of email/password pairs was hacked and used to take over Twitter accounts en masse.
+                            </p>
+                            <p>
+                                News websites may have very little to lose through poor password security, but they can undermine the efforts made by other sites. This is a classic negative externality; with few corrective mechanisms the market is failing as news websites are doing a shoddy job with password security. Removing these externalities is hard; it requires putting a real price tag on hosting an insecure password deployment. RockYou may have endured a <a href="http://techcrunch.com/2009/12/14/rockyou-hack-security-myspace-facebook-passwords/">public shaming</a> on tech blogs, but its gaming business has continued along fine. One approach would be strict punitive laws for websites if user passwords are compromised due to negligence, modeled on data breach notification laws. This is problematic, as aside from public, large-scale attacks, the public may not know when passwords have been compromised (tracer accounts might be useful here). A second approach would be to raise the price of collecting passwords at all, for example by requiring sites to submit to outside auditing or to send users written annual reports about their password security. It would be a successful outcome if fewer sites chose to register passwords in the first place-currently many sites are doing so which are unable to do so securely. In the meantime, technical aids like <a href="https://www.pwdhash.com/">PwdHash</a> to generate site-specific passwords automatically, or <a href="http://www.bugmenot.com/">Bugmenot</a> to re-use credentials at very low-security sites may be the best way to alleviate the problem.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.lightbluetouchpaper.org/2010/07/28/passwords-in-the-wild-part-ii-failures-in-the-market/">http://www.lightbluetouchpaper.org/2010/07/28/passwords-in-the-wild-part-ii-failures-in-the-market/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

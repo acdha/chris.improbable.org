@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Node.js, YUI 3 &amp; Dom Manipulation… Oh My!
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 09 Apr 2010 15:30:47 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-09T11:30:47-04:00">
+                    <meta itemprop="dateModified" content="2010-04-09T11:30:47-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-09T15:30:47+00:00">Apr 09</time>
+                    <h2 itemprop="title">
+                        Node.js, YUI 3 &amp; Dom Manipulation… Oh My!
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/282fd580ff430bec">
+                        <blockquote>
+                            <p>
+                                <em><strong>Update from <a href="http://www.yuiblog.com/blog/2010/04/05/running-yui-3-server-side-with-node-js/" title="Running YUI 3 Server-Side with Node.js » Yahoo! User Interface Blog (YUIBlog)">the previous article</a></strong>: YUI 3 no longer runs in the global scope. I have made some adjustments to my <a href="http://github.com/davglass/nodejs-yui3">nodejs-yui3</a> project to allow YUI 3 to run fully as a proper non-global module.</em>
+                            </p>
+                            <p>
+                                <a href="http://www.yuiblog.com/blog/2010/04/05/running-yui-3-server-side-with-node-js/">Early this week</a> I gave you a peek at running <a href="http://developer.yahoo.com/yui/3/" title="YUI 3 — Yahoo! User Interface Library">YUI 3</a> on the server with <a href="http://nodejs.org/" title="node.js">Node.js</a>. Now I’m back to tell you what I have been up to over the last week or so. A couple of weeks ago I stumbled across a project on GitHub called <a href="http://github.com/tmpvar/jsdom">jsdom</a> by <a href="http://github.com/tmpvar">Elijah Insua</a> (<a href="http://twitter.com/tmpvar">@tmpvar</a>). jsdom describes itself as:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    [A] <a href="http://commonjs.org/" title="CommonJS: JavaScript Standard Library">CommonJS</a> implementation of the DOM intended to be platform-independent and as minimal/light as possible while completely adhering to the w3c DOM specifications.
+                                </p>
+                            </blockquote>
+                            <p>
+                                That sounded interesting to me, so I forked the repository and started playing around with it to see what I could get it to do. To my surprise, it just worked. And because it’s written in JavaScript, it was easy to start hacking and adding new features. The only issue I could see was that it’s a pure DOM layer, lacking some BOM features that are necessary for most common web application development. So I set out to add the features I would need to run YUI 3 against jsdom. After a couple of days of hacking, I had a baseline implementation of jsdom that supports almost all of YUI 3’s needs.
+                            </p>
+                            <h3>
+                                Getting YUI 3 running with jsdom
+                            </h3>
+                            <p>
+                                I started by just including <a href="http://github.com/tmpvar/jsdom">jsdom</a> and setting up the “fake” document object. At this point I could load our core <a href="http://developer.yahoo.com/yui/3/node/" title="YUI 3: Node">YUI 3 DOM functionality</a>, but the Event module would’t load. That’s when I noticed that some key BOM abstractions were missing — for example, Event needs some kind of a <code>window</code> object. So I created a “fake” window object to match my “fake” document and things started to load. As I said in the previous article, YUI 3’s module system is fantastic and makes this kind of work much easier to do.
+                            </p>
+                            <p>
+                                Most scripts access <code>document</code> and <code>window</code> directly. YUI 3 doesn’t do that; instead, we have references to the active document/window in a config attached to each YUI instance. These can be accessed by <code>Y.config.doc</code> and <code>Y.config.win</code>. All YUI 3 modules adhere to this practice (and we strongly recommend you do the same in your <a href="http://yuilibrary.com/gallery/" title="YUI Library :: Gallery">YUI 3 Gallery</a> modules or your own bespoke components).
+                            </p>
+                            <p>
+                                Some might think this is a little excessive, but I’ve already used this feature in my early work on Editor for YUI 3. I am able to create a YUI instance and have it bound to an iframe’s window/document. This means that I can run Selector and Event inside the iframe without having to load YUI inside that document. On the server, this makes even more sense. You may have several documents open in the same process, but your YUI 3 instances only need to know about the document they’re using.
+                            </p>
+                            <p>
+                                To support this work, I’ve created a new YUI 3 module called <code>nodejs-dom</code>. This module will include the proper libraries, if available, and set up the YUI instance with a <code>document</code> and <code>window</code> reference. Along with the configuration, it will create a new object on the instance called <code>Browser</code>. Since all YUI 3 module use Node and Node uses <code>Y.config.doc</code>, you shouldn’t need to do anything else to make YUI 3 code work on the server. But if you’re working with older JavaScript and need to access the <code>document</code>, <code>window</code>, <code>location</code> or <code>navigator</code> objects, they’re all available on the <code>Browser</code> object. Here’s a quick view of what the <code>Y.Browser</code> object looks like:
+                            </p>
+                            <pre>
+{navigator:
+   { userAgent: 'Node.js (darwin; U; rv:0.1.33)'
+   , appVersion: '0.1.33'
+   , platform: 'darwin'
+   }
+, window:
+   { screenTop: 0
+   , pageYOffset: 0
+   , screenY: 0
+   , navigator: [Circular]
+   , innerHeight: 768
+   , pageXOffset: 0
+   , screenLeft: 0
+   , screenX: 0
+   , innerWidth: 1024
+   , length: 1
+   , scrollY: 0
+   , outerHeight: 768
+   , contentWindow: [Circular]
+   , frames: [ [Circular], [length]: 1 ]
+   , setInterval:  [Function]
+   , name: 'nodejs'
+   , scrollX: 0
+   , document: '#DOCUMENT'
+   , outerWidth: 1024
+   , setTimeout: { [Function]
+   , location: { href: '/Users/davglass/.node_libraries/browser.js' }
+   }
+, self: [Circular]
+, document: [Circular]
+, location: [Circular]
+}
+</pre>
+                            <h3>
+                                innerHTML support
+                            </h3>
+                            <p>
+                                Since <code>innerHTML</code> is not in the DOM Level1 spec, it’s not in jsdom. This was a requirement for me, so I needed to find a solution. I found a project on GitHub called <a href="http://github.com/tautologistics/node-htmlparser">node-htmlparser</a> and it claimed to be able to parse HTML, including malformed syntax. <a href="http://github.com/davglass/node-htmlparser">I forked it</a> and made some code changes, cleaned up the syntax and fixed a couple of issues. I’d recommend using my fork if you’re following along at home; I know my fork will work and I’ll continue to maintain it as long as needed. Eventually someone will write a parser based on <a href="http://twitter.com/izs">@izs</a>’s <a href="http://github.com/isaacs/sax-js">sax-js</a> module.
+                            </p>
+                            <h3>
+                                Let’s see some code
+                            </h3>
+                            <p>
+                                This is a very simple hello world example:
+                            </p>
+                            <pre>
+YUI().use('nodejs-dom', 'event', 'node', function(Y) {
+    var document = Y.Browser.document;
+    document.title = 'This is a test';
+    var i = Y.Node.create('&lt;i&gt;Test This&lt;/i&gt;');
+    i.addClass('foo');
+    Y.one('body').append(i);
+
+    var div = document.createElement('div');
+    div.id = 'foo';
+    div.innerHTML = '&lt;em id="foo"&gt;Test&lt;/em&gt; this &lt;strong id="bax"&gt;awesome!&lt;/strong&gt;';
+    document.body.appendChild(div);
+
+    var foo = Y.one('#foo');
+    foo.addClass('bar');
+    sys.puts(document.outerHTML);
+});
+</pre>
+                            <p>
+                                The above code will return this snippet of HTML:
+                            </p>
+                            <pre>
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;This is a test&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;i class="foo"&gt;Test This&lt;/i&gt;
+    &lt;div id="foo" class="bar"&gt;
+      &lt;em id="foo"&gt;Test&lt;/em&gt; this &lt;strong id="bax"&gt;awesome!&lt;/strong&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
+                            <h3>
+                                Is that what I think it is?
+                            </h3>
+                            <p>
+                                That’s the most common question I’ve received when showing demos of this stuff. The answer: <strong>YES</strong>, this is what you think it is: <strong>a full document rendered on the server by writing standard JavaScript against standard DOM and BOM APIs</strong>. I have several examples of its use in the <a href="http://github.com/davglass/nodejs-yui3">GitHub project</a>. These examples include rendering YUI 3 <a href="http://developer.yahoo.com/yui/3/tabview">Tabviews</a>, <a href="http://developer.yahoo.com/yui/3/slider">Sliders</a> and <a href="http://developer.yahoo.com/yui/3/overlay">Overlays</a>. Using the <a href="http://www.yuiblog.com/blog/2010/03/11/yui-2-in-3-coming-soon/">2 in 3</a> project I was also able to render a YUI 2 <a href="http://developer.yahoo.com/yui/calendar">Calendar</a> and <a href="http://developer.yahoo.com/yui/layout">Layout Manager</a>.
+                            </p>
+                            <h3>
+                                Examples
+                            </h3>
+                            <p>
+                                I tossed up a couple of the examples from my git repo so you can see them in action:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://yuiloader.davglass.com/calendar/">Functional YUI 2 Calendar rendered server-side</a> (<a href="http://github.com/davglass/nodejs-yui3/blob/master/examples/tnt-calendar-serve.js">source</a>)
+                                </li>
+                                <li>
+                                    <a href="http://yuiloader.davglass.com/template/">Simple Templating Demo</a> (<a href="http://github.com/davglass/nodejs-yui3/blob/master/examples/y-server-template.js">source</a>)
+                                </li>
+                            </ul>
+                            <p>
+                                The Calendar demo is designed to show an example of progressive enhancement by using YUI to generate the Calendar on the server and provide static navigation to selected days and months. This implementation uses the same JavaScript to generate the server-side view as you would use on the client to render it in pure JavaScript. There is intentionally no client side JavaScript. Think of this as the baseline you’d use for progressive enhancement, rendering a fully-functional DOM on the server side to provide functionality to clients with no JavaScript support.
+                            </p>
+                            <p>
+                                The second example shows how you can mix and match what is server data and what is client data. If I have a true MVC framework, which YUI 3 provides, I can separate my data (JSON) from my widget templates (DHTML) and from page templates (static HTML). The example shows how you can use the same data but access it from 3 different places to get only the parts you want.
+                            </p>
+                            <p>
+                                I hope you see the power here that I see, including a possible future free of context switching and free of writing multiple levels of rendering code in the various levels of an application to support progressive enhancement. Enjoy! (<a href="http://twitter.com/davglass">@davglass</a>)
+                            </p>
+                            <div>
+                                <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=hzoRyALZWr4:0QnpOsX_shE:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=hzoRyALZWr4:0QnpOsX_shE:dnMXMwOfBR0"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=dnMXMwOfBR0" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=hzoRyALZWr4:0QnpOsX_shE:7Q72WNTAKBA"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=7Q72WNTAKBA" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=hzoRyALZWr4:0QnpOsX_shE:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?i=hzoRyALZWr4:0QnpOsX_shE:D7DqB2pKExk" border="0"></a>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.yuiblog.com/blog/2010/04/09/node-js-yui-3-dom-manipulation-oh-my/">http://www.yuiblog.com/blog/2010/04/09/node-js-yui-3-dom-manipulation-oh-my/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

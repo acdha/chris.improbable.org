@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Large Problems in Django, Mostly Solved: Database Migrations
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 06 Nov 2009 22:03:11 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-06T17:03:11-04:00">
+                    <meta itemprop="dateModified" content="2009-11-06T17:03:11-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-06T21:03:11+00:00">Nov 06</time>
+                    <h2 itemprop="title">
+                        Large Problems in Django, Mostly Solved: Database Migrations
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/d95c1ea9ef21982f">
+                        <blockquote>
+                            <p>
+                                Continuing in the series of big problems that are mostly solved, we have database migrations. A couple days ago I talked about <a href="http://ericholscher.com/blog/2009/nov/2/large-problems-django-mostly-solved/">Search</a>.
+                            </p>
+                            <h2>
+                                Database Migrations
+                            </h2>
+                            <p>
+                                Database Migrations are an interesting piece of the Django community. Rails has the functionality built in, but Django currently relies on third party apps for this functionality. One of the core philosophies about not including apps in the Django core is that ideas percolate better in the fast release environment outside of the core. When something goes into core, it is automatically seen as blessed, and will certainly become the defacto answer to a problem. Leaving things outside allows multiple different implementations to develop (as they did), and for one to become the standard (which it has). Along the way it has picked up ideas from others, and now provides a good answer to migrations.
+                            </p>
+                            <h3>
+                                South
+                            </h3>
+                            <p>
+                                <a href="http://south.aeracode.org/">South</a> has emerged as the obvious choice for database migrations in the Django community. We use it in production at work at the Journal World, and it has served us well.
+                            </p>
+                            <p>
+                                I have talked about south in the past, using it to <a href="http://ericholscher.com/blog/2009/jun/11/migrating-test-fixtures-using-south/">migrate test fixtures</a>. This serves as a basic tutorial and introduction into south as well.
+                            </p>
+                            <h3>
+                                Main Features
+                            </h3>
+                            <h4>
+                                Automatic Migrations
+                            </h4>
+                            <p>
+                                Most of the migrations that I write, I <a href="http://south.aeracode.org/wiki/About#AutomaticMigrationCreation">don't write</a> a single line of code. South has the ability to how you model looked at the end of your last migration, and then extrapolate what has changed (in most simple and modestly complex cases). There are obviously times that it falls down, but for simple addition, deletion, and modification of fields it has worked almost flawlessly for me. With a simple command, it will do all your work for you.
+                            </p>
+                            <pre>
+<code>django-admin.py migrate app_name --auto
+</code>
+</pre>
+                            <p>
+                                It has problems with Generic Foreign Keys and a couple of other more complex models. However, I would say that it absolutely nails the 80% case that most migrations fall in to.
+                            </p>
+                            <h4>
+                                Fake ORM ("ORM Freezing")
+                            </h4>
+                            <p>
+                                This is a feature that South has grown from it's <a href="http://bitbucket.org/DeadWisdom/migratory/wiki/Home">Migratory</a> roots. I think it is one of the best conceptual features for migrations. It allows you to use a Fake ORM (the real ORM, applied to the aforementioned fake models), to do data transformation in your migrations. This example from the <a href="http://south.aeracode.org/wiki/Tutorial3">tutorial</a> shows the value:
+                            </p>
+                            <pre>
+<code>def forwards(self, orm):
+    for adopter in orm.Adopter.objects.all():
+        try:
+            adopter.first_name, adopter.last_name = adopter.name.split(" ", 1)
+        except ValueError:
+            adopter.first_name, adopter.last_name = adopter.name, ""
+        adopter.save()
+</code>
+</pre>
+                            <h4>
+                                Database Independent
+                            </h4>
+                            <p>
+                                This sounds like an obvious feature, but a lot of the approaches for migrations were only viable on one database. The support for SQLite is still lacking, but that is because of fundamental limitations in the way SQLite works. Most people using SQLite can just wipe their database and start over, if not, you should probably be using another database.
+                            </p>
+                            <h4>
+                                It knows when you've been naughty
+                            </h4>
+                            <p>
+                                South <a href="http://south.aeracode.org/wiki/About#MissingMigrations">keeps track</a> of all the migrations that you have run, and it intelligently informs you if you have missed a migration. It also supports inter-dependencies on migrations. This allows you to be safe in your knowledge that your migrations will be run properly, and that state is maintained. This sounds like a hand-wavey feature, but when you're migrating your data, knowing when things aren't quite right is a nice feeling!
+                            </p>
+                            <p>
+                                South also keeps track of the migrations that are on disk, and won't let you migrate if they are different than previous runs. This makes sure that you aren't running against a different version of the code; allowing you to be sure that the migrations being run are correct.
+                            </p>
+                            <h4>
+                                Conclusion
+                            </h4>
+                            <p>
+                                Overall, south solves a lot of the problems about migrations in a good way. There have been other solutions to the migration problem, and I think that south has taken most of the good ideas and combined them in one place. It has some drawbacks still, but overall it is the best of breed in Django for Database Migrations. If you are looking for a migration tool for Django, this is your best bet.
+                            </p>
+                            <p>
+                                <strong>There aren't a lot of flashy features in the migration realm I feel. Mostly you just want something that keeps your data safe, and allows you to write migrations as simply and foolproof as possible.</strong> South lets you do that, so I consider it a win.
+                            </p>
+                            <p>
+                                I view migrations somewhere along the lines of testing. It is one of those things that once you have, you don't see how you ever lived without it. Being able to immediately see the state of your database, what migrations haven't been run, and what all needs to happen is incredibly useful. Having a safety net of repeatable migrations also ensures that your databases are all the same, across many installations and machines. The value of database migrations are many, and South brings them to you in a nice package.
+                            </p><img src="http://feeds.feedburner.com/~r/EricsThoughts/~4/yfQjmEs86Vg" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ericholscher.com/blog/2009/nov/6/large-problems-database-migrations/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EricsThoughts+%28Eric%27s+Thoughts%29">http://ericholscher.com/blog/2009/nov/6/large-problems-database-migrations/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EricsThoughts+%28Eric%27s+Thoughts%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Optimizing asset bundling and serving with Rails
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 19 Nov 2009 20:32:20 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-19T15:30:47-04:00">
+                    <meta itemprop="dateModified" content="2009-11-19T15:30:47-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-19T19:30:47+00:00">Nov 19</time>
+                    <h2 itemprop="title">
+                        Optimizing asset bundling and serving with Rails
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/e1f5f4b8e0ceffe2">
+                        <blockquote>
+                            <p>
+                                We spend a lot of time optimizing the front end experience at GitHub. With that said, our asset (css, javascript, images) packaging and serving has evolved to be the best setup I've seen out of any web application I've worked on in my life.
+                            </p>
+                            <p>
+                                Originally, I was going to package what we have up into a plugin, but realized that much of our asset packaging is specific our particular app architecture and <a href="http://github.com/blog/470-deployment-script-spring-cleaning">choice of deployment strategy</a>. If you haven't read up on our deployment recipe <strong><em>read it now</em></strong>. I cannot stress enough how awesome it is to have 14 second no downtime deploys. In any case, you can find the relevant asset bundling code in <a href="http://gist.github.com/238291">this gist</a>
+                            </p>
+                            <h3>
+                                Benefits of our asset bundling
+                            </h3>
+                            <ul>
+                                <li>Users never have to wait while the server generates bundle caches, ever. With default Rails bundling, each time you deploy, each request until your server generates the bundle has to wait for the bundle to finish. This makes your site pause for about 30s after each deploy.
+                                </li>
+                                <li>We can use slower asset minifiers (such as YUI or Google Closure) without consequence to our users.
+                                </li>
+                                <li>Adding new stylesheets or javascripts is as easy as creating the file. No need to worry about including a new file in every layout file.
+                                </li>
+                                <li>Because we base our ASSET_ID off our git modified date, we can deploy code updates without forcing users to lose their css/js cache.
+                                </li>
+                                <li>We take full advantage of image caching with SSL while eliminating the unauthenticated mixed content warnings some browsers throw.
+                                </li>
+                            </ul>
+                            <p>
+                                Our asset bundling is comprised of several different pieces:
+                            </p>
+                            <ol>
+                                <li>A particular css &amp; js file structure
+                                </li>
+                                <li>Rails helpers to include css &amp; js bundles in production and the corresponding files in development.
+                                </li>
+                                <li>A rake task to bundle and minify css &amp; javascript as well as the accompanying changes to deploy.rb to make it happen on deploy
+                                </li>
+                                <li>Tweaks to our Rails environment to use smart ASSET_ID and asset servers
+                                </li>
+                            </ol>
+                            <h3>
+                                CSS &amp; JS file layout
+                            </h3>
+                            <p>
+                                Our file layout for CSS &amp; JS is detailed in the <a href="http://gist.github.com/238291#file__readme.md">README</a> for Javascript, but roughly resembles something like this:
+                            </p>
+                            <pre>
+<code>public/javascripts
+|-- README.md
+|-- admin
+| |-- date.js
+| `-- datePicker.js
+|-- common
+| |-- application.js
+| |-- jquery.facebox.js
+| `-- jquery.relatize_date.js
+|-- dev
+| |-- jquery-1.3.2.js
+| `-- jquery-ui-1.5.3.js
+|-- gist
+| `-- application.js
+|-- github
+| |-- _plugins
+| | |-- jquery.autocomplete.js
+| | `-- jquery.truncate.js
+| |-- application.js
+| |-- blob.js
+| |-- commit.js
+`-- rogue
+    |-- farbtastic.js
+    |-- iui.js
+    `-- s3_upload.js
+</code>
+</pre>
+                            <p>
+                                I like this layout because:
+                            </p>
+                            <ul>
+                                <li>It allows me to namespace specific files to specific layouts (gist, github.com, iPhone, admin-only layouts, etc) <strong>and</strong> share files between apps (common).
+                                </li>
+                                <li>I can lay out files however I want within each of these namespaces, and reorganize them at will.
+                                </li>
+                            </ul>
+                            <p>
+                                Some might say that relying on including everything is bad practice -- but remember that web-based javascript is almost exclusively onDOMReady or later. That means that there is no dependency order problems. If you run into dependency order issues, you're writing javascript wrong.
+                            </p>
+                            <h3>
+                                Rails Helpers
+                            </h3>
+                            <p>
+                                To help with this new bundle strategy, I've created some Rails helpers to replace your standard <code>stylesheet_link_tag</code> and <code>javascript_include_tag</code>. Because of the way we bundle files, it was necessary to use custom helpers. As an added benefit, these helpers are much more robust than the standard Rails helpers.
+                            </p>
+                            <p>
+                                Here's the code:
+                            </p>
+                            <p>
+                                Our <code>application.html.erb</code> now looks something like this:
+                            </p>
+                            <pre>
+<code>&lt;%= javascript_dev ['jquery-1.3.2', "#{http_protocol}://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"] %&gt;
+&lt;%= javascript_bundle 'common', 'github' %&gt;
+</code>
+</pre>
+                            <p>
+                                This includes jQuery and all javascript files under <code>public/javascripts/common</code> and <code>public/javascripts/github</code> (recursively). Super simple and we probably won't need to change this for a very long time. We just add files to the relevant directories and they get included magically.
+                            </p>
+                            <p>
+                                For pages that have heavy javascript load, you can still use the regular <code>javascript_include_tag</code> to include these files (we keep them under the <code>public/javascripts/rogue</code> directory).
+                            </p>
+                            <h3>
+                                Bundle rake &amp; deploy tasks
+                            </h3>
+                            <p>
+                                The <code>javascript_bundle</code> and <code>stylesheet_bundle</code> helpers both assume that in production mode, there'll be a corresponding bundle file. Since we are proactively generating these files, you need to create these manually on each deploy.
+                            </p>
+                            <p>
+                                Throw this into <code>lib/tasks/bundle.rake</code> <strong><em>and the corresponding YUI &amp; Closure jars</em></strong> and then run <code>rake bundle:all</code> to generate your javascript. You can customize this to use the minifying package of your choice.
+                            </p>
+                            <p>
+                                To make sure this gets run on deploy, you can add this to your deploy.rb:
+                            </p>
+                            <h3>
+                                Tweaks to production.rb
+                            </h3>
+                            <p>
+                                The last step in optimizing your asset bundling for deploys is to tweak your production.rb config file to make asset serving a bit smarter. The relevant bits in our file are:
+                            </p>
+                            <p>
+                                There's three important things going on here.
+                            </p>
+                            <p>
+                                <strong>First—</strong> If you hit a page using SSL, we serve all assets through SSL. If you're on Safari, we send all CSS &amp; images non-ssl since Safari doesn't have a mixed content warning.
+                            </p>
+                            <p>
+                                It is of note that many people <a href="http://37signals.com/svn/posts/1431-mixed-content-warning-how-i-loathe-thee">suggest serving CSS &amp; images non-ssl to Firefox</a>. This was good practice when Firefox 2.0 was standard, but now that Firefox 3.0 is standard (and obeys cache-control:public as it should) there is no need for this hack. Firefox does have a mixed content warning (albeit not as prominent as IE), so I choose to use SSL.
+                            </p>
+                            <p>
+                                <strong>Second—</strong> We're serving assets out of 4 different servers. This fakes browsers into downloading things faster and is generally good practice.
+                            </p>
+                            <p>
+                                <strong>Third—</strong> We're hitting the git repo on the server (note our deployment setup) and getting a sha of the last changes to the <code>public/stylesheets</code> and <code>public/javascripts</code> directory. We use that sha as the ASSET_ID (the bit that gets tacked on after css/js files as ?sha-here).
+                            </p>
+                            <p>
+                                This means that if we deploy a change that only affects <code>app/application.rb</code> we don't interrupt our user's cache of the javascripts and stylesheets.
+                            </p>
+                            <h3>
+                                Conclusion
+                            </h3>
+                            <p>
+                                What all of this adds up to is that our deploys have almost no frontend consequence unless they intend to (changing css/js). This is <strong>huge</strong> for a site that does dozens of deploys a day. All browser caches remain the same and there isn't any downtime while we bundle up assets. It also means we're not afraid to deploy changes that may only affect one line of code and some minor feature.
+                            </p>
+                            <p>
+                                All of this is not to say there isn't room for improvement in our stack. I'm still tracking down some SSL bugs, and always trying to cut down on the total CSS, javascript and image load we deliver on every page.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://github.com/blog/551-optimizing-asset-bundling-and-serving-with-rails">http://github.com/blog/551-optimizing-asset-bundling-and-serving-with-rails</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

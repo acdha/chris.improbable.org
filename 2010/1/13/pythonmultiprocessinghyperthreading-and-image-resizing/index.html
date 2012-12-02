@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Python,Multiprocessing,Hyperthreading, and image resizing
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 13 Jan 2010 22:18:33 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-13T17:18:33-04:00">
+                    <meta itemprop="dateModified" content="2010-01-13T17:18:33-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-13T21:18:33+00:00">Jan 13</time>
+                    <h2 itemprop="title">
+                        Python,Multiprocessing,Hyperthreading, and image resizing
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5241c6e929407e18">
+                        <blockquote>
+                            <p>
+                                I have the occasional need to resize a set of images. I used to use Photoshop batch actions, then I used some droplets, and recently I’ve been using a simple python script with PIL (Python Image Library)
+                            </p>
+                            <p>
+                                We recently got an 8 core Mac Pro, and I wanted to see if I could take more advantage of all those cores when resizing images.
+                            </p>
+                            <p>
+                                One of the things that confused me when I first opened activity monitor, is that it had 16 processors listed. A little digging turns up that this relates to Intel’s Hyperthreading technology, where they present the OS twice the cores and hand some extra concurrency on the chip. There is some debate out there as to whether or not it makes a difference.
+                            </p>
+                            <p>
+                                It’s frustrating to have all that power and watch a CPU utilization tool look like this:
+                            </p>
+                            <p>
+                                <img src="http://ptone.com/dablog/wp-content/uploads/2010/01/single.png" alt="Single">
+                            </p>
+                            <p>
+                                But that is what you get when a tool is not written to be parallel across processing units. Much is made over Python’s limit to threading and the GIL, however it seems that multiple threads never take as much advantage of multicore horsepower as do multiple processes.
+                            </p>
+                            <p>
+                                Thanks to Python’s <a href="http://docs.python.org/library/multiprocessing.html">multiprocessing library</a> it was very easy to create a worker <a href="http://docs.python.org/library/multiprocessing.html#module-multiprocessing.pool">pool</a> to handle the resizing. The results are impressive. The test task was to resize a folder of 350 jpeg files by 50% and save them to a folder.
+                            </p>
+                            <p>
+                                <img src="http://ptone.com/dablog/wp-content/uploads/2010/01/performance.png" alt="Performance">
+                            </p>
+                            <p>
+                                This shows you the performance gain by doing the image resizing in parallel. It goes from a 6 minute task to a 30 second task.
+                            </p>
+                            <p>
+                                What is interesting is that even though there are only 8 true cores, there is a 40% increase in speed using all 16 virtual cores, but almost no advantage in going any higher than that. I’d say hyperthreading makes a difference in this case.
+                            </p>
+                            <p>
+                                Now this is more like it:
+                            </p>
+                            <p>
+                                <img src="http://ptone.com/dablog/wp-content/uploads/2010/01/maxed.png" alt="Maxed">
+                            </p>
+                            <p>
+                                A couple assorted notes:
+                            </p>
+                            <p>
+                                With 8 workers, there is a roughly 10% increase in performance seen when turning off hyperthreading (via processor prefpane from dev-tools). It may be that the overhead of managing threads that aren’t doing much for you detracts from the overall performance?? Not sure.
+                            </p>
+                            <p>
+                                Photoshop batch automate on the same task takes about 6 minutes, which seems to refute Adobe’s <a href="http://blogs.adobe.com/jnack/2006/12/photoshop_and_multicore.html">implication</a> that muliprocessing doesn’t often gain you much.
+                            </p>
+                            <p>
+                                There is one gotcha however, and that is that there does seem to be some sort of memory leak with the multiprocessing module. With just one worker in the pool, you can see a steadily increasing memory use that isn’t present in the same PIL code that isn’t run through the multiprocessing module. This is probably a manifestation of <a href="http://bugs.python.org/issue6653">this bug</a>
+                            </p>
+                            <p>
+                                Finally, the script that I used to do the tests is available <a href="http://gist.github.com/276618">here</a>.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ptone.com/dablog/2010/01/pythonmultiprocessinghyperthreading-and-image-resizing/">http://ptone.com/dablog/2010/01/pythonmultiprocessinghyperthreading-and-image-resizing/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

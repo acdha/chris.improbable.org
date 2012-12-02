@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Mac OS X Spelunking in PowerPC and x86 Assembly, part 1
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 04 Jun 2009 18:58:59 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-05-26T19:11:00-04:00">
+                    <meta itemprop="dateModified" content="2009-05-26T19:11:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-05-26T23:11:00+00:00">May 26</time>
+                    <h2 itemprop="title">
+                        Mac OS X Spelunking in PowerPC and x86 Assembly, part 1
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/e3e196b86b273554">
+                        <blockquote>
+                            <span style="font-style:italic">By Avi Drissman, Google Chrome Team</span>
+                            <p>
+                                (Note: this is one of our occasional extra-geeky technical posts. If this isn't your thing, don't worry; our usual non-technical stuff will be back soon.)
+                            </p>
+                            <p>
+                                If you're a programmer, there are many reasons why you might want to go exploring the inner workings of Mac OS X. You might want to learn how how Apple achieves interesting effects. Or perhaps you're just curious about how things work. (We're all adults here, so I won't lecture you about the dangers of using private or undocumented interfaces in your apps.)
+                            </p>
+                            <p>
+                                In any case, though, you need to know how to read assembly, either PowerPC (if you have an older Mac) or x86 (if you have anything recent). While there are good resources available to learn about <a href="http://www.osnews.com/story/10366/A_Brief_Tutorial_on_Reverse_Engineering_OS_X">reading PowerPC assembly for exploration</a>, there are fewer about x86. Despite the present and future of the Mac being x86, it seems like people have lots of <a href="http://www.clarkcox.com/blog/?p=12">anxiety</a> about having to work with it.
+                            </p>
+                            <p>
+                                I think the problem is not a lack of documentation on x86 assembly, but a surfeit of it. Most of it is Windows- or DOS-centric, usually with <a href="http://en.wikipedia.org/wiki/X86_assembly">syntax</a> that doesn't apply (Intel syntax vs the AT&amp;T syntax that GCC uses), and with the aim of teaching how to write it. But <em>reading</em> x86 assembly really isn't that hard. If all you want to do is learn how to read the code generated by GCC, it's probably just as easy as PowerPC.<br>
+                            </p>
+                            <p>
+                                The other day I was investigating how window minimization and window titles work. While exploring, I took <a href="http://www.drissman.com/blog/images/2009/05/SetWindowTitle.txt">notes of my discoveries</a>. Let's touch on two functions, in both PowerPC and x86 flavors.
+                            </p>
+                            <p>
+                                Before we begin, I'm going to assume that you're comfortable with assembly in general (though not necessarily with any particular one). If you have the latest developer tools, launch Shark (in <code>/Developer/Applications/Performance Tools</code>) and in the Help menu you can access various ISA references. In addition, Apple has ABI documentation for both the <a href="http://developer.apple.com/documentation/DeveloperTools/Conceptual/LowLevelABI/100-32-bit_PowerPC_Function_Calling_Conventions/32bitPowerPC.html">PowerPC</a> and <a href="http://developer.apple.com/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html">x86</a>. I'm going to go over each function twice (once for PowerPC and once for x86); feel free to skim the PowerPC version if you're accustomed to it. And finally, this is only for the 32-bit version of each platform; things change even more with 64 bits.
+                            </p>
+                            <p>
+                                <strong>SetWindowTitleWithCFString</strong>
+                            </p>
+                            <p>
+                                The trail always begins with a public call that uses the SPI that you want to figure out. In this case, I chose <code>SetWindowTitleWithCFString</code> because it has to somehow set the title of a window even if it's minimized. I went with Carbon because sometimes the dynamic nature of Objective-C with Cocoa makes tracing code harder.
+                            </p>
+                            <p>
+                                <em>PowerPC</em>
+                            </p>
+                            <pre>
+&lt;+0&gt;: mflr    r0          // save linkage<br>&lt;+4&gt;: stmw    r30,-8(r1)  // stash r30, r31<br>&lt;+8&gt;: mr      r30,r4      // save r4 (new title)<br>&lt;+12&gt;: stw     r0,8(r1)    // make stack frame<br>&lt;+16&gt;: stwu    r1,-80(r1)  // make stack frame<br>
+</pre>
+                            <p>
+                                This is the prologue of the function. The PowerPC doesn't have a dedicated stack pointer (convention is to use <code>r1</code> for that), so the common way of implementing branches by pushing the PC onto the stack doesn't work. Instead, the PowerPC has a link register and a command <code>bl</code> to branch and put the old PC value into the link register. Thus, almost every function starts with <code>mflr r0</code>, to pull the old PC into a usable register. Then in &lt;+4&gt; we save off some registers that we're going to smash. Every function needs scratch registers to hold local variables, and usually the high-numbered registers are used. The <code>stmw</code> (store multiple words) instruction is useful for ditching many high registers on the stack. Then in &lt;+12&gt; we drop the old PC onto the stack and allocate 80 bytes on the stack.
+                            </p>
+                            <p>
+                                A note on parameter passing. Integer-sized parameters (the only kind we'll be dealing with today) are passed into a function starting with <code>r3</code> and going up through the registers. Return values are returned in <code>r3</code>. So we see that in &lt;+8&gt; we stick away the pointer to the new name in <code>r30</code> (whose previous value was stored on the stack earlier).
+                            </p>
+                            <pre>
+&lt;+20&gt;: bl      0x92881384 &lt;_Z13GetWindowDataP15OpaqueWindowPtr&gt;<br>&lt;+24&gt;: li      r0,-5600    // errInvalidWindowRef<br>&lt;+28&gt;: cmpwi   cr7,r3,0    // if no window data, bail<br>&lt;+32&gt;: beq-    cr7,0x928d2ae0 &lt;+60&gt;<br>&lt;+36&gt;: cmpwi   cr7,r30,0   // if no string to set, bail<br>&lt;+40&gt;: li      r0,-50      // paramErr<br>&lt;+44&gt;: beq-    cr7,0x928d2ae0 &lt;+60&gt;<br>&lt;+48&gt;: mr      r4,r30<br>
+</pre>
+                            <p>
+                                This is where we must start making inferences as to what the code is doing. Fortunately, we have the symbols so it's not too hard. We see that we use the WindowRef as a parameter to a C++ function <code>GetWindowData(OpaqueWindowPtr)</code>, as the WindowRef was passed in as <code>r3</code> and <code>r3</code> wasn't altered before the call. In addition, note that the function return value, being in <code>r3</code>, will overwrite the WindowRef value which wasn't saved in a high register. That's fine, as the WindowRef was just an index into a table and won't be needed further.
+                            </p>
+                            <p>
+                                At this point we run some checks. We compare both <code>r3</code> and <code>r30</code> to zero, and if either are zero we jump to the end with <code>r0</code> set to the appropriate error code. (The end of the function will move <code>r0</code> into <code>r3</code> for return.)
+                            </p>
+                            <p>
+                                The PowerPC condition register has eight condition sets. Why are we using <code>cr7</code> here? Probably because <code>cr7</code> is volatile and we can get away with not saving/restoring it.
+                            </p>
+                            <pre>
+&lt;+52&gt;: bl      0x928d2af8 &lt;_ZN10WindowData14SetTitleCommonEPK10__CFString&gt;<br>&lt;+56&gt;: li      r0,0        // return noErr<br>&lt;+60&gt;: addi    r1,r1,80    // tear down stack frame and return<br>&lt;+64&gt;: mr      r3,r0<br>&lt;+68&gt;: lwz     r0,8(r1)<br>&lt;+72&gt;: lmw     r30,-8(r1)<br>&lt;+76&gt;: mtlr    r0<br>&lt;+80&gt;: blr<br>
+</pre>
+                            <p>
+                                The rest is pretty simple. We call a member function <code>WindowData::SetTitleCommon(CFString*)</code>, and then do common tear down. We restore the stack pointer, put the return value into <code>r3</code>, restore the registers, move the old PC back into the link register, and branch to the link register (<code>blr</code>), returning us to our caller.
+                            </p>
+                            <p>
+                                <em>x86</em>
+                            </p>
+                            <p>
+                                The PowerPC register file is really easy: <code>r0</code>, <code>r1</code>, <code>r2</code> ... <code>r31</code>. x86 has fewer registers and they've historically had different roles (accumulator, base, source index, destination index, and so on). Seriously, forget about that. There are eight registers you care about. <code>eax</code>, <code>ebx</code>, <code>ecx</code>, <code>edx</code>, <code>esi</code>, and <code>edi</code> are all general-purpose registers. <code>esp</code> is the stack pointer. <code>ebp</code> is the frame pointer. That's it.
+                            </p>
+                            <p>
+                                PowerPC assembly reads right-to-left (except for stores). x86 AT&amp;T syntax in general reads left-to-right.
+                            </p>
+                            <pre>
+&lt;+0&gt;: push   %ebp             // make stack frame<br>&lt;+1&gt;: mov    %esp,%ebp        // make stack frame<br>&lt;+3&gt;: push   %esi             // stash %esi<br>&lt;+4&gt;: sub    $0x14,%esp       // make stack frame<br>
+</pre>
+                            <p>
+                                x86 is stack-based. Parameters to a function are put at the top of the stack, and the rightmost parameters have the highest addresses. To execute the function, the <code>call</code> instruction was used. This instruction pushes the PC onto the stack, so even before we hit &lt;+0&gt; the parameters are four bytes above the stack pointer. In &lt;+0&gt; we save off the old stack frame value and in &lt;+1&gt; we establish our stack frame. At this point <code>ebp</code> is fixed for the entire function. In &lt;+3&gt; we save the old values of registers we're going to use, and in &lt;+4&gt; we allocate space on the stack.
+                            </p>
+                            <p>
+                                This is a perfect example of an ideal stack frame. <code>ebp</code> is the frame pointer. It points (to the stack) at the old frame pointer. <code>ebp</code>+4 is the PC of the function that called us. <code>ebp</code>+8 is the first parameter passed in, <code>ebp</code>+12 is the second, etc. Immediately below <code>ebp</code> are the values saved from the registers, which will be restored before the return. And below <em>that</em> is a bunch of stack space used for either register spillage or calling subsequent functions. One interesting note is that rarely are parameters pushed onto the stack for a call. The stack pointer doesn't move once we make it past the prologue. We just set the memory right above <code>esp</code> (the stack pointer) and make the call.
+                            </p>
+                            <pre>
+&lt;+7&gt;: mov    0x8(%ebp),%eax   // get WindowRef in %eax<br>&lt;+10&gt;: mov    0xc(%ebp),%esi   // get new title in %esi<br>
+</pre>
+                            <p>
+                                The parameters are passed on the stack. Since fiddling in memory is slow, we pull the values into registers. It's actually pretty analogous to how things go in PowerPC. There, lower registers like <code>r3</code> are reused for parameter passing so important values are kept in the high registers. On x86 the parameters go on the stack and values are kept in registers when possible. Why <code>eax</code> and <code>esi</code>? Why not?
+                            </p>
+                            <pre>
+&lt;+13&gt;: mov    %eax,(%esp)      // put WindowRef on the stack<br>&lt;+16&gt;: call   0x92dfb8f6 &lt;_Z13GetWindowDataP15OpaqueWindowPtr&gt;<br>
+</pre>
+                            <p>
+                                With the PowerPC, you can tell how many parameters a function has by seeing how many registers starting with <code>r3</code> are loaded. Here, we just look at the register indirect addressing with <code>esp</code>.
+                            </p>
+                            <pre>
+&lt;+21&gt;: mov    %eax,%edx        // stick WindowData into %edx<br>&lt;+23&gt;: mov    $0xffffea20,%eax // errInvalidWindowRef<br>&lt;+28&gt;: test   %edx,%edx        // if no window data, bail<br>&lt;+30&gt;: je     0x92e4bb04 &lt;+54&gt;<br>&lt;+32&gt;: test   %esi,%esi        // if no string to set, bail<br>&lt;+34&gt;: mov    $0xffce,%ax      // paramErr<br>&lt;+38&gt;: je     0x92e4bb04 &lt;+54&gt;<br>
+</pre>
+                            <p>
+                                Return values come back from functions in <code>eax</code>, but otherwise this is pretty much the same. The only thing of interest to note is the clever use of the peculiar register structure. In &lt;+23&gt; the constant <code>0xffffea20</code> is loaded into <code>eax</code>. But on &lt;+34&gt; the constant <code>0xffce</code> is loaded in <code>ax</code>. But since <code>ax</code> is just an alias for the lower 16 bits of <code>eax</code>, the upper half of the word is left as <code>0xffff</code> and we get the full constant <code>0xffffffce</code> in <code>eax</code>. Why do this? Because loading a 32 bit constant takes 5 bytes while loading a 16 bit constant only takes 4.<br>
+                            </p>
+                            <pre>
+&lt;+40&gt;: mov    %esi,0x4(%esp)   // load new title as param 2<br>&lt;+44&gt;: mov    %edx,(%esp)      // load WindowData as param 1<br>&lt;+47&gt;: call   0x92e4bb0c &lt;_ZN10WindowData14SetTitleCommonEPK10__CFString&gt;<br>&lt;+52&gt;: xor    %eax,%eax        // return noErr<br>
+</pre>
+                            <p>
+                                Same stuff as before. The one note is the zeroing of <code>eax</code> with an <code>xor</code>. Just a fancy trick as the generated code is <a href="http://en.wikibooks.org/wiki/X86_Disassembly/Code_Obfuscation">faster and smaller</a> than the equivalent <code>mov $0x0,%eax</code>.<br>
+                            </p>
+                            <pre>
+&lt;+54&gt;: add    $0x14,%esp       // tear down stack frame and return<br>&lt;+57&gt;: pop    %esi<br>&lt;+58&gt;: leave<br>&lt;+59&gt;: ret<br>&lt;+60&gt;: nop<br>&lt;+61&gt;: nop<br>
+</pre>
+                            <p>
+                                The mirror image of the stack frame creation.
+                            </p>
+                            <p>
+                                That's one function down and one left to go. <a href="http://googlemac.blogspot.com/2009/06/mac-os-x-spelunking-in-powerpc-and-x86.html">Next time</a>, we'll take a look at a function that behaves a little differently than this one did.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/29010370-7766054805757287032?l=googlemac.blogspot.com" alt="">
+                            </div>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/OfficialGoogleMacBlog?a=W_nvhKYCizM:ipO99Zay6Pc:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/OfficialGoogleMacBlog?d=yIl2AUoC8zA" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/OfficialGoogleMacBlog/~4/W_nvhKYCizM" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://googlemac.blogspot.com/2009/05/mac-os-x-spelunking-in-powerpc-and-x86.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+OfficialGoogleMacBlog+%28Official+Google+Mac+Blog%29">http://googlemac.blogspot.com/2009/05/mac-os-x-spelunking-in-powerpc-and-x86.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+OfficialGoogleMacBlog+%28Official+Google+Mac+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

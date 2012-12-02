@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Introduction to Unladen Swallow
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 03 Nov 2009 20:04:11 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-02T22:29:00-04:00">
+                    <meta itemprop="dateModified" content="2009-11-02T22:29:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-03T02:29:00+00:00">Nov 03</time>
+                    <h2 itemprop="title">
+                        Introduction to Unladen Swallow
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/725d2bd3e27f60ba">
+                        <blockquote>
+                            Unless you've been living under a rock for the past year (or have zero interest in either Python or dynamic languages, it which case why are you here?) you've probably heard of Unladen Swallow. Unladen Swallow is a Google funded branch of the CPython interpreter, with a goal of making CPython significantly faster while retaining both API and ABI compatibility. In this post I'm going to try to explain what it is Unladen Swallow is doing to bring a new burst of speed to the Python world.<br>
+                            <br>
+                            In terms of virtual machines there are a few levels of complexity, which roughly correspond to their speed. The simplest type of interpreter is an AST evaluator, these are more or less the lowest of the low on the speed totem pole, up until YARV was merged into the main Ruby interpreter, MRI (Matz Ruby Interpreter) was this type of virtual machine. The next level of VM is a bytecode interpreter, this means that the language is compiled to an intermediary format (bytecode) which is then executed. Strictly speaking this is an exceptionally broad category which encompasses most virtual machines today, however for the purposes of this article I'm going to exclude any VMs with a Just-In-Time compiler from this section (more on them later). The current CPython VM is this type of interpreter. The most complex (and fastest) type of virtual machine is one with a Just-In-Time compiler, this means that the bytecode that the virtual machine interprets is also dynamically compiled into assembly and executed. This type of VM includes modern Javascript interpreters such as V8, Tracemonkey, and Squirellfish, as well as other VMs like the Hotspot Java virtual machine.<br>
+                            <br>
+                            Now that we know where CPython is, and what the top of the totem pole looks like it's probably clear what Unladen Swallow is looking to accomplish, however there is a bit of prior art here that's worthy of taking a look. There is actually currently a JIT for CPython, named Psyco. Psyco is pretty commonly used to speed up numerical code, as that's what it's best at, but it can speed up most of the Python language. However, Psyco is extremely difficult to maintain and update. It only recently gained support for modern Python language features like generators, and it still only supports x86 CPUs. For these reasons the developers at Google chose to build their JIT rather than work to improve the existing solution (they also chose not to use one of the alternative Python VMs, I'll be discussing these in another post).<br>
+                            <br>
+                            I just said that Unladen Swallow looked to build their own JIT, but that's not entirely true. The developers have chosen not to develop their own JIT (meaning their own assembly generator, and register allocator, and optimizer, and everything else that goes along with a JIT), they have instead chosen to utilize the LLVM (Low Level Virtual Machine) JIT for all the code generation. What this means is that instead of doing all the work I've alluded the devs can instead translate the CPython bytecode into LLVM IR (intermediate representation) and then use LLVM's existing JIT infrastructure to do some of the heavy lifting. This gives the devs more time to focus on the interesting work of how to optimize the Python language.<br>
+                            <br>
+                            Now that I've layed out the background I'm going to dive into what exactly it is that Unladen Swallow does. Right now the CPython virtual machine looks something like this:<br>
+                            <pre>
+<br>    for opcode in opcodes:<br>        if opcode == BINARY_ADD:<br>            x, y = POP(), POP()<br>            z = x + y<br>            PUSH(z)<br>        elif opcode == JUMP_ABSOLUTE:<br>            pc = OPARG()<br>        # ...<br>
+</pre><br>
+                            This is both hugely simplified and translated into a Pythonesque psuedocode, but hopefully it makes the point clear, right now the CPython VM runs through the opcodes and based on what the opcode is executes some C code. This is particularly inefficient because there is a fairly substantial overhead to actually doing the dispatch on the opcode. What Unladen Swallow does is count the number of times a given Python function is called (the heuristic is actually slightly more complicated than this, but it's a good approximation of what happens), and when it reaches 10000 (the same value the JVM uses) it stops to compile the function using LLVM. Here what it does is essentially unrolls the interpreter loop, into the LLVM IR. So if you had the bytecode:<br>
+                            <pre>
+<br>    BINARY_ADD<br>
+</pre><br>
+                            Unladen Swallow would generate code like:<br>
+                            <pre>
+<br>    x, y = POP(), POP()<br>    z = x + y<br>    PUSH(z)<br>
+</pre><br>
+                            <br>
+                            This eliminates all of the overhead of the large loop in the interpreter. Unladen Swallow also performs a number of optimizations based on Python's semantics, but I'll be getting into those in another post, for now LLVM run it's optimizers, which can improve the generated code somewhat, and then CPython executes the generated function. Now whenever this function is called in the future the optimized, assembly version of it is called.<br>
+                            <br>
+                            This concludes the introduction to Unladen Swallow. Hopefully you've learned something about the CPython VM, Unladen Swallow, or virtual machines in general. In future posts I'm going to be diving in to some of the optimizations Unladen Swallow does, as well as what other players are doing in this space (particularly PyPy).
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/7176062489626496619-2178119911644916673?l=lazypython.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://lazypython.blogspot.com/2009/11/introduction-to-unladen-swallow.html">http://lazypython.blogspot.com/2009/11/introduction-to-unladen-swallow.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

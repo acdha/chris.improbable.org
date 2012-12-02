@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Python memory usage: is it worth sharing constant data?
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 19 Dec 2009 01:19:52 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-12-18T20:19:52-04:00">
+                    <meta itemprop="dateModified" content="2009-12-18T20:19:52-04:00"><time class="date" itemprop="datePublished" datetime="2009-12-19T00:19:52+00:00">Dec 19</time>
+                    <h2 itemprop="title">
+                        Python memory usage: is it worth sharing constant data?
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0c03b7a3c4e96094">
+                        <blockquote>
+                            I had some interesting conversations at <a href="http://fedoraproject.org/wiki/FUDCon:Toronto_2009" rel="nofollow">FUDcon Toronto</a> [1] about python's memory footprint, and about ways of reducing the whole-system memory pressure of a collection of Python processes, by sharing more pages of memory between them.<br>
+                            <br>
+                            We discussed sharing memory between python processes.<br>
+                            <br>
+                            One approach to doing this would be to write some kind of support for starting python as a "zygote process", where we keep a started-up python process around, forking from it, so that the freshly forked process (in theory) uses only memory for the pages that become different (copy-on-write). As I understand it, this is how <a href="http://code.google.com/p/chromium/wiki/LinuxZygote" rel="nofollow">Chromium implements its tabs</a>.<br>
+                            <br>
+                            Bernie Innocenti apparently tried this for OLPC's activities (each a PyGTK process) but only got 10-20% sharing. The problem is that every python object embeds a reference count, and constantly increments/decrements those ob_refcnt fields, leading to unsharing of the pages.<br>
+                            <br>
+                            One way of improving this might be to invent a magic refcount value (e.g. 0) that means "don't refcount this", so that pages can be shared (stuff that's been created at vm startup will probably be long-lived). (do we need the ability to "seal" an object, to optimize for the common case where nothing's been monkeypatched?)<br>
+                            <br>
+                            (Or we could completely scrap refcounting and go to a full gc model, but I'm looking for easy wins here)<br>
+                            <br>
+                            A similar approach that doesn't require us to have a zygote process is to use <a href="http://fedoraproject.org/wiki/Features/KSM" rel="nofollow">KSM (Kernel SamePage Merging)</a>. This is a feature added in recent versions of the Linux kernel, where a program can mark regions of its address space. The kernel can try to hash these pages, and pages that are bit-for-bit identical will be shared in RAM across the various processes.<br>
+                            <br>
+                            KSM was developed by Qumranet hackers (now at Red Hat) for use in KVM. Perhaps Python could use it?<br>
+                            <br>
+                            Unfortunately I don't think this approach will work either: all of the various PyObject* pointers cross-referencing the data in memory will be non-equal, and that will kill the sharing; the pages are unlikely to be bit-for-bit identical.<br>
+                            <br>
+                            One idea for achieving equality of pages was to mimic how we build emacs: as I understand it, we build emacs as a process, then take a core-dump of it. On starting up emacs we bring the coredump back to life. (I may be horribly mischaracterizing this - it seems very fragile to me).<br>
+                            <br>
+                            An approach that sounded promising was to try to consolidate the representation of the immutable blobs of data in the loaded python modules: the docstrings, the constant strings and unicode representations; the bytecode blobs (actually these are PyStringObjects).<br>
+                            <br>
+                            The idea was a new variant of .pyc/.pyo. A .pyc file is a hierarchical representation of a parsed python module, containing everything needed at runtime (e.g. optimized bytecodes blobs rather than source strings, with links to the constants needed in the code) serialized to disk using the "marshal" module. It's analogous to pickle, except that the marshal format only caters to strict hierarchies of objects, whereas pickle supports cross-references, and this the marshal code can be simpler (and hopefully more efficient).<br>
+                            <br>
+                            So in our proposed variant of .pyc, we would split the data into two streams:<br>
+                            - control data for building the hierarchy of objects, to be thrown away after the module is loaded<br>
+                            - "large" data to be mmap-ed, to persist in the process' address space after the module is loaded, with the kernel sharing all instances of this data in RAM between all python processes.<br>
+                            <br>
+                            This would require hooks in PyStringObject (need PyBytesObject to do it for py3k) e.g. a new ob_sstate: SSTATE_INTERNED_MMAPPED, which places the bytes in a pointer elsewhere in the address space.<br>
+                            <br>
+                            Some approaches to doing this:<br>
+                            - use the .pyc format as is. Unfortunately I don't think this works: currently they're written to disk as (size, bytes) without a nul terminator, whereas PyStringObject assumes that ob_sval is nul-terminated.<br>
+                            - come up with a simple variant of .pyc that splits the marshalled data into two streams (as above), storing offsets into the second stream within the first whenever writing out e.g. a PyStringObject<br>
+                            - use the ELF format directly: ELF is a binary format supporting multiple chunks/streams of data, with room for expansion, and a library and command-line tools for manipulating them. We could invent some new types of section. However I suspect that tools for dealing with ELF files are only readily-available on Linux (it happens to be the native format for executables and shared libraries) (we came up with the name ".pye" to refer to these ELF-based bytecode files)<br>
+                            <br>
+                            Another idea was linkage: to try to link together all of the .pyc files per RPM into one big file, linking together the large sections as far as possible, or perhaps a big sqlite db mapping dotted path to .pyc files for standard modules. The idea here was to try to reduce the number of syscalls needed to locate the .py files.<br>
+                            <br>
+                            As it turned out, this seems to have been a classic case of optimizing without measuring.<br>
+                            <br>
+                            Looking at the "stat" case, starting up the python interpreter 100 times:<br>
+                            <pre>
+[david@brick ~]$ time (for i in $(seq 1 100) ; do python -c "pass" ; done)
+
+real    0m3.129s
+user    0m2.328s
+sys     0m0.652s
+</pre><br>
+                            <br>
+                            ...so the bulk of the time taken is in user-space, rather than waiting on the kernel. (We tried this on the OLPC "boot animation" workload, and I believe the real slowdown is an accidental syncronous call that should have been asyncronous, that's stalling on waiting for a socket to close).<br>
+                            <br>
+                            On my return from the conference I spent some time trying to capture real measurements to justify a possible pyc rewrite.<br>
+                            <br>
+                            To look at the memory usage of all of those shared docstrings, I wrote some systemtap scripts.<br>
+                            <br>
+                            You can see the latest version here: <a href="http://dmalcolm.fedorapeople.org/systemtap/marshal.stp" rel="nofollow">http://dmalcolm.fedorapeople.org/systemtap/marshal.stp</a><br>
+                            <br>
+                            I trieds various approaches to instrumentation.<br>
+                            <br>
+                            The one I've settled on is to instrument returns from the r_object() call in Python/marshal.c, and to record PyObject* instances returned from that function that are of ob_type "str" (i.e. are PyStringObject instances) and have ob_refcnt == 1 (i.e. they are shared with anything, and haven't been interned).<br>
+                            <br>
+                            Assuming I've instrumented things correctly, a simple startup of the interpreter under systemtap:<br>
+                            $ stap -v marshal.stp -c"python -c'pass'"<br>
+                            has this usage of unique strings (the "value" is the length of the string); note that this includes docstrings, constant strings, and bytecode blobs:<br>
+                            (snipped, full output here: <a href="http://dmalcolm.fedorapeople.org/systemtap/output-of-marshal.stp-on-python-pass.txt" rel="nofollow">http://dmalcolm.fedorapeople.org/systemtap/output-of-marshal.stp-on-python-pass.txt</a> )<br>
+                            <pre>
+Total cumulative size of r_object() calls returning strings with refcnt==1:  192K
+value |-------------------------------------------------- count
+    0 |                                                     0
+    1 |@@                                                  54
+    2 |@@@@@@@@@@@@@@                                     291
+    4 |@@@@@@@@@@@                                        238
+    8 |@@@@@@@@@@@@@@                                     281
+   16 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    959
+   32 |@@@@@@@@@@@@@@@@@@@@@                              432
+   64 |@@@@@@@@@                                          196
+  128 |@@@@@@                                             138
+  256 |@@@@                                                97
+  512 |@@                                                  45
+ 1024 |                                                    11
+ 2048 |                                                     5
+ 4096 |                                                     1
+ 8192 |                                                     1
+16384 |                                                     0
+32768 |                                                     0
+</pre><br>
+                            <br>
+                            so (assuming my method is correct) we'd save 192K of mmap-ed data per python process.<br>
+                            <br>
+                            For the OLPC case, each "activity" on the laptop is a python process that typically imports the GTK and DBus modules.<br>
+                            <br>
+                            This shows a larger saving: 431K per python process:<br>
+                            <pre>
+$ stap -v marshal.stp -c"python -c'import gtk; import dbus'"
+</pre><br>
+                            (output snipped; full output here: <a href="http://dmalcolm.fedorapeople.org/systemtap/output-of-marshal.stp-on-python-import-gtk-and-dbus.txt" rel="nofollow">http://dmalcolm.fedorapeople.org/systemtap/output-of-marshal.stp-on-python-import-gtk-and-dbus.txt</a> )<br>
+                            <pre>
+Total cumulative size of r_object() calls returning strings with refcnt==1:  431K
+value |-------------------------------------------------- count
+    0 |                                                      0
+    1 |@                                                    65
+    2 |@@@@@@@@@@@@@                                       534
+    4 |@@@@@@@@@@@@@@                                      565
+    8 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@                   1302
+   16 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   1958
+   32 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@                      1173
+   64 |@@@@@@@@@@@                                         478
+  128 |@@@@@@@@                                            336
+  256 |@@@@@                                               216
+  512 |@@                                                   87
+ 1024 |                                                     22
+ 2048 |                                                     10
+ 4096 |                                                      2
+ 8192 |                                                      1
+16384 |                                                      0
+32768 |                                                      0
+</pre><br>
+                            <br>
+                            Similarly, I suspect that there may be savings if you have numerous python web apps on one box (mod_wsgi daemon mode?), or via KSM savings as above if dealing with multiple guest VMs running python on one host.<br>
+                            <br>
+                            Worth pursuing?<br>
+                            <br>
+                            I also started looking at "yum"'s memory usage; see <a href="http://dmalcolm.fedorapeople.org/systemtap/output-of-marshal.stp-on-yum-whatprovides-python.txt" rel="nofollow">http://dmalcolm.fedorapeople.org/systemtap/output-of-marshal.stp-on-yum-whatprovides-python.txt</a> . I wrote a systemtap script to try to instrument the various levels of memory allocation inside the python runtime; see <a href="http://dmalcolm.fedorapeople.org/systemtap/python-mem.stp" rel="nofollow">http://dmalcolm.fedorapeople.org/systemtap/python-mem.stp</a> ; unfortunately this script doesn't work yet, owing to <a href="https://bugzilla.redhat.com/show_bug.cgi?id=546006" rel="nofollow">a systemtap bug</a>. Hopefully when that's fixed we can get some real insight into this.<br>
+                            <br>
+                            <br>
+                            [1] with <a href="http://codewiz.org/" rel="nofollow">Bernie Innocenti</a>, <a href="http://cgwalters.livejournal.com/">Colin Walters</a>, <a href="http://lewk.org/blog" rel="nofollow">Luke Macken</a>, <a href="http://people.freedesktop.org/~ajax/" rel="nofollow">Adam Jackson</a> and others; please forgive me if I've forgotten you.
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dmalcolm.livejournal.com/4183.html">http://dmalcolm.livejournal.com/4183.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            More code reuse patterns in YUI3
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 07 Jan 2010 14:41:19 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-07T09:41:19-04:00">
+                    <meta itemprop="dateModified" content="2010-01-07T09:41:19-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-07T13:41:19+00:00">Jan 07</time>
+                    <h2 itemprop="title">
+                        More code reuse patterns in YUI3
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/6829a4f86e01457f">
+                        <blockquote>
+                            <div>
+                                <div>
+                                    <p>
+                                        <img src="http://yuiblog.com/assets/stoyan.jpg" alt="Stoyan Stefanov." align="right" hspace="10" vspace="5"><em><strong>About the Author:</strong> <a href="http://www.phpied.com">Stoyan Stefanov</a> (<a href="http://twitter.com/stoyanstefanov">@stoyanstefanov</a>) is a front-end engineer at Yahoo! Search. He is also the architect of YSlow 2.0, co-creator of the smush.it image optimizer, speaker and technical writer. His latest book is called <a href="http://www.packtpub.com/object-oriented-javascript-applications-libraries/book">Object-Oriented JavaScript</a>.</em>
+                                    </p>
+                                </div>
+                            </div>
+                            <p>
+                                This post is a follow-up to the article <a href="http://www.yuiblog.com/blog/2010/01/06/inheritance-patterns-in-yui-3/">“Inheritance patterns in YUI3″</a> and dives deeper into the YUI3 APIs showing more patterns for code reuse. The <a href="http://en.wikipedia.org/wiki/Design_Patterns_%28book%29">Gang of Four book</a> advocates that we should “prefer object composition to class inheritance”. And in fact, inheritance is sometimes used as a workaround in strongly typed languages where the signature of an object or a class needs to be fixed at compile time. JavaScript is loosely typed and objects can be composed, mixed and augmented at any time.
+                            </p>
+                            <h2>
+                                Augmenting objects
+                            </h2>
+                            <p>
+                                In real-life JavaScript, it’s rare that you would have to setup deep inheritance chains. Often you may only want to augment an existing object (or a constructor) with the members of another, without necessarily forming a parent-child relationship. YUI offers the method <code>Y.augment(...)</code> to do just that.
+                            </p>
+                            <p>
+                                The following example illustrates the difference between the proper inheritance with <code>Y.extend(...)</code> and the simple object augmentation with <code>Y.augment(...)</code>.
+                            </p>
+                            <pre>
+// parent, a.k.a. supplier of functionality
+function Programmer(){}
+Programmer.prototype.writeCode = function(){};
+
+// a constructor that gets augmented with supplier's members
+function CodeMonkey(){}
+Y.augment(CodeMonkey, Programmer);
+var monkey = new CodeMonkey();
+
+// a constructor that inherits from the parent-supplier
+function Guru(){}
+Y.extend(Guru, Programmer);
+var guru = new Guru();
+</pre>
+                            <p>
+                                Now that we’ve reused <code>Programmer</code>’s functionality in two ways, let’s test the outcome. Both objects <code>monkey</code> and <code>guru</code> now get a <code>writeCode()</code> method, but only the <code>guru</code> is part of the inheritance chain.
+                            </p>
+                            <pre>
+alert(typeof monkey.writeCode); // "function"
+alert(typeof guru.writeCode); // "function"
+
+// monkey is not a Programmer, while guru is
+alert(monkey instanceof Programmer); // false
+alert(guru instanceof Programmer); // true
+</pre>
+                            <p>
+                                <code>Y.augment(...)</code> can also take an object (as opposed to a constructor) to be augmented.
+                            </p>
+                            <pre>
+var n00b = {};
+Y.augment(n00b, Programmer);
+
+// now n00b can writeCode
+alert(typeof n00b.writeCode); // "function"
+</pre>
+                            <p>
+                                <code>Y.augment(...)</code> allows the recipient to be more picky when reusing code from the supplier. An optional third parameter to <code>Y.augment(...)</code> defines whether existing properties should be overwritten (<code>false</code> by default, meaning preserve the original properties of the recipient). The fourth parameter can optionally provide a whitelist – an array containing the names of the properties that should be carried over.
+                            </p>
+                            <h2>
+                                Cloning
+                            </h2>
+                            <p>
+                                Cloning objects is yet another pattern for code reuse, which allows you to create brand new objects which are just like existing ones. In a way, the idea is similar to the prototypal inheritance (see <code>Y.Object(...)</code> in the previous article), where objects inherit from objects. The main difference is that when cloning, the parent’s properties get copied to the child directly, not through the prototype chain.
+                            </p>
+                            <p>
+                                <code>Y.clone(...)</code> creates a deep copy, meaning it recurses through array and object properties. It also creates copies by value, so that the cloned object doesn’t modify the parent by mistake (in JavaScript arrays, objects and functions are copied by reference).
+                            </p>
+                            <p>
+                                To illustrate the difference, consider an object <code>pro</code> that gets cloned into a new object <code>clone</code> and also inherited as <code>wiz</code> using <code>Y.Object(...)</code>.
+                            </p>
+                            <pre>
+// original object
+var pro = {groks: ['html']};
+
+// inherit
+var wiz = Y.Object(pro);
+
+// clone
+var clone = Y.clone(pro);
+</pre>
+                            <p>
+                                Now let’s add a new array element to the original object
+                            </p>
+                            <pre>
+pro.groks.push('css');
+</pre>
+                            <p>
+                                The child object sees the updated value, while the clone doesn’t, because the clone is a snapshot of what the object was at the time of cloning.
+                            </p>
+                            <pre>
+wiz.groks.join(); // "html,css"
+clone.groks.join(); //"html"
+</pre>
+                            <p>
+                                This works the other way around as well – when the child modifies the array.
+                            </p>
+                            <pre>
+wiz.groks.push('js');
+pro.groks.join(); // "html,css,js"
+clone.groks.join(); // "html"
+</pre>
+                            <h3>
+                                Clone discussion
+                            </h3>
+                            <p>
+                                As you can see <code>Y.clone(...)</code> creates new objects by deep-copying all their properties and methods. Although this is probably not what you’d normally call inheritance, it’s still a pretty simple and straightforward pattern for code reuse. After all code reuse is about avoiding the need to duplicate code and reusing existing functionality.
+                            </p>
+                            <p>
+                                Something you may be wondering – what about performance? Isn’t it inefficient to copy values like that. The answer is – yes, it could be inefficient. But for most applications this would rarely be the bottleneck. In fact <a href="http://getfirebug.com">Firebug</a> (Firefox extensions are written in JavaScript), which is a pretty complex piece of software has an <code>extend()</code> method which works by simply copying properties from the parent object to the child object, using a shallow copy (not recursing into objects and arrays).
+                            </p>
+                            <p>
+                                So, since cloning is just deep-copying properties from one object to another, wouldn’t it be nice if you can inherit functionality from multiple objects, not only from one? This is where <code>Y.merge(...)</code> comes to help you with this sort of mix-in objects.
+                            </p>
+                            <h2>
+                                Mixin objects with <code>Y.merge(...)</code>
+                            </h2>
+                            <p>
+                                The mixin pattern allows you to grab properties and methods from multiple objects and carry them over into a new object. YUI3 provides the method <code>Y.merge(...)</code> which can take any number of objects and return a single one which is a mix of all source objects.
+                            </p>
+                            <p>
+                                Here’s an example:
+                            </p>
+                            <pre>
+var mad_skillz = {bake: function(){}, mix: function(){}, eat: function(){}};
+var ingredients = {sugar: "lots", flour: 1, eggs: 2};
+var dairy = {milk: 1};
+
+// mixin
+var cake = Y.merge(mad_skillz, ingredients, dairy);
+</pre>
+                            <p>
+                                Now you can test which properties got carried over to the <code>cake</code> object using the convenient method <code>Y.Object.keys(...)</code> which gives you an array of all property names.
+                            </p>
+                            <pre>
+Y.Object.keys(cake).join(); // "bake,mix,eat,sugar,flour,eggs,milk"
+</pre>
+                            <p>
+                                <code>Y.merge(...)</code> resembles cloning, but instead of deep-copying one object, it creates a shallow copy and can take multiple objects to mix with the same method call. The overwriting logic of <code>Y.merge(...)</code> in cases of property naming collisions is different than most other methods – if you have two members with the same name, the last one wins and overwrites the previous.
+                            </p>
+                            <p>
+                                Just like with <code>Y.clone(...)</code>, <code>Y.merge(...)</code> is not necessarily limited to the purposes of code reuse. You can use them also for manipulating arrays or any sort of hash-like objects, such as configuration objects.
+                            </p>
+                            <h2>
+                                <code>Y.mix(...)</code>
+                            </h2>
+                            <p>
+                                <code>Y.mix(...)</code> is the lower-level method behind most of the functionality discussed above. It offers you a fine-grained control over which properties get copied and where exactly. It also allows you to combine two properties with the same names, ignore certain properties and so on.
+                            </p>
+                            <p>
+                                Here’s a somewhat complex example of using the <code>Y.mix(...)</code> API:
+                            </p>
+                            <pre>
+// an object
+var pro = {
+  groks: ['html', 'css', 'js'],
+  speaks: ['Latin'],
+  tweets: true
+};
+
+// a constructor
+function WebGuru(){}
+
+// augmenting the prototype of the constructor
+// with some of pro's properties
+Y.mix(WebGuru, pro, true, ['groks', 'tweets'], 4);
+
+// test
+var guru = new WebGuru();
+guru.groks.join(); // "html,css,js"
+guru.tweets; // true
+guru.speeks; // undefined
+</pre>
+                            <p>
+                                If you look at the call to <code>Y.mix(...)</code>, we have 5 arguments, meaning:
+                            </p>
+                            <ol>
+                                <li>
+                                    <code>WebGuru</code> gets more members…
+                                </li>
+                                <li>from <code>pro</code> …
+                                </li>
+                                <li>overwriting any existing ones…
+                                </li>
+                                <li>only if they are in this whitelist array <code>['groks', 'tweets']</code>. This means that the <code>speaks</code> property will not be mixed
+                                </li>
+                                <li>4 is the mode. There are five mixing modes – 0 to 4, where 4 means that the <em>prototype</em> of <code>WebGuru</code> will receive members from <code>pro</code>.
+                                </li>
+                            </ol>
+                            <p>
+                                You can <a href="http://developer.yahoo.com/yui/3/api/YUI.html#method_mix">check the docs</a> for more information on the parameters accepted by <code>Y.mix(...)</code>.
+                            </p>
+                            <h2>
+                                That’s all folks!
+                            </h2>
+                            <p>
+                                Thank you for reading! For more information and examples on the OOP functionality in YUI3, you can consult these links:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://developer.yahoo.com/yui/theater/video.php?v=kloots-yuiconf2009-sugar">Todd Kloots’ "YUI 3 Sugar" presentation</a> from YUIConf on <a href="http://developer.yahoo.com/yui/theater/">YUI Theater</a>
+                                </li>
+                                <li>OOP module <a href="http://developer.yahoo.com/yui/3/api/YUI~oop.html">API docs</a>
+                                </li>
+                                <li>Highlighted source of the <a href="http://developer.yahoo.com/yui/3/api/oop.js.html">OOP module</a>
+                                </li>
+                                <li>Functional examples of using <a href="http://developer.yahoo.com/yui/3/examples/yui/yui-augment.html">augment</a>, <a href="http://developer.yahoo.com/yui/3/examples/yui/yui-mix.html">mix</a> and <a href="http://developer.yahoo.com/yui/3/examples/yui/yui-merge.html">merge</a>
+                                </li>
+                            </ul>
+                            <div>
+                                <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=_QzlgKPohR0:kovLN0vK-AE:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=_QzlgKPohR0:kovLN0vK-AE:dnMXMwOfBR0"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=dnMXMwOfBR0" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=_QzlgKPohR0:kovLN0vK-AE:7Q72WNTAKBA"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?d=7Q72WNTAKBA" border="0"></a> <a href="http://feeds.yuiblog.com/~ff/yuiblog/development?a=_QzlgKPohR0:kovLN0vK-AE:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/yuiblog/development?i=_QzlgKPohR0:kovLN0vK-AE:D7DqB2pKExk" border="0"></a>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.yuiblog.com/blog/2010/01/07/more-code-reuse-patterns-in-yui3/">http://www.yuiblog.com/blog/2010/01/07/more-code-reuse-patterns-in-yui3/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

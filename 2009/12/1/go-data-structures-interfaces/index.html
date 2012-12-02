@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Go Data Structures: Interfaces
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 22 Mar 2011 18:25:44 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-12-01T12:00:00-04:00">
+                    <meta itemprop="dateModified" content="2009-12-01T12:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-12-01T16:00:00+00:00">Dec 01</time>
+                    <h2 itemprop="title">
+                        Go Data Structures: Interfaces
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/eba06bc6a92ced97">
+                        <blockquote>
+                            <p>
+                                Go's interfaces—static, checked at compile time, dynamic when asked for—are, for me, the most exciting part of Go from a language design point of view. If I could export one feature of Go into other languages, it would be interfaces.
+                            </p>
+                            <p>
+                                This post is my take on the implementation of interface values in the “gc” compilers: 6g, 8g, and 5g. Over at Airs, Ian Lance Taylor has written <a href="http://www.airs.com/blog/archives/277">two</a> <a href="http://www.airs.com/blog/archives/276">posts</a> about the implementation of interface values in <code>gccgo</code>. The implementations are more alike than different: the biggest difference is that this post has pictures.
+                            </p>
+                            <p>
+                                Before looking at the implementation, let's get a sense of what it must support.
+                            </p>
+                            <h3>
+                                Usage
+                            </h3>
+                            <p>
+                                Go's interfaces let you use <a href="http://en.wikipedia.org/wiki/Duck_typing">duck typing</a> like you would in a purely dynamic language like Python but still have the compiler catch obvious mistakes like passing an <code>int</code> where an object with a <code>Read</code> method was expected, or like calling the <code>Read</code> method with the wrong number of arguments. To use interfaces, first define the interface type (say, <code>ReadCloser</code>):
+                            </p>
+                            <pre>
+type ReadCloser interface {
+    Read(b []byte) (n int, err os.Error)
+    Close()
+}
+</pre>
+                            <p>
+                                and then define your new function as taking a <code>ReadCloser</code>. For example, this function calls <code>Read</code> repeatedly to get all the data that was requested and then calls <code>Close</code>:
+                            </p>
+                            <pre>
+func ReadAndClose(r ReadCloser, buf []byte) (n int, err os.Error) {
+    for len(buf) &gt; 0 &amp;&amp; err == nil {
+        var nr int
+        nr, err = r.Read(buf)
+        n += nr
+        buf = buf[nr:]
+    }
+    r.Close()
+    return
+}
+</pre>
+                            <p>
+                                The code that calls <code>ReadAndClose</code> can pass a value of any type as long as it has <code>Read</code> and <code>Close</code> methods with the right signatures. And, unlike in languages like Python, if you pass a value with the wrong type, you get an error at compile time, not run time.
+                            </p>
+                            <p>
+                                Interfaces aren't restricted to static checking, though. You can check dynamically whether a particular interface value has an additional method. For example:
+                            </p>
+                            <pre>
+type Stringer interface {
+    String() string
+}
+
+func ToString(any interface{}) string {
+    if v, ok := any.(Stringer); ok {
+        return v.String()
+    }
+    switch v := any.(type) {
+    case int:
+        return strconv.Itoa(v)
+    case float:
+        return strconv.Ftoa(v, 'g', -1)
+    }
+    return "???"
+}
+</pre>
+                            <p>
+                                The value <code>any</code> has static type <code>interface{}</code>, meaning no guarantee of any methods at all: it could contain any type. The “comma ok” assignment inside the <code>if</code> statement asks whether it is possible to convert <code>any</code> to an interface value of type <code>Stringer</code>, which has the method <code>String</code>. If so, the body of that statement calls the method to obtain a string to return. Otherwise, the <code>switch</code> picks off a few basic types before giving up. This is basically a stripped down version of what the <a href="http://golang.org/pkg/fmt/">fmt package</a> does. (The <code>if</code> could be replaced by adding <code>case Stringer:</code> at the top of the <code>switch</code>, but I used a separate statement to draw attention to the check.)
+                            </p>
+                            <p>
+                                As a simple example, let's consider a 64-bit integer type with a <code>String</code> method that prints the value in binary and a trivial <code>Get</code> method:
+                            </p>
+                            <pre>
+type Binary uint64
+
+func (i Binary) String() string {
+    return strconv.Uitob64(i.Get(), 2)
+}
+
+func (i Binary) Get() uint64 {
+    return uint64(i)
+}
+</pre>
+                            <p>
+                                A value of type <code>Binary</code> can be passed to <code>ToString</code>, which will format it using the <code>String</code> method, even though the program never says that <code>Binary</code> intends to implement <code>Stringer</code>. There's no need: the runtime can see that <code>Binary</code> has a <code>String</code> method, so it implements <code>Stringer</code>, even if the author of <code>Binary</code> has never heard of <code>Stringer</code>.
+                            </p>
+                            <p>
+                                These examples show that even though all the implicit conversions are checked at compile time, explicit interface-to-interface conversions can inquire about method sets at run time. “<a href="http://golang.org/doc/effective_go.html#interfaces">Effective Go</a>” has more details about and examples of how interface values can be used.
+                            </p>
+                            <h3>
+                                Interface Values
+                            </h3>
+                            <p>
+                                Languages with methods typically fall into one of two camps: prepare tables for all the method calls statically (as in C++ and Java), or do a method lookup at each call (as in Smalltalk and its many imitators, JavaScript and Python included) and add fancy caching to make that call efficient. Go sits halfway between the two: it has method tables but computes them at run time. I don't know whether Go is the first language to use this technique, but it's certainly not a common one. (I'd be interested to hear about earlier examples; leave a comment below.)
+                            </p>
+                            <p>
+                                As a warmup, a value of type <code>Binary</code> is just a 64-bit integer made up of two 32-bit words (like in the <a href="http://research.swtch.com/2009/11/go-data-structures.html">last post</a>, we'll assume a 32-bit machine; this time memory grows down instead of to the right):
+                            </p>
+                            <center>
+                                <img src="http://3.bp.blogspot.com/_ucVxjWlZXr0/SxSw1clnzYI/AAAAAAAAAAc/MgxokAz6lAw/s400/gointer1.png">
+                            </center>
+                            <p>
+                                Interface values are represented as a two-word pair giving a pointer to information about the type stored in the interface and a pointer to the associated data. Assigning <code>b</code> to an interface value of type <code>Stringer</code> sets both words of the interface value.
+                            </p>
+                            <center>
+                                <img src="http://2.bp.blogspot.com/_ucVxjWlZXr0/SxSw1nK9lHI/AAAAAAAAAAk/pFbY7cgMyV4/s1600/gointer2.png">
+                            </center>
+                            <p>
+                                (The pointers contained in the interface value are gray to emphasize that they are implicit, not directly exposed to Go programs.)
+                            </p>
+                            <p>
+                                The first word in the interface value points at what I call an interface table or itable (pronounced i-table; in the <a href="http://golang.org/src/pkg/runtime/iface.c#L23">runtime sources</a>, the C implementation name is <code>Itab</code>). The itable begins with some metadata about the types involved and then becomes a list of function pointers. Note that the itable corresponds to the <i>interface type</i>, not the dynamic type. In terms of our example, the itable for <code>Stringer</code> holding type <code>Binary</code> lists the methods used to satisfy <code>Stringer</code>, which is just <code>String</code>: <code>Binary</code>'s other methods (<code>Get</code>) make no appearance in the itable.
+                            </p>
+                            <p>
+                                The second word in the interface value points at the actual data, in this case a copy of <code>b</code>. The assignment <code>var s Stringer = b</code> makes a copy of <code>b</code> rather than point at <code>b</code> for the same reason that <code>var c uint64 = b</code> makes a copy: if <code>b</code> later changes, <code>s</code> and <code>c</code> are supposed to have the original value, not the new one. Values stored in interfaces might be arbitrarily large, but only one word is dedicated to holding the value in the interface structure, so the assignment allocates a chunk of memory on the heap and records the pointer in the one-word slot. (There's an obvious optimization when the value does fit in the slot; we'll get to that later.)
+                            </p>
+                            <p>
+                                To check whether an interface value holds a particular type, as in the <a href="http://research.swtch.com/">type switch</a> above, the Go compiler generates code equivalent to the C expression <code>s.tab-&gt;type</code> to obtain the type pointer and check it against the desired type. If the types match, the value can be copied by by dereferencing <code>s.data</code>.
+                            </p>
+                            <p>
+                                To call <code>s.String()</code>, the Go compiler generates code that does the equivalent of the C expression <code>s.tab-&gt;fun[0](s.data)</code>: it calls the appropriate function pointer from the itable, passing the interface value's data word as the function's first (in this example, only) argument. You can see this code if you run <code>8g -S x.go</code> (details at the bottom of this post). Note that the function in the itable is being passed the 32-bit pointer from the second word of the interface value, not the 64-bit value it points at. In general, the interface call site doesn't know the meaning of this word nor how much data it points at. Instead, the interface code arranges that the function pointers in the itable expect the 32-bit representation stored in the interface values. Thus the function pointer in this example is <code>(*Binary).String</code> not <code>Binary.String</code>.
+                            </p>
+                            <p>
+                                The example we're considering is an interface with just one method. An interface with more methods would have more entries in the <i>fun</i> list at the bottom of the itable.
+                            </p>
+                            <h3>
+                                Computing the Itable
+                            </h3>
+                            <p>
+                                Now we know what the itables look like, but where do they come from? Go's dynamic type conversions mean that it isn't reasonable for the compiler or linker to precompute all possible itables: there are too many (interface type, concrete type) pairs, and most won't be needed. Instead, the compiler generates a type description structure for each concrete type like <code>Binary</code> or <code>int</code> or <code>func(map[int]string)</code>. Among other metadata, the type description structure contains a list of the methods implemented by that type. Similarly, the compiler generates a (different) type description structure for each interface type like <code>Stringer</code>; it too contains a method list. The interface runtime computes the itable by looking for each method listed in the interface type's method table in the concrete type's method table. The runtime caches the itable after generating it, so that this correspondence need only be computed once.
+                            </p>
+                            <p>
+                                In our simple example, the method table for <code>Stringer</code> has one method, while the table for <code>Binary</code> has two methods. In general there might be <i>ni</i> methods for the interface type and <i>nt</i> methods for the concrete type. The obvious search to find the mapping from interface methods to concrete methods would take <i>O</i>(<i>ni</i> × <i>nt</i>) time, but we can do better. By sorting the two method tables and walking them simultaneously, we can <a href="http://code.google.com/p/go/source/browse/src/pkg/runtime/iface.c#98">build the mapping</a> in <i>O</i>(<i>ni</i> + <i>nt</i>) time instead.
+                            </p>
+                            <h3>
+                                Memory Optimizations
+                            </h3>
+                            <p>
+                                The space used by the implementation described above can be optimized in two complementary ways.
+                            </p>
+                            <p>
+                                First, if the interface type involved is empty—it has no methods—then the itable serves no purpose except to hold the pointer to the original type. In this case, the itable can be dropped and the value can point at the type directly:
+                            </p>
+                            <center>
+                                <img src="http://2.bp.blogspot.com/_ucVxjWlZXr0/SxSw1zlAeEI/AAAAAAAAAAs/1ZgOqPcvQ6g/s400/gointer3.png">
+                            </center>
+                            <p>
+                                Whether an interface type has methods is a static property—either the type in the source code says <code>interface{}</code> or it says <code>interace{ methods... }</code>—so the compiler knows which representation is in use at each point in the program.
+                            </p>
+                            <p>
+                                Second, if the value associated with the interface value can fit in a single machine word, there's no need to introduce the indirection or the heap allocation. If we define <code>Binary32</code> to be like <code>Binary</code> but implemented as a <code>uint32</code>, it could be stored in an interface value by keeping the actual value in the second word:
+                            </p>
+                            <center>
+                                <img src="http://1.bp.blogspot.com/_ucVxjWlZXr0/SxSw14jfr6I/AAAAAAAAAA0/eisj90tRh6o/s1600/gointer4.png">
+                            </center>
+                            <p>
+                                Whether the actual value is being pointed at or inlined depends on the size of the type. The compiler arranges for the functions listed in the type's method table (which get copied into the itables) to do the right thing with the word that gets passed in. If the receiver type fits in a word, it is used directly; if not, it is dereferenced. The diagrams show this: in the <code>Binary</code> version far above, the method in the itable is <code>(*Binary).String</code>, while in the <code>Binary32</code> example, the method in the itable is <code>Binary32.String</code> not <code>(*Binary32).String</code>.
+                            </p>
+                            <p>
+                                Of course, empty interfaces holding word-sized (or smaller) values can take advantage of both optimizations:
+                            </p>
+                            <center>
+                                <img src="http://4.bp.blogspot.com/_ucVxjWlZXr0/SxSw2F8hWII/AAAAAAAAAA8/FgK2kI2QaSE/s400/gointer5.png">
+                            </center>
+                            <h3>
+                                Method Lookup Performance
+                            </h3>
+                            <p>
+                                Smalltalk and the many dynamic systems that have followed it perform a method lookup every time a method gets called. For speed, many implementations use a simple one-entry cache at each call site, often in the instruction stream itself. In a multithreaded program, these caches must be managed carefully, since multiple threads could be at the same call site simultaneously. Even once the races have been avoided, the caches would end up being a source of memory contention.
+                            </p>
+                            <p>
+                                Because Go has the hint of static typing to go along with the dynamic method lookups, it can move the lookups back from the call sites to the point when the value is stored in the interface. For example, consider this code snippet:
+                            </p>
+                            <pre>
+1   var any interface{}  // initialized elsewhere
+2   s := any.(Stringer)  // dynamic conversion
+3   for i := 0; i &lt; 100; i++ {
+4       fmt.Println(s.String())
+5   }
+</pre>
+                            <p>
+                                In Go, the itable gets computed (or found in a cache) during the assignment on line 2; the dispatch for the <code>s.String()</code> call executed on line 4 is a couple of memory fetches and a single indirect call instruction.
+                            </p>
+                            <p>
+                                In contrast, the implementation of this program in a dynamic language like Smalltalk (or JavaScript, or Python, or ...) would do the method lookup at line 4, which in a loop repeats needless work. The cache mentioned earlier makes this less expensive than it might be, but it's still more expensive than a single indirect call instruction.
+                            </p>
+                            <p>
+                                Of course, this being a blog post, I don't have any numbers to back up this discussion, but it certainly seems like the lack of memory contention would be a big win in a heavily parallel program, as is being able to move the method lookup out of tight loops. Also, I'm talking about the general architecture, not the specifics o the implementation: the latter probably has a few constant factor optimizations still available.
+                            </p>
+                            <h3>
+                                More Information
+                            </h3>
+                            <p>
+                                The interface runtime support is in <code><a href="http://code.google.com/p/go/source/browse/src/pkg/runtime/iface.c">$GOROOT/src/pkg/runtime/iface.c</a></code>. There's much more to say about interfaces (we haven't even seen an example of a pointer receiver yet) and the type descriptors (they power reflection in addition to the interface runtime) but those will have to wait for future posts.
+                            </p>
+                            <h3>
+                                Code
+                            </h3>
+                            <p>
+                                Supporting code (<code>x.go</code>):
+                            </p>
+                            <pre>
+package main
+
+import (
+ "fmt"
+ "strconv"
+)
+
+type Stringer interface {
+ String() string
+}
+
+type Binary uint64
+
+func (i Binary) String() string {
+ return strconv.Uitob64(i.Get(), 2)
+}
+
+func (i Binary) Get() uint64 {
+ return uint64(i)
+}
+
+func main() {
+ b := Binary(200)
+ s := Stringer(b)
+ fmt.Println(s.String())
+}
+</pre>
+                            <p>
+                                Selected output of <code>8g -S x.go</code>:
+                            </p>
+                            <pre>
+0045 (x.go:25) LEAL    s+-24(SP),BX
+0046 (x.go:25) MOVL    4(BX),BP
+0047 (x.go:25) MOVL    BP,(SP)
+0048 (x.go:25) MOVL    (BX),BX
+0049 (x.go:25) MOVL    20(BX),BX
+0050 (x.go:25) CALL    ,BX
+</pre>
+                            <p>
+                                The <code>LEAL</code> loads the address of <code>s</code> into the register <code>BX</code>. (The notation <code><i>n</i>(SP)</code> describes the word in memory at <code>SP+<i>n</i></code>. <code>0(SP)</code> can be shortened to <code>(SP)</code>.) The next two <code>MOVL</code> instructions fetch the value from the second word in the interface and store it as the first function call argument, <code>0(SP)</code>. The final two <code>MOVL</code> instructions fetch the itable and then the function pointer from the itable, in preparation for calling that function.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/8082954141980125536-5897651736741559682?l=research.swtch.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://research.swtch.com/2009/12/go-data-structures-interfaces.html">http://research.swtch.com/2009/12/go-data-structures-interfaces.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            A Javascript lexer in Python, and the saga behind it
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 10 Apr 2011 12:11:01 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-10T08:11:01-04:00">
+                    <meta itemprop="dateModified" content="2011-04-10T08:11:01-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-10T12:11:01+00:00">Apr 10</time>
+                    <h2 itemprop="title">
+                        A Javascript lexer in Python, and the saga behind it
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a749505166ce060c">
+                        <blockquote>
+                            <p>
+                                In the last week I've written a new Javascript lexer, <a href="https://bitbucket.org/ned/jslex">jslex</a>. Why I did it is one of those open source adventures that starts innocently enough.
+                            </p>
+                            <p>
+                                I'm working on a Django project for a client, and it needs to be localized into their language. Django has good support for localization, providing tools for extracting strings from Python, HTML, and Javascript files. But something wasn't right: the client reported that some of the strings were still in English. Usually this means that they made a small mistake during the translation process, and the English in the source doesn't match the English in the message file.
+                            </p>
+                            <p>
+                                But when I looked, it turned out the English was completely missing from the message file. Check the source: yup, it's properly marked for translation. Then I remembered: parsing Javascript source files for messages is fragile. I'd encountered this before, and had simply fiddled with the Javascript source to make the problem go away. But this time, as one message was re-harvested, other messages would disappear. The problem seemed more severe than I had encountered in the past. I decided to learn more about why it was happening.
+                            </p>
+                            <p>
+                                Like many open source projects, Django uses <a href="http://www.gnu.org/software/gettext/">Gnu gettext</a> to manage the message files, including using the xgettext tool to parse the source files to find strings to translate. But xgettext doesn't support parsing Javascript. Django has a strange accomodation to deal with this: it performs a simple transformation on the Javascript source, then tells xgettext that it's Perl.
+                            </p>
+                            <p>
+                                I can only guess why Perl was chosen: because Javascript and Perl both have regex literals, which as we'll see, play a large part in this story. But Django's Javascript-to-Perl transformation is simplistic: it just converts all //-comments on their own line into #-comments. So this Javascript:
+                            </p>
+                            <blockquote>
+                                <tt><span>//&nbsp;My&nbsp;awesome&nbsp;Javascript</span><br>
+                                <span>x</span>&nbsp;<span>=</span>&nbsp;<span>1</span><span>;</span>&nbsp;&nbsp;<span>//&nbsp;Don't&nbsp;start&nbsp;x&nbsp;at&nbsp;zero.</span><br>
+                                <span>gettext</span><span>(</span><span>"Please&nbsp;translate&nbsp;me!"</span><span>);</span><br></tt>
+                            </blockquote>
+                            <p>
+                                gets transformed into this "Perl":
+                            </p>
+                            <blockquote>
+                                <tt><span>#&nbsp;My&nbsp;awesome&nbsp;Javascript</span><br>
+                                <span>x</span>&nbsp;<span>=</span>&nbsp;<span>1</span><span>;</span>&nbsp;&nbsp;<span>//</span>&nbsp;<span>Don</span><span>'</span><span>t</span>&nbsp;<span>start</span>&nbsp;<span>x</span>&nbsp;<span>at</span>&nbsp;<span>zero</span><span>.</span><br>
+                                <span>gettext</span><span>(</span><span>"Please&nbsp;translate&nbsp;me!"</span><span>);</span><br></tt>
+                            </blockquote>
+                            <p>
+                                I assume the reason //-comments that share a line with code are skipped is to avoid clobbering strings with // in them, though with multi-line strings, even that is not enough to protect them.
+                            </p>
+                            <p>
+                                Of course, this transformation is insufficient to properly carry the strings into the "Perl" so that xgettext can find them. For example, in the above sample, the Javascript comment on line 2 is still executable Perl code after the transformation, and the apostrophe in the comment is considered the start of a string literal, so the gettext call is skipped as part of a multi-line string.
+                            </p>
+                            <p>
+                                In fact, depending on the version of gettext, which determines how advanced its Perl parsing is, all sorts of innocuous Javascript constructs can throw off the parser:
+                            </p>
+                            <blockquote>
+                                <tt><span>gettext</span><span>(</span><span>"Message&nbsp;on&nbsp;1"</span><span>);</span><br>
+                                <span>var</span>&nbsp;<span>x</span>&nbsp;<span>=</span>&nbsp;<span>y</span><span>;</span><br>
+                                <span>gettext</span><span>(</span><span>"Message&nbsp;on&nbsp;3"</span><span>);</span><br>
+                                <span>gettext</span><span>(</span><span>"Message&nbsp;on&nbsp;4"</span><span>);</span><br>
+                                <span>gettext</span><span>(</span><span>"Message&nbsp;on&nbsp;5"</span><span>);</span><br></tt>
+                            </blockquote>
+                            <p>
+                                Here messages 1 and 5 are found, and 3 and 4 are not. How come? Because Perl's <a href="http://perldoc.perl.org/functions/y.html">y operator</a> consumes two strings delimited by the next character, in this case a semicolon, so lines 3 and 4 are considered literals rather than code.
+                            </p>
+                            <p>
+                                In truth, Django's accommodation for Javascript is an egregious hack. So I wanted to find a better solution. I figured that if I could properly lex Javascript, then I could manipulate the token stream to create something that could reliably be parsed by gettext.
+                            </p>
+                            <p>
+                                The result is <a href="https://bitbucket.org/ned/jslex">jslex</a>, a pure-Python lexer for Javascript. Lexing Javascript turns out to be tricky due to our old friend the regex literal. When a slash character is found, it could mean one of four things: a division operator (either / or /=), a line comment (//), a multi-line comment (/*), or a regex literal. The two comment forms are simple to deal with, because a regex literal can't be empty, so // is always a comment, and a regex can't start with a star, so /* is always a comment.
+                            </p>
+                            <p>
+                                But distinguishing between division and regexes is impossible to do at a purely lexical level, and can be quite subtle:
+                            </p>
+                            <blockquote>
+                                <tt><span>for</span>&nbsp;<span>(</span><span>var</span>&nbsp;<span>x</span>&nbsp;<span>=</span>&nbsp;<span>a</span>&nbsp;<span>in</span>&nbsp;<span>foo</span>&nbsp;<span>&amp;&amp;</span>&nbsp;<span>"&lt;/x&gt;"</span>&nbsp;<span>||</span>&nbsp;<span>mot</span>&nbsp;<span>?</span>&nbsp;<span>z</span><span>:</span><span>/x:3;x&lt;5;y&lt;/g</span><span>/</span><span>i</span><span>)</span>&nbsp;<span>{</span><span>xyz</span><span>(</span><span>x</span><span>++</span><span>);}</span><br>
+                                <span>for</span>&nbsp;<span>(</span><span>var</span>&nbsp;<span>x</span>&nbsp;<span>=</span>&nbsp;<span>a</span>&nbsp;<span>in</span>&nbsp;<span>foo</span>&nbsp;<span>&amp;&amp;</span>&nbsp;<span>"&lt;/x&gt;"</span>&nbsp;<span>||</span>&nbsp;<span>mot</span>&nbsp;<span>?</span>&nbsp;&nbsp;<span>z</span><span>/</span><span>x</span><span>:</span><span>3</span><span>;</span><span>x</span><span>&lt;</span><span>5</span><span>;</span><span>y</span><span>&lt;</span><span>/g/i</span><span>)</span>&nbsp;<span>{</span><span>xyz</span><span>(</span><span>x</span><span>++</span><span>);}</span><br></tt>
+                            </blockquote>
+                            <p>
+                                The first line has a regex of /x:3;x&lt;5;y&lt;/g, the second has /g/i.
+                            </p>
+                            <p>
+                                The <a href="http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-262.pdf">ECMAScript standard</a> says you need to parse the code, and if you're at a point where a regex literal would be a valid next token, then lex it as a regex, but if you're at a point where a division would be valid, that lex it as division.
+                            </p>
+                            <p>
+                                I wasn't willing to write a full parser, but I've taken a similar approach to other light Javascript tools, and use the previous token to decide if the next token can be division or regex. It seems to work well.
+                            </p>
+                            <p>
+                                The lexer is a general-purpose multi-state lexer built on regular expressions. The rules create a two-state lexer with a state for "division possible," and "regex possible." When I thought I had it working, I outsourced the QA to Stack Overflow, finally finding something to do with my too-many reputation points: <a href="http://stackoverflow.com/questions/5533925/what-javascript-constructs-does-jslex-incorrectly-lex">pay a bounty to find Javascript it doesn't lex properly</a>. Mind-twistingly, a respondent there found a useful test: a Javascript lexer written in Javascript, which when fed through my lexer, failed because my regex-matching regex couldn't properly lex his regex-matching regex!
+                            </p>
+                            <p>
+                                To bridge Javascript code to xgettext, I chose to transform it into "C" instead of Perl. That means getting rid of the regex literals by turning them all into the C string "REGEX", and changing single-quoted strings into double-quoted strings.
+                            </p>
+                            <p>
+                                The next phase is to determine whether this gets into Django or not. I've prepared it as a patch, but there was already some momentum to replace gettext with <a href="http://babel.edgewall.org/">Babel</a>, and it's looking like it might all have to wait for 1.4 in any case. As someone who's recently lost time to this bug, I would really rather get something into 1.3.1, so we'll <a href="https://groups.google.com/d/topic/django-developers/MERy3Drylkc/discussion">see where that ends up</a>.
+                            </p>
+                            <p>
+                                In any case, if you have need for lexing Javascript in Python, use <a href="https://bitbucket.org/ned/jslex">jslex</a>, it works.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://nedbatchelder.com/blog/201104/a_javascript_lexer_in_python_and_the_saga_behind_it.html">http://nedbatchelder.com/blog/201104/a_javascript_lexer_in_python_and_the_saga_behind_it.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

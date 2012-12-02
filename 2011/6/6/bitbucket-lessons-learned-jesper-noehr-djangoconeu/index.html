@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Bitbucket, lessons learned - Jesper Noehr (djangocon.eu)
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 07 Jun 2011 08:22:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-06-06T19:00:00-04:00">
+                    <meta itemprop="dateModified" content="2011-06-06T19:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-06-06T23:00:00+00:00">Jun 06</time>
+                    <h2 itemprop="title">
+                        Bitbucket, lessons learned - Jesper Noehr (djangocon.eu)
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0a3ff8dd4c44edb0">
+                        <blockquote>
+                            <div>
+                                <div>
+                                    <p>
+                                        <a href="http://twitter.com/#!/jespern">Jesper Noehr</a> talks about the well-known <a href="https://bitbucket.org/">bitbucket</a>. Bitbucket is written in Django! He started with django four years ago (the "magic removal branch").
+                                    </p>
+                                    <p>
+                                        Bitbucket started in may 2008 and launched 1 month after that. That short turn-around time was thanks to django. For two years they worked on it with two people. It ran entirely on Amazon web services. Last year it got bought by <a href="http://www.atlassian.com/">Atlassian</a>. After being acquired they got a couple of java programmers on the team that got into python and django real quick: that's how good python and django is.
+                                    </p>
+                                    <p>
+                                        He used mercurial when writing his django blog app. He also wanted to integrate mercurial's basic http viewer into his blog. That's the basis for bitbucket!
+                                    </p>
+                                    <p>
+                                        74k lines of code, all python. 86% is django. Of course they use mercurial. And postgresql and virtualenv/pip. Some of the production tools: HAProxy, nginx, gunicorn, puppet. Deployments are mostly weekly. For testing: selenium for functional tests, <a href="http://ericholscher.com/blog/2009/nov/17/announcing-kong-server-description-and-deployment-/">kong</a> for headless tests and bamboo for continuous integration.
+                                    </p>
+                                    <p>
+                                        Some "lessons learned":
+                                    </p>
+                                    <p>
+                                        <strong>Stay idiomatic</strong>. "Idiomatic" means something like "using native things". So stick with django as much as possible. Everything they have is just a regular model. Sometimes there's a mixin class to get some extra features, but it is still a django model. And everthing is splitted up in django applications.
+                                    </p>
+                                    <p>
+                                        Benefits. You get free upgrades and there's little backporting. Getting and finding help is often easy as you're just using the standard tools. An awesome community. And an advantage is that it is easy for new people to pick up.
+                                    </p>
+                                    <p>
+                                        Disadvantages. It sometimes feels like you have to make what you want fit what django needs. They had to do some crazy request-mangling django middleware to get their custom-url-per-user working. And they're unusual in that they're quite transactional: things happen on disk and in the database and they have to be in one transaction, really.
+                                    </p>
+                                    <p>
+                                        But... sticking to idioms is usual better.
+                                    </p>
+                                    <p>
+                                        <strong>Things change</strong>. Even the most beautiful thing in the world that you made may have to be changed. It might have been a good idea at the time. But the requirements change or the amount of users goes way up or whatever. They had to change several database parts to redis, for instance.
+                                    </p>
+                                    <p>
+                                        Likewise running django on fastcgi was fine at the start. Then they switched to mod_wsgi, which helped a lot. Till even that wasn't up to the task. Now they're using <a href="http://gunicorn.org/">gunicorn</a> behind ngnix and they're happy with it. Gunicorn's author is very responsive.
+                                    </p>
+                                    <p>
+                                        So: things are going to change. Embrace it! Change is a good thing. It means you're evolving and growing. But watch out for vendor lock-in. They had this with amazon. They figured out something that would run fine on amazon, but it would mean vendor lock-in when they would ever move away from amazon. So they stuck to simple filesystem stuff. Which helped a lot as they <em>actually</em> moved away from amazon. So assuming you'll change things is valuable.
+                                    </p>
+                                    <p>
+                                        Embrace technologies that let you replace and change.
+                                    </p>
+                                    <p>
+                                        <strong>Open source</strong>. There's a lot of useful code out there. South and celery come to mind. They used their own home-brewn user registration system, but now they just use django registration and they're happier.
+                                    </p>
+                                    <p>
+                                        They also gave back to the community, like <a href="https://bitbucket.org/jespern/django-piston/wiki/Home">django-piston</a> ("yes, I'll make a release soon"), <a href="http://pypi.python.org/pypi/dogslow">django-dogslow</a> and tipper.
+                                    </p>
+                                    <p>
+                                        <strong>Be transparent and humble</strong>. Their customers are super smart and need to be treated that way. They really had to learn that. When there's an outage now, they give out full details and people like it, for instance.
+                                    </p><a href="http://photos.reinout.vanrees.org/Construction-demolition/Construction/4740565_VDRrv#1223906081_Nesoh-A-LB"><img alt="Construction of Rotterdam central station" src="http://photos.reinout.vanrees.org/photos/1223906081_Nesoh-M.jpg"></a>
+                                </div>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://reinout.vanrees.org/weblog/2011/06/07/bitbucket.html">http://reinout.vanrees.org/weblog/2011/06/07/bitbucket.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

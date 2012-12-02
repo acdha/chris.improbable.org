@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Testing is not a substitute for thinking (binary search part 3)
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 23 Apr 2010 20:13:41 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-23T16:13:41-04:00">
+                    <meta itemprop="dateModified" content="2010-04-23T16:13:41-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-23T20:13:41+00:00">Apr 23</time>
+                    <h2 itemprop="title">
+                        Testing is not a substitute for thinking (binary search part 3)
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7fb4bf08b71ded7d">
+                        <blockquote>
+                            <p>
+                                The contributions to <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/">the original binary search thread</a> continue to trickle in, and now stand at an astonishing tally of 679 comments, most of them containing code. &nbsp;Thanks once more to all of you who’ve attempted this challenge, and to everyone who’s commented.
+                            </p>
+                            <p>
+                                In <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-2274">one of the more interesting comments</a>, Darius Bacon tested a sample of 20 of the Python submissions, and found that exactly 10% of them both passed the functional test and appeared to run in O(log n) time — which of course is exactly in line with Jon Bentley’s original statistic, that 10% of the professional programmers he’d examined were able to write correct binary search code (albeit under rather different conditions). &nbsp;It <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-2292">subsequently became apparent</a>, though, that Darius’s testing code was overly strict, and that a further two of the sampled routines did run correctly (though not necessarily in O(log n) time). &nbsp;Still — it’s a surprisingly low hit-rate, especially when you bear in mind that, contrary to the rules, many of the programmers did use testing to help them develop the code. (You should read the second linked comment, as it has plenty of other interesting observations, too.)
+                            </p>
+                            <p>
+                                [<strong>Update, an hour or two later:</strong> as Darius Bacon points out in a comment below, I misinterpreted his results. &nbsp;Once the testing code had been fixed, his sample of 21 routines found 9 that passed all test, of which 6 were O(log n).]
+                            </p>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/salmon_deluxe_rolls.jpg"><img title="Salmon_Deluxe_Rolls" src="http://reprog.files.wordpress.com/2010/04/salmon_deluxe_rolls.jpg?w=500&amp;h=135" alt="" width="500" height="135"></a>
+                            </p>
+                            <h2>
+                                “It’s dumb not to test”
+                            </h2>
+                            <p>
+                                By far the most common comment on this challenge was that it’s dumb to try to write correct code without testing. &nbsp;Many, many people made this point, not only here but especially on Reddit. &nbsp;For example, someone calling him/herself <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-1818">K wrote</a>: “&nbsp;I don’t really see a point in this exercise – are you (or the author of the book) implying that if a programmer can’t implement this on first try, without testing, he’s not as good as one who can? &nbsp;IMO, it’s not a good metric for the ability of the programmer.”
+                            </p>
+                            <p>
+                                First of all, let me be very clear what I wasn’t saying: <strong>I was not saying that it’s a bad thing to test your code</strong>. &nbsp;I am very much in favour of testing. &nbsp;So is Jon Bentley. &nbsp;That’s because neither of us is insane.
+                            </p>
+                            <p>
+                                The point is this: testing is only one of the weapons in our armoury, and it’s one that has recently become so fashionable that a lot of programmers are in danger of forgetting the others. &nbsp;Although testing is valuable, even indispensible, it is also limited in important ways, and we need to have facility with other techniques as well.
+                            </p>
+                            <p>
+                                Here are three limitations of testing:
+                            </p>
+                            <ul>
+                                <li>Tests can only show the presence of bugs, not their absence
+                                </li>
+                                <li>Tests can be buggy, just like tested code
+                                </li>
+                                <li>Tests increase confidence, not understanding
+                                </li>
+                            </ul>
+                            <p>
+                                I’ll expand on each of these below. &nbsp;Before I do that, let me say one more time that <strong>testing is good</strong>. &nbsp;Please do not respond in the comments saying “Mike is a doofus because he says testing is bad.” &nbsp;Testing is very good. &nbsp;But like so many very good things — <em>Doctor Who</em>, sushi, Wi-Fi, Gold Miner ale — it turns out that it’s not the <em>only</em> very good thing you need.
+                            </p>
+                            <p>
+                                So the purpose of the write-your-code-without testing exercise was not to discard testing because it’s useless; but, precisely because testing is useful, it’s important that we sometimes force ourselves to walk without that particular crutch … and perhaps we’ll find out how atrophied our muscles have become. &nbsp;Then we can discover what other areas we need to concentrate on, what techniques we need to bone up on, what tools we need to relearn and what exercises we need to do.
+                            </p>
+                            <p>
+                                (I’m assuming here that we aspire to be excellent, rather than merely adequate, programmers.)
+                            </p>
+                            <p>
+                                <a href="http://reprog.files.wordpress.com/2010/04/fire_dragon_rolls2.jpg"><img title="Fire_Dragon_Rolls" src="http://reprog.files.wordpress.com/2010/04/fire_dragon_rolls2.jpg?w=500&amp;h=133" alt="" width="500" height="133"></a>
+                            </p>
+                            <h2>
+                                Tests can only show the presence of bugs, not their absence
+                            </h2>
+                            <p>
+                                I wrote this heading off the top of my head, then looked at it and thought it sounded a bit familiar. &nbsp;When I grepped around, I found that it was, almost word for word, a quote from <a href="http://reprog.wordpress.com/2010/03/09/where-dijkstra-went-wrong-the-value-of-basic-as-a-first-programming-language/">an old friend</a>:
+                            </p>
+                            <blockquote>
+                                <div>
+                                    Testing can show the presence of bugs, but not their absence.
+                                </div>
+                                <div style="padding-left:30px">
+                                    – Edsgar W. Dijkstra, University of Texas
+                                </div>
+                            </blockquote>
+                            <p>
+                                So I guess I am in good company in making this point. &nbsp;To say the same thing in more general terms, as <a href="http://www.geol.umd.edu/~tholtz/">Tom Holtz</a> is fond of saying, “Absence of evidence is not evidence of absence”. &nbsp;(He’s usually talking about fossils in a particular rock formation, but the principle is good more widely. &nbsp;And to be fair, absence of evidence is indeed&nbsp;<em>evidence</em> of absence, but it’s not <em>proof</em> of absence.)
+                            </p>
+                            <p>
+                                You can test all you want; but all you have shown at any given point is that you have not <em>yet</em> found any bugs. &nbsp;We can see this principle at work in several of the posted solutions — I don’t want to pick on individuals, so I won’t name names, but I’ve seen submissions tagged with statements like “Mine works”, “works for me” and “no errors at the first try”, which have been subsequently shown to be buggy — presumably because the author’s own tests didn’t test all the edge cases.
+                            </p>
+                            <p>
+                                Again, this is <em>not</em> to say that testing is useless: each passed test can legitimately increase confidence in the tested code. &nbsp;But it can never get you all the way. &nbsp;For that, you need something different.
+                            </p>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/tai_deluxe_rolls.jpg"><img title="Tai_Deluxe_Rolls" src="http://reprog.files.wordpress.com/2010/04/tai_deluxe_rolls.jpg?w=500&amp;h=180" alt="" width="500" height="180"></a>
+                            </p>
+                            <h2>
+                                Tests can be buggy, just like tested code
+                            </h2>
+                            <p>
+                                “Quis custodiet ipsos custodes?”, <a href="http://en.wikipedia.org/wiki/Quis_custodiet_ipsos_custodes%3F">asks Juvenal</a> (and let us not forget that quidquid latine dictum sit, altum viditur). &nbsp;”Who will watch the watchmen?” <a href="http://en.wikipedia.org/wiki/Watchmen">replies Alan Moore</a>. &nbsp;”Who will test the tests?”, say I.
+                            </p>
+                            <p>
+                                This is another problem that cropped up several times in the comments. &nbsp;For example:
+                            </p>
+                            <ul>
+                                <li>“My code worked the first time, but my test had a bug.” — <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-1919">nicholas</a>.
+                                </li>
+                                <li>“Worked at first try though I did test it before submitting here, which took some time before I realized that while the binary search was working, my small test code was faulty.” — <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-1968">Robert Leffmann</a>.
+                                </li>
+                                <li>“I felt my heart sink when it threw an exception on first run, but it turned out the error was forgetting to sort the test arrays in the test code, so all was ok.” — <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-2042">Paddy</a>.
+                                </li>
+                                <li>“Had some bugs in the harness itself, but didn’t catch any in the binary search method.” — <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-2321">Dan Carroll</a>.
+                                </li>
+                            </ul>
+                            <p>
+                                We’ve all been there, I’m sure. &nbsp;As it happen, this very afternoon I spent an unpleasant hour or so trying to debug the test suite of a Perl module that I was building a Debian package for. &nbsp;We fall too easily into talking as though code and tests are two different things, but <em>tests are code</em>. &nbsp;We know that we’re not clever enough to write correct code all the time, so why would we think that we can reliably write correct tests?
+                            </p>
+                            <p>
+                                Actually, there are two reason why this argument isn’t as strong as it sounds. &nbsp;One is that the code that makes up test suites is often — not always, but often — much simpler than the code being tested. &nbsp;In which case it’s more likely to be correct. &nbsp;I’ve been in situations where that’s not true, where the testing code is itself a major piece of work; but I admit those cases are the exception. &nbsp;The second reason why this argument is not super-strong is this: writing tests lets you triangulate. &nbsp;You’re looking at the same problem from two different directions, and if your tests are broken there’s a fair chance that your correct code will help you spot that fact and fix it. &nbsp;(If you’re really unlucky, your code and your test will both be broken but in such a way that the deficiencies of one patch over the mistakes in the other; but that seems to be rare.)
+                            </p>
+                            <div>
+                                I’m not going to labour the tests-can-be-wrong point too much, just as I skimmed quickly over tests-can’t-show-the-absence-of-bugs, because I want to get on to the meat: the real reason why testing is in desperate danger of being overhyped. &nbsp;These two points have just been a prelude; now on to the fugue.
+                            </div>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/snow_rolls_2.jpg"><img title="Snow_Rolls_2" src="http://reprog.files.wordpress.com/2010/04/snow_rolls_2.jpg?w=500&amp;h=164" alt="" width="500" height="164"></a>
+                            </p>
+                            <h2>
+                                Tests increase confidence, not understanding
+                            </h2>
+                            <p>
+                                Here we reach my core point. &nbsp;It’s this. &nbsp;If you had to boil down the whole programming skill-set to a single core skill — a completely general one that applies across all that we do — what would you choose? &nbsp;I can imagine various different answers, but for me the answer would be: thinking clearly. &nbsp;I’d argue that the essence of good programming is thinking clearly about the problem; understanding; <a href="http://www.catb.org/jargon/html/G/grok.html">grokking</a>.
+                            </p>
+                            <p>
+                                Testing a piece of code is essentially a black-box process. &nbsp;If you hack together a binary search routine, you can and will write tests for it that are not based on how the code works, but only on what it claims to do. &nbsp;This is right and good — it’s proper separation of concerns. &nbsp;But what it means is that <em>writing and running tests does not in itself increase your understanding of the code being tested</em>.
+                            </p>
+                            <p>
+                                And we need to understand.
+                            </p>
+                            <p>
+                                In the case of binary search (and let’s all remember that this was chosen because it’s a particularly straightforward algorithm), we’ve seen posted code that does all sorts of horrible things — some of them kind of harmless; some of them with performance implications (like all those array-slicing Python implementations that run in O(n) time, and so are no better than a trivial linear search); and some positively detrimental. &nbsp;The point is this: no amount of testing will, in itself, give you any <em>insight</em> into these coding mistakes.
+                            </p>
+                            <p>
+                                (Aaaaand I am going to say it yet again, in the desperate hope of not being misunderstood: this does not mean that I think testing is bad; it means that I think it serves some purposes but not all.)
+                            </p>
+                            <p>
+                                If you’re not convinced, consider this pair of comments. &nbsp;<a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-1855">From&nbsp;Jonathan Deutsch</a>: “Writing code without testing is akin to doing math without a calculator”; and <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-1861">from Matthias Goergens</a>: “Arithmetic without a calculator borders on nonsense. &nbsp;But for analysis, algebra or proofs in general, you’d need a very advanced calculator.” &nbsp;Unit tests are great for verifying your arithmetic; but they don’t help you to think through your calculus. &nbsp;For that, you need to think. &nbsp;There’s no way out of it. &nbsp;Sometimes, no amount of agile, pattern-oriented, test-driven, refactoring-focussed pair-programming methodology will get you out of the responsibility to invest some actual thought into your program.
+                            </p>
+                            <p>
+                                It’s not all just <em>Move Method</em> and <em>Pull Up Instance Variable</em>, you know. &nbsp;Sometimes I wonder whether tools that can do mechanical things reliably for us are blunting our ability to think clearly about subtle problems. &nbsp;One of my very <a href="http://reprog.wordpress.com/reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-2002">favourite comment</a>s on the original post was EoghanM’s: “I definitely thought about it a lot harder when I couldn’t test.”
+                            </p>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/caterpillar_rolls.jpg"><img title="Caterpillar_Rolls" src="http://reprog.files.wordpress.com/2010/04/caterpillar_rolls.jpg?w=500&amp;h=147" alt="" width="500" height="147"></a>
+                            </p>
+                            <h2>
+                                “Test-driven development” is is not even a zinc bullet
+                            </h2>
+                            <p>
+                                Fred Brooks, perhaps best known as the author of <em>The Mythical Man-Month</em> [<a href="http://www.amazon.com/exec/obidos/ASIN/0201835959/thedinosaurrea0a">amazon.com</a>, <a href="http://www.amazon.co.uk/exec/obidos/ASIN/0201835959/thedinosaurreadi">amazon.co.uk</a>], is also the author of the classic 1986 paper, <em>No Silver Bullet</em>, in which he argued that “there is no single development, in either technology or management technique, which by itself promises even one order of magnitude improvement within a decade in productivity, in reliability, in simplicity”. Admittedly, what he says is impossible is a high goal — an order of magnitude — and I doubt that even the most committed Object Jockey, Extreme Programmer, Refactoring Guru or Test-Driven Developer would claim benefits that great for their favoured methodology. &nbsp;And yet, these fads keep coming along, and Test-Driven Development seems to be the fashionable one right now.
+                            </p>
+                            <p>
+                                Folks, really?
+                            </p>
+                            <p>
+                                Well, OK, maybe a bit. &nbsp;Here’s where I think the cognitive mismatch is: a test-driven approach can be helpful in designing (and of course testing) an API; but it makes no contribution whatsoever to designing an algorithm. &nbsp;In other words, it might help with the easy bit, but doesn’t help at all with the actual <em>work</em>. &nbsp;But APIs are such a big deal nowadays (especially with <a href="http://reprog.wordpress.com/2010/03/04/whatever-happened-to-programming-redux-it-may-not-be-as-bad-as-all-that/">the framework obsession</a> and all), that we too easily fall into thinking that the API <em>is</em> the program. &nbsp;(<a href="http://reprog.wordpress.com/2010/03/28/what-is-simplicity-in-programming/">Over-Fowlering</a> the code can also contribute to this misapprehension.) &nbsp;That is a mistake on the same order as “<a href="http://en.wikipedia.org/wiki/The_medium_is_the_message">the medium is the message</a>“. &nbsp;The medium is not the the message, it’s what we need to <em>get</em> the message; the API is not the code, it’s how we <em>invoke</em> the code. &nbsp;But, oh my, isn’t it&nbsp;<em>seductive</em>? &nbsp;To spend our time breaking a problem down into smaller and smaller parts, designing lots of little classes, writing masses of test code, and telling ourselves that we’re being productive, without ever putting any effort in solving the actual problem.
+                            </p>
+                            <p>
+                                The classic example of this is Peter Norvig’s and Ron Jeffries’&nbsp;<a href="http://en.wikipedia.org/wiki/Sudoku">sudoku</a> solvers. &nbsp;These are gathered and linked from the brief article <em><a href="http://ravimohan.blogspot.com/2007/04/learning-from-sudoku-solvers.html">Learning From Sudoku Solvers</a></em>, which has some excellent comments. &nbsp;I urge you to go and look at these for yourself when you’re done here, but in a nutshell: Ron Jeffries wrote a series of five articles on the test-driven development of a sudoku solver that eventually faded away into nothingness without ever finding a solution, or even coming close; while Peter Norvig spent a while thinking hard, applied powerful non-trivial techniques, and wrote a 100-line Python program that solves any sudoku puzzle. &nbsp;[Jeffries' articles are often unavailable, as his web-site comes and goes. &nbsp;If you can't read them there, you can find them in Google's cache.]
+                            </p>
+                            <p>
+                                How did Norvig do that? &nbsp;By using skills that are not often thought about in these days of test-driven kool-ade, reflexive application of design patterns and automatic refactoring tools. &nbsp;Once more, let me be clear that all these things are good so far as they go — really, I agree with you, they are! — but they are no substitute for actually thinking, and thinking is what’s needed for hard problems.
+                            </p>
+                            <p>
+                                I <em>was</em> going to say that in the last part of this article I’ll look at a couple of mental tools for thinking about code, but yet again I have gone on for much longer than I intended, so that will have to wait until a subsequent article. &nbsp;Soon, though, I promise! &nbsp;(And yes, I am well aware of the irony that this is one of a series of blog entries wherein I keep promising to get to the meat but never do, and that here in this very entry I castigate Ron Jeffries for a series of blog entries wherein he kept promising to get to the meat but never did. &nbsp;The difference is that we’ve been waiting three years for RJ to keep his promise but only three days for me to keep mine. &nbsp;Also, I know what my punchline is going to be.)
+                            </p>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/49er_rolls23.jpg"><img title="49er_Rolls2" src="http://reprog.files.wordpress.com/2010/04/49er_rolls23.jpg?w=500&amp;h=137" alt="" width="500" height="137"></a>
+                            </p>
+                            <p>
+                                Before I wrap up for this time, I want to address one more point:
+                            </p>
+                            <h2>
+                                “But I would have had a working binary searcher more quickly if I’d been allowed to test along the way”
+                            </h2>
+                            <p>
+                                Yes, maybe you would. &nbsp;Bearing in mind that binary search is in fact a pretty simple algorithm, it’s likely true that you could have bashed your way through to a working implementation after a few iterations of coding and testing. &nbsp;But –
+                            </p>
+                            <ul>
+                                <li>Your code would be less clear
+                                </li>
+                                <li>You wouldn’t understand clearly why it works
+                                </li>
+                                <li>You would find it harder to extend or modify in future
+                                </li>
+                            </ul>
+                            <p>
+                                Because as soon as it’s aimed at a non-trivial problem, test-driven development becomes debugging-driven development. &nbsp;It stops being “write the test, then write the code, then check that your test says the code is OK”. &nbsp;It starts being “write the test, then write the first draft of the code, the run the test to find the first bug, then patch the code, then write the code to find the next bug; GOTO 40″.
+                            </p>
+                            <p>
+                                Let’s look at a hypothetical example of how this can happen. &nbsp;Tell me if this sounds hauntingly familiar.
+                            </p>
+                            <p>
+                                I bang out a first draft of my binary search routine, and test it. &nbsp;I notice that it sometimes looks at an out-of-range array element and realise that I was setting the upper bound to the size of the array rather than the index of its last element. &nbsp;I fix that and see that sometimes it goes into an infinite loop. &nbsp;I guess that’s because when I iterate, I am setting the new upper bound one too high so that it doesn’t converge, so I try subtracting 1. &nbsp;Now I find it sometimes fails to find values that are included, so I remove the -1 and try setting the lower bound one higher instead. &nbsp;It seems to work. &nbsp;The next test shows that my code doesn’t handle an empty array, so I add a special case for that. &nbsp;Then I find it doesn’t work on an array of a single element, so I add another special case. &nbsp;A few more tests suggest that I’ve caught all the edge cases, so I pronounce myself done.
+                            </p>
+                            <p>
+                                I’m sure I don’t need to (A) persuade you that the resulting code is suboptimal, (B) point out that it likely still contains bugs, or (C) draw your attention to the fact that more than a few of the submitted solutions a couple of posts ago look suspiciously like this. &nbsp;My fear is that most code looks like this — a patchwork of special cases that pretty much work most of the time, more or less. &nbsp;Testing helps us to have more confidence that where we’ve arrived is good enough; but it doesn’t help to make the code <em>good</em>. &nbsp;And that is what I want to talk about next time.
+                            </p>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/highway_rolls.jpg"><img title="Highway_Rolls" src="http://reprog.files.wordpress.com/2010/04/highway_rolls.jpg?w=500&amp;h=179" alt="" width="500" height="179"></a>
+                            </p>
+                            <p>
+                                <strong><span style="color:#808080">Acknowledgement</span></strong>
+                            </p>
+                            <p>
+                                <span style="color:#808080">Usually, I gather my sushi photographs from many different sources. &nbsp;But for this article, I drew them all from the website of</span> <a href="http://www.sushi85.com/index.php?option=com_content&amp;task=section&amp;id=10&amp;Itemid=86"><span style="color:#808080">the Sushi 8 Japanese Restaurant</span></a> <span style="color:#808080">in Mountain View, California. &nbsp;They just have such nice photographs! &nbsp;I have no idea whether their stuff is good or not, so don’t construe this as a recommendation, but it’s certainly easy on the eye.</span>
+                            </p>
+                            <p>
+                                <span style="color:#808080">Also: ignore this Technorati claim-code: EECRHMA873AV</span>
+                            </p>
+                            <p>
+                                <span style="color:#808080"><br></span>
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/reprog.wordpress.com/589/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/reprog.wordpress.com/589/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/reprog.wordpress.com/589/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/reprog.wordpress.com/589/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/reprog.wordpress.com/589/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/reprog.wordpress.com/589/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/reprog.wordpress.com/589/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/reprog.wordpress.com/589/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/reprog.wordpress.com/589/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/reprog.wordpress.com/589/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=reprog.wordpress.com&amp;blog=12269820&amp;post=589&amp;subd=reprog&amp;ref=&amp;feed=1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://reprog.wordpress.com/2010/04/23/testing-is-not-a-substitute-for-thinking-binary-search-part-3/">http://reprog.wordpress.com/2010/04/23/testing-is-not-a-substitute-for-thinking-binary-search-part-3/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

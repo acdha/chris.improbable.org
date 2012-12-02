@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Storing Bounded Timeboxes in Redis
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 08 Apr 2011 01:35:50 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-07T21:35:50-04:00">
+                    <meta itemprop="dateModified" content="2011-04-07T21:35:50-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-08T01:35:50+00:00">Apr 08</time>
+                    <h2 itemprop="title">
+                        Storing Bounded Timeboxes in Redis
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/e56ac732ebe6db90">
+                        <blockquote>
+                            <p>
+                                So, you're trying to write a simple report system for tracking error rates in your system. And, hey--who knew?--you've decided to use <a href="http://www.python.org/" title="Python">Python</a> and <a href="http://redis.io/" title="Redis">Redis</a>. It'll be a breeze!
+                            </p>
+                            <p>
+                                Or will it?
+                            </p>
+                            <h2>
+                                Installation
+                            </h2>
+                            <p>
+                                First, installing and starting Redis on your local machine.
+                            </p>
+                            <div>
+                                <pre>
+<span>curl</span> <span>http:</span><span>//</span><span>redis</span><span>.</span><span>googlecode</span><span>.</span><span>com</span><span>/files/</span><span>redis</span><span>-</span><span>2.2.4</span><span>.</span><span>tar</span><span>.</span><span>gz</span> <span>&gt;</span> <span>redis</span><span>.</span><span>tar</span><span>.</span><span>gz</span>
+<span>tar</span> <span>-</span><span>xzvf</span> <span>redis</span><span>.</span><span>tar</span><span>.</span><span>gz</span>
+<span>cd</span> <span>redis</span><span>-</span><span>2.2.4</span>
+<span>make</span>
+<span>.</span><span>/src/</span><span>redis</span><span>-</span><span>server</span>
+</pre>
+                            </div>
+                            <p>
+                                Let's test that worked real quickly...
+                            </p>
+                            <div>
+                                <pre>
+<span>.</span><span>/src/</span><span>redis</span><span>-</span><span>cli</span> <span>set</span> <span>a</span> <span>b</span>
+<span>.</span><span>/src/</span><span>redis</span><span>-</span><span>cli</span> <span>get</span> <span>a</span>
+</pre>
+                            </div>
+                            <p>
+                                If the second command returned <code>b</code>, then you're all set. OK, awesome. Now just need to get <code>redispy</code> installed.
+                            </p>
+                            <div>
+                                <pre>
+<span>virtualenv</span> <span>--</span><span>no</span><span>-</span><span>site</span><span>-</span><span>packages</span> <span>zset</span>
+<span>cd</span> <span>zset</span>
+<span>.</span> <span>.</span><span>/bin/</span><span>activate</span>
+<span>pip</span> <span>install</span> <span>redis</span>
+</pre>
+                            </div>
+                            <p>
+                                Check that worked...
+                            </p>
+                            <div>
+                                <pre>
+<span>&gt;&gt;&gt; </span><span>import</span> <span>redis</span>
+<span>&gt;&gt;&gt; </span><span>cli</span> <span>=</span> <span>redis</span><span>.</span><span>Redis</span><span>()</span>
+<span>&gt;&gt;&gt; </span><span>cli</span><span>.</span><span>get</span><span>(</span><span>"a"</span><span>)</span>
+<span>'b'</span>
+</pre>
+                            </div>
+                            <p>
+                                Excellent, now we're ready to get back to bounded timeboxes.
+                            </p>
+                            <h2>
+                                What Are Bounded Timeboxes?
+                            </h2>
+                            <p>
+                                Contrary to common expectations it isn't a <a href="http://en.wikipedia.org/wiki/DeLorean_DMC-12#Back_to_the_Future">DeLorean</a>, and I might have just made the term up, but anyway, let's move past that. In this post a "timebox" is a something which contains activity for a period of time like "100 Diggs one minute ago" or "200 tweets two minutes ago". "bounded" comes into play because you only want to store a certain number of timeboxes. An example will make this more concrete.
+                            </p>
+                            <p>
+                                You're storing the number of pageviews for each URL for each minute. You've decided to do this by having a sorted set per URL, where the key is the timestamp in seconds modulus sixty and the value is the number of pageviews in that minute. Writing and reading from this sorted set would be like:
+                            </p>
+                            <div>
+                                <pre>
+<span>import</span> <span>time</span><span>,</span> <span>redis</span>
+<span>PAGEVIEW_BUCKET</span> <span>=</span> <span>"pv.</span><span>%s</span><span>"</span>
+
+<span>def</span> <span>increment_pageview</span><span>(</span><span>url</span><span>):</span>
+    <span>cli</span> <span>=</span> <span>redis</span><span>.</span><span>Redis</span><span>()</span>
+    <span>bucket</span> <span>=</span> <span>int</span><span>(</span><span>time</span><span>.</span><span>time</span><span>())</span> <span>%</span> <span>60</span>
+    <span>cli</span><span>.</span><span>zincrby</span><span>(</span><span>PAGEVIEW_BUCKET</span> <span>%</span> <span>url</span><span>,</span> <span>bucket</span><span>,</span> <span>1</span><span>)</span>
+
+<span>def</span> <span>get_pageviews</span><span>(</span><span>url</span><span>,</span> <span>bucket</span><span>):</span>
+    <span>cli</span> <span>=</span> <span>redis</span><span>.</span><span>Redis</span><span>()</span>
+    <span>return</span> <span>cli</span><span>.</span><span>zscore</span><span>(</span><span>PAGEVIEW_BUCKET</span> <span>%</span> <span>url</span><span>,</span> <span>bucket</span><span>)</span>
+</pre>
+                            </div>
+                            <p>
+                                This is reasonable and all, and allows us to find the minutes where the story received the most (or least) pageviews,
+                            </p>
+                            <div>
+                                <pre>
+<span># get top 10 buckets by num pageviews, include num pageviews</span>
+<span>cli</span><span>.</span><span>revrange</span><span>(</span><span>PAGEVIEW_BUCKET</span> <span>%</span> <span>url</span><span>,</span> <span>0</span><span>,</span> <span>9</span><span>,</span> <span>withscores</span><span>=</span><span>True</span><span>)</span>
+
+<span># get bottom 10 buckets by num pageviews, don't include num pageviews</span>
+<span>cli</span><span>.</span><span>range</span><span>(</span><span>PAGEVIEW_BUCKET</span> <span>%</span> <span>url</span><span>,</span> <span>0</span><span>,</span> <span>9</span><span>)</span>
+</pre>
+                            </div>
+                            <p>
+                                but it doesn't support keeping only the last <code>N</code> timebuckets, nor getting the number of pageviews in the those last buckets.
+                            </p>
+                            <p>
+                                Using only one sorted set, if you want to prune you'd need to retrieve all the keys, sort them in Python and then prune. For a small enough set, that's probably going to be a performant--albeit slightly soul crushing--solution.
+                            </p>
+                            <div>
+                                <pre>
+<span>MAX_BUCKETS</span> <span>=</span> <span>10</span>
+
+<span>def</span> <span>increment_pageview</span><span>(</span><span>url</span><span>):</span>
+    <span>cli</span> <span>=</span> <span>redis</span><span>.</span><span>Redis</span><span>()</span>
+    <span>bucket</span> <span>=</span> <span>(</span><span>int</span><span>(</span><span>time</span><span>.</span><span>time</span><span>())</span> <span>*</span> <span>60</span><span>,)</span>
+    <span>url_key</span> <span>=</span> <span>PAGEVIEW</span> <span>%</span> <span>url</span>
+    <span>cli</span><span>.</span><span>zincrby</span><span>(</span><span>url_key</span><span>,</span> <span>bucket</span><span>,</span> <span>1</span><span>)</span>
+    <span>num_keys</span> <span>=</span> <span>cli</span><span>.</span><span>zcard</span><span>(</span><span>url_key</span><span>)</span>
+    <span>if</span> <span>num_keys</span> <span>&gt;</span> <span>MAX_BUCKETS</span><span>:</span>
+        <span>all_keys</span> <span>=</span> <span>cli</span><span>.</span><span>rank</span><span>(</span><span>url_key</span><span>,</span> <span>0</span><span>,</span> <span>num_keys</span><span>,</span> <span>withscores</span><span>=</span><span>True</span><span>)</span>
+        <span># note that older buckets are always lower ranking ints,</span>
+        <span># although they are being stored as strings, so we have</span>
+        <span># to coerce them into ints</span>
+        <span>sorted_keys</span> <span>=</span> <span>sorted</span><span>((</span><span>int</span><span>(</span><span>a</span><span>),</span> <span>b</span><span>)</span> <span>for</span> <span>a</span><span>,</span><span>b</span> <span>in</span> <span>x</span><span>.</span><span>iteritems</span><span>())</span>
+        <span>for</span> <span>key</span><span>,</span> <span>score</span> <span>in</span> <span>sorted_keys</span><span>[:</span><span>num_keys</span><span>-</span><span>MAX_BUCKETS</span><span>]:</span>
+            <span>cli</span><span>.</span><span>zrem</span><span>(</span><span>url_key</span><span>,</span> <span>key</span><span>)</span>
+</pre>
+                            </div>
+                            <p>
+                                Yes, it works. But, damnit, it's hard to love, and it's also pushing datastructure manipulation from Redis into the application. In this case we might not care beacuse we don't have to worry about any races (all the cleanup operations will be idempotent), but we can absolutely do better.
+                            </p>
+                            <p>
+                                We can do better, that is, if by better we mean: "uses twice the memory but is conceptually cleaner and has better performance with large sorted sets."
+                            </p>
+                            <h2>
+                                <code>WATCH</code>, <code>MULTI</code> and <code>EXEC</code>
+                            </h2>
+                            <p>
+                                The answer is to use two sorted sets. The first contains the same data as before, and the second will use the name as its value, allowing us to perform the same operations as above in addition to removing older timeboxes.
+                            </p>
+                            <p>
+                                We'll also need to use a few relatively uncommon Redis commands to keep two sorted sets synchronized in the face of concurrent requests:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://redis.io/commands/watch" title="WATCH Redis command">WATCH</a> allows you to make a transaction conditional: if another client modifies a value you're watching, then the dependent transaction will fail. (You watch <code>A</code>, use <code>GET A</code> to fetch its value, then do <code>MULTI</code>, <code>INCR A 100</code>, <code>EXEC</code>; if another client modifies <code>A</code> after you watched it and before your transaction completed on the Redis server, the transaction will fail, otherwise it will increment.)
+                                </li>
+                                <li>
+                                    <a href="http://redis.io/commands/multi" title="MULTI Redis command">MULTI</a> allows you to queue multiple commands into a single transaction. Either all of them will succeed or none of them will. All <code>WATCH</code> commands should be issued before <code>MULTI</code> is issued.
+                                </li>
+                                <li>
+                                    <a href="http://redis.io/commands/exec" title="EXEC Redis command">EXEC</a> executes all commands since <code>MULTI</code>.
+                                </li>
+                            </ul>
+                            <p>
+                                These pieces make it possible to perform fairly complex transactional operations with Redis. They also make it possible to increase performance by sending multiple commands in a batch.
+                            </p>
+                            <p>
+                                <code>redispy</code> uses pipelines to expose <code>MULTI</code> and <code>EXEC</code>. Here is us popping two items off of a sorted set with extreme prejudice (it'll fail if there aren't enough items, but otherwise it'll bang on the server until it is able to read the end of a sorted set and remove the items read before another client writes to that sorted set):
+                            </p>
+                            <div>
+                                <pre>
+<span>cli</span> <span>=</span> <span>redis</span><span>.</span><span>Redis</span><span>()</span>
+<span>while</span> <span>True</span><span>:</span>
+    <span>try</span><span>:</span>
+        <span>cli</span><span>.</span><span>watch</span><span>(</span><span>"a"</span><span>)</span>
+        <span>(</span><span>first</span><span>,</span> <span>second</span><span>)</span> <span>=</span> <span>cli</span><span>.</span><span>zrange</span><span>(</span><span>"a"</span><span>,</span> <span>0</span><span>,</span> <span>1</span><span>)</span>
+        <span>cli</span><span>.</span><span>pipeline</span><span>()</span><span>.</span><span>zrem</span><span>(</span><span>"a"</span><span>,</span> <span>first</span><span>)</span><span>.</span><span>zrem</span><span>(</span><span>"a"</span><span>,</span> <span>second</span><span>)</span><span>.</span><span>execute</span><span>()</span>
+        <span>break</span>
+    <span>except</span> <span>redis</span><span>.</span><span>exceptions</span><span>.</span><span>WatchError</span><span>:</span>
+        <span>pass</span>
+</pre>
+                            </div>
+                            <p>
+                                If you have a great deal of write-contention then this approach is going to thrash the server, but it absolutely will be transactional. Okay, let's put the same ideas to work to build our bounded timeboxes.
+                            </p>
+                            <div>
+                                <pre>
+<span>import</span> <span>time</span><span>,</span> <span>redis</span>
+<span>PAGEVIEW_BUCKET</span> <span>=</span> <span>"pv.</span><span>%s</span><span>"</span>
+<span>TIME_BUCKET</span> <span>=</span> <span>"tb.</span><span>%s</span><span>"</span>
+<span>MAX_BUCKETS</span> <span>=</span> <span>1000</span>
+
+<span>def</span> <span>increment_pageview</span><span>(</span><span>url</span><span>):</span>
+    <span>cli</span> <span>=</span> <span>redis</span><span>.</span><span>Redis</span><span>()</span>
+    <span>bucket</span> <span>=</span> <span>int</span><span>(</span><span>time</span><span>.</span><span>time</span><span>())</span> <span>%</span> <span>60</span>
+    <span>pv_key</span> <span>=</span> <span>PAGEVIEW_BUCKET</span> <span>%</span> <span>url</span>
+    <span>cli</span><span>.</span><span>zincrby</span><span>(</span><span>pv_key</span><span>,</span> <span>bucket</span><span>,</span> <span>1</span><span>)</span>
+
+    <span># ensure that the bucket's KV exists in TIME_BUCKET</span>
+    <span>tb_key</span> <span>=</span> <span>TIME_BUCKET</span> <span>%</span> <span>url</span>
+    <span>cli</span><span>.</span><span>watch</span><span>(</span><span>tb_key</span><span>)</span>
+    <span>time_bucket_exists</span> <span>=</span> <span>cli</span><span>.</span><span>zscore</span><span>(</span><span>tb_key</span><span>,</span> <span>bucket</span><span>)</span>
+    <span>if</span> <span>not</span> <span>time_bucket_exists</span><span>:</span>
+        <span>try</span><span>:</span>
+            <span>cli</span><span>.</span><span>pipeline</span><span>()</span><span>.</span><span>zadd</span><span>(</span><span>tb_key</span><span>,</span> <span>bucket</span><span>,</span> <span>bucket</span><span>)</span><span>.</span><span>execute</span><span>()</span>
+        <span>except</span> <span>redis</span><span>.</span><span>exceptions</span><span>.</span><span>WatchError</span><span>:</span>
+            <span># somebody else already initialized the key,</span>
+            <span># we don't need to initialize it again</span>
+            <span>pass</span>
+
+    <span># trim any excess values</span>
+    <span>to_rem</span> <span>=</span> <span>cli</span><span>.</span><span>zrevrange</span><span>(</span><span>tb_key</span><span>,</span> <span>MAX_BUCKETS</span><span>,</span> <span>MAX_BUCKETS</span><span>)</span>
+    <span>if</span> <span>to_rem</span><span>:</span>
+        <span># we aren't watching any values, so no need catch WatchError</span>
+        <span>cli</span><span>.</span><span>pipeline</span><span>()</span><span>.</span><span>zrem</span><span>(</span><span>tb_key</span><span>,</span> <span>bucket</span><span>)</span><span>.</span><span>zrem</span><span>(</span><span>pv_key</span><span>,</span> <span>bucket</span><span>)</span><span>.</span><span>execute</span><span>()</span>
+
+<span>def</span> <span>recent_buckets</span><span>(</span><span>url</span><span>,</span> <span>offset</span><span>,</span> <span>limit</span><span>):</span>
+    <span>"Get the most recent time buckets and their pageviews for a URL."</span>
+    <span>cli</span> <span>=</span> <span>redis</span><span>.</span><span>Redis</span><span>()</span>
+    <span>tb_key</span> <span>=</span> <span>TIME_BUCKET</span> <span>%</span> <span>url</span>
+    <span>pv_key</span> <span>=</span> <span>PAGEVIEW_BUCKET</span> <span>%</span> <span>url</span>
+
+    <span># note that we are watching the time bucket key,</span>
+    <span># not the pageview key, so this watch will only fail</span>
+    <span># if executed while a call to ``increment_pageview``</span>
+    <span># trims one of the buckets, so we don't expect for</span>
+    <span># frequent failures here, but we can rest assured</span>
+    <span># we will never return data for a bucket whose data</span>
+    <span># we are no longer storing</span>
+    <span>while</span> <span>True</span><span>:</span>
+        <span>try</span><span>:</span>
+            <span>cli</span><span>.</span><span>watch</span><span>(</span><span>tb_key</span><span>)</span>
+            <span># end value is inclusive, so have to do limit-1 for</span>
+            <span># traditional offset/limit expectations</span>
+            <span>recent_buckets</span> <span>=</span> <span>cli</span><span>.</span><span>zrevrange</span><span>(</span><span>tb_key</span><span>,</span> <span>offset</span><span>,</span> <span>limit</span><span>-</span><span>1</span><span>)</span>
+            <span>pipe</span> <span>=</span> <span>cli</span><span>.</span><span>pipeline</span><span>()</span>
+            <span>for</span> <span>bucket</span> <span>in</span> <span>recent_buckets</span><span>:</span>
+                <span>pipe</span><span>.</span><span>zscore</span><span>(</span><span>bucket</span><span>)</span>
+            <span>scores</span> <span>=</span> <span>pipe</span><span>.</span><span>execute</span><span>()</span>
+            <span>return</span> <span>zip</span><span>(</span><span>recent_buckets</span><span>,</span> <span>scores</span><span>)</span>
+        <span>except</span> <span>redis</span><span>.</span><span>exceptions</span><span>.</span><span>WatchError</span><span>:</span>
+            <span>pass</span>
+</pre>
+                            </div>
+                            <p>
+                                What a concise improvement! No? Well, I suppose it's fairly complicated for what we want to accomplish, but I'll be damned if it doesn't meet the requirements for most analytics systems which want to maintain a fixed number of time buckets. <em>And</em> you probably learned something about the <code>WATCH</code>, <code>MULTI</code> and <code>EXEC</code> commands.
+                            </p>
+                            <p>
+                                As always, let me know what I could have done better in this tutorial or where I've made mistakes! Thank you for reading!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://lethain.com/storing-bounded-timeboxes-in-redis/">http://lethain.com/storing-bounded-timeboxes-in-redis/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

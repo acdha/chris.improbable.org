@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Securing your SSH Server
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 12 Nov 2010 14:47:57 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-12T09:47:57-04:00">
+                    <meta itemprop="dateModified" content="2010-11-12T09:47:57-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-12T13:47:57+00:00">Nov 12</time>
+                    <h2 itemprop="title">
+                        Securing your SSH Server
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/1a68cc62416d4e0d">
+                        <p class="annotation">
+                            The best solution - and by far the most effective for a cloud-style environment - is also the simplest: disable any form of authentication other than public-key auth. fail2ban et al. are nice if you have to allow normal users password access but very few cloud instances need that.
+                        </p>
+                        <blockquote>
+                            <p>
+                                <span style="color:#666699"><em><strong><img title="major_hayden" src="http://c0179631.cdn.cloudfiles.rackspacecloud.com/major_Hayden.png" alt="" width="78" height="71"></strong></em></span><span style="color:#666699"><em><strong>This post was written and contributed by <a href="http://rackerhacker.com/">Major Hayden</a>, Linux Systems Engineer for the Rackspace C</strong></em></span><span style="color:#666699"><em><strong>l</strong></em></span><span style="color:#666699"><em><strong>oud.</strong></em></span> <span style="color:#666699"><strong><em>He’s also known as <em><strong>“Racker Hacker.”</strong></em></em></strong></span>
+                            </p>
+                            <p>
+                                One of the most common questions that I see in <a href="javascript:void(0);">my favorite IRC channel</a> is: “How can I secure sshd on my server?” There’s no single right answer, but most systems administrators combine multiple techniques to provide as much security as possible with the least inconvenience to the end user.
+                            </p>
+                            <p>
+                                Here are my favorite techniques listed from most effective to least effective:
+                            </p>
+                            <p>
+                                <strong>SSH key pairs</strong>
+                            </p>
+                            <p>
+                                By disabling password-based authentication and requiring ssh key pairs, you reduce the chances of compromise via a brute force attack. This can also help you protect against weak account passwords since a valid private key is required to gain access to the server. However, a weak account password is still a big problem if you allow your users to use sudo.
+                            </p>
+                            <p>
+                                If you’re new to using ssh keys, there are <a href="http://sial.org/howto/openssh/publickey-auth/">many</a> <a href="http://www.debian-administration.org/articles/530">great</a> <a href="http://www.linuxquestions.org/linux/answers/Networking/Public_key_authentication_with_ssh">guides</a> that can walk you through the process.
+                            </p>
+                            <p>
+                                <strong>Firewall</strong>
+                            </p>
+                            <p>
+                                Limiting the source IP addresses that can access your server on port 22 is simple and effective. However, if you travel on vacation often or your home IP address changes frequently, this may not be a convenient way to limit access. Acquiring a server with trusted access through your firewall would make this method easier to use, but you’d need to <a href="http://en.wikipedia.org/wiki/Recursion">consider the security of that server as well</a>.
+                            </p>
+                            <p>
+                                The iptables rules would look something like this:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+iptables -A INPUT -j ACCEPT -p tcp --dport 22 -s 10.0.0.20
+iptables -A INPUT -j ACCEPT -p tcp --dport 22 -s 10.0.0.25
+iptables -A INPUT -j DROP -p tcp --dport 22
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                <strong>Use a non-standard port</strong>
+                            </p>
+                            <p>
+                                I’m not a big fan of <a href="http://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a> and it doesn’t work well for ssh. If someone is simply scanning a subnet to find ssh daemons, you might not be seen the first time. However, if someone is targeting you specifically, changing the ssh port doesn’t help at all. They’ll find your ssh banner quickly and begin their attack.
+                            </p>
+                            <p>
+                                If you prefer this method, simply adjust the <code>Port</code> configuration parameter in your sshd_config file.
+                            </p>
+                            <p>
+                                <strong>Limit users and groups</strong>
+                            </p>
+                            <p>
+                                If you have only certain users and groups who need ssh access to your server, setting user or group limits can help increase security. Consider a server which needs ssh access for developers and a manager. Adding this to to your sshd_config would allow only those users and groups to access your ssh daemon:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+AllowGroups developers
+AllowUsers jsmith pjohnson asamuels
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Keep in mind that any users or groups not included in the sshd_config won’t be able to access your ssh server.
+                            </p>
+                            <p>
+                                <strong>TCP wrappers</strong>
+                            </p>
+                            <p>
+                                While <a href="http://en.wikipedia.org/wiki/TCP_Wrapper">TCP wrappers</a> are tried and true, I consider them to be a bit old-fashioned. I’ve found that many new systems administrators may not think of TCP wrappers when they diagnose server issues and this could possibly cause delays when adjustments need to be made later.
+                            </p>
+                            <p>
+                                If you’re ready to use TCP wrappers to limit ssh connections, check out <a href="http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html/Deployment_Guide/s1-tcpwrappers-access.html">Red Hat’s extensive documentation</a>.
+                            </p>
+                            <p>
+                                <strong>fail2ban and denyhosts</strong>
+                            </p>
+                            <p>
+                                For those systems administrators who want to take a bit more active stance on blocking brute force attacks, there’s always <a href="http://en.wikipedia.org/wiki/Fail2ban">fail2ban</a> or <a href="http://en.wikipedia.org/wiki/DenyHosts">denyhosts</a>. Both fail2ban and denyhosts monitor your authentication logs for repeated failures, but denyhosts can only work with your ssh daemon. You can use fail2ban with other applications like web servers and FTP servers.
+                            </p>
+                            <p>
+                                The only downside of using these applications is that if a valid user accidentally tries to authenticate unsuccessfully multiple times, they may be locked out for a period of time. This could be a big problem if you’re in the middle of a server emergency.
+                            </p>
+                            <p>
+                                A quick search on Google will give you instructions on <a href="http://www.fail2ban.org/wiki/index.php/HOWTOs">fail2ban configuration</a> as well as <a href="http://denyhosts.sourceforge.net/faq.html#2_0">denyhosts configuration</a>.
+                            </p>
+                            <p>
+                                <strong>Port knocking</strong>
+                            </p>
+                            <p>
+                                Although <a href="http://en.wikipedia.org/wiki/Port_knocking">port knocking</a> is another tried and true method to prevent unauthorized access, it can be annoying to use unless you have users who are willing to jump through additional hoops. Port knocking involves a “knock” on an arbitrary port that then allows the ssh daemon to be exposed to the user who sent the original knock.
+                            </p>
+                            <p>
+                                <a href="http://www.linuxjournal.com/article/6811">Linux Journal</a> has a great article explaining how port knocking works and it provides some sample configurations as well.
+                            </p>
+                            <p>
+                                <strong>Conclusion</strong>
+                            </p>
+                            <p>
+                                The best way to secure your ssh daemon is to apply more than one of these methods to your servers. Weighing security versus convenience of access isn’t an easy task and it will be different for every environment. Regardless of the method or methods you choose, ensure that the rest of your team is comfortable with the changes and capable of adapting to them efficiently.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.rackspacecloud.com/blog/2010/11/11/securing-your-ssh-server/">http://www.rackspacecloud.com/blog/2010/11/11/securing-your-ssh-server/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

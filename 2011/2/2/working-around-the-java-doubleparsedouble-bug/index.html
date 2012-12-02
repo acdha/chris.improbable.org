@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Working Around the Java Double.parseDouble Bug
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 03 Feb 2011 02:07:29 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-02T21:07:29-04:00">
+                    <meta itemprop="dateModified" content="2011-02-02T21:07:29-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-03T01:07:29+00:00">Feb 03</time>
+                    <h2 itemprop="title">
+                        Working Around the Java Double.parseDouble Bug
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/437f6050c20f19d4">
+                        <p class="annotation">
+                            Ouch…
+                        </p>
+                        <blockquote>
+                            You may have seen recently that Java suffers from a similar <a href="http://www.exploringbinary.com/java-hangs-when-converting-2-2250738585072012e-308/">floating-point parsing bug</a> to the one that recently affected PHP users. The basic gist of it is that for this special 64-bit floating point value, the Java call Double.parseDouble("2.2250738585072012e-308") will get stuck in an infinite loop. Read the link above to understand what's happening.<br>
+                            <br>
+                            Naturally, this affects all JVM languages too, since we all use Double.parseDouble for something or another. In fact, it affects almost all the JVM language parsers and compilers (including javac itself), since they need to turn strings into doubles.<br>
+                            <br>
+                            Being the upright citizens we are on the JRuby team, we figured we'd try to beat Oracle to the punch and patch around the bug, at least for Ruby-land conversions of String to Float.<br>
+                            <br>
+                            I started by looking for calls to Double.parseDouble in JRuby. It turned out there were only two: one for the lexer, and one used by String#to_f, BigDecimal#new, and so on. That was a relief; I expected to find dozens of calls.<br>
+                            <br>
+                            It also turned out all cases had already parsed out Ruby float literal oddities, like underscores, using 'd' or 'D' for the exponentiation marker, allowing ill-formatted exponents to be treated as zero, and so on.<br>
+                            <br>
+                            My first attempt was to simply normalize the cleaned-up string and pass it to new java.math.BigDecimal(), converting that result back to a primitive double. Unfortunately, BigDecimal's constructor *also* passes through the offending Double.parseDouble code, and we're back where we started.<br>
+                            <br>
+                            Ultimately, I ended up with the following code. I make no claims this is efficient, but it appears to pass all the Float tests and specs for JRuby and does not DOS like the bad code in Double.parseDouble:<br>
+                            <br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp;public static double parseDouble(String value) {</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;String normalString = normalizeDoubleString(value);</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;int offset = normalString.indexOf('E');</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;BigDecimal base;</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;int exponent;</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;if (offset == -1) {</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;base = new BigDecimal(value);</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;exponent = 0;</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;} else {</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;base = new BigDecimal(normalString.substring(0, offset));</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;exponent = Integer.parseInt(normalString.charAt(offset + 1) == '+' ?</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;normalString.substring(offset + 2) :</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;normalString.substring(offset + 1));</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;}</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;return base.scaleByPowerOfTen(exponent).doubleValue();</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace">&nbsp;&nbsp; &nbsp;}</span><br>
+                            <span style="font-family:'Courier New', Courier, monospace"><br></span><br>
+                            <span style="font-family:inherit">I didn't say it was particularly clever or efficient...but there you have it. A few notes:</span><br>
+                            <ul>
+                                <li>Do I really need UNLIMITED precision here? I almost used it to ensure there's no peculiarities passing through BigDecimal on the way to double, but are any such peculiarities outside 128-bit precision?
+                                </li>
+                                <li>It might have been more efficient to normalize the decimal position and exponent and then see if it matched the magic value. But of course this magic value was not known until recently, so why risk there being another one?
+                                </li>
+                                <li>Using BigDecimal is also lazy. I am lazy.
+                                </li>
+                            </ul>
+                            <div>
+                                I welcome improvements. Everyone will probably need to start using code like this, since there will be a lot of unpatched JVMs out there for a long time.<br>
+                                <br>
+                                I'm happy to say JRuby will be the first JVM language to route around the Double.parseDouble bug :)<br>
+                                <br>
+                                <i style="font-weight:bold">Update:</i> The JRuby commit with this logic is&nbsp;<a href="https://github.com/jruby/jruby/commit/4c712963885c0117b95066d927520a6a738c2a65">4c71296</a>, and the JRuby bug is at&nbsp;<a href="http://jira.codehaus.org/browse/JRUBY-5441">http://jira.codehaus.org/browse/JRUBY-5441</a>.<br>
+                                <br>
+                                <i style="font-weight:bold">Update:</i>&nbsp;A commented on Hacker News pointed out that BigDecimal.doubleValue actually just converts to a string and calls Double.parseDouble. So unfortunately, the mechanism above only worked in an earlier version where I was losing some precision by calling Math.pow(10, exponent) rather than scaleByPowerOfTen. The version above unfortunately does <b>not work</b>, so it's back to the drawing board. C'est la vie!
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/4704664917418794835-6627578193167913100?l=blog.headius.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.headius.com/2011/02/working-around-java-doubleparsedouble.html">http://blog.headius.com/2011/02/working-around-java-doubleparsedouble.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

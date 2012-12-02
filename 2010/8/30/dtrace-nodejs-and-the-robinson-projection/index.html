@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            DTrace, node.js and the Robinson Projection
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 30 Aug 2010 09:55:03 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-30T05:55:03-04:00">
+                    <meta itemprop="dateModified" content="2010-08-30T05:55:03-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-30T09:55:03+00:00">Aug 30</time>
+                    <h2 itemprop="title">
+                        DTrace, node.js and the Robinson Projection
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7b418057e3c53a4d">
+                        <blockquote>
+                            <p>
+                                When I joined Joyent, <a href="http://dtrace.org/blogs/bmc/2010/07/30/hello-joyent/">I mentioned</a> that I was seeking to apply DTrace to the cloud, and that I was particularly excited about the development of node.js — leaving it implict that the intersection of the two technologies would be naturally interesting, As it turns out, we have had an early opportunity to show the potential here: as you might have seen, the <a href="http://nodeknockout.com/">Node Knockout</a> programming contest was held over the weekend; when I first joined Joyent (but four weeks ago!), <a href="http://twitter.com/ryah">Ryan</a> was very interested in potentially using DTrace to provide a leaderboard for the competition. I got to work, adding <a href="http://github.com/bcantrill/node-dtrace">USDT probes to node.js</a>. To be fair, this still has some disabled overhead (namely, getting into and out of the node addon that has the true USDT probe), but it’s sufficiently modest to deploy DTrace-enabled node’s in production.
+                            </p>
+                            <p>
+                                And thanks to incredibly strong work by Joyent engineers, we were able to make available a new <a href="http://nodeknockout.posterous.com/countdown-to-knockout-post-11-deploying-to-jo">node.js service</a> that allocated a container per user. This service allowed us to make available a DTrace-enabled node to contestants — and then observe all of that from the global zone.
+                            </p>
+                            <p>
+                                For example of the DTrace provider for node.js, here’s a simple enabling to print out HTTP requests as zones handle them (running on one of the Node Knockout machines):
+                            </p>
+                            <pre>
+# <b>dtrace -n 'node*:::http-server-request{printf("%s: %s of %s\n", \
+    zonename, args[0]-&gt;method, args[0]-&gt;url)}' -q</b>
+nodelay: GET of /poll6759.479651377309
+nodelay: GET of /poll6148.392275444794
+nodebodies: GET of /latest/
+nodebodies: GET of /latest/
+nodebodies: GET of /count/
+nodebodies: GET of /count/
+nodelay: GET of /poll8973.863890386003
+nodelay: GET of /poll2097.9667574643568
+awesometown: GET of /graphs/4c7a650eba12e9c41d000005.js
+awesometown: POST of /graphs/4c7a650eba12e9c41d000005/appendValue
+awesometown: GET of /graphs/4c7acd5ca121636840000002.js
+awesometown: GET of /graphs/4c7a650eba12e9c41d000005.js
+awesometown: GET of /graphs/4c7a650eba12e9c41d000005.js
+awesometown: GET of /graphs/4c7a650eba12e9c41d000005.js
+awesometown: GET of /graphs/4c7b2408546a64b81f000001.js
+awesometown: POST of /faye
+awesometown: POST of /faye
+...
+</pre>
+                            <p>
+                                I added probes around both HTTP request and HTTP response; treating the file descriptor as a token that describes that uniquely describes that request while it is pending (an assumption that would only be invalid in the presence of <a href="http://en.wikipedia.org/wiki/HTTP_pipelining">HTTP pipelining</a>), allows one to actually determine the latency for requests:
+                            </p>
+                            <pre>
+# <b>cat http.d</b>
+#pragma D option quiet
+
+http-server-request
+{
+        ts[this-&gt;fd = args[1]-&gt;fd] = timestamp;
+        vts[this-&gt;fd] = vtimestamp;
+}
+
+http-server-response
+/this-&gt;ts = ts[this-&gt;fd = args[0]-&gt;fd]/
+{
+        @t[zonename] = quantize(timestamp - this-&gt;ts);
+        @v[zonename] = quantize(vtimestamp - vts[this-&gt;fd]);
+        ts[this-&gt;fd] = 0;
+        vts[this-&gt;fd] = 0;
+}
+
+tick-1sec
+{
+        printf("Wall time:\n");
+        printa(@t);
+
+        printf("CPU time:\n");
+        printa(@v);
+}
+</pre>
+                            <p>
+                                This script makes the distinction between wall time and CPU time; for wall-time, you can see the effect of long-polling, e.g. (the values are nanoseconds):
+                            </p>
+                            <pre>
+    nodelay
+           value  ------------- Distribution ------------- count
+           32768 |                                         0
+           65536 |                                         4
+          131072 |@@@@@                                    52
+          262144 |@@@@@@@@@@@@@@@@@@                       183
+          524288 |@@@@@                                    55
+         1048576 |@@@                                      27
+         2097152 |@                                        9
+         4194304 |                                         5
+         8388608 |@                                        8
+        16777216 |@                                        6
+        33554432 |@                                        9
+        67108864 |@                                        7
+       134217728 |@                                        12
+       268435456 |@                                        11
+       536870912 |                                         1
+      1073741824 |                                         4
+      2147483648 |                                         1
+      4294967296 |                                         5
+      8589934592 |                                         0
+     17179869184 |                                         1
+     34359738368 |                                         1
+     68719476736 |                                         0
+</pre>
+                            <p>
+                                You can also look at the CPU time to see those that are doing more actual work. For example, one zone with interesting CPU time outliiers:
+                            </p>
+                            <pre>
+  nodebodies
+           value  ------------- Distribution ------------- count
+         4194304 |                                         0
+         8388608 |@@@@@@@@@@@@                             57
+        16777216 |@@@@                                     21
+        33554432 |@@@@                                     18
+        67108864 |@@@@@@@                                  34
+       134217728 |@@@@@@@@@@@                              54
+       268435456 |                                         0
+       536870912 |                                         0
+      1073741824 |                                         0
+      2147483648 |                                         0
+      4294967296 |@                                        3
+      8589934592 |@                                        4
+     17179869184 |                                         0
+</pre>
+                            <p>
+                                Note that because node has a single thread do all processing, we cannot assume that the requests themselves are inducing the work — only that CPU work was done between request and response. Still, this data would probably be interesting to the <a href="http://nodebodies.no.de">nodebodies</a> team…
+                            </p>
+                            <p>
+                                I also added probes around connection establishment; so here’s a simple way of looking at new connections by zone:
+                            </p>
+                            <pre>
+# <b>dtrace -n 'node*:::net-server-connection{@[zonename] = count()}'</b>
+dtrace: description 'node*:::net-server-connection' matched 44 probes
+^C
+
+  explorer-sox                                                      1
+  nodebodies                                                        1
+  anansi                                                           69
+  nodelay                                                         102
+  awesometown                                                     146
+</pre>
+                            <p>
+                                Or if we wanted to see which IP addresses were connecting to, say, our good friends at <a href="http://awesometown.no.de">awesometown</a> (with actual addresses<br>
+                                in the output elided):
+                            </p>
+                            <pre>
+# <b>dtrace -n 'node*:::net-server-connection \
+    /zonename == "awesometown"/{@[args[0]-&gt;remoteAddress] = count()}'</b>
+dtrace: description 'node*:::net-server-connection' matched 44 probes
+  XXX.XXX.XXX.XXX                                                   1
+  XX.XXX.XX.XXX                                                     1
+  XX.XXX.XXX.XXX                                                    1
+  XX.XXX.XXX.XX                                                     1
+  XXX.XXX.XX.XXX                                                    1
+  XXX.XXX.XX.XX                                                     2
+  XXX.XXX.XXX.XX                                                    8
+</pre>
+                            <p>
+                                Ryan saw the DTrace support I had added, and had a great idea: what if we took the IPs of incoming connections and geolocated them, throwing them on a world map and coloring them by team name? This was an idea that was just too exciting not to take a swing at, so we got to work. For the backend, the machinery was begging to itself be written in node, so I did a <a href="http://github.com/bcantrill/node-libdtrace">libdtrace addon</a> for node and started building a scalable backend for processing the DTrace data from the different Node Knockout machines. Meanwhile, <a href="http://twitter.com/jahoni">Joni</a> came up with some mockups that had everyone drooling, and <a href="http://twitter.com/mmayo">Mark</a> contacted <a href="http://twitter.com/brianleroux">Brian</a> from <a href="http://nitobi.com/">Nitobi</a> about working on the front-end. Brian and crew were as excited about it as we were, and they put front-end engineer extraordinaire <a href="http://twitter.com/yoheis">Yohei</a> on the case — who worked with <a href="http://twitter.com/rob_ellis">Rob</a> on the Joyent side to pull it all together. Among Rob’s other feats, he managed to implement in JavaScript the logic for plotting longitude and latitude in the beautiful <a href="http://en.wikipedia.org/wiki/Robinson_projection">Robinson projection</a> — which is a brutally complicated transformation. It was an incredible team, and we were pulling it off in such a short period of time and with such a firm deadline that we often felt like contestants ourselves!
+                            </p>
+                            <p>
+                                The result — which it must be said works best in Safari and Chrome — is at <a href="http://leaderboard.no.de">http://leaderboard.no.de</a>. In keeping with both the spirit of node and DTrace, the leaderboard is updated in real-time; from the time you connect to one of the Joyent-hostest (no.de) contestants, you should see yourself show up in the map in no more than 700 milliseconds (plus your network latwork latency). For crowded areas like the Bay Area, it can be hard to see yourself — but try moving to Cameroon for best results. It’s fun to watch as certain contestants go viral (try both hovering over a particular data point and clicking on the team name in the leaderboard) — and you can know which continent you’re cursing at in <a href="http://saber-tooth-moose-lion.no.de">http://saber-tooth-moose-lion.no.de</a> (now known to the world as <a href="http://swarmation.com/">Swarmation</a>).
+                            </p>
+                            <p>
+                                Enjoy both the leaderboard and the terrific Node Knockout entries (be sure to vote for your favorites!) — and know that we’ve only scratched the surface of what DTrace and node.js can do together!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dtrace.org/blogs/bmc/2010/08/30/dtrace-node-js-and-the-robinson-projection/">http://dtrace.org/blogs/bmc/2010/08/30/dtrace-node-js-and-the-robinson-projection/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

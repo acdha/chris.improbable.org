@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Thinking about Namespaces in JSON
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 14 Oct 2011 01:37:27 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-10-12T02:23:14-04:00">
+                    <meta itemprop="dateModified" content="2011-10-12T02:23:14-04:00"><time class="date" itemprop="datePublished" datetime="2011-10-12T06:23:14+00:00">Oct 12</time>
+                    <h2 itemprop="title">
+                        Thinking about Namespaces in JSON
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7fb6e4b62a04d1d9">
+                        <blockquote>
+                            <p>
+                                Since joining Rackspace to help out with OpenStack, one of the hot topics of conversation I’ve been involved in has been extensibility and versioning.
+                            </p>
+                            <p>
+                                I think most of my readers (yes, all six of you) are fairly familiar with, if not tired of (hi, <a href="http://www.pacificspirit.com/blog/2008/10/23/distributed_extensibility_stays_alive_and_anne">Dave</a>!) the various arguments and counter-arguments in this space. However, there is one new-ish bit; how to do distributed extensibility in JSON.
+                            </p>
+                            <p>
+                                That’s because OpenStack’s API allows vendors to add extensions in various ways, in an uncoordinated fashion. And while that’s a well-understood (if still somewhat tricky) problem in XML, it hasn’t been approached at all in JSON, which has fast become the format of choice for data-bearing APIs.
+                            </p>
+                            <p>
+                                JSON has a head start in that it embodies the mustIgnore rule; if you put extra data in a JSON document (for example, an extra property on an object), all implementations will just ignore it. Great. However, the problem comes in when multiple people want to extend a document, but avoid collisions.
+                            </p>
+                            <p>
+                                For example, given this straw-man JSON document:
+                            </p>
+                            <pre>
+{
+        "foo": "bar",
+        "version": 1
+}
+</pre>
+                            <p>
+                                and you both FooCorp and BarProject add a “widget” property, they’ll be fighting over who owns it. Bad luck.
+                            </p>
+                            <p>
+                                So, some way to coordinate these parties and assure that they don’t conflict is necessary. In XML, this is done with Namespaces in XML, and so solutions to this problem are generally called Namespaces too, even though they don’t have to look or work the same way.
+                            </p>
+                            <h3>
+                                Prior Art
+                            </h3>
+                            <p>
+                                I’m not the first person to wonder in this direction, of course.
+                            </p>
+                            <p>
+                                Yaron made the <a href="http://www.goland.org/jsonnamespace/">first proposal</a>, as far as I can tell. His approach looks like this:
+                            </p>
+                            <pre>
+{
+    "org.goland.schemas.projectFoo.specProposal" : {
+    "title": "JSON Extensions",
+    "author": { "firstName": "Yaron",
+                "com.example.schemas.middleName":"Y",
+                "org.goland.schemas.projectFoo.lastName": "Goland",
+              }
+    }
+}
+</pre>
+                            <p>
+                                It’s sort of a Java-ish approach, based on the DNS like URIs, but without the syntactic awkwardness of putting URIs in JSON. he also states that there’s an implicit name space for descendants; e.g., here, “title” is also in the org.goland.schemas.projectFoo name space.
+                            </p>
+                            <p>
+                                There was <a href="http://groups.google.com/group/json-schema/browse_thread/thread/dd1a8c9e55035c67">another proposal in the JSON-schema mailing list</a> in 2008. It looks very, very similar to XML schemas, except that the namespaces, as far as I can figure out, are bound inside the schema itself, rather than the document. It seems to have been shot down, because it required schema parsing to be able to identify things; never a good idea, especially in the JSON world.
+                            </p>
+                            <h3>
+                                Some Observations
+                            </h3>
+                            <p>
+                                Starting with the obvious, I’d say that if you can use JSON without namespaces, you really, really should. In other words, if you really need distributed extensibility, you need something like namespaces, but for all other purposes, they should be avoided like the plague; they make it too complex, and simplicity is the name of the game in JSON.
+                            </p>
+                            <p>
+                                A bit more subtly, I think this isn’t just a document-by-document decision, but an node-by-node one in the document. I.e., you should identify the specific places in a document that need extensibility and allow namespaces there, but they shouldn’t pollute the rest of the document, if they aren’t needed there.
+                            </p>
+                            <p>
+                                I suppose what I’m saying is that namespaces should be a purely syntactic convention to avoid collisions where distributed extensibility is allowed, rather than some magical thing that allows you to uniquely and globally identify every bit of data in the document. I know that’s going to rile up some of the linked data and semweb folks, but we’re talking JSON here, not Turtle or RDF.
+                            </p>
+                            <p>
+                                This implies that Yaron’s inheritance is unnecessary; the very fact that the “title” property is a member of “org.goland.schemas.projectFoo.specProposal” is sufficient to assure lack of collisions (unless he wants to allow extensibility at that level too, in which case they should be explicit at that level).
+                            </p>
+                            <h3>
+                                Another Straw-Man
+                            </h3>
+                            <p>
+                                Given all of that, I wonder if the problem can be simplified enough to make some progress. I think Yaron’s proposal makes a certain amount of sense, with a few modifications:
+                            </p>
+                            <ul>
+                                <li>JSON-based formats need to define which objects require namespaced members explicitly. I.e., it’s opt-in and constrained to only those nodes nominated for distributed extensibility.
+                                </li>
+                                <li>No inheritance is assumed.
+                                </li>
+                                <li>Non-namespaced property names won't have the delimiter character in them (here, '.')
+                                </li>
+                                <li>Prefixes are defined by the format; they can either be in the DNS-based style that Yaron advocates, or if there’s some level of coordination, you could set up a registry (JSON-based, of course :) of shorter prefixes.
+                                </li>
+                            </ul>
+                            <p>
+                                This would tweak Yaron’s sample to something like (assuming that a registry were used):
+                            </p>
+                            <pre>
+{
+    "FOO.specProposal" : {
+    "title": "JSON Extensions",
+    "author": { "firstName": "Yaron",
+                "EXAMPLE.middleName":"Y",
+                "lastName": "Goland",
+              }
+    }
+}
+</pre>
+                            <p>
+                                I like this because it’s not very painful, it doesn’t require schema to process, and it gets the job done; it allows distributed extensibility. The important thing is to stop looking at namespaces as something you should slather over your format like butter — <em>more is better!</em> — and start seeing them as a specialised tool that should only be used when it can do some good.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.mnot.net/blog/2011/10/12/thinking_about_namespaces_in_json">http://www.mnot.net/blog/2011/10/12/thinking_about_namespaces_in_json</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

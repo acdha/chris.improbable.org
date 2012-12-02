@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Apache Hadoop: Best Practices and Anti-Patterns
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 19 Aug 2010 01:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-18T21:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-08-18T21:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-19T01:00:00+00:00">Aug 19</time>
+                    <h2 itemprop="title">
+                        Apache Hadoop: Best Practices and Anti-Patterns
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/46965dcd496df10a">
+                        <blockquote>
+                            <p>
+                                Apache Hadoop is a software framework to build large-scale, shared storage and computing infrastructures. Hadoop clusters are used for a variety of research and development projects, and for a growing number of production processes at Yahoo!, EBay, Facebook, LinkedIn, Twitter, and other companies in the industry. It is a key component in several business critical endeavors representing a very significant investment and technology component. Thus, appropriate usage of the clusters and Hadoop is critical in ensuring that we reap the best possible return on this investment.
+                            </p>
+                            <p>
+                                This blog post represents compendium of <em>best practices</em> for applications running on Apache Hadoop. In fact, we introduce the notion of a<em>Grid Pattern</em> which, similar to a <a href="http://redirect.corp.yahoo.com/?url=http%3A%2F%2Fen.wikipedia.org%2Fwiki%2FDesign_pattern_%28computer_science%29">Design Pattern</a>, represents a general reusable solution for applications running on the Grid.
+                            </p>
+                            <p>
+                                This blog post enumerates characteristics of <em>well behaved</em> applications and provides guidance on appropriate uses of various features and capabilities of the Hadoop framework. It is largely prescriptive in its nature; a useful way to look at this document is to understand that applications that follow, in spirit, the best practices prescribed here are very likely to be efficient, <em>well-behaved</em> in the multi-tenant environment of the Apache Hadoop clusters, and unlikely to fall afoul of most policies and limits.
+                            </p>
+                            <p>
+                                This blog post also attempts to highlight some of the <em>anti-patterns</em> for applications running on the Apache Hadoop clusters.
+                            </p>
+                            <h3>
+                                Overview
+                            </h3>
+                            <p>
+                                Applications processing data on Hadoop are written using the Map-Reduce paradigm.
+                            </p>
+                            <p>
+                                A Map-Reduce job usually splits the input data-set into independent chunks, which are processed by the map tasks in a completely parallel manner. The framework sorts the outputs of the maps, which are then input to the reduce tasks. Typically both the input and the output of the job are stored in a file-system. The framework takes care of scheduling tasks, monitoring them and re-executes the failed tasks.
+                            </p>
+                            <p>
+                                Map-Reduce applications specify the input/output locations and supply <em>map</em> and <em>reduce</em> functions via implementations of appropriate Hadoop interfaces, such as <em>Mapper</em> and <em>Reducer</em>. These, and other job parameters, comprise the job configuration. The Hadoop job client then submits the job (jar/executable, etc.) and configuration to the JobTracker, which then assumes the responsibility of distributing the software/configuration to the slaves, scheduling tasks and monitoring them, providing status and diagnostic information to the job-client.
+                            </p>
+                            <p>
+                                The Map/Reduce framework operates exclusively on <em>&lt;key, value&gt;</em> pairs — that is, the framework views the input to the job as a set of <em>&lt;key, value&gt;</em> pairs and produces a set of <em>&lt;key, value&gt;</em> pairs as the output of the job, conceivably of different types.
+                            </p>
+                            <p>
+                                Here is the typical data-flow in a Map-Reduce application:
+                            </p><img alt="Map Reduce data flow" src="http://developer.yahoo.com/blogs/hadoop/MapRed.png" width="282" height="227">
+                            <p>
+                                The vast majority of Map-Reduce applications executed on the Grid do not directly implement the low-level Map-Reduce interfaces; rather they are implemented in a higher-level language, such as <a href="http://redirect.corp.yahoo.com/?url=http%3A%2F%2Fhadoop.apache.org%2Fpig%2F">Pig</a>.
+                            </p>
+                            <p>
+                                <a href="http://twiki.corp.yahoo.com/view/CCDI/Oozie">Oozie</a> is the preferred workflow management and scheduling solution on the Grid. Oozie supports multiple interfaces for applications (Hadoop Map-Reduce, Pig, Hadoop Streaming, Hadoop Pipes, etc.) and supports scheduling of applications based on either time or data-availability.
+                            </p>
+                            <h3>
+                                Grid Patterns
+                            </h3>
+                            <p>
+                                This section covers the best practices for Map-Reduce applications running on the Grid.
+                            </p>
+                            <p>
+                                <strong>Input</strong>
+                            </p>
+                            <p>
+                                Hadoop Map-Reduce is optimized to process large amounts of data. The <em>maps</em> typically process data in an embarrassingly parallel manner, typically at least 1 HDFS block of data, usually 128MB.
+                            </p>
+                            <ul>
+                                <li>By default, the framework processes at most 1 HDFS file per-map. This means that if an application needs to processes a very large number of input files, it is better to process multiple files per-map via a special input-format such as <i>MultiFileInputFormat</i>. This is true even for applications processing a small number of tiny input files, processing multiple files per map is significantly more efficient.
+                                </li>
+                                <li>If the application needs to process a very large amount of data, even if they are present in large-sized files, it is more efficient to process more than 128MB of data per-map (see section on <a href="http://twiki.corp.yahoo.com/view/Hadoop/BestPractices#Maps">Maps</a>).
+                                </li>
+                            </ul>
+                            <p>
+                                <em>Grid Pattern: Coalesce processing of multiple small input files into smaller number of maps and use larger HDFS block-sizes for processing very large data-sets.</em>
+                            </p>
+                            <p>
+                                <strong>Maps</strong>
+                            </p>
+                            <p>
+                                The number of maps is usually driven by the total size of the inputs, that is, the total number of blocks of the input files. Thus, if you expect 10TB of input data and have a block-size of 128MB, you'll end up with 82,000 maps.
+                            </p>
+                            <p>
+                                Task setup takes awhile, so it is best if the maps take at least a minute to execute for large jobs.
+                            </p>
+                            <p>
+                                As explained in the section above on <a href="http://twiki.corp.yahoo.com/view/Hadoop/BestPractices#Input">input</a> of applications, it is more efficient to process multiple-files per map for jobs with very large number of small input files.
+                            </p>
+                            <p>
+                                Even if an application is processing large input files, such that each map is processing a whole HDFS block of data, it is more efficient to process large chunks of data per-map. For example, one way to process more data per map is to have the application process input data with larger HDFS block size, e.g., 512M or even higher, if appropriate.
+                            </p>
+                            <p>
+                                As an extreme example the Map-Reduce development team used ~66,000 maps to accomplish the <a href="http://developer.yahoo.net/blogs/hadoop/2009/05/hadoop_sorts_a_petabyte_in_162.html">PetaSort</a>, that is, 66,000 maps to process 1PB of data (12.5G per map).
+                            </p>
+                            <p>
+                                The bottom-line is that having too many maps or lots of maps with very short run-time is anti-productive.
+                            </p>
+                            <p>
+                                <em>Grid Pattern: Unless the application's maps are heavily CPU bound, there is almost no reason to ever require more than 60,000-70,000 maps for a single application.</em>
+                            </p>
+                            <p>
+                                Also, when processing larger blocks per-map, it is important ensure they have sufficient memory for the sort-buffer to speed up the map-side sort (please see the documentation for <code>io.sort.mb</code> and <code>io.sort.record.percent</code>). The performance of the application can improve dramatically if it can be arranged such that the majority of the map-output can be held in the map's sort-buffer, this will entail larger heap-sizes for the map JVM. It is important to remember that the in-memory footprint of deserialized input might significantly vary from the on-disk footprint; for example, certain class of Pig applications result in 3x-4x blow up of on-disk data in-memory. In such cases, applications might need significantly large heap-sizes for the JVM to ensure the map-input-records and map-output-records can be kept in memory.
+                            </p>
+                            <p>
+                                <em>Grid Pattern: Ensure maps are sized so that all of map-outputs can be sorted in one pass by keeping all of them in the sort-buffer.</em>
+                            </p>
+                            <p>
+                                Having the right number of maps has the following advantages for applications:
+                            </p>
+                            <ul>
+                                <li>It reduces the scheduling overhead; having fewer maps means task-scheduling is easier and availability of free-slots in the cluster is higher.
+                                </li>
+                                <li>It means the map-side is more efficient; provided there is <em>sufficient</em> memory to accommodate the map-outputs in the sort-buffer in the map.
+                                </li>
+                                <li>It reduces the number of seeks required to <em>shuffle</em> the map-outputs from the maps to the reduces — remember that each map produces output for each reduce, thus the number of seeks is <code>m * r</code> where m is #maps and r is #reduces.
+                                </li>
+                                <li>Each shuffled segment is larger, resulting in reducing the overhead of connection-establishment when compared to the 'real' work done, that is, moving bytes across the network.
+                                </li>
+                                <li>It means that the reduce-side merge of the sorted map-outputs is more efficient, since the branch-factor for the merge is lesser, that is, fewer merges are needed since there are fewer sorted segments of map-outputs to merge.
+                                </li>
+                            </ul>
+                            <p>
+                                The caveat to the above guidelines is that processing too much data per-map is bad for failure recovery, a single failed map might hurt the latency of the application.
+                            </p>
+                            <p>
+                                <em>Grid Pattern: Applications should use fewer maps to process data in parallel, as few as possible without having really bad failure recovery cases.</em>
+                            </p>
+                            <p>
+                                <strong>Combiner</strong>
+                            </p>
+                            <p>
+                                Applications, which use Combiners appropriately, reap benefits of the map-side aggregation effected by them. The primary benefit of the Combiner is that, when used appropriately, it significantly cuts down the amount of data shuffled from the maps to the reduces.
+                            </p>
+                            <p>
+                                <strong>Shuffle</strong>
+                            </p>
+                            <p>
+                                Applications that use Combiners appropriately reap benefits of the map-side aggregation effected by them. The primary benefit of the Combiner is that, when used appropriately, it significantly cuts down the amount of data shuffled from the maps to the reduces.
+                            </p>
+                            <p>
+                                It is important to remember that Combiner has a performance penalty since it entails an extra serialization/de-serialization of map-output records. Applications that cannot aggregate the map-output bytes by 20-30% should not be using combiners. Applications can use the combiner input/output records counters to measure the efficacy of the Combiner.
+                            </p>
+                            <p>
+                                <em>Grid Pattern: Combiners help the shuffle phase of the applications by reducing network traffic. However, it is important to ensure that the Combiner does provide sufficient aggregation.</em>
+                            </p>
+                            <p>
+                                <strong>Reduces</strong>
+                            </p>
+                            <p>
+                                The efficiency of reduces is driven by a large extent by the performance of the <a href="http://twiki.corp.yahoo.com/view/Hadoop/BestPractices#Shuffle">shuffle</a>.
+                            </p>
+                            <p>
+                                The number of reduces configured for the application (r) is, obviously, a crucial factor.
+                            </p>
+                            <p>
+                                Having too many or too few reduces is anti-productive:
+                            </p>
+                            <ul>
+                                <li>Too few reduces cause undue load on the node on which the reduce is scheduled — in extreme cases we have seen reduces processing over 100GB per-reduce. This also leads to very bad failure-recovery scenarios since a single failed reduce has a significant, adverse, impact on the latency of the job.
+                                </li>
+                                <li>Too many reduces adversely affects the shuffle crossbar. Also, in extreme cases it results in too many small files created as the output of the job — this hurts both the NameNode and performance of subsequent Map-Reduce applications who need to process lots of small files.
+                                </li>
+                            </ul>
+                            <p>
+                                <em>Grid Pattern: Applications should ensure that each reduce should process at least 1-2 GB of data, and at most 5-10GB of data, in most scenarios.</em>
+                            </p>
+                            <p>
+                                <strong>Output</strong>
+                            </p>
+                            <p>
+                                A key factor to remember is that the number of output artifacts of an application is linear w.r.t the number of configured reduces. As discussed in the section on <a href="http://twiki.corp.yahoo.com/view/Hadoop/BestPractices#Reduces">reduces</a>, picking the right number of reduces is very important.
+                            </p>
+                            <p>
+                                Some other factors to consider:
+                            </p>
+                            <ul>
+                                <li>Consider compressing the application's output with an appropriate compressor (compression speed v/s efficiency) to improve HDFS write-performance.
+                                </li>
+                                <li>Do not write out more than one output file per-reduce, using side-files is usually avoidable. Typically applications write small side-files to capture statistics and the like; counters might be more appropriate if the number of statistics collected is small.
+                                </li>
+                                <li>Use an appropriate file-format for the output of the reduces. Writing out large amounts of compressed textual data with a codec such as zlib/gzip/lzo is counter-productive for downstream consumers. This is because zlib/gzip/lzo files cannot be split and processed and the Map-Reduce framework is forced to process the entire file in a single map, in the downstream consumer applications. This results in a bad load imbalance and failure recover scenarios on the maps. Using file-formats such as SequenceFile or TFile alleviates these problems since they are both compressed and splittable.
+                                </li>
+                                <li>Consider using a larger output block size (<code>dfs.block.size</code>) when the individual output files are large (multiple GBs).
+                                </li>
+                            </ul>
+                            <p>
+                                <em>Grid Pattern: Application outputs to be few large files, with each file spanning multiple HDFS blocks and appropriately compressed.</em>
+                            </p>
+                            <p>
+                                <strong>Distributed Cache</strong>
+                            </p>
+                            <p>
+                                DistributedCache distributes application-specific, large, read-only files efficiently. DistributedCache is a facility provided by the Map/Reduce framework to cache files (text, archives, jars and so on) needed by applications. The framework will copy the necessary files to the slave node before any tasks for the job are executed on that node. Its efficiency stems from the fact that the files are only copied once per job and the ability to cache archives which are un-archived on the slaves. It can also be used as a rudimentary software distribution mechanism for use in the map and/or reduce tasks. It can be used to distribute both jars and native libraries and they can be put on the classpath or native library path for the map/reduce tasks.
+                            </p>
+                            <p>
+                                The DistributedCache is designed to distribute a small number of medium-sized artifacts, ranging from a few MBs to few tens of MBs. One <a href="http://redirect.corp.yahoo.com/?url=http%3A%2F%2Fissues.apache.org%2Fjira%2Fbrowse%2FMAPREDUCE-989">drawback</a> of the current implementation of the DistributedCache is that there is no way to specify map or reduce specific artifacts.
+                            </p>
+                            <p>
+                                In rare cases, it might be more appropriate for the tasks themselves to do the HDFS i/o to copy the artifacts than rely on the DistributedCache, for example, if an application has a small number of reduces and need very large artifacts (e.g. greater than 512M) in the distributed-cache.
+                            </p>
+                            <p>
+                                <em>Grid Pattern: Applications should ensure that artifacts in the distributed-cache should not require more i/o than the actual input to the application tasks.</em>
+                            </p>
+                            <p>
+                                <strong>Counters</strong>
+                            </p>
+                            <p>
+                                Counters represent global counters, defined either by the Map/Reduce framework or applications. Applications can define arbitrary Counters and update them in the map and/or reduce methods. These counters are then globally aggregated by the framework.
+                            </p>
+                            <p>
+                                Counters are appropriate for tracking few, important, global bits of information. They are definitely not meant to aggregate very fine-grained statistics of applications.
+                            </p>
+                            <p>
+                                Counters are very expensive since the JobTracker has to maintain every counter of every map/reduce task for the entire duration of the application.
+                            </p>
+                            <p>
+                                <em>Grid Pattern: Applications should not use more than 10, 15 or 25 custom counters.</em>
+                            </p>
+                            <p>
+                                <strong>Compression</strong>
+                            </p>
+                            <p>
+                                Hadoop Map-Reduce provides facilities for the application-writer to specify compression for both intermediate map-outputs and the output of the application, that is, output of the reduces.
+                            </p>
+                            <ul>
+                                <li>Intermediate Output Compression: As explained in the section on <a href="http://twiki.corp.yahoo.com/view/Hadoop/BestPractices#Shuffle">shuffle</a>, compression of the intermediate map-outputs with an appropriate compression codec yields better performance by saving on network traffic between the maps and the reduces. Lzo is a reasonably optimal choice for compressing map-outputs since it provides reasonable compression at very high CPU efficiencies.
+                                </li>
+                                <li>Application Output Compression: As explained in the section on <a href="http://twiki.corp.yahoo.com/view/Hadoop/BestPractices#Output">application output</a>, compression of the outputs with an appropriate compression codec and file-format yields better latency for application. Zlib/Gzip might be an appropriate choice in a majority of cases since it provides high compression at reasonable speeds; bzip2 is usually too slow to be used.
+                                </li>
+                            </ul>
+                            <p>
+                                <strong>Total Order Outputs</strong>
+                            </p>
+                            <p>
+                                <strong><em>Sampling</em></strong>
+                            </p>
+                            <p>
+                                Occasionally, applications need to produce totally ordered output, that is, fully-sorted. In such cases, a common anti-pattern is for applications is to use a single-reducer, forcing a single, global aggregation. Clearly, it is very inefficient - this not only puts a significant amount of load on the single node on which the reduce task is executing, but also has very bad failure recovery.
+                            </p>
+                            <p>
+                                A much better approach is to sample the input and use that to drive a <em>sampling partitioner</em> rather than the default <em>hash partitioner</em>. Thus, one can derive benefits of better load balancing and failure recovery.
+                            </p>
+                            <p>
+                                <strong><em>Joining Fully Sorted Data-Sets</em></strong>
+                            </p>
+                            <p>
+                                Another design pattern on the Grid concerns the join of two fully-sorted data-sets whose cardinality is not an exact multiple of the other; for example, one data-set has 512 buckets while the other has 200 buckets.
+                            </p>
+                            <p>
+                                In such cases, ensuring the input data-sets have a total-order (as described in the previous section) means that the application can use the cardinality of either of the data-sets i.e. 512 or 200 buckets in the above example. Pig handles these joins in the efficient manner described here.
+                            </p>
+                            <p>
+                                <strong>HDFS Operations &amp; JobTracker Operations</strong>
+                            </p>
+                            <p>
+                                The NameNode is a precious resource, applications need to be careful about performing HDFS operations in the Grid. In particular, applications are discouraged from doing non-I/O operations, that is, metadata operations such as stat'ing large directories, recursive stats, and more, from the map/reduce tasks at runtime.
+                            </p>
+                            <p>
+                                Similarly, applications should not contact the JobTracker for cluster statistics, etc., from the backend.
+                            </p>
+                            <p>
+                                <em>Grid Pattern: Applications should not perform any metadata operations on the file-system from the backend, they should be confined to the job-client during job-submission. Furthermore, applications should be careful not to contact the JobTracker from the backend.</em>
+                            </p>
+                            <p>
+                                <strong>User Logs</strong>
+                            </p>
+                            <p>
+                                The user task-logs, that is, <code>stdout</code> and <code>stderr</code>, of map/reduce tasks are stored on the local-disk of the compute node on which the task is executed.
+                            </p>
+                            <p>
+                                Since the nodes are part of the shared infrastructure the Map-Reduce framework implements limits on the amount of task-logs stored on the node.
+                            </p>
+                            <p>
+                                <strong>Web-UI</strong>
+                            </p>
+                            <p>
+                                The Hadoop Map-Reduce framework provides a rudimentary web-ui to track the running jobs, their progress, history of completed jobs, and so on, via the JobTracker.
+                            </p>
+                            <p>
+                                It is important to remember that the web-ui is meant to be used for humans and not for automated processes.
+                            </p>
+                            <p>
+                                Implementing automated processes to screen-scrape the web-ui is strictly prohibited. Some parts of the web-ui, such as browsing of job-history, are very resource-intensive on the JobTracker and could lead to severe performance problems when they are screen-scraped.
+                            </p>
+                            <p>
+                                If there is a need for automated statistics gathering it is better to consult the Grid Solutions, Grid SE, or the Map-Reduce development teams.
+                            </p>
+                            <p>
+                                <strong>Workflows</strong>
+                            </p>
+                            <p>
+                                <a href="http://twiki.corp.yahoo.com/view/CCDI/Oozie">Oozie</a> is the preferred workflow-management and scheduling system for the Grid. Oozie manages workflows and provides scheduling either based on time or availability of data. Increasingly, latency sensitive production job <em>pipelines</em> are being scheduled and managed through Oozie.
+                            </p>
+                            <p>
+                                A key factor to keep in mind when designing Oozie workflows is that Hadoop is better suited for batch processing of very large amounts of data. As such, it is advisable for workflows to be comprise of fewer number of medium-to-large sized Map-Reduce jobs, in terms of processing, rather than large number of small Map-Reduce jobs. As an extreme case we have seen single workflows consisting of hundreds and thousands of jobs. This is an obvious <em>anti-pattern</em>. The Hadoop framework, currenty, is not really suited for pipelines of this nature. It would be better to <em>collapse</em> these hundreds/thousands of Map-Reduce jobs into fewer jobs crunching more data — this will help both performance and latency of the workflows.
+                            </p>
+                            <p>
+                                <em>Grid Pattern: A single Map-Reduce job in a workflow should process at least a few tens of GB of data.</em>
+                            </p>
+                            <h3>
+                                Anti-Patterns
+                            </h3>
+                            <p>
+                                This section attempts to cover some of the common <b>anti-patterns</b> of applications running on the Grid. These are, usually, not in keeping with the <em>spirit</em> of a large-scale, distributed, batch, data processing system.
+                            </p>
+                            <p>
+                                This is meant to be a warning to the application developers since the Grid software stack is being <em>hardened</em>, particularly in the upcoming 20.Fred release, and the Grid stack will be less forgiving of transgressions to the point of rejecting applications which exhibit some of the anti-patterns described here:
+                            </p>
+                            <ul>
+                                <li>Applications not using a higher-level interface such as Pig unless really necessary.
+                                </li>
+                                <li>Processing thousands of small files (sized less than 1 HDFS block, typically 128MB) with one map processing a single small file.
+                                </li>
+                                <li>Processing very large data-sets with small HDFS block size, that is, 128MB, resulting in tens of thousands of maps.
+                                </li>
+                                <li>Applications with a large number (thousands) of maps with a very small runtime (e.g., 5s).
+                                </li>
+                                <li>Straightforward aggregations without the use of the Combiner.
+                                </li>
+                                <li>Applications with greater than 60,000-70,000 maps.
+                                </li>
+                                <li>Applications processing large data-sets with very few reduces (e.g., 1).
+                                </li>
+                                <li style="list-style: none; display: inline">
+                                    <ul>
+                                        <li>Pig scripts processing large data-sets without using the PARALLEL keyword
+                                        </li>
+                                        <li>Applications using a single reduce for total-order amount the output records
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>Applications processing data with very large number of reduces, such that each reduce processes less than 1-2GB of data.
+                                </li>
+                                <li>Applications writing out multiple, small, output files from each reduce.
+                                </li>
+                                <li>Applications using the DistributedCache to distribute a large number of artifacts and/or very large artifacts (hundreds of MBs each).
+                                </li>
+                                <li>Applications using tens or hundreds of counters per task.
+                                </li>
+                                <li>Applications performing metadata operations (e.g. listStatus) on the file-system from the map/reduce tasks.
+                                </li>
+                                <li>Applications doing screen scraping of JobTracker web-ui for status of queues/jobs or worse, job-history of completed jobs.
+                                </li>
+                                <li>Workflows comprising hundreds or thousands of small jobs processing small amounts of data.
+                                </li>
+                            </ul>
+                            <p>
+                                Arun Murthy, Architect, Hadoop Team at Yahoo!
+                            </p>
+                            <div>
+                                <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=B40vEh_7dAA:EDLDk_bVK2A:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=B40vEh_7dAA:EDLDk_bVK2A:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?i=B40vEh_7dAA:EDLDk_bVK2A:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=B40vEh_7dAA:EDLDk_bVK2A:qj6IDK7rITs"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=qj6IDK7rITs" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=B40vEh_7dAA:EDLDk_bVK2A:PhkjNP4BSzk"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=PhkjNP4BSzk" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=B40vEh_7dAA:EDLDk_bVK2A:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?i=B40vEh_7dAA:EDLDk_bVK2A:F7zBnMyn0Lo" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/YDNHadoop/~4/B40vEh_7dAA" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://feeds.developer.yahoo.net/~r/YDNHadoop/~3/B40vEh_7dAA/apache_hadoop_best_practices_a.html">http://feeds.developer.yahoo.net/~r/YDNHadoop/~3/B40vEh_7dAA/apache_hadoop_best_practices_a.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

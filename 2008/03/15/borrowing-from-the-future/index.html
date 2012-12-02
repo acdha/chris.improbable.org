@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Borrowing from the future
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 15 Mar 2008 04:03:33 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2008-03-14T17:03:33-04:00">
+                    <meta itemprop="dateModified" content="2008-03-15T00:03:33-04:00"><time class="date" itemprop="datePublished" datetime="2008-03-15T04:03:33+00:00">Mar 15</time>
+                    <h2 itemprop="title">
+                        Borrowing from the future
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <p>
+                        I noticed <a href="http://smuglispweeny.blogspot.com/">Kenny Tilton's</a> recent <a href="http://smuglispweeny.blogspot.com/2008/03/tiltons-law-solve-first-problem.html">Solve the First Problem</a> post on <a href="http://reddit.com/r/programming/info/6bo6w/comments/">reddit</a> a few days ago. It's a really simple rule: when faced with a complicated problem, start with the first thing you can fix — the others often turn out to be side-effects. This is one of my favorite "debugging magic" techniques - over the years I've run into many problems which seemed far more intimidating than they actually were because the bug spewed out hundreds of errors or the assumption that the bug must be a mistake on their part because the program in question must be far too widely used to have a bug like that.
+                    </p>
+                    <p>
+                        Today I fixed a problem which has been annoying us for awhile using what I think of as the zero-th law of debugging: <em>if you can't find the problem, your first bug is poor <a href="http://en.wikipedia.org/wiki/Observability">observability</a></em>.
+                    </p>
+                    <p>
+                        <em>A little background: we've been working on a more scalable upgrade to our LDAP server infrastructure. Since we're a Debian shop the process was really simple: clone our base Debian VM, apt-get install slapd, run cfengine, a quick slapcat/slapadd and we're up and running 15 minutes later with an LDAP master &amp; a couple slaves (have I mentioned lately how much I love having invested in automation)? A little load-testing later and I'm ready to unleash this thing on our internal group — and then the guy down the hall mentions that he can't login…</em>
+                    </p>
+                    <p>
+                        <em>After a quick look, this is even more confusing - the problem appears to be account specific but the LDAP records are very similar and copied from the current production server. Exhaustive comparisons between the two accounts turn up nothing. Soon one of the other admins discovers another interesting wrinkle: the problem only happens if pam_ldap uses SSL or STARTTLS - insecure connections work correctly for all accounts! Contributing to the confusion are the error messages insinuating that the problem is the LDAP server:</em>
+                    </p>
+                    <pre>
+<em>2008-03-11T10:30:58+07:00 su[17545]: pam_ldap: ldap_search_s Can't contact LDAP server
+2008-03-11T10:31:01+07:00 su[17545]: pam_ldap: ldap_simple_bind Can't contact LDAP server
+2008-03-11T10:31:03+07:00 su[17545]: pam_authenticate: Authentication service cannot retrieve authentication info.
+</em>
+</pre>
+                    <p>
+                        <em>A quick check with <code>debug 65535</code> in <code>/etc/pam_ldap.conf</code> shows that the LDAP server is sending back all of the requested data:</em>
+                    </p>
+                    <pre>
+<em>ldap_read: want=44954, got=16376
+  0000:  82 af 97 04 26 75 69 64  3d 6a 62 2c 6f 75 3d 50   ....&amp;uid=jb,ou=P
+  0010:  65 6f 70 6c 65 2c 64 63  3d 73 6e 6c 2c 64 63 3d   eople,dc=snl,dc=
+  0020:  73 61 6c 6b 2c 64 63 3d  65 64 75 30 82 af 6b 30   salk,dc=edu0..k0
+  0030:  47 04 0b 6f 62 6a 65 63  74 43 6c 61 73 73 31 38   G..objectClass18
+  0040:  04 0c 70 6f 73 69 78 41  63 63 6f 75 6e 74 04 0d   ..posixAccount..
+  0050:  73 68 61 64 6f 77 41 63  63 6f 75 6e 74 04 0d 69   shadowAccount..i
+  0060:  6e 65 74 4f 72 67 50 65  72 73 6f 6e 04 0a 61 70   netOrgPerson..ap
+  0070:  70 6c 65 2d 75 73 65 72  30 0b 04 03 75 69 64 31   ple-user0...uid1
+  0080:  04 04 02 6a 62 30 13 04  09 75 69 64 4e 75 6d 62   ...jb0...uidNumb
+  0090:  65 72 31 06 04 04 31 30  30 32 30 1b 04 0d 68 6f   er1...10020...ho
+  00a0:  6d 65 44 69 72 65 63 74  6f 72 79 31 0a 04 08 2f   meDirectory1.../
+  00b0:  68 6f 6d 65 2f 6a 62 30  18 04 0a 6c 6f 67 69 6e   home/jb0...login
+  00c0:  53 68 65 6c 6c 31 0a 04  08 2f 62 69 6e 2f 63 73   Shell1.../bin/cs
+  00d0:  68 30 10 04 02 63 6e 31  0a 04 08 4a 6f 65 20 42   h0...cn1...Joe B
+…
+ldap_read: want=28578 error=Success
+ber_get_next failed.
+ldap_err2string
+</em>
+</pre>
+                    <p>
+                        <em>After about the fifth time comparing strace results the real problem dawns on me: the main thing making this hard is because pam_ldap and OpenLDAP have pretty rough debugging code which is really only used by the developers and so we're stuck guessing at what might be happening. This has been an inconvenience for years and I realized that I've spent more time scrutinizing high debug-level dumps and strace output than it would take to add proper logging to pam_ldap - and anyway, how many times can you not fix a mocking "error=Success" telling you that something clobbered a useful errno before you could see it?</em>
+                    </p>
+                    <p>
+                        <em>A quick <code>apt-get source libpam-ldap</code> later and I had a huge pile of innovatively-indented code to slog through (thank FSM for <a href="http://www.gnu.org/software/indent/">indent</a>). The general process was to find each function in pam_ldap.c and add syslog() at each point where an error can cause an early return. I also cleaned up a number of the error messages and made sure that the important ones included the actual error codes since it was frequently the case that a meaningful low-level error was turned into an uninformative <code>return -1</code> before it was logged. The resulting <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?msg=15;filename=libpam-ldap-attribute-fix-and-syslog.diff.gz;att=1;bug=470509">works-on-my-system tested patch</a> is part of Debian bug report <a href="http://bugs.debian.org/470509">#470509</a>.</em>
+                    </p>
+                    <p>
+                        <em>Armed with my shiny new syslog information I quickly wound up in <code>_get_user_info()</code> where <code>ldap_search_s()</code> is used to retrieve the user's information. A quick <code>apt-get source libldap2</code> and <a href="http://improbable.org/chris/BugReports/openldap2-2.1.30-logging.diff.gz">not-so-quick patch to add better logging</a> later and I finally had a real error message:</em>
+                    </p>
+                    <pre>
+<em>SSL_read() failed: gnutls_read() returned -59: GnuTLS internal error
+</em>
+</pre>
+                    <p>
+                        <em><strong>Huh?</strong> Although that does kind of mesh with that clue in the big dump above: ldap_read only received part of the data it needed (suspiciously close to a 16KB chunk in fact). A quick check confirms that the problem is size related - both of the failing accounts have jpegPhoto attributes which are larger than the jpegPhotos for the working accounts. A quick test later and we've confirmed that size is the problem by telling <code>ldap_search_s()</code> to return only attribute names and not the values:</em>
+                    </p>
+                    <pre>
+<em>  <del>rc = ldap_search_s (session-&gt;ld, ssd-&gt;base, ssd-&gt;scope, filter, NULL, 1, &amp;res); </del>
+  <ins>rc = ldap_search_s (session-&gt;ld, ssd-&gt;base, ssd-&gt;scope, filter, NULL, 0, &amp;res); </ins>
+</em>
+</pre>
+                    <p>
+                        <em>This isn't quite the approach I ended up putting in the patch (which queries for a single attribute) and ultimately this led to a second bug report for the OpenLDAP client library since ldap_search_s() should never fail in this fashion. Since this post has already grown a bit large, though, I'm going to abbreviate those details in favor of the ever-popular bulleted list:</em>
+                    </p>
+                    <ol>
+                        <li>
+                            <em>OpenLDAP's logging is an operational cost: libldap is used all over the place and every single user has to live with logging which does not help isolate common operational problems and requires far more knowledge of the library internals than most users are going to have (or want).</em>
+                        </li>
+                        <li>
+                            <em>The saving grace was that everything involved is open source software: OSS is certainly not immune to unpleasant bugs and poor observability but I've run into similar bugs from all of the major commercial software vendors. The difference here is that Open Source means that my systems are patched a day after shaking off my "traditional ISV support"-induced apathy, leading to the final and most important point:</em>
+                        </li>
+                        <li>
+                            <em>I was <em>stupid</em> not to do this earlier: <strong>time spent improving observability is really time borrowed from the future</strong>. It saved me some time now which I otherwise would have spent in single-stepping in <a href="http://www.gnu.org/software/gdb/">gdb</a> but while that may cost me an “Extreme Sysadmin™” t-shirt it's a good investment in my future sanity. This class of problems has been widely discussed in the <a href="http://loganalysis.org/">log-analysis</a> community and something which most sysadmins (myself included) tend to view as more intractable than they really are. Fixing something the right way really isn't as time-consuming as it may seem at first glance and it sure beats scrutinizing chicken entrails the next time something breaks.</em>
+                        </li>
+                    </ol>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

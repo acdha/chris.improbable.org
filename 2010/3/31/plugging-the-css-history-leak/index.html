@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Plugging the CSS History Leak
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 31 Mar 2010 13:41:50 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-31T09:41:50-04:00">
+                    <meta itemprop="dateModified" content="2010-03-31T09:41:50-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-31T13:41:50+00:00">Mar 31</time>
+                    <h2 itemprop="title">
+                        Plugging the CSS History Leak
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/75e85d607cdfcf2e">
+                        <blockquote>
+                            <h3>
+                                Privacy isn’t always easy.
+                            </h3>
+                            <p>
+                                We’re close to landing some changes in the Firefox development tree that will fix a privacy leak that browsers have been struggling with for some time. We’re really excited about this fix, we hope other browsers will follow suit. It’s a tough problem to fix, though, so I’d like to describe how we ended up with this approach.
+                            </p>
+                            <h4>
+                                History Sniffing
+                            </h4>
+                            <p>
+                                <img src="http://blog.mozilla.com/security/files/2010/03/visitedunvisited.png" alt="Visited and Unvisited Links" title="visitedunvisited" width="73" height="39" style="margin:10px">Links can look different on web sites based on whether or not you’ve visited the page they reference. You’ve probably seen this before: in some cases, visited links are purple instead of blue. This is just one of the many features web designers use to make the web the best it can be, and for the most part that’s a good thing.
+                            </p>
+                            <p>
+                                The problem is that appearance can be detected by the page showing you links, cluing the page into which of the presented pages you’ve been to. The result: not only can you see where you’ve been, but so can the web site!
+                            </p>
+                            <p>
+                                Originally specified as a useful feature for the Web, visited link styling has been part of the web for… well, forever. So this is a pretty old problem, and resurfaces every once in a while to generate <a href="http://startpanic.com/">more</a> <a href="http://www.haveyourfriendsbeenthere.com/">paranoid</a> <a href="http://caughtyouwatching.com/">netizens</a>.
+                            </p>
+                            <p>
+                                The most obvious fix is to disable different styles for visited versus unvisted links, but this would be employed at the expense of utility: while sites can no longer figure out which links you’ve clicked, neither can you. David Baron has implemented <a href="http://dbaron.org/mozilla/visited-privacy">a way to help keep users’ data private while minimizing the effect on the web</a>, and we are deploying it to protect our users. We think this represents the best solution to the problem, and we’ll be delighted if other browsers approach this the same way.
+                            </p>
+                            <h3>
+                                Technical Details.
+                            </h3>
+                            <p>
+                                The biggest threats here are the high-bandwidth techniques, or those that extract lots of information from users’ browsers quickly. These are particularly worrisome since they enable not only very focused attacks, but also the widespread brute-force attacks that are, in general, more useful to a variety of attackers (potentially including <a href="http://panopticlick.eff.org">fingerprinting</a>).
+                            </p>
+                            <p>
+                                The JavaScript function <tt>getComputedStyle()</tt> and its related functions are <em>fast</em> and can be used to guess visitedness at <a href="http://cssfingerprint.com/results">hundreds of thousands of links per minute</a>. To make it harder for web sites to figure out where you’ve been without radically changing the web, we’re approaching the way we style links in three fairly subtle ways:
+                            </p>
+                            <p>
+                                <strong>Change 1: Layout-Based Attacks</strong><br>
+                                First of all, we’re limiting what types of styling can be done to visited links to differentiate them from unvisited links. Visited links can only be different in color: foreground, background, outline, border, SVG stroke and fill colors. All other style changes either leak the visitedness of the link by loading a resource or changing position or size of the styled content in the document, which can be detected and used to identify visited links.
+                            </p>
+                            <p>
+                                While we are changing what is allowed in CSS, the CSS 2.1 specification takes into consideration how visited links can be abused:
+                            </p>
+                            <blockquote style="margin-left:40px">
+                                <p>
+                                    “UAs may therefore treat all links as unvisited links, or implement other measures to preserve the user’s privacy while rendering visited and unvisited links differently.” [<a href="http://www.w3.org/TR/CSS2/">CSS 2 Specification</a>]
+                                </p>
+                            </blockquote>
+                            <p>
+                                <strong>Change 2: Some Timing Attacks</strong><br>
+                                Next, we are changing some of the guts of our layout engine to provide a fairly uniform flow of execution to minimize differences in layout time for visited and unvisited links. The changes cause all styles to be resolved on all links for both visited and unvisited states, and it is stored; then, when the link is styled, the appropriate set of styles is chosen making the code paths for visited and unvisited links essentially the same length. This should eliminate some of the easy-to-mount timing attacks.
+                            </p>
+                            <p>
+                                <strong>Change 3: Computed Style Attacks</strong><br>
+                                JavaScript is not going to have access to the same style data it used to. When a web page tries to get the computed style of a link (or any of its sub-elements), Firefox will give it unvisited style values.
+                            </p>
+                            <h3>
+                                What does this mean for users?
+                            </h3>
+                            <p>
+                                For the most part, users shouldn’t notice a change in how the web works. A few web sites may look a little different, but visited links will still show up differently colored. A few sites that use more than color to differentiate visited links may look slightly broken at first while they adjust to these changes, but we think it’s the right trade-off to be sure we protect our users’ privacy. This is a troubling and well-understood attack; as much as we hate to break any portion of the web, we need to shut the attack down to the extent we can.
+                            </p>
+                            <p>
+                                We have to be realistic, though: there are many ways all browsers leak information about you, and fixing CSS history sniffing <a href="http://dbaron.org/mozilla/visited-privacy#limits">will not block all of these leaks</a>. But we believe it’s important to stop the scariest, most effective history attacks any way we can since it will be a big win for users’ privacy.
+                            </p>
+                            <p>
+                                If the remaining attacks worry you, or you can’t wait for us to ship this fix, version 3.5 and newer versions of Firefox already allow you to disable all visited styling (immediately stops this attack) by setting the <a href="http://support.mozilla.com/tiki-view_forum_thread.php?locale=hu&amp;comments_parentId=438422&amp;forumId=1#threadId438464"><tt>layout.css.visited_links_enabled</tt> option in <tt>about:config</tt> to <tt>false</tt></a>. While this will plug the history leak, you’ll no longer see any visited styling anywhere.
+                            </p>
+                            <h3>
+                                Enhancing Privacy on the Web.
+                            </h3>
+                            <p>
+                                We want to bridge the gap between our users’ expectations of privacy and what actually happens on the web. Sometimes users have an expectation that we preserve their privacy a certain way, and if we can, we want to live up to it. Privacy isn’t a feature that can simply be added to a browser, though; it often comes at the expense of utility. We think we’ve found a fix that will balance flexibility for web developers while providing a safer experience for our users on the web.
+                            </p>
+                            <p>
+                                Sid Stamm, Mozilla Security
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.mozilla.com/security/2010/03/31/plugging-the-css-history-leak/">http://blog.mozilla.com/security/2010/03/31/plugging-the-css-history-leak/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

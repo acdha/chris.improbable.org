@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Testing Chromium: AddressSanitizer, a fast memory error detector.
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 15 Jun 2011 23:52:51 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-06-15T19:52:51-04:00">
+                    <meta itemprop="dateModified" content="2011-06-15T19:52:51-04:00"><time class="date" itemprop="datePublished" datetime="2011-06-15T23:52:51+00:00">Jun 15</time>
+                    <h2 itemprop="title">
+                        Testing Chromium: AddressSanitizer, a fast memory error detector.
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/40b082e0b1a39f67">
+                        <p class="annotation">
+                            Indeed, static instrumentation can be faster than dynamic because you can actually optimize away many of the checks which (as I have learned) is hard to do at the machine code level.
+                        </p>
+                        <blockquote>
+                            <a href="http://valgrind.org/">Valgrind</a> is a great tool for detecting memory errors. We are running many Chromium tests under Valgrind and it has helped us find <a href="http://code.google.com/p/chromium/issues/list?can=1&amp;q=Stability%3DValgrind&amp;colspec=ID+Stars+Pri+Area+Feature+Type+Status+Summary+Modified+Owner+Mstone+OS&amp;x=mstone&amp;y=area&amp;cells=tiles">hundreds of significant bugs</a>. However, when we run binaries under Valgrind, testing becomes at least 10 times slower. This huge slowdown costs us more than just machine time; our trybots and buildbots can’t provide fast feedback and some tests fail due to timeouts.<br>
+                            <br>
+                            A month ago we released <a href="http://code.google.com/p/address-sanitizer/wiki/AddressSanitizer">AddressSanitizer</a> (aka ASan), a new testing tool. ASan consists of two parts:<br>
+                            <ul>
+                                <li>A compiler which performs instrumentation - currently we use a modified <a href="http://llvm.org/">LLVM</a>/<a href="http://clang.llvm.org/">Clang</a> and we're trying to contribute our code to the core LLVM package.
+                                </li>
+                                <li>A run-time library that replaces <span style="font-family:courier">malloc()</span>, <span style="font-family:courier">free()</span>and friends.
+                                </li>
+                            </ul><br>
+                            The custom <span style="font-family:courier">malloc()</span> allocates more bytes than requested and “poisons” the redzones around the region returned to the caller. The custom <span style="font-family:courier">free()</span> “poisons” the entire region and puts it into quarantine for some time. The instrumented code produced by the compiler checks if the address being accessed is poisoned and if so, reports an error. The compiler also inserts poisoned redzones between objects on stack to catch stack buffer overrun/underrun.<br>
+                            <br>
+                            ASan helps us find a subset of bugs that are detectable by Valgrind like heap buffer overrun/underrun (out-of-bounds access) and “Use after free.” It can also detect bugs that Valgrind can not find, such as stack buffer overrun/underrun. Last month alone, ASan helped us find more than 20 bugs in Chromium including some that could have potentially led to security vulnerabilities.<br>
+                            <br>
+                            What makes ASan even more powerful than other comparable tools is its speed. On <a href="http://www.spec.org/cpu2006/">SPEC CPU2006</a> benchmarks the <a href="http://code.google.com/p/address-sanitizer/wiki/PerformanceNumbers">average slowdown</a> is about 2x. On Chromium’s “browser_tests”, the slowdown is about 20%. If you are curious to learn why ASan is faster than comparable tools read this <a href="http://code.google.com/p/address-sanitizer/wiki/AddressSanitizerAlgorithm">article</a>.<br>
+                            <br>
+                            Today ASan works only on Linux (x86 and x86_64) and ChromiumOS, but we're planning to port it to other platforms in the near future. In the coming months we also plan to setup various ASan buildbots and trybots for Chromium.<br>
+                            <br>
+                            The <a href="http://code.google.com/p/address-sanitizer/wiki/AddressSanitizer">AddressSanitizer home page</a> has the instructions for running it with your favorite project outside of Chromium. If you are working on Chromium, refer to this <a href="https://sites.google.com/a/chromium.org/dev/developers/testing/addresssanitizer">page</a> for instructions. If you have any questions or suggestions, feel free to contact address-sanitizer@googlegroups.com<br>
+                            <br>
+                            <span>Posted by Kostya Serebryany, Software Engineer</span>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/2471378914199150966-5886492252609542755?l=blog.chromium.org" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.chromium.org/2011/06/testing-chromium-addresssanitizer-fast.html">http://blog.chromium.org/2011/06/testing-chromium-addresssanitizer-fast.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

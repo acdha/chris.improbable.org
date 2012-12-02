@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Insufficiently known POSIX shell features
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 28 Feb 2011 14:13:57 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-28T09:13:57-04:00">
+                    <meta itemprop="dateModified" content="2011-02-28T09:13:57-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-28T13:13:57+00:00">Feb 28</time>
+                    <h2 itemprop="title">
+                        Insufficiently known POSIX shell features
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/07b1939ba9f4611b">
+                        <p class="annotation">
+                            Some useful, some a reminder of why all of my non-trivial scripts are now in Python
+                        </p>
+                        <blockquote>
+                            <p>
+                                I've seen several articles in the past with titles like "Top 10 things you didn't know about bash programming." These articles are disappointing on two levels: first of all, the tricks are almost always things I already knew. And secondly, if you want to write portable programs, you can't depend on bash features (not every platform has bash!). POSIX-like shells, however, are much more widespread.<sup>1</sup>
+                            </p>
+                            <p>
+                                Since writing <a href="http://github.com/apenwarr/redo">redo</a>, I've had a chance to start writing a few more shell scripts that aim for maximum portability, and from there, I've learned some really cool tricks that I haven't seen documented elsewhere. Here are a few.
+                            </p>
+                            <p>
+                                Update 2011/02/28: Just to emphasize, all the tricks below work in every POSIX shell I know of. None of them are bashisms.
+                            </p>
+                            <p>
+                                <b>1. Removing prefixes and suffixes</b>
+                            </p>
+                            <p>
+                                This is a super common requirement. For example, given a *.c filename, you want to turn it into a *.o. This is easy in sh:
+                            </p>
+                            <pre>
+   SRC=/path/to/foo.c
+        OBJ=${SRC%.c}.o
+</pre>
+                            <p>
+                                You might also try <tt>OBJ=$(basename $SRC .c).o</tt>, but this has an annoying side effect: it *also* removes the /path/to part. Sometimes you want to do that, but sometimes you don't. It's also more typing.
+                            </p>
+                            <p>
+                                (Update 2011/02/28: Note that the above $() syntax, as an alternative to nesting, is also valid POSIX and works in every halfway modern shell. I use it all the time. Backquotes get really ugly as soon as you need to nest them.)
+                            </p>
+                            <p>
+                                Speaking of removing those paths, you can use this feature to strip prefixes too:
+                            </p>
+                            <pre>
+   SRC=/path/to/foo.c
+        BASE=${SRC##*/}
+        DIR=${SRC%$BASE}
+</pre>
+                            <p>
+                                These are cheap (ie. non-forking!) alternatives to the <tt>basename</tt> and <tt>dirname</tt> commands. The nice thing about not forking is they run much faster, especially on Windows where fork/exec is ridiculously expensive and should be avoided at all costs.
+                            </p>
+                            <p>
+                                (Note that these are not quite the same as dirname and basename. For example, "dirname foo" will return ".", but the above would set DIR to the empty string instead of ".". You might want to write a dirname function that's a little more careful.)
+                            </p>
+                            <p>
+                                Some notes about the #/% syntax:
+                            </p>
+                            <ul>
+                                <li>The thing you're stripping is a shell glob, not a regex. So "*", not ".*"
+                                </li>
+                                <li>bash has a handy regex version of this, but we're not talking about bashisms here :)
+                                </li>
+                                <li>The part you want to remove can include shell variables (using $).
+                                </li>
+                                <li>Unfortunately the part you're removing *from* has to be just a variable name, so you might have to strip things in a few steps. In particular, removing prefixes *and* suffixes from one string is a two step process.
+                                </li>
+                                <li>##/%% mean "the longest matching prefix/suffix" and #/% mean "the shortest matching prefix/suffix." So to remove the *first* directory only, you could use <tt>SUB=${SRC#*/}</tt>.
+                                </li>
+                            </ul><b>2. Default values for variables</b>
+                            <p>
+                                There are several different substitution modes for variables that don't contain values. They come in two flavours: assignment and substitution, as well as two rules: empty string vs. unassigned variable. It's easiest to show with an example:
+                            </p>
+                            <pre>
+   unset a b c d
+        e= f= g= h=
+        
+        # prints 1 2 3 4 6 8
+        echo ${a-1} ${b:-2} ${c=3} ${d:=4} ${e-5} ${f:-6} ${g=7} ${h:=8}
+        
+        # prints 3 4 8
+        echo $a $b $c $d $e $f $g $h
+</pre>
+                            <p>
+                                The "-" flavours are a one-shot substitution; they don't change the variable itself. The "=" flavours reassign the variable if the substitution takes effect. (You can see the difference by what shows in the second echo statement compared to the first.)
+                            </p>
+                            <p>
+                                The ":" rules affect both unassigned ("null") variables and empty ("") variables; the non-":" rules affect only unassigned variables, but not empty ones. As far as I can tell, this is virtually the only time the shell cares about the difference between the two.
+                            </p>
+                            <p>
+                                Personally, I think it's *almost* always wrong to treat empty strings differently from unset ones, so I recommend using the ":" rules almost all the time.
+                            </p>
+                            <p>
+                                I also think it makes sense to express your defaults once at the top instead of every single time - since in the latter case if you change your default, you'll have to change your code in 25 places - so I recommend using := instead of :- almost all the time.
+                            </p>
+                            <p>
+                                If you're going to do that, I also recommend this little syntax trick for assigning your defaults exactly once at the top:
+                            </p>
+                            <pre>
+   : ${CC:=gcc} ${CXX:=g++}
+        : ${CFLAGS:=-O -Wall -g}
+        : ${FILES:=
+                f1
+                f2
+                f3
+        }
+</pre>
+                            <p>
+                                The trick here is the ":" command, a shell builtin that never does anything and throws away all its parameters. I find this trick to be a little more readable and certainly less repetitive than:
+                            </p>
+                            <pre>
+        [ -z "$CC" ] || CC=gcc
+        [ -z "$CXX" ] || CXX=g++
+        [ -z "$CFLAGS" ] || CFLAGS="-O -Wall -g"
+        [ -z "$FILES" ] || FILES="
+                f1
+                f2
+                f3
+        "
+</pre>
+                            <p>
+                                <b>3. You can assign one variable to another without quoting</b>
+                            </p>
+                            <p>
+                                It turns out that these two statements are identical:
+                            </p>
+                            <pre>
+   a=$b
+        a="$b"
+</pre>
+                            <p>
+                                ...even if $b contains characters like spaces, wildcards, or quotes. For whatever reason, the substitutions in a variable assignment aren't subject to further expansion, which turns out to be exactly what you want. If $b was "chicken ls" you wouldn't really want the meaning of "a=$b" to be "a=chicken; ls". So luckily, it isn't.
+                            </p>
+                            <p>
+                                If you've been quoting all your variable-to-variable assignments, you can take out the quotes now. By the way, more complex assignments like "a=$b$c" are also safe.
+                            </p>
+                            <p>
+                                <b>4. Local vs. global variables</b>
+                            </p>
+                            <p>
+                                In early sh, all variables were global. That is, if you set a variable inside a shell function, it would be visible inside the calling function. For backward compatibility, this behaviour persists today. And from what I've heard, POSIX actually doesn't specify any other behaviour.
+                            </p>
+                            <p>
+                                However, every single POSIX-compliant shell I've tested implements the 'local' keyword, which lets you declare variables that won't be returned from the current function. So nowadays you can safely count on it working. Here's an example of the standard variable scoping:
+                            </p>
+                            <pre>
+   func()
+        {
+                X=5
+                local Y=6
+        }
+        X=1
+        Y=2
+        (func)
+        echo $X $Y  # returns 1 2; parens throw away changes
+        func
+        echo $X $Y  # returns 5 2; X was assigned globally
+</pre>
+                            <p>
+                                Don't be afraid of the 'local' keyword. Pre-POSIX shells might not have had it, but every modern shell now does.
+                            </p>
+                            <p>
+                                (Note: stock ksh93 doesn't seem to have the 'local' keyword, at least on MacOS 10.6. But ksh differs from POSIX in lots of ways, and nobody can agree on even what "ksh" means. Avoid it.)
+                            </p>
+                            <p>
+                                <b>5. Multi-valued and temporary exports, locals, assignments</b>
+                            </p>
+                            <p>
+                                For historical reasons, some people are afraid of mixing "export" with assignment, or putting multiple exports on one line. I've tested a lot of shells, and I can safely tell you that if your shell is basically POSIX compliant, then it supports syntax like these:
+                            </p>
+                            <pre>
+   export PATH=$PATH:/home/bob/bin CHICKEN=5
+        local A=5 B=6 C=$PATH
+        A=1 B=2
+        
+        # sets GIT_DIR only while 'git log' runs
+        GIT_DIR=$PWD/.githome git log
+</pre>
+                            <p>
+                                <b>6. Multi-valued function returns</b>
+                            </p>
+                            <p>
+                                You might think it's crazy that variable assignments by default leak out of the function where you assigned them. But it can be useful too. Normally, shell functions can only return one string: their stdout, which you capture like this:
+                            </p>
+                            <pre>
+   X=$(func)
+</pre>
+                            <p>
+                                But sometimes you really want to get *two* values out. Don't be afraid to use globals to accomplish this:
+                            </p>
+                            <pre>
+   getXY()
+        {
+                X=$1
+                Y=$2
+        }
+        
+        test()
+        {
+                local X Y
+                getXY 7 8
+                echo $X-$Y
+        }
+        
+        X=1 Y=2
+        test        # prints 7-8
+        echo $X $Y  # prints 1-2
+</pre>
+                            <p>
+                                Did you catch that? If you run 'local X Y' in a calling function, then when a subfunction assigns them "globally", it still only affects your local ones, not the global ones.
+                            </p>
+                            <p>
+                                <b>7. Avoiding 'set -e'</b>
+                            </p>
+                            <p>
+                                The <tt>set -e</tt> command tells your shell to die if a function returns nonzero in certain contexts. Unfortunately, set -e *does* seem to be implemented slightly differently between different POSIX-compliant shells. The variations are usually only in weird edge cases, but it's sometimes not what you want. Moreover, "silently abort when something goes wrong" isn't always the goal. Here's a trick I learned from studying the git source code:
+                            </p>
+                            <pre>
+        cd foo &amp;&amp;
+        make &amp;&amp;
+        cat chicken &gt;file &amp;&amp;
+        [ -s file ] ||
+        die "resulting file should have nonzero length"
+</pre>
+                            <p>
+                                (Of course you'll have to define the "die" function to do what you want, but that's easy.)
+                            </p>
+                            <p>
+                                This is treating the "&amp;&amp;" and "||" (and even "|" if you want) like different kinds of statement <i>terminators</i> instead of statement <i>separators</i>. So you don't indent lines after the first one any further, because they're not really related to the first line; the &amp;&amp; terminator is a statement flow control, not a way to extend the statement. It's like terminating a statement with a ; or &amp; - each type of terminator has a different effect on program flow. See what I mean?
+                            </p>
+                            <p>
+                                It takes a little getting used to, but once you start writing like this, your shell code starts getting a lot more readable. Before seeing this style, I would tend to over-indent my code, which actually made it worse instead of better.
+                            </p>
+                            <p>
+                                By the way, take special note of the way we used the higher precedence of &amp;&amp; vs. || here. All the &amp;&amp; statements clump together, so that if *any* of them fail, we fall back to the other side of the || and die.
+                            </p>
+                            <p>
+                                Oh, as an added bonus, you can use this technique even if <tt>set -e</tt> is in effect: capturing the return value using &amp;&amp; or || causes <tt>set -e</tt> to *not* abort. So this works:
+                            </p>
+                            <pre>
+   set -e
+        mv file1 file2 || true
+        echo "we always run this line"
+</pre>
+                            <p>
+                                Even if the 'mv' command fails, the program doesn't abort. (Because this technique is available, redo always runs all its scripts with set -e active so it can be more like make. If you don't like it, you can simply catch any "expected errors" as above.)
+                            </p>
+                            <p>
+                                <b>8. printf as an alternative to echo</b>
+                            </p>
+                            <p>
+                                The "echo" command is chronically underspecified by POSIX. It's okay for simple stuff, but you never know if it'll interpret a word starting with dash (like -n or -c) as an option or just print it out. And ash/dash/busybox/ksh, for example, have a weird "feature" where echo interprets "echo \n" as a command to print a newline. Which is fun, except other shells don't do that. (zsh does, in zsh mode, but not in sh mode.) The others all just print backslash followed by n. (Update 2011/02/28: changed list of which shells do what with \n.)
+                            </p>
+                            <p>
+                                There's good news, though! It turns out the "printf" command is available everywhere nowadays, and its semantics are much more predictable. Of course, you shouldn't write this:
+                            </p>
+                            <pre>
+   # DANGER!  See below!
+        printf "path to foo: $PATH_TO_FOO\n"
+</pre>
+                            <p>
+                                Because $PATH_TO_FOO might contain variables like %s, which would confuse printf. But you *can* write your own version of echo that works just how you like!
+                            </p>
+                            <pre>
+   echo()
+        {
+                # remove this line if you don't want to support "-n"
+                [ "$1" = -n ] &amp;&amp; { shift; FMT="%s"; } || FMT="%s\n"
+                printf "$FMT" "$*"
+        }
+</pre>
+                            <p>
+                                <b>9. The "read" command is crazier than you think</b>
+                            </p>
+                            <p>
+                                This is both good news and bad news. The "read" command actually mangles its input pretty severely. It seems the "-r" option (which turns off the mangling) is supported on all the shells that I've tried, but I haven't been able to find a straight answer on this one; I don't think -r is POSIX. But if everyone supports it, maybe it doesn't matter. (Update 2011/02/28: <a href="http://pubs.opengroup.org/onlinepubs/009695399/utilities/read.html">yes, it's POSIX</a>. Thanks to Alex Bradbury for the link.)
+                            </p>
+                            <p>
+                                The good news is that the mangling behaviour gives you a lot of power, as long as you actually understand it. For example, given this input file, testy.d (produced by gcc -MD -c testy.c):
+                            </p>
+                            <pre>
+        testy.o: testy.c /usr/include/stdio.h /usr/include/features.h \
+          /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h \
+          /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h \
+          /usr/lib/gcc/i486-linux-gnu/4.3.2/include/stddef.h \
+          /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+          /usr/include/libio.h /usr/include/_G_config.h
+          /usr/include/wchar.h \
+          /usr/lib/gcc/i486-linux-gnu/4.3.2/include/stdarg.h \
+          /usr/include/bits/stdio_lim.h \
+          /usr/include/bits/sys_errlist.h
+</pre>
+                            <p>
+                                You can actually read all that content like this:
+                            </p>
+                            <pre>
+   read CONTENT &lt;testy.d
+</pre>
+                            <p>
+                                ...because the 'read' command understands backslash escapes! It removes the backslashes and joins all the lines into a single line, just like the file intended.
+                            </p>
+                            <p>
+                                And then you can get a raw list of the dependencies by removing the target filename from the start:
+                            </p>
+                            <pre>
+   DEPS=${CONTENT#*:}
+</pre>
+                            <p>
+                                Until I discovered this feature, I thought you had to run the file through sed to get rid of all the extra junk - and that's one or more extra fork/execs for every single run of gcc. With this method, there's no fork/exec necessary at all, so your autodependency mechanism doesn't have to slow things down.
+                            </p>
+                            <p>
+                                <b>10. Reading/assigning a variable named by another variable</b>
+                            </p>
+                            <p>
+                                Say you have a variable $1 that contains the name of another variable, say BOO, and you want to read the variable pointed to by $1, then do a calculation, then write back to it. The simplest form of this is an append operation. You *can't* just do this:
+                            </p>
+                            <pre>
+   # Doesn't work!
+        $V="$$V appended stuff"
+</pre>
+                            <p>
+                                ...because "$$V" is actually "$$" (the current process id) followed by "V". Also, even this doesn't work:
+                            </p>
+                            <pre>
+   # Also doesn't work!
+        $V=50
+</pre>
+                            <p>
+                                ...because the shell assumes that after substitution, the result is a command name, not an assignment, so it tries to run a program called "BOO=50".
+                            </p>
+                            <p>
+                                The secret is the magical 'eval' command, which has a few gotchas, but if you know how to use it exactly right, then it's perfect.
+                            </p>
+                            <pre>
+   append()
+        {
+                eval local tmp=\$$1
+                tmp="$tmp $2"
+                eval $1=\$tmp
+        }
+        
+        BOO="first bit"
+        append BOO "second bit"
+        echo "$BOO"
+</pre>
+                            <p>
+                                The magic is all about where you put the backslashes. You need to do some of the $ substitutions - like replacing "$1" with "BOO" - before calling eval on the literal '$BOO'. In the second eval, we want $1 to be replaced with "BOO" before running eval, but '$tmp' is a literal string parsed by the eval, so that we don't have to worry about shell quoting rules.
+                            </p>
+                            <p>
+                                In short, if you're sending an arbitrary string into an eval, do it by setting a variable and then using \$varname, rather than by expanding that variable outside the eval. The only exception is for tricks like assigning to dynamic variables - but then the variable name should be controlled by the calling function, who is presumably not trying to screw you with quoting rules.
+                            </p>
+                            <p>
+                                <b>11. "read" multiple times from a single input file</b>
+                            </p>
+                            <p>
+                                This problem is one of the great annoyances of shell programming. You might be tempted to try this:
+                            </p>
+                            <pre>
+   (read x; read y) &lt;myfile
+</pre>
+                            <p>
+                                But it doesn't work; the subshell eats the variable definitions. The following does work, however, because {} blocks aren't subshells, they're just blocks:
+                            </p>
+                            <pre>
+   { read x; read y; } &lt;myfile
+</pre>
+                            <p>
+                                Unfortunately, the trick doesn't work with pipelines:
+                            </p>
+                            <pre>
+   ls | { read x; read y; }
+</pre>
+                            <p>
+                                Because every sub-part of a pipeline is implicitly a subshell whether it's inside () or not, so variable assignments get lost.
+                            </p>
+                            <p>
+                                A temp file is always an option:
+                            </p>
+                            <pre>
+   ls &gt;tmpfile
+        { read x; read y; } &lt;tmpfile
+        rm -f tmpfile
+</pre>
+                            <p>
+                                But temp files seem rather inelegant, especially since there's no standard way to make well-named temp files in sh. (The mktemp command is getting popular and even appears in busybox nowadays, but it's not everywhere yet.)
+                            </p>
+                            <p>
+                                Update 2011/02/28: andresp on reddit contributed a better suggestion than the following crazy one! See below.
+                            </p>
+                            <p>
+                                Alternatively you can capture the entire output to a variable:
+                            </p>
+                            <pre>
+   tmp=$(ls)
+</pre>
+                            <p>
+                                But then you have to break it into lines the hard way (using the eval trick from above):
+                            </p>
+                            <pre>
+   nextline()
+        {
+                local INV=$1 OUTV=$2
+                eval local IN=\$$INV
+                
+                local IFS=""
+                local newline=$(printf "\nX") 
+                newline=${newline%X}
+                
+                [ -z "$IN" ] &amp;&amp; return 1
+                local rest=${IN#*$newline}
+                if [ "$rest" = "$IN" ]; then
+                        # no more newlines; return remainder
+                        eval $INV= $OUTV=\$rest
+                else
+                        local OUT=${IN%$rest}
+                        OUT=${OUT%$newline}
+                        eval $INV=\$rest $OUTV=\$OUT
+                fi
+        }
+        
+        tmp=$(echo "hello 1"; echo "hello 2")
+        nextline tmp x
+        nextline tmp y
+        echo "$x-$y"  # prints "hello 1-hello 2"
+</pre>
+                            <p>
+                                Okay, that's a little ugly. But it works, and you can steal the nextline function and never have to look at it again :) You could also generalize it into a "split" function that can split on any arbitrary separator string. Or maybe someone has a cleaner suggestion?
+                            </p>
+                            <p>
+                                Update 2011/02/28: andresp on reddit suggests doing this instead. It works!
+                            </p>
+                            <pre>
+   { read x; read y; } &lt;
+<br><b>Parting Comments</b>
+<br>I just want to say that <b>sh is a real programming language</b>.  When
+you're writing shell scripts, try to think of them as programs.  That means
+don't use insane indentation; write functions instead of spaghetti; spend
+some extra time learning the features of your language.  The more you know,
+the better your scripts will be.
+<br>When early versions of git were released, they were <i>mostly</i> shell
+scripts. Large parts of git (like 'git rebase') still are.  You can write
+serious code in shell, as long as you treat it like real programming.
+<br>autoconf scripts are some of the most hideous shell code imaginable, and I'm
+a bit afraid that a lot of people nowadays use them to learn how to program
+in sh.  <b>Don't use autoconf as an example of good sh programming!</b>
+autoconf has two huge things working against it:
+<br>
+</pre>
+                            <ul>
+                                <li>It was designed about 20 years ago, *long* before POSIX was commonly available, so they avoid using really critical stuff like functions. Imagine trying to write a readable program without ever breaking it into functions!
+                                </li>
+                                <li>Because of that, their scripts are generated by macro expansion (a poor man's functions), so http://apenwarr.ca/log/configure is more like compiler output than something any real programmer would write.
+                                </li>
+                            </ul>
+                            <pre>
+
+autoconf solves a lot of problems that have not yet been solved any other
+way, but it comes with a lot of historical baggage and it leaves a bit of a
+<a href="http://en.wikipedia.org/wiki/Broken_windows_theory">broken window effect</a>.  Please try to hold your shell code to a higher standard, for
+the good of all of us.  Thanks.
+<br><b>Footnote</b>
+<br><sup>1</sup> Of course, finding a shell with POSIX compliance is rather
+nebulous.  The reason autoconf 'configure' scripts are so nasty, for
+example, is that they didn't want to depend on the existence of a
+POSIX-compliant shell back in 1992.  On many platforms, /bin/sh is anything
+but POSIX compliant; you have to pick some other shell.  But how?  It's a
+tough problem.  <a href="http://github.com/apenwarr/redo">redo</a> tests
+your locally-installed shells and picks one that's a good match, then runs
+it in "sh mode" for maximum compatibility.  It's very refreshing to just be
+allowed to use all the POSIX sh features without worrying.  By the way, if
+you want a portable trying-to-be-POSIX shell, try <a href="http://gondor.apana.org.au/~herbert/dash/">dash</a>, or <a href="http://www.busybox.net/">busybox</a>, which includes a variant of
+dash.  On *really* ancient Unixes without a POSIX shell, it makes much more
+sense to just install bash or dash than to forever write all your scripts to
+assume it doesn't exist.
+<br>"But what about Windows?" I can hear you asking.  Well, of
+course you already know about Cygwin and MSys, which both have free ports of
+bash to Windows.  But if you know about them, you probably also know that
+they're gross: huge painful installation processes, messing with your $PATH,
+incompatible with each other, etc.  My preference is the <a href="http://github.com/pclouds/busybox-w32">busybox-w32</a> (busybox-win32)
+project, which is a single 500k .exe file with an ash/dash-derived POSIX-like
+shell and a bunch of standard Unix utilities, all built in.  It still has a
+few bugs, but if we all help out a little, it could be a great answer for
+shell scripting on Windows machines.
+</pre>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://apenwarr.ca/log/?m=201102#28">http://apenwarr.ca/log/?m=201102#28</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

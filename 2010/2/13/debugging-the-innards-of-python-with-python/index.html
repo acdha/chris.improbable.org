@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Debugging the innards of Python... with Python
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 13 Feb 2010 06:39:22 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-02-13T01:39:22-04:00">
+                    <meta itemprop="dateModified" content="2010-02-13T01:39:22-04:00"><time class="date" itemprop="datePublished" datetime="2010-02-13T05:39:22+00:00">Feb 13</time>
+                    <h2 itemprop="title">
+                        Debugging the innards of Python... with Python
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/55fc8cef017bd25e">
+                        <blockquote>
+                            I've been trying a <a href="https://fedoraproject.org/wiki/Features/EasierPythonDebugging" rel="nofollow">new approach for debugging the internals of Python</a>.<br>
+                            <br>
+                            One of the strengths of the C implementation of Python ("CPython") is how easy it is to wrap libraries written in C/C++ so that they're callable from Python code.<br>
+                            <br>
+                            The drawback of this is that you're running "native" machine code, and that code can crash the python process, or worse, corrupt the internals of the python process so that the crash seems to be coming from somewhere else.<br>
+                            <br>
+                            Time to break out the debugger...<br>
+                            <br>
+                            Unfortunately, practically everything inside CPython is a pointer to a <a href="http://svn.python.org/view/python/trunk/Include/object.h?view=markup" rel="nofollow">PyObject structure</a>, with some additional type-specific data lurking after it in memory. A typical debugger by default just shows you the addresses of these structures, or shows you the two values they contain ("ob_refcnt" and "ob_type", which aren't necessarily enlightening).<br>
+                            <br>
+                            <a name="cutid1" id="cutid1"></a>I typically use <a href="http://sourceware.org/gdb/" rel="nofollow">the "gdb" debugger</a>. Python has long had a file named <a href="http://svn.python.org/view/python/trunk/Misc/gdbinit?view=markup" rel="nofollow">"gdbinit"</a> which contains various hooks to make it easier to debug CPython within gdb (In <a href="http://fedoraproject.org/" rel="nofollow">Fedora</a> and <a href="http://www.redhat.com/rhel/" rel="nofollow">RHEL</a> that file can be found in our "python-devel" packages).<br>
+                            <br>
+                            If you copy this file to ~/.gdbinit and restart gdb you can then use "pyo" to print a more human-readable representation of a PyObject*, and use "pyframe" and other commands to figure out where the currently selected thread of the process is in Python code.<br>
+                            <br>
+                            This approach has some drawbacks:
+                            <ul>
+                                <li>it isn't very robust - it effectively injects calls to the repr() function into the process being debugged (the so-called "inferior process" in debugger parlance). If the data in the inferior process is corrupt, attempting to print it can lead to another segmentation fault ("SIGSEGV") within that process inside the implementation of "repr". For example, if the allocator of the inferior process has become corrupt, then Python won't be able to create the string representation of the data without a crash (be it in Python's memory arena code or the underlying heap), and you've got another SIGSEGV. If one of the objects inside a list has been splatted with 0xDEADBEEF garbage, attempting to print the repr() object will crash, and you won't even know that you had a list.
+                                </li>
+                                <li>you have to go into gdb manually and run these commands by hand. Automated crash reports can't get at the "real" data, most significantly: what lines of Python code were being executed when this crash happened?
+                                </li>
+                                <li>as well as being a manual task, it's hard to do this correctly; any mistakes when doing this will typically cause a SIGSEGV in the inferior process
+                                </li>
+                                <li>the script is written in gdb's own language and is thus hard to work with and extend
+                                </li>
+                                <li>complicated intermeshing of C and Python (e.g. invocations of callbacks that then trigger other callbacks each time crossing a language boundary) can be hard to figure out
+                                </li>
+                            </ul><br>
+                            <br>
+                            Is there a better way?<br>
+                            <br>
+                            (...drum roll...)<br>
+                            <br>
+                            As of gdb 7.0, it's now possible to write custom "pretty-printers" for data in gdb, using Python as the extension language. One of the reasons for this was to <a href="http://sourceware.org/gdb/wiki/ProjectArcher" rel="nofollow">improve visualization of C++ data in the debugger</a>, so that if you try to print a C++ std::string, rather than get this craziness:<br>
+                            <tt><br>
+                            (gdb) print str<br>
+                            $1 = {static npos = 4294967295,<br>
+                            _M_dataplus = {&gt; = {&lt;__gnu_cxx::new_allocator&gt; = {}, }, _M_p = 0x804a014 "hello world"}}<br></tt><br>
+                            <br>
+                            you now get:<br>
+                            <tt><br>
+                            (gdb) print str<br>
+                            $1 = hello world<br></tt><br>
+                            <br>
+                            The above is thanks to <a href="http://gcc.gnu.org/svn/gcc/trunk/libstdc++-v3/python/libstdcxx/v6/printers.py" rel="nofollow">python hooks running inside the gdb process</a>, using a <a href="http://sourceware.org/git/gitweb.cgi?p=archer.git;a=blob;f=gdb/python/python.c;h=29386c9205333aab33348c5e9742343ed8070c5e;hb=HEAD" rel="nofollow">"gdb" module</a> to walk the graph of <a href="http://sourceware.org/git/gitweb.cgi?p=archer.git;a=blob;f=gdb/python/py-value.c;h=a792819d5511d523d0db3ac4722d9d96752a18d9;hb=HEAD" rel="nofollow">gdb.Value</a> and <a href="http://sourceware.org/git/gitweb.cgi?p=archer.git;a=blob;f=gdb/python/py-type.c;h=a97c125359336aa7c5fcd3ee7c79740d3605e54b;hb=HEAD" rel="nofollow">gdb.Type</a> objects representing the state of the process being debugged.<br>
+                            <br>
+                            <br>
+                            What this is building up to is that I've written a similar set of Python hooks for CPython itself.<br>
+                            <br>
+                            The code can be seen in <a href="http://fedorapeople.org/gitweb?p=dmalcolm/public_git/libpython.git;a=blob;f=libpython.py" rel="nofollow">this git repository</a>. I've been going through the various types within CPython's internals, writing Python code to run inside the debugger. For each type I've written a Python class that runs inside the debugger process, and knows how to convert an object in the process being debugged into an object within the debugger, and can then print it.<br>
+                            <br>
+                            To demonstrate, let's try breaking Python:<br>
+                            <br>
+                            The real use case for this for me is when a library decides to do error handling using "assert", and takes down the whole process, or has a crasher bug. Rather than pick on a 3rd-party library, let's inject our own segfault. We can do this by abusing the "ctypes" module, by picking a random location in the process' address space and trying to read it as a string. We can do this as a one-liner, but let's set up some data so we can see what it looks like in the crash report:<br>
+                            <pre>
+&gt;&gt;&gt; class Foo:
+...     def bar(self):
+...         from ctypes import string_at
+...         string_at(0xDEADBEEF) # this code will (probably) cause Python to segfault
+... 
+&gt;&gt;&gt; f = Foo()
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Let's assign some data of various kinds to the instance:
+&gt;&gt;&gt; f.someattr = 42
+&gt;&gt;&gt; f.someotherattr = {'one':1, 'two':2L, 'three':[(), (None,), (None, None)]}
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Now let's trigger the segfault
+&gt;&gt;&gt; f.bar()
+</pre><br>
+                            <br>
+                            At this point we've generated a segmentation fault inside Python.<br>
+                            <br>
+                            Let's see the old behavior of a backtrace, using the "bt" command:<br>
+                            <tt><br>
+                            Program received signal SIGSEGV, Segmentation fault.<br>
+                            __strlen_sse2 () at ../sysdeps/i386/i686/multiarch/strlen.S:87<br>
+                            87 pcmpeqb (%esi), %xmm0<br>
+                            Current language: auto<br>
+                            The current source language is "auto; currently asm".<br>
+                            (gdb) bt<br>
+                            #0 __strlen_sse2 () at ../sysdeps/i386/i686/multiarch/strlen.S:87<br>
+                            #1 0x07113d30 in PyString_FromString (str=0xdeadbeef &lt;Address 0xdeadbeef out of bounds&gt;) at Objects/stringobject.c:116<br>
+                            #2 0x00167e18 in string_at (ptr=0xdeadbeef &lt;Address 0xdeadbeef out of bounds&gt;, size=-1) at /usr/src/debug/Python-2.6.2/Modules/_ctypes/_ctypes.c:5348<br>
+                            #3 0x0018247f in ffi_call_SYSV () at src/x86/sysv.S:61<br>
+                            #4 0x001822b0 in ffi_call (cif=&lt;value optimized out&gt;, fn=&lt;value optimized out&gt;, rvalue=&lt;value optimized out&gt;, avalue=&lt;value optimized out&gt;) at src/x86/ffi.c:213<br>
+                            #5 0x00171315 in _call_function_pointer (pProc=0x167de0 &lt;string_at&gt;, argtuple=0xb7f3d02c, flags=4357, argtypes=0xb7f45a4c, restype=0x80f3dc4, checker=0x0) at /usr/src/debug/Python-2.6.2/Modules/_ctypes/callproc.c:815<br>
+                            #6 _CallProc (pProc=0x167de0 &lt;string_at&gt;, argtuple=0xb7f3d02c, flags=4357, argtypes=0xb7f45a4c, restype=0x80f3dc4, checker=0x0) at /usr/src/debug/Python-2.6.2/Modules/_ctypes/callproc.c:1162<br>
+                            #7 0x0016a6f2 in CFuncPtr_call (self=0xb7f9d5dc, inargs=0xb7f3d02c, kwds=0x0) at /usr/src/debug/Python-2.6.2/Modules/_ctypes/_ctypes.c:3857<br>
+                            #8 0x070c478c in PyObject_Call (func=0xb7f9d5dc, arg=0xb7f3d02c, kw=0x0) at Objects/abstract.c:2492<br>
+                            #9 0x0716069c in do_call (f=0x80f37bc, throwflag=0) at Python/ceval.c:3917<br>
+                            #10 call_function (f=0x80f37bc, throwflag=0) at Python/ceval.c:3729<br>
+                            #11 PyEval_EvalFrameEx (f=0x80f37bc, throwflag=0) at Python/ceval.c:2389<br>
+                            #12 0x07162642 in PyEval_EvalCodeEx (co=0xb7f3bda0, globals=0xb7f3768c, locals=0x0, args=0x80ec788, argcount=1, kws=0x80ec78c, kwcount=0, defs=0xb7f45d78, defcount=1, closure=0x0) at Python/ceval.c:2968<br>
+                            #13 0x07160983 in fast_function (f=0x80ec644, throwflag=0) at Python/ceval.c:3802<br>
+                            #14 call_function (f=0x80ec644, throwflag=0) at Python/ceval.c:3727<br>
+                            #15 PyEval_EvalFrameEx (f=0x80ec644, throwflag=0) at Python/ceval.c:2389<br>
+                            #16 0x07161b79 in fast_function (f=0x80eb1cc, throwflag=0) at Python/ceval.c:3792<br>
+                            #17 call_function (f=0x80eb1cc, throwflag=0) at Python/ceval.c:3727<br>
+                            #18 PyEval_EvalFrameEx (f=0x80eb1cc, throwflag=0) at Python/ceval.c:2389<br>
+                            #19 0x07162642 in PyEval_EvalCodeEx (co=0xb7f2e578, globals=0xb7fc70b4, locals=0xb7fc70b4, args=0x0, argcount=0, kws=0x0, kwcount=0, defs=0x0, defcount=0, closure=0x0) at Python/ceval.c:2968<br>
+                            #20 0x071627a3 in PyEval_EvalCode (co=0xb7f2e578, globals=0xb7fc70b4, locals=0xb7fc70b4) at Python/ceval.c:522<br>
+                            #21 0x0717d94b in run_mod (mod=&lt;value optimized out&gt;, filename=&lt;value optimized out&gt;, globals=0xb7fc70b4, locals=0xb7fc70b4, flags=0xbffff2fc, arena=0x80e8628) at Python/pythonrun.c:1335<br>
+                            #22 0x0717f4a6 in PyRun_InteractiveOneFlags (fp=0x5b5420, filename=0x71c3e7d "&lt;stdin&gt;", flags=0xbffff2fc) at Python/pythonrun.c:840<br>
+                            #23 0x0717f6ab in PyRun_InteractiveLoopFlags (fp=0x5b5420, filename=0x71c3e7d "&lt;stdin&gt;", flags=&lt;value optimized out&gt;) at Python/pythonrun.c:760<br>
+                            #24 0x0717f7eb in PyRun_AnyFileExFlags (fp=0x5b5420, filename=&lt;value optimized out&gt;, closeit=0, flags=0xbffff2fc) at Python/pythonrun.c:729<br>
+                            #25 0x0718c212 in Py_Main (argc=1, argv=0xbffff3f4) at Modules/main.c:599<br></tt><br>
+                            <br>
+                            Looking closely at the above, we can see that there's a problem inside ctypes, but it's hard to see what triggered the problem within the Python code.<br>
+                            <br>
+                            <br>
+                            Below is a screendump of what it looks like with my new debugging hooks (warning: some very long lines; hopefully this won't get too badly mangled)<br>
+                            <br>
+                            I've highlighted some of it: we can see
+                            <ul>
+                                <li>the location we're at (file/line/function) within the Python code at each point in the call stack
+                                </li>
+                                <li>the dictionary of globals
+                                </li>
+                                <li>the arguments passed to functions
+                                </li>
+                            </ul>and so on - there's almost too much information. This should come in handy for nasty issues when the stack involves C code calling into Python and back again (e.g. when callbacks get invoked); should also be useful for debugging all threads at once in a multithreaded app.<br>
+                            <br>
+                            There are probably many things that could be improved about this code, but I'm already finding it very useful, and I hope other people will too.<br>
+                            <br>
+                            I've integrated this code into Fedora's Python 2 and Python 3 builds for the <a href="https://fedoraproject.org/wiki/Features/EasierPythonDebugging" rel="nofollow">upcoming Fedora 13 release</a> so that the hooks should get automatically loaded by the debugger. It should all Just Work - the crash-handling tool will fetch the debugging hooks and the bug report that's generated should contain all of this rich information on what's going on inside python - <b>without the user needing to be a debugging guru</b>.<br>
+                            <br>
+                            <pre>
+(gdb) bt
+#0  __strlen_sse2 () at ../sysdeps/i386/i686/multiarch/strlen.S:87
+</pre>
+                            <address>
+                                #1 &nbsp;0x07113d30 in PyString_FromString (str=0xdeadbeef &lt;Address 0xdeadbeef out of bounds&gt;) at Objects/stringobject.c:116
+                            </address>
+                            <address>
+                                #2 &nbsp;0x00167e18 in string_at (ptr=0xdeadbeef &lt;Address 0xdeadbeef out of bounds&gt;, size=-1) at /usr/src/debug/Python-2.6.2/Modules/_ctypes/_ctypes.c:5348
+                            </address>
+                            <address>
+                                #3 &nbsp;0x0018247f in ffi_call_SYSV () at src/x86/sysv.S:61
+                            </address>
+                            <address>
+                                #4 &nbsp;0x001822b0 in ffi_call (cif=&lt;value optimized out&gt;, fn=&lt;value optimized out&gt;, rvalue=&lt;value optimized out&gt;, avalue=&lt;value optimized out&gt;) at src/x86/ffi.c:213
+                            </address>
+                            <address>
+                                #5 &nbsp;0x00171315 in _call_function_pointer (pProc=0x167de0 &lt;string_at&gt;, <b>argtuple=(3735928559L, -1)</b>, flags=4357, argtypes=(&lt;builtin_function_or_method at remote 0xb7f45d2c&gt;, &lt;builtin_function_or_method at remote 0xb7f45d4c&gt;), restype=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;&lt;_ctypes.SimpleType at remote 0x80f3dc4&gt;, checker=&lt;unknown at remote 0x0&gt;) at /usr/src/debug/Python-2.6.2/Modules/_ctypes/callproc.c:815
+                            </address>
+                            <address>
+                                #6 &nbsp;_CallProc (pProc=0x167de0 &lt;string_at&gt;, argtuple=(3735928559L, -1), flags=4357, argtypes=(&lt;builtin_function_or_method at remote 0xb7f45d2c&gt;, &lt;builtin_function_or_method at remote 0xb7f45d4c&gt;), restype=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;&lt;_ctypes.SimpleType at remote 0x80f3dc4&gt;, checker=&lt;unknown at remote 0x0&gt;) at /usr/src/debug/Python-2.6.2/Modules/_ctypes/callproc.c:1162
+                            </address>
+                            <address>
+                                #7 &nbsp;0x0016a6f2 in CFuncPtr_call (self=0xb7f9d5dc, inargs=(3735928559L, -1), kwds=&lt;unknown at remote 0x0&gt;) at /usr/src/debug/Python-2.6.2/Modules/_ctypes/_ctypes.c:3857
+                            </address>
+                            <address>
+                                #8 &nbsp;0x070c478c in PyObject_Call (func=&lt;CFunctionType at remote 0xb7f9d5dc&gt;, arg=(3735928559L, -1), kw=&lt;unknown at remote 0x0&gt;) at Objects/abstract.c:2492
+                            </address>
+                            <address>
+                                #9 &nbsp;0x0716069c in do_call (<b>f=File /usr/lib/python2.6/ctypes/__init__.py, line 492, in string_at (ptr=3735928559L, size=-1)</b>, throwflag=0) at Python/ceval.c:3917
+                            </address>
+                            <address>
+                                #10 call_function (<b>f=File /usr/lib/python2.6/ctypes/__init__.py, line 492, in string_at (ptr=3735928559L, size=-1)</b>, throwflag=0) at Python/ceval.c:3729
+                            </address>
+                            <address>
+                                #11 PyEval_EvalFrameEx (f=File /usr/lib/python2.6/ctypes/__init__.py, line 492, in string_at (ptr=3735928559L, size=-1), throwflag=0) at Python/ceval.c:2389
+                            </address>
+                            <address>
+                                #12 0x07162642 in PyEval_EvalCodeEx (co=0xb7f3bda0, globals=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;{'Union': &lt;_ctypes.UnionType at remote 0x17c120&gt;, 'c_wchar': &lt;_ctypes.SimpleType at remote 0x80fb32c&gt;, 'c_bool': &lt;_ctypes.SimpleType at remote 0x80fab54&gt;, 'c_double': &lt;_ctypes.SimpleType at remote 0x80f7a0c&gt;, 'CFUNCTYPE': &lt;function at remote 0xb7f3264c&gt;, '__path__': ['/usr/lib/python2.6/ctypes'], 'byref': &lt;builtin_function_or_method at remote 0xb7f40eec&gt;, 'pointer': &lt;builtin_function_or_method at remote 0xb7f40d6c&gt;, 'alignment': &lt;builtin_function_or_method at remote 0xb7f40eac&gt;, '_memmove_addr': 4962832, 'c_longlong': &lt;_ctypes.SimpleType at remote 0x80f8544&gt;, 'c_short': &lt;_ctypes.SimpleType at remote 0x80f407c&gt;, 'get_errno': &lt;builtin_function_or_method at remote 0xb7f39f4c&gt;, '__file__': '/usr/lib/python2.6/ctypes/__init__.pyc', '_calcsize': &lt;builtin_function_or_method at remote 0xb7f96bec&gt;, 'c_ulong': &lt;_ctypes.SimpleType at remote 0x80f5974&gt;, 'c_int': &lt;_ctypes.SimpleType at remote 0x80f5124&gt;, 'c_int32': &lt;_ctypes.SimpleType at remote 0x80f5124&gt;, 'memmove': &lt;CFunctionType at remote 0xb7f9d4a4&gt;, '_sys': &lt;module at remote 0xb7fa308c&gt;, '_cast': &lt;CFunctionType at remote 0xb7f9d574&gt;, 'addressof': &lt;builtin_function_or_method at remote 0xb7f40f0c&gt;, 'ArgumentError': &lt;type at remote 0x80f2fdc&gt;, 'c_buffer': &lt;function at remote 0xb7f32614&gt;, 'c_longdouble': &lt;_ctypes.SimpleType at remote 0x80f821c&gt;, 'cdll': &lt;LibraryLoader at remote 0xb7f459ac&gt;, 'memset': &lt;CFunctionType at remote 0xb7f9d50c&gt;, 'string_at': &lt;function at remote 0xb7f32a04&gt;, 'sizeof': &lt;builtin_function_or_method at remote 0xb7f40ecc&gt;, '_FUNCFLAG_PYTHONAPI': 4, 'create_string_buffer': &lt;function at remote 0xb7f325dc&gt;, 'set_errno': &lt;builtin_function_or_method at remote 0xb7f40d2c&gt;, '_pointer_type_cache': {&lt;_ctypes.SimpleType at remote 0x80f9ec4&gt;: &lt;_ctypes.PointerType at remote 0x80fb864&gt;, &lt;_ctypes.SimpleType at remote 0x80fb32c&gt;: &lt;_ctypes.PointerType at remote 0x80fb504&gt;, &lt;NoneType at remote 0x72061e0&gt;: &lt;_ctypes.SimpleType at remote 0x80fa6a4&gt;}, '_Pointer': &lt;_ctypes.PointerType at remote 0x17bd00&gt;, 'create_unicode_buffer': &lt;function at remote 0xb7f326bc&gt;, 'c_long': &lt;_ctypes.SimpleType at remote 0x80f5124&gt;, 'c_char_p': &lt;_ctypes.SimpleType at remote 0x80fa37c&gt;, '__builtins__': {'bytearray': &lt;type at remote 0x71fb540&gt;, 'IndexError': &lt;type at remote 0x71ff0e0&gt;, 'all': &lt;builtin_function_or_method at remote 0xb7fafccc&gt;, 'help': &lt;_Helper at remote 0xb7f814ec&gt;, 'vars': &lt;builtin_function_or_method at remote 0xb7fb280c&gt;, 'SyntaxError': &lt;type at remote 0x71fed60&gt;, 'unicode': &lt;type at remote 0x720e2c0&gt;, 'sorted': &lt;builtin_function_or_method at remote 0xb7fb274c&gt;, 'isinstance': &lt;builtin_function_or_method at remote 0xb7fb22cc&gt;, 'copyright': &lt;_Printer at remote 0xb7f81d6c&gt;, 'NameError': &lt;type at remote 0x71feac0&gt;, 'BytesWarning': &lt;type at remote 0x72006c0&gt;, 'dict': &lt;type at remote 0x7205960&gt;, 'input': &lt;builtin_function_or_method at remote 0xb7fb224c&gt;, 'oct': &lt;builtin_function_or_method at remote 0xb7fb246c&gt;, 'bin': &lt;builtin_function_or_method at remote 0xb7fafd8c&gt;, 'SystemExit': &lt;type at remote 0x71fe2e0&gt;, 'StandardError': &lt;type at remote 0x71fdf60&gt;, 'format': &lt;builtin_function_or_method at remote 0xb7fb20ac&gt;, 'repr': &lt;builtin_function_or_method at remote 0xb7fb268c&gt;, 'UnicodeDecodeError': &lt;type at remote 0x71ff540&gt;, 'False': &lt;bool at remote 0x71f9624&gt;, 'RuntimeWarning': &lt;type at remote 0x7200340&gt;, 'bytes': &lt;type at remote 0x7209c80&gt;, 'iter': &lt;builtin_function_or_method at remote 0xb7fb230c&gt;, 'reload': &lt;builtin_function_or_method at remote 0xb7fb264c&gt;, 'Warning': &lt;type at remote 0x71ffee0&gt;, 'round': &lt;builtin_function_or_method at remote 0xb7fb26cc&gt;, 'dir': &lt;builtin_function_or_method at remote 0xb7faff4c&gt;, 'cmp': &lt;builtin_function_or_method at remote 0xb7fafe4c&gt;, 'set': &lt;type at remote 0x7207000&gt;, 'list': &lt;type at remote 0x7204420&gt;, 'reduce': &lt;builtin_function_or_method at remote 0xb7fb260c&gt;, 'intern': &lt;builtin_function_or_method at remote 0xb7fb228c&gt;, 'issubclass': &lt;builtin_function_or_method at remote 0xb7fb22ec&gt;, 'apply': &lt;builtin_function_or_method at remote 0xb7fafd4c&gt;, 'EOFError': &lt;type at remote 0x71fe820&gt;, 'locals': &lt;builtin_function_or_method at remote 0xb7fb238c&gt;, 'BufferError': &lt;type at remote 0x71ffe00&gt;, 'slice': &lt;type at remote 0x7207900&gt;, 'FloatingPointError': &lt;type at remote 0x71ff8c0&gt;, 'sum': &lt;builtin_function_or_method at remote 0xb7fb278c&gt;, 'buffer': &lt;type at remote 0x71f9840&gt;, 'getattr': &lt;builtin_function_or_method at remote 0xb7fb20cc&gt;, 'abs': &lt;builtin_function_or_method at remote 0xb7fafc8c&gt;, 'exit': &lt;Quitter at remote 0xb7fd1d2c&gt;, 'print': &lt;builtin_function_or_method at remote 0xb7fb256c&gt;, 'IndentationError': &lt;type at remote 0x71fee40&gt;, 'True': &lt;bool at remote 0x71f9630&gt;, 'FutureWarning': &lt;type at remote 0x7200420&gt;, 'ImportWarning': &lt;type at remote 0x7200500&gt;, 'None': &lt;NoneType at remote 0x72061e0&gt;, 'hash': &lt;builtin_function_or_method at remote 0xb7fb218c&gt;, 'len': &lt;builtin_function_or_method at remote 0xb7fb234c&gt;, 'credits': &lt;_Printer at remote 0xb7f8156c&gt;, 'frozenset': &lt;type at remote 0x72070e0&gt;, '__name__': '__builtin__', 'ord': &lt;builtin_function_or_method at remote 0xb7fb24ec&gt;, 'super': &lt;type at remote 0x720ade0&gt;, 'TypeError': &lt;type at remote 0x71fe040&gt;, 'license': &lt;_Printer at remote 0xb7f8170c&gt;, 'KeyboardInterrupt': &lt;type at remote 0x71fe3c0&gt;, 'UserWarning': &lt;type at remote 0x71fffc0&gt;, 'filter': &lt;builtin_function_or_method at remote 0xb7fb206c&gt;, 'range': &lt;builtin_function_or_method at remote 0xb7fb25ac&gt;, 'staticmethod': &lt;type at remote 0x72035e0&gt;, 'SystemError': &lt;type at remote 0x71ffb60&gt;, 'BaseException': &lt;type at remote 0x7200a60&gt;, 'pow': &lt;builtin_function_or_method at remote 0xb7fb252c&gt;, 'RuntimeError': &lt;type at remote 0x71fe900&gt;, 'float': &lt;type at remote 0x72028a0&gt;, 'GeneratorExit': &lt;type at remote 0x71fe200&gt;, 'StopIteration': &lt;type at remote 0x71fe120&gt;, 'globals': &lt;builtin_function_or_method at remote 0xb7fb210c&gt;, 'divmod': &lt;builtin_function_or_method at remote 0xb7faff8c&gt;, 'enumerate': &lt;type at remote 0x71fdaa0&gt;, 'Ellipsis': &lt;ellipsis at remote 0x7207840&gt;, 'LookupError': &lt;type at remote 0x71ff000&gt;, 'open': &lt;builtin_function_or_method at remote 0xb7fb24ac&gt;, 'quit': &lt;Quitter at remote 0xb7fd120c&gt;, 'basestring': &lt;type at remote 0x7209ba0&gt;, 'UnicodeError': &lt;type at remote 0x71ff380&gt;, 'zip': &lt;builtin_function_or_method at remote 0xb7fb284c&gt;, 'hex': &lt;builtin_function_or_method at remote 0xb7fb21cc&gt;, 'long': &lt;type at remote 0x7204f60&gt;, 'next': &lt;builtin_function_or_method at remote 0xb7fb244c&gt;, 'int': &lt;type at remote 0x7203a40&gt;, 'chr': &lt;builtin_function_or_method at remote 0xb7fafe0c&gt;, '__import__': &lt;builtin_function_or_method at remote 0xb7fafc6c&gt;, 'type': &lt;type at remote 0x720ac20&gt;, '__doc__': "Built-in functions, exceptions, and other objects.\n\nNoteworthy: None is the `nil' object; Ellipsis represents `...' in slices.", 'Exception': &lt;type at remote 0x71fde80&gt;, 'tuple': &lt;type at remote 0x720a6a0&gt;, 'UnicodeTranslateError': &lt;type at remote 0x71ff620&gt;, 'reversed': &lt;type at remote 0x71fdb80&gt;, 'UnicodeEncodeError': &lt;type at remote 0x71ff460&gt;, 'IOError': &lt;type at remote 0x71fe660&gt;, 'hasattr': &lt;builtin_function_or_method at remote 0xb7fb214c&gt;, 'delattr': &lt;builtin_function_or_method at remote 0xb7faff0c&gt;, 'setattr': &lt;builtin_function_or_method at remote 0xb7fb270c&gt;, 'raw_input': &lt;builtin_function_or_method at remote 0xb7fb25ec&gt;, 'PendingDeprecationWarning': &lt;type at remote 0x7200180&gt;, 'compile': &lt;builtin_function_or_method at remote 0xb7fafecc&gt;, 'ArithmeticError': &lt;type at remote 0x71ff7e0&gt;, 'str': &lt;type at remote 0x7209c80&gt;, 'property': &lt;type at remote 0x71fcec0&gt;, 'MemoryError': &lt;type at remote 0x71ffd20&gt;, 'ImportError': &lt;type at remote 0x71fe4a0&gt;, 'xrange': &lt;type at remote 0x7206640&gt;, 'KeyError': &lt;type at remote 0x71ff1c0&gt;, 'coerce': &lt;builtin_function_or_method at remote 0xb7fafe8c&gt;, 'SyntaxWarning': &lt;type at remote 0x7200260&gt;, 'file': &lt;type at remote 0x7201d80&gt;, 'EnvironmentError': &lt;type at remote 0x71fe580&gt;, 'unichr': &lt;builtin_function_or_method at remote 0xb7fb27cc&gt;, 'id': &lt;builtin_function_or_method at remote 0xb7fb220c&gt;, 'OSError': &lt;type at remote 0x71fe740&gt;, 'DeprecationWarning': &lt;type at remote 0x72000a0&gt;, 'min': &lt;builtin_function_or_method at remote 0xb7fb242c&gt;, 'UnicodeWarning': &lt;type at remote 0x72005e0&gt;, 'execfile': &lt;builtin_function_or_method at remote 0xb7fb202c&gt;, '__package__': &lt;NoneType at remote 0x72061e0&gt;, 'complex': &lt;type at remote 0x71fc840&gt;, 'bool': &lt;type at remote 0x71f9560&gt;, 'ValueError': &lt;type at remote 0x71ff2a0&gt;, 'NotImplemented': &lt;NotImplementedType at remote 0x72061e8&gt;, 'map': &lt;builtin_function_or_method at remote 0xb7fb23cc&gt;, 'any': &lt;builtin_function_or_method at remote 0xb7fafd0c&gt;, 'max': &lt;builtin_function_or_method at remote 0xb7fb240c&gt;, 'object': &lt;type at remote 0x720ad00&gt;, 'TabError': &lt;type at remote 0x71fef20&gt;, 'callable': &lt;builtin_function_or_method at remote 0xb7fafdcc&gt;, 'ZeroDivisionError': &lt;type at remote 0x71ffa80&gt;, 'eval': &lt;builtin_function_or_method at remote 0xb7faffcc&gt;, '__debug__': &lt;bool at remote 0x71f9630&gt;, 'ReferenceError': &lt;type at remote 0x71ffc40&gt;, 'AssertionError': &lt;type at remote 0x71ff700&gt;, 'classmethod': &lt;type at remote 0x7203500&gt;, 'UnboundLocalError': &lt;type at remote 0x71feba0&gt;, 'NotImplementedError': &lt;type at remote 0x71fe9e0&gt;, 'AttributeError': &lt;type at remote 0x71fec80&gt;, 'OverflowError': &lt;type at remote 0x71ff9a0&gt;}, '_FUNCFLAG_USE_ERRNO': 8, '_memset_addr': 4962944, '_dlopen': &lt;builtin_function_or_method at remote 0xb7f40e0c&gt;, '__name__': 'ctypes', 'RTLD_LOCAL': 0, 'c_int16': &lt;_ctypes.SimpleType at remote 0x80f407c&gt;, '_SimpleCData': &lt;_ctypes.SimpleType at remote 0x17bde0&gt;, 'wstring_at': &lt;function at remote 0xb7f32a3c&gt;, 'c_void_p': &lt;_ctypes.SimpleType at remote 0x80fa6a4&gt;, 'set_conversion_mode': &lt;builtin_function_or_method at remote 0xb7f40dec&gt;, 'PyDLL': &lt;type at remote 0x80fc3dc&gt;, 'DEFAULT_MODE': 0, 'LittleEndianStructure': &lt;_ctypes.StructType at remote 0x17c040&gt;, 'c_uint64': &lt;_ctypes.SimpleType at remote 0x80f8d54&gt;, 'c_ulonglong': &lt;_ctypes.SimpleType at remote 0x80f8d54&gt;, '_FUNCFLAG_USE_LASTERROR': 16, '_cast_addr': 1490912, 'ARRAY': &lt;function at remote 0xb7f3279c&gt;, 'c_ushort': &lt;_ctypes.SimpleType at remote 0x80f48ac&gt;, '__doc__': 'create and manipulate C data types in Python', '_check_size': &lt;function at remote 0xb7f32684&gt;, 'CDLL': &lt;type at remote 0x80fbeac&gt;, '_wstring_at': &lt;CFunctionType at remote 0xb7f9d644&gt;, 'c_ubyte': &lt;_ctypes.SimpleType at remote 0x80f9564&gt;, 'RTLD_GLOBAL': 256, 'c_char': &lt;_ctypes.SimpleType at remote 0x80f9ec4&gt;, 'c_uint32': &lt;_ctypes.SimpleType at remote 0x80f5974&gt;, 'c_float': &lt;_ctypes.SimpleType at remote 0x80f71fc&gt;, 'SetPointerType': &lt;function at remote 0xb7f32764&gt;, 'resize': &lt;builtin_function_or_method at remote 0xb7f40dcc&gt;, '_c_functype_cache': {(&lt;_ctypes.SimpleType at remote 0x80f5124&gt;, (), 1): &lt;_ctypes.CFuncPtrType at remote 0x8100b14&gt;, (&lt;_ctypes.SimpleType at remote 0x80fa6a4&gt;, (&lt;_ctypes.SimpleType at remote 0x80fa6a4&gt;, &lt;_ctypes.SimpleType at remote 0x80f5124&gt;, &lt;_ctypes.SimpleType at remote 0x80f5974&gt;), 1): &lt;_ctypes.CFuncPtrType at remote 0x80fd84c&gt;}, '---Type &lt;return&gt; to continue, or q &lt;return&gt; to quit---
+                            </address>
+                            <address>
+                                _os': &lt;module at remote 0xb7fa314c&gt;, '_wstring_at_addr': 1494192, 'cast': &lt;function at remote 0xb7f329cc&gt;, 'c_int8': &lt;_ctypes.SimpleType at remote 0x80f9a14&gt;, 'c_byte': &lt;_ctypes.SimpleType at remote 0x80f9a14&gt;, 'c_int64': &lt;_ctypes.SimpleType at remote 0x80f8544&gt;, 'c_voidp': &lt;_ctypes.SimpleType at remote 0x80fa6a4&gt;, '_string_at_addr': 1474016, '_FUNCFLAG_CDECL': 1, 'pythonapi': &lt;PyDLL at remote 0xb7f45a0c&gt;, 'PYFUNCTYPE': &lt;function at remote 0xb7f327d4&gt;, '_CFuncPtr': &lt;_ctypes.CFuncPtrType at remote 0x17bb40&gt;, '_endian': &lt;module at remote 0xb7fa3944&gt;, '__package__': 'ctypes', 'c_uint16': &lt;_ctypes.SimpleType at remote 0x80f48ac&gt;, 'BigEndianStructure': &lt;_swapped_meta at remote 0x81006ec&gt;, 'pydll': &lt;LibraryLoader at remote 0xb7f459ec&gt;, '__version__': '1.1.0', 'Structure': &lt;_ctypes.StructType at remote 0x17c040&gt;, 'c_uint': &lt;_ctypes.SimpleType at remote 0x80f5974&gt;, 'py_object': &lt;_ctypes.SimpleType at remote 0x80f3dc4&gt;, 'c_wchar_p': &lt;_ctypes.SimpleType at remote 0x80fae7c&gt;, '_string_at': &lt;CFunctionType at remote 0xb7f9d5dc&gt;, 'c_size_t': &lt;_ctypes.SimpleType at remote 0x80f5974&gt;, 'c_uint8': &lt;_ctypes.SimpleType at remote 0x80f9564&gt;, 'LibraryLoader': &lt;type at remote 0x80fc704&gt;, 'Array': &lt;_ctypes.ArrayType at remote 0x17bc20&gt;, 'POINTER': &lt;builtin_function_or_method at remote 0xb7f40d4c&gt;}, locals=&lt;unknown at remote 0x0&gt;, args=0x80ec788, argcount=1, kws=0x80ec78c, kwcount=0, defs=0xb7f45d78, defcount=1, closure=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;&lt;unknown at remote 0x0&gt;) at Python/ceval.c:2968
+                            </address>
+                            <address>
+                                #13 0x07160983 in fast_function (<b>f=</b>
+                            </address>
+                            <address>
+                                <b>&nbsp;&nbsp; &nbsp;File &lt;stdin&gt;, line 2, in bar (self=&lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, string_at=&lt;function at remote 0xb7f32a04&gt;)</b>, throwflag=0) at Python/ceval.c:3802
+                            </address>
+                            <address>
+                                #14 call_function (<b>f=</b>
+                            </address>
+                            <address>
+                                <b>&nbsp;&nbsp; &nbsp;File &lt;stdin&gt;, line 2, in bar (self=&lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, string_at=&lt;function at remote 0xb7f32a04&gt;)</b>, throwflag=0) at Python/ceval.c:3727
+                            </address>
+                            <address>
+                                #15 PyEval_EvalFrameEx (f=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;File &lt;stdin&gt;, line 2, in bar (self=&lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, string_at=&lt;function at remote 0xb7f32a04&gt;), throwflag=0) at Python/ceval.c:2389
+                            </address>
+                            <address>
+                                #16 0x07161b79 in fast_function (f=File &lt;stdin&gt;, line 1, in &lt;module&gt; (), throwflag=0) at Python/ceval.c:3792
+                            </address>
+                            <address>
+                                #17 call_function (f=File &lt;stdin&gt;, line 1, in &lt;module&gt; (), throwflag=0) at Python/ceval.c:3727
+                            </address>
+                            <address>
+                                #18 PyEval_EvalFrameEx (f=File &lt;stdin&gt;, line 1, in &lt;module&gt; (), throwflag=0) at Python/ceval.c:2389
+                            </address>
+                            <address>
+                                #19 0x07162642 in PyEval_EvalCodeEx (co=0xb7f2e578, globals=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;{'f': &lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, '__builtins__': &lt;module at remote 0xb7fa3074&gt;, '__package__': &lt;NoneType at remote 0x72061e0&gt;, '__name__': '__main__', 'Foo': &lt;classobj at remote 0xb7f3817c&gt;, '__doc__': &lt;NoneType at remote 0x72061e0&gt;}, locals=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;{'f': &lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, '__builtins__': &lt;module at remote 0xb7fa3074&gt;, '__package__': &lt;NoneType at remote 0x72061e0&gt;, '__name__': '__main__', 'Foo': &lt;classobj at remote 0xb7f3817c&gt;, '__doc__': &lt;NoneType at remote 0x72061e0&gt;}, args=0x0, argcount=0, kws=0x0, kwcount=0, defs=0x0, defcount=0,&nbsp;
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;closure=&lt;unknown at remote 0x0&gt;) at Python/ceval.c:2968
+                            </address>
+                            <address>
+                                #20 0x071627a3 in PyEval_EvalCode (co=0xb7f2e578, globals=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;{'f': &lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, '__builtins__': &lt;module at remote 0xb7fa3074&gt;, '__package__': &lt;NoneType at remote 0x72061e0&gt;, '__name__': '__main__', 'Foo': &lt;classobj at remote 0xb7f3817c&gt;, '__doc__': &lt;NoneType at remote 0x72061e0&gt;}, locals=
+                            </address>
+                            <address>
+                                &nbsp;&nbsp; &nbsp;{'f': &lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, '__builtins__': &lt;module at remote 0xb7fa3074&gt;, '__package__': &lt;NoneType at remote 0x72061e0&gt;, '__name__': '__main__', 'Foo': &lt;classobj at remote 0xb7f3817c&gt;, '__doc__': &lt;NoneType at remote 0x72061e0&gt;}) at Python/ceval.c:522
+                            </address>
+                            <address>
+                                #21 0x0717d94b in run_mod (mod=&lt;value optimized out&gt;, filename=&lt;value optimized out&gt;, <b>globals=</b>
+                            </address>
+                            <pre>
+
+</pre>
+                            <address>
+                                <b>&nbsp;&nbsp; &nbsp;{'f': &lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, '__builtins__': &lt;module at remote 0xb7fa3074&gt;, '__package__': &lt;NoneType at remote 0x72061e0&gt;, '__name__': '__main__', 'Foo': &lt;classobj at remote 0xb7f3817c&gt;, '__doc__': &lt;NoneType at remote 0x72061e0&gt;}, locals=</b>
+                            </address>
+                            <address>
+                                <b>&nbsp;&nbsp; &nbsp;{'f': &lt;Foo({'someattr': 42, 'someotherattr': {'three': [(), (&lt;NoneType at remote 0x72061e0&gt;,), (&lt;NoneType at remote 0x72061e0&gt;, &lt;NoneType at remote 0x72061e0&gt;)], 'two': 2L}}) at remote 0xb7f3946c&gt;, '__builtins__': &lt;module at remote 0xb7fa3074&gt;, '__package__': &lt;NoneType at remote 0x72061e0&gt;, '__name__': '__main__', 'Foo': &lt;classobj at remote 0xb7f3817c&gt;, '__doc__': &lt;NoneType at remote 0x72061e0&gt;}, flags=0xbffff2fc, arena=0x80e8628) at Python/pythonrun.c:1335</b>
+                            </address>
+                            <address>
+                                #22 0x0717f4a6 in PyRun_InteractiveOneFlags (fp=0x5b5420, filename=0x71c3e7d "&lt;stdin&gt;", flags=0xbffff2fc) at Python/pythonrun.c:840
+                            </address>
+                            <address>
+                                #23 0x0717f6ab in PyRun_InteractiveLoopFlags (fp=0x5b5420, filename=0x71c3e7d "&lt;stdin&gt;", flags=&lt;value optimized out&gt;) at Python/pythonrun.c:760
+                            </address>
+                            <address>
+                                #24 0x0717f7eb in PyRun_AnyFileExFlags (fp=0x5b5420, filename=&lt;value optimized out&gt;, closeit=0, flags=0xbffff2fc) at Python/pythonrun.c:729
+                            </address>
+                            <address>
+                                #25 0x0718c212 in Py_Main (argc=1, argv=0xbffff3f4) at Modules/main.c:599
+                            </address>
+                            <address>
+                                #26 0x080485c7 in main (argc=1, argv=0xbffff3f4) at Modules/python.c:23
+                            </address>
+                            <address>
+                                &nbsp;
+                            </address>
+                            <address>
+                                &nbsp;
+                            </address>
+                            <address>
+                                &nbsp;
+                            </address><br>
+                            <br>
+                            <a name="cutid1-end" id="cutid1-end"></a>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dmalcolm.livejournal.com/4545.html">http://dmalcolm.livejournal.com/4545.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

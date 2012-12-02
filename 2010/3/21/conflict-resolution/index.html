@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Conflict Resolution
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 22 Mar 2010 01:24:35 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-21T21:24:35-04:00">
+                    <meta itemprop="dateModified" content="2010-03-21T21:24:35-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-22T01:24:35+00:00">Mar 22</time>
+                    <h2 itemprop="title">
+                        Conflict Resolution
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/dc8e3df324b8cb19">
+                        <blockquote>
+                            <p>
+                                In my <a href="http://pl.atyp.us/wordpress/?p=2769">Riak and Cassandra</a> thread, one issue that came up was the use of vector clocks to resolve conflicts. Vector what? I’ve had this post about vector clocks queued up for a while (check the numbers) but what I had here wasn’t very good so I’ve decided to talk about conflict resolution more generally. The basic issue here is that, in a system where writes can happen independently in more than one place, multiple writes can happen which conflict or overlap, and at some point you have to decide which one survives. This is not just a problem in those newfangled NoSQL thingies either. Distributed filesystems and other systems (e.g. databases) that use asynchronous replication have been dealing with the same issue for decades – and worse, because of things like partial overlaps and data dependencies that don’t exist in the common NoSQL data models.
+                            </p>
+                            <p>
+                                <a href="http://en.wikipedia.org/wiki/Vector_clock">Vector clocks</a> and closely related <a href="http://en.wikipedia.org/wiki/Version_vector">version vectors</a> are among the common techniques used to resolve conflicts. The common idea here is that, for each datum, each node keeps track of the last version on every other node which is known to precede the current one. In other words, the version for a datum is not a single value but a vector, with a separate value for each (relevant) node. If I’m X, and I had already seen Y’s version 7 before I wrote my version 3, then I note that fact by including a 7 in Y’s entry within that vector and a 3 in mine. Then anyone who sees that 7 (or later) in my version would know that I had already seen and (presumably) accounted for Y’s update when I made mine, and could treat my update as superseding it. If they already saw Y’s 7 and they see a 6 from me, they’d be able to recognize that as a conflict. There’s a lot more about rules for updating or comparing vectors in either case, but that’s probably enough for now. No post here would be complete without a bullet list, though, so here are a couple of additional observations.
+                            </p>
+                            <ul>
+                                <li>There are a lot of papers about vectors becoming too big, and ways to make them smaller. These are very real concerns when there are many updaters, as in a distributed filesystem. However, in many NoSQL stores the vectors only need to include an entry for each node where a replica might be stored. Since this number is likely to be very small, vector size isn’t an issue in these cases. Thanks to Alex Feinberg of <a href="http://project-voldemort.com/">Project Voldemort</a> for reminding me of this recently.
+                                </li>
+                                <li>Version vectors are usually per-object on a node, while vector clocks are usually global for the node, but this need not be the case. The version-vector update rules can be used for the entire set of objects on a node just as well.
+                                </li>
+                                <li>There are subtle but important differences between the update rules for version vectors and vector clocks. In particular, message exchanges count as events for vector clocks and the vectors end up being more “advanced” on the receiver than on the sender. This extra ordering information can be useful, e.g. to detect ordering of operations across multiple objects, but can also create problems – e.g. with clocks passed back and forth never converging, or conflict-resolution events generating new vectors and thus potentially new conflicts.
+                                </li>
+                            </ul>
+                            <p>
+                                The most important thing about both vector clocks and version vectors (henceforth “vectors” for both) is that they do not by themselves resolve conflicts. All they can do is <em>detect</em> conflicts, meaning updates whose order cannot be determined. The conflicting versions must all be saved until someone, at some time, looks at them and determines how to resolve the conflict – i.e. turn them into a single combined version. In most cases, this is the user. Both Voldemort and Riak, for example, follow Dynamo’s lead in this way. The Riak folks even claim that <a href="http://blog.basho.com/2010/01/29/why-vector-clocks-are-easy/">vector clocks are easy</a>, but I don’t agree. Using vector clocks to detect conflicts isn’t hard, so they’re sort of right as far as that goes, but detection is not the same as resolution and resolution is where the harder problems live. Even Werner Vogels recently said that <a href="http://thechangelog.com/post/457259567/episode-0-1-8-nosql-smackdown">Dynamo is not very user friendly</a> and vector clocks are a large part of the reason. Vectors aren’t that hard to deal with once you’re used to them, but there’s a bit of a “last straw” effect; they usually tend to show up when you’re already doing something fairly complex, and the last thing you need is one more $#@! bit of complexity. Also, not all conflicts are equally easy to resolve. Basho’s example (set union) turns out to be particularly easy due to certain mathematical properties, but even something as seemingly simple as incrementing an integer can run into more serious problems. How can increment be difficult? Well, let’s look at what might happen at node zero in a three-node system.
+                            </p>
+                            <ol>
+                                <li>Node zero has a value of 100 for the integer, and a version of {10,20,30}.
+                                </li>
+                                <li>An update comes in with a value of 101 and a version of {10,21,30}.
+                                </li>
+                                <li>Another update comes in, also with a value of 101 but with a version of {10,20,31}.
+                                </li>
+                            </ol>
+                            <p>
+                                Hm. Node one’s update was apparently made while oblivious to node two’s, and vice versa. No problem, they each obviously incremented the variable once, so we just make it 102 with a version of {10,21,31}. Everyone’s happy, right? Not so fast. If all we kept was the first update (including its version) then we no longer have any information to tell us whether {10,21,30} was an update from 100 to 101 or from 99 to 101. We’re missing the same information for {10,20,31}. Thus, we don’t really know whether the correct new value is 100+1+1=102 or 99+2+2=103 or something else. To know that, we’d have to keep {10,20,30} so that we could see what each of the subsequent updates really did. (This is where the special nature of set union, which is not subject to such problems, becomes apparent.) What if the second update had used a version of {9,20,31}? That would indicate a conflict not with {10,21,30} but with {10,20,30} – meaning we’d better have its predecessor(s) handy as well. Basically we’re stuck holding onto all previous versions until we can be sure no new conflict with them can occur – i.e. we’ve heard from every possible updater with a version clearly equal to or later than {10,20,30} in this case. In a system with many updaters, or where long-lived partitions can occur, this can get pretty messy indeed. Not so easy any more, is it?
+                            </p>
+                            <p>
+                                But wait, some might say, you can avoid all this by using vectors in a different way – to <em>prevent</em> update conflicts by issuing <a href="http://developer.amazonwebservices.com/connect/entry.jspa?externalID=3572">conditional writes</a> which specify a version (vector) and only succeed if that version is still current. Sorry, but no, or at least not generally. In a partition-tolerant system, nodes on each side of a partition may simultaneously accept conflicting writes against the same initial version, and you’ll still have to resolve the conflict when you resolve the partition. For conditional writes to work, the condition must be evaluated <em>at all update sites</em> before the write can be allowed to succeed. Implications regarding SimpleDB internals are left as an exercise for the reader.
+                            </p>
+                            <p>
+                                In conclusion, then, vectors are an incredibly powerful and useful tool to support conflict resolution . . . but conflict resolution remains a fundamentally hard problem. The complexity can be contained in many cases, but there will always be a few where it leaks out and gets all over you. This is why stronger forms of consistency, which truly don’t allow such conflicts to occur and therefore don’t require their resolution, have such enduring appeal. If you want a system that remains available even when partitions occur, though, you’ll need to weaken that consistency and therefore you’ll need to deal with conflicts. Understanding vector clocks and their relatives – and I mean <em>really</em> understanding them, not just treating them as some sort of magic pixie dust that will solve all of your problems – will likely be key to that effort. I hope I’ve provided at least a few clues to where both the pitfalls and the safe paths through that minefield are.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://pl.atyp.us/wordpress/?p=2601">http://pl.atyp.us/wordpress/?p=2601</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

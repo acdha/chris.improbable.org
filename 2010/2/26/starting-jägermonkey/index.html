@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Starting JägerMonkey
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 26 Feb 2010 22:40:46 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-02-26T17:40:46-04:00">
+                    <meta itemprop="dateModified" content="2010-02-26T17:40:46-04:00"><time class="date" itemprop="datePublished" datetime="2010-02-26T21:40:46+00:00">Feb 26</time>
+                    <h2 itemprop="title">
+                        Starting JägerMonkey
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/8cb6b1b010eefb08">
+                        <blockquote>
+                            <p>
+                                About 2 months ago, we started work on JägerMonkey, a new “baseline” method JIT compiler for SpiderMonkey (and Firefox). The reason we’re doing this is that TraceMonkey is very fast for code that traces well, but for code that doesn’t trace, we’re stuck with the interpreter, which is not fast. The JägerMonkey method JIT will provide a much better performance baseline, and tracing will continue to speed us up on code where it applies.
+                            </p>
+                            <p>
+                                This week, we’ve been sprinting to bring up the basic compiler, and as of today, JägerMonkey implements enough JavaScript to run all of SunSpider in “Jäger mode” and is 18% faster than the interpreter. And we haven’t done that many optimizations yet–there are many more things we will do (<a href="https://wiki.mozilla.org/JaegerMonkey">see the wiki article</a>).
+                            </p>
+                            <p>
+                                In the rest of this post, I’ll give a little more background on why we’re doing this, and a summary of what we’ve done so far.
+                            </p>
+                            <p>
+                                <strong>Why JägerMonkey.</strong> TraceMonkey’s tracing JIT is very fast for code that it can JIT. For example, it is 9x faster than the interpreter on SunSpider’s <code>math-cordic</code> benchmark. But it can’t really trace a benchmark like <code>date-format-tofte</code>, which calls <code>eval</code> in its main loop, so tracing only yields a 5% speedup on that program. As David Anderson put it, TraceMonkey has rocket boosters, so it runs really fast when the boosters are on, but the boosters can’t always be turned on.
+                            </p>
+                            <p>
+                                (See also the <a href="http://hacks.mozilla.org/2009/07/tracemonkey-overview/">hacks article</a> for much more background on how tracing works.)
+                            </p>
+                            <p>
+                                There are many factors that can prevent the rockets from turning on, so there’s really no short description of the programs that don’t trace, but most of them fall into a few categories:
+                            </p>
+                            <ul>
+                                <li>Programs with very branchy control flow. Tracing works by generating type-specialized native code for program paths. So if a program has 1000 paths in its hottest loop, TraceMonkey would have to generate 1000 paths to run it natively with tracing. But that would use up way too much memory for code, so instead TraceMonkey stops after a certain number of paths and falls back to the interpreter. Another problem with branchy code is that generating a trace takes time, so if there are many branches and each branch is run fewer times, TraceMonkey gets less benefit for the cost of compiling.
+                                </li>
+                                <li>Programs with many type combinations. Because TraceMonkey generates type-specialized code, it must generate a separate trace for every type combination (mapping of variables to types) the program generates. If there are 1000 type combinations, we have the same problems we get with 1000 paths.
+                                </li>
+                                <li>Programs that call <code>eval</code> in their hot loops. TraceMonkey needs to know all the variables and their types in order to generate type-specialized code. Because <code>eval</code> can potentially do anything, TraceMonkey must give up when it sees an <code>eval</code>. There are a few other language features and corner cases that TraceMonkey can’t trace for similar reasons.
+                                </li>
+                            </ul>
+                            <p>
+                                These untraceable programs are a result of two basic design factors:
+                            </p>
+                            <ul>
+                                <li>Trace JIT vs. method JIT. A method JIT compiles each statement in a method once, while a trace JIT may need to compile a statement many times if it is contained in many traces. So a method JIT isn’t hurt by branchy code.
+                                </li>
+                                <li>Mandatory type specialization vs. type specialization lite. A JIT that always type specializes has trouble with code that uses too many type combinations, or special features like <code>eval</code>. A JIT that doesn’t type specialize doesn’t have those problems. A JIT that type specializes only a little bit, or only optionally, also avoids those problems.
+                                </li>
+                            </ul>
+                            <p>
+                                Note that although a tracing JIT can either type specialize or not, and a method JIT can also type specialize or not, type specialization is a natural companion of tracing. Consider code like this:
+                            </p>
+                            <pre>
+  var x;
+  if (z) {
+    x = 3;
+  } else {
+    x = "hello";
+  }
+  var y = x + 77;
+</pre>
+                            <p>
+                                A trace JIT will compile two traces, which look something like this:
+                            </p>
+                            <pre>
+  // trace 1
+  if (!z) exit this trace;
+  x = 3;
+  y = x + 77;
+
+  // trace 2
+  if (z) exit this trace
+  x = "hello";
+  y = x + 77;
+</pre>
+                            <p>
+                                Notice how the types of x and y are completely known, so it is relatively easy to completely type-specialize this code. Accordingly, TraceMonkey is designed to always type-specialize everything. On the other hand, a method JIT compiles the whole method just once, so the method JIT really can’t know the type of <code>y</code>, and must generate non-specialized code.
+                            </p>
+                            <p>
+                                (But a method JIT can type-specialize, and a trace JIT doesn’t have to. For example, a trace JIT could choose to generate non-specialized code. But then the JIT becomes more complex–it needs a notion of “unknown” types and it needs separate code generation functions to handle those cases. And a method JIT could look ahead to see that there are only 2 different types, and generate two type-specialized cases. Or it could even decide to duplicate the assignment to <code>y</code> inside the branches so that it can be type-specialized. But again, this makes the JIT more complex than the basic non-specializing method JIT design.)
+                            </p>
+                            <p>
+                                So, a type-specializing trace JIT generates really fast code, but can’t generate native code for the situations described above. Conversely, an optionally specializing method JIT generates moderately fast code, but can generate native code for any JavaScript program. So the two techniques are complementary–we want the method JIT to provide good baseline performance, and then for code that traces well, tracing will push performance even higher.
+                            </p>
+                            <p>
+                                <strong>JägerMonkey so far.</strong> Now I’ll say a little more about what we’ve done so far on JägerMonkey.
+                            </p>
+                            <p>
+                                The first thing we needed was a fast assembler to generate the native code. TraceMonkey has a native code compiler, <a href="https://developer.mozilla.org/En/Nanojit">nanojit</a>, but we thought nanojit wasn’t ideal for JägerMonkey. Nanojit does a fair number of compiler backend optimizations, like dead store elimination and common subexpression elimination, which allows to generate faster code, but makes it take longer to generate that code. We don’t expect those optimizations to help much in the Jäger domain, so we wanted something simpler and faster.
+                            </p>
+                            <p>
+                                We decided to import the assembler from Apple’s open-source <a href="http://webkit.org/blog/214/introducing-squirrelfish-extreme/">Nitro</a> JavaScript JIT. (Thanks, WebKit devs!) We know it’s simple and fast from looking at it before (I did measurements that showed it was very fast at compiling regular expressions), it’s open-source, and it’s well-designed C++, so it was a great fit. Julian Seward modified it to run with our build system and support libraries. It’s in our tree with the appropriate licensing, and we’re already using it to get that 18% speedup I mentioned before.
+                            </p>
+                            <p>
+                                Another key component is the method JIT compiler itself, which David Anderson designed and started up. Right now it’s pretty basic but works well, so I don’t have a lot more to say about it right now. One interesting note is that David created a new function that does abstract interpretation of the bytecode in order to compute stack depths and incoming branch edges. The compiler uses the results to do some optimizations that gave us another 5% speedup or so.
+                            </p>
+                            <p>
+                                Finally, as part of the JägerMonkey project, we are going to make a bunch of changes to the interpreter to make it more amenable to JIT optimization. The first change, done by Luke Wagner, was to simplify the stack the interpreter uses to store temporary values and JavaScript stack frames. Previously, stack frames were laid out in a linked list of memory chunks, which keeps stack memory usage very low, but complicates the allocation of new stack frames and addressing of variables and values stored on the stack. Luke changed it to use a single “slab o’ memory”, so allocating a new stack frame is just a size check and pointer increment, and values and variables are always at fixed offsets from the stack frame headers. This makes it easier to write the JIT and easier to generate simple, fast code to access stack values. We were pleasantly surprised to find that the stack rearrangement alone gave a 3-5% speedup, both in the interpreter and JägerMonkey.
+                            </p>
+                            <p>
+                                At this point, everything’s looking good. The next step is to integrate JägerMonkey with tracing, so we can use them complementarily. We’ll also be continuing with the interpreter upgrades and simplifications. Finally, I’m going to try <a href="http://www.scienceteecher.com/Stand-Back-Try-Science-T-shirt.html">science</a> to learn more about existing JavaScript code and how best to design JägerMonkey to run it fast.
+                            </p>
+                            <p>
+                                (<a href="http://webhostinggeeks.com/science/starting-jagermonkey-be">Link to Belorussian translation of this article</a>, courtesy of Amanda Lynn.)
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.mozilla.com/dmandelin/2010/02/26/starting-jagermonkey/">http://blog.mozilla.com/dmandelin/2010/02/26/starting-jagermonkey/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

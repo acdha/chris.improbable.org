@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Hosting backdoors in hardware
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 27 Oct 2010 15:56:08 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-10-27T11:56:08-04:00">
+                    <meta itemprop="dateModified" content="2010-10-27T11:56:08-04:00"><time class="date" itemprop="datePublished" datetime="2010-10-27T15:56:08+00:00">Oct 27</time>
+                    <h2 itemprop="title">
+                        Hosting backdoors in hardware
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/67aed7d46deaa8fd">
+                        <blockquote>
+                            <p>
+                                Have you ever had a machine get compromised? What did you do? Did you run rootkit checkers and reboot? Did you restore from backups or wipe and reinstall the machines, to remove any potential backdoors?
+                            </p>
+                            <p>
+                                In some cases, that may not be enough. In this blog post, we’re going to describe how we can gain full control of someone’s machine by giving them a piece of hardware which they install into their computer. The backdoor won’t leave any trace on the disk, so it won’t be eliminated even if the operating system is reinstalled. It’s important to note that our ability to do this does not depend on exploiting any bugs in the operating system or other software; our hardware-based backdoor would work even if all the software on the system worked perfectly as designed.
+                            </p>
+                            <p>
+                                I’ll let you figure out the social engineering side of getting the hardware installed (birthday “present”?), and instead focus on some of the technical details involved.
+                            </p>
+                            <p>
+                                Our goal is to produce a PCI card which, when present in a machine running Linux, modifies the kernel so that we can control the machine remotely over the Internet. We’re going to make the simplifying assumption that we have a virtual machine which is a replica of the actual target machine. In particular, we know the architecture and exact kernel version of the target machine. Our proof-of-concept code will be written to only work on this specific kernel version, but it’s mainly just a matter of engineering effort to support a wide range of kernels.
+                            </p>
+                            <h3>
+                                Modifying the kernel with a kernel module
+                            </h3>
+                            <p>
+                                The easiest way to modify the behavior of our kernel is by loading a kernel module. Let’s start by writing a module that will allow us to remotely control a machine.
+                            </p>
+                            <p>
+                                IP packets have a field called the <a href="http://en.wikipedia.org/wiki/List_of_IP_protocol_numbers">protocol number</a>, which is how systems distinguish between TCP and UDP and other protocols. We’re going to pick an unused protocol number, say, 163, and have our module listen for packets with that protocol number. When we receive one, we’ll execute its data payload in a shell running as root. This will give us complete remote control of the machine.
+                            </p>
+                            <p>
+                                The Linux kernel has a global table <code><a href="http://lxr.linux.no/linux+v2.6.32.24/include/net/protocol.h#L97">inet_protos</a></code> consisting of a <code><a href="http://lxr.linux.no/linux+v2.6.32.24/include/net/protocol.h#L36">struct net_protocol</a> *</code> for each protocol number. The important field for our purposes is <code>handler</code>, a pointer to a function which takes a single argument of type <code><a href="http://lxr.linux.no/linux+v2.6.32.24/include/linux/skbuff.h#L313">struct sk_buff</a> *</code>. Whenever the Linux kernel receives an IP packet, it looks up the entry in <code>inet_protos</code> corresponding to the protocol number of the packet, and if the entry is not <code>NULL</code>, it passes the packet to the <code>handler</code> function. The <code>struct sk_buff</code> type is quite complicated, but the only field we care about is the <code>data</code> field, which is a pointer to the beginning of the payload of the packet (everything after the IP header). We want to pass the payload as commands to a shell running with root privileges. We can create a user-mode process running as root using the <code><a href="http://lxr.linux.no/linux+v2.6.32.24/include/linux/kmod.h#L75">call_usermodehelper</a></code> function, so our handler looks like this:
+                            </p>
+                            <pre>
+int exec_packet(struct sk_buff *skb)
+{
+        char *argv[4] = {"/bin/sh", "-c", skb-&gt;data, NULL};
+        char *envp[1] = {NULL};
+
+        call_usermodehelper("/bin/sh", argv, envp, UMH_NO_WAIT);
+
+        kfree_skb(skb);
+        return 0;
+}
+</pre>
+                            <p>
+                                We also have to define a <code>struct net_protocol</code> which points to our packet handler, and register it when our module is loaded:
+                            </p>
+                            <pre>
+const struct net_protocol proto163_protocol = {
+        .handler = exec_packet,
+        .no_policy = 1,
+        .netns_ok = 1
+};
+
+int init_module(void)
+{
+        return (inet_add_protocol(&amp;proto163_protocol, 163) &lt; 0);
+}
+</pre>
+                            <p>
+                                Let’s build and load the module:
+                            </p>
+                            <pre>
+rwbarton@target:~$ make
+make -C /lib/modules/2.6.32-24-generic/build M=/home/rwbarton modules
+make[1]: Entering directory `/usr/src/linux-headers-2.6.32-24-generic'
+  CC [M]  /home/rwbarton/exec163.o
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      /home/rwbarton/exec163.mod.o
+  LD [M]  /home/rwbarton/exec163.ko
+make[1]: Leaving directory `/usr/src/linux-headers-2.6.32-24-generic'
+rwbarton@target:~$ sudo insmod exec163.ko
+</pre>
+                            <p>
+                                Now we can use <code>sendip</code> (available in the <code>sendip</code> Ubuntu package) to construct and send a packet with protocol number 163 from a second machine (named <code>control</code>) to the target machine:
+                            </p>
+                            <pre>
+rwbarton@control:~$ echo -ne 'touch /tmp/x\0' &gt; payload
+rwbarton@control:~$ sudo sendip -p ipv4 -is 0 -ip 163 -f payload $targetip
+</pre>
+                            <pre>
+rwbarton@target:~$ ls -l /tmp/x
+-rw-r--r-- 1 root root 0 2010-10-12 14:53 /tmp/x
+</pre>
+                            <p>
+                                Great! It worked. Note that we have to send a null-terminated string in the payload, because that’s what <code>call_usermodehelper</code> expects to find in <code>argv</code> and we didn’t add a terminator in <code>exec_packet</code>.
+                            </p>
+                            <h3>
+                                Modifying the on-disk kernel
+                            </h3>
+                            <p>
+                                In the previous section we used the module loader to make our changes to the running kernel. Our next goal is to make these changes by altering the kernel on the disk. This is basically an application of ordinary binary patching techniques, so we’re just going to give a high-level overview of what needs to be done.
+                            </p>
+                            <p>
+                                The kernel lives in the <code>/boot</code> directory; on my test system, it’s called <code>/boot/vmlinuz-2.6.32-24-generic</code>. This file actually contains a compressed version of the kernel, along with the code which decompresses it and then jumps to the start. We’re going to modify this code to make a few changes to the decompressed image before executing it, which have the same effect as loading our kernel module did in the previous section.
+                            </p>
+                            <p>
+                                When we used the kernel module loader to make our changes to the kernel, the module loader performed three important tasks for us:
+                            </p>
+                            <ol>
+                                <li>it allocated kernel memory to store our kernel module, including both code (the <code>exec_packet</code> function) and data (<code>proto163_protocol</code> and the string constants in <code>exec_packet</code>) sections;
+                                </li>
+                                <li>it performed <a href="http://en.wikipedia.org/wiki/Relocation_(computer_science)">relocations</a>, so that, for example, <code>exec_packet</code> knows the addresses of the kernel functions it needs to call such as <code>kfree_skb</code>, as well as the addresses of its string constants;
+                                </li>
+                                <li>it ran our <code>init_module</code> function.
+                                </li>
+                            </ol>
+                            <p>
+                                We have to address each of these points in figuring out how to apply our changes without making use of the module loader.
+                            </p>
+                            <p>
+                                The second and third points are relatively straightforward thanks to our simplifying assumption that we know the exact kernel version on the target system. We can look up the addresses of the kernel functions our module needs to call by hand, and define them as constants in our code. We can also easily patch the kernel’s startup function to install a pointer to our <code>proto163_protocol</code> in <code>inet_protos[163]</code>, since we have an exact copy of its code.
+                            </p>
+                            <p>
+                                The first point is a little tricky. Normally, we would call <code>kmalloc</code> to allocate some memory to store our module’s code and data, but we need to make our changes before the kernel has started running, so the memory allocator won’t be initialized yet. We could try to find some code to patch that runs late enough that it is safe to call <code>kmalloc</code>, but we’d still have to find somewhere to store that extra code.
+                            </p>
+                            <p>
+                                What we’re going to do is cheat and find some data which isn’t used for anything terribly important, and overwrite it with our own data. In general, it’s hard to be sure what a given chunk of kernel image is used for; even a large chunk of zeros might be part of an important lookup table. However, we can be rather confident that any error messages in the kernel image are not used for anything besides being displayed to the user. We just need to find an error message which is long enough to provide space for our data, and obscure enough that it’s unlikely to ever be triggered. We’ll need well under 180 bytes for our data, so let’s look for strings in the kernel image which are at least that long:
+                            </p>
+                            <pre>
+rwbarton@target:~$ strings vmlinux | egrep  '^.{180}' | less
+</pre>
+                            <p>
+                                One of the output lines is this one:
+                            </p>
+                            <pre>
+&lt;4&gt;Attempt to access file with crypto metadata only in the extended attribute region, but eCryptfs was mounted without xattr support enabled. eCryptfs will not treat this like an encrypted file.
+</pre>
+                            <p>
+                                This sounds pretty obscure to me, and a Google search doesn’t find any occurrences of this message which aren’t from the kernel source code. So, we’re going to just overwrite it with our data.
+                            </p>
+                            <p>
+                                Having worked out what changes need to be applied to the decompressed kernel, we can modify the <code>vmlinuz</code> file so that it applies these changes after performing the decompression. Again, we need to find a place to store our added code, and conveniently enough, there are a bunch of strings used as error messages (in case decompression fails). We don’t expect the decompression to fail, because we didn’t modify the compressed image at all. So we’ll overwrite those error messages with code that applies our patches to the decompressed kernel, and modify the code in <code>vmlinuz</code> that decompresses the kernel to jump to our code after doing so. The changes amount to 5 bytes to write that <code>jmp</code> instruction, and about 200 bytes for the code and data that we use to patch the decompressed kernel.
+                            </p>
+                            <h3>
+                                Modifying the kernel during the boot process
+                            </h3>
+                            <p>
+                                Our end goal, however, is not to actually modify the on-disk kernel at all, but to create a piece of hardware which, if present in the target machine when it is booted, will cause our changes to be applied to the kernel. How can we accomplish that?
+                            </p>
+                            <p>
+                                The PCI specification defines a “expansion ROM” mechanism whereby a PCI card can include a bit of code for the <a href="http://en.wikipedia.org/wiki/BIOS">BIOS</a> to execute during the boot procedure. This is intended to give the hardware a chance to initialize itself, but we can also use it for our own purposes. To figure out what code we need to include on our expansion ROM, we need to know a little more about the boot process.
+                            </p>
+                            <p>
+                                When a machine boots up, the BIOS initializes the hardware, then loads the <a href="http://en.wikipedia.org/wiki/Master_boot_record">master boot record</a> from the boot device, generally a hard drive. Disks are traditionally divided into conceptual units called sectors of 512 bytes each. The master boot record is the first sector on the drive. After loading the master boot record into memory, the BIOS jumps to the beginning of the record.
+                            </p>
+                            <p>
+                                On my test system, the master boot record was installed by <a href="http://en.wikipedia.org/wiki/GNU_GRUB">GRUB</a>. It contains code to load the rest of the GRUB boot loader, which in turn loads the <code>/boot/vmlinuz-2.6.32-24-generic</code> image from the disk and executes it. GRUB contains a built-in driver which understands the <a href="http://en.wikipedia.org/wiki/Ext4">ext4</a> filesystem layout. However, it relies on the BIOS to actually read data from the disk, in much the same way that a user-level program relies on an operating system to access the hardware. Roughly speaking, when GRUB wants to read some sectors off the disk, it loads the start sector, number of sectors to read, and target address into registers, and then invokes the <code>int 0x13</code> instruction to raise an interrupt. The CPU has a table of <a href="http://en.wikipedia.org/wiki/Interrupt_descriptor_table">interrupt descriptors</a>, which specify for each interrupt number a function pointer to call when that interrupt is raised. During initialization, the BIOS sets up these function pointers so that, for example, the entry corresponding to interrupt <code>0x13</code> points to the BIOS code handling hard drive IO.
+                            </p>
+                            <p>
+                                Our expansion ROM is run after the BIOS sets up these interrupt descriptors, but before the master boot record is read from the disk. So what we’ll do in the expansion ROM code is overwrite the entry for interrupt <code>0x13</code>. This is actually a legitimate technique which we would use if we were writing an expansion ROM for some kind of exotic hard drive controller, which a generic BIOS wouldn’t know how to read, so that we could boot off of the exotic hard drive. In our case, though, what we’re going to make the <code>int 0x13</code> handler do is to call the original interrupt handler, then check whether the data we read matches one of the sectors of <code>/boot/vmlinuz-2.6.32-24-generic</code> that we need to patch. The ext4 filesystem stores files aligned on sector boundaries, so we can easily determine whether we need to patch a sector that’s just been read by inspecting the first few bytes of the sector. Then we return from our custom <code>int 0x13</code> handler. The code for this handler will be stored on our expansion ROM, and the entry point of our expansion ROM will set up the interrupt descriptor entry to point to it.
+                            </p>
+                            <p>
+                                In summary, the boot process of the system with our PCI card inserted looks like this:
+                            </p>
+                            <ul>
+                                <li>The BIOS starts up and performs basic initialization, including setting up the interrupt descriptor table.
+                                </li>
+                                <li>The BIOS runs our expansion ROM code, which hooks the <code>int 0x13</code> handler so that it will apply our patch to the <code>vmlinuz</code> file when it is read off the disk.
+                                </li>
+                                <li>The BIOS loads the master boot record installed by GRUB, and jumps to it. The master boot record loads the rest of GRUB.
+                                </li>
+                                <li>GRUB reads the <code>vmlinuz</code> file from the disk, but our custom <code>int 0x13</code> handler applies our patches to the kernel before returning.
+                                </li>
+                                <li>GRUB jumps to the <code>vmlinuz</code> entry point, which decompresses the kernel image. Our modifications to <code>vmlinuz</code> cause it to overwrite a string constant with our <code>exec_packet</code> function and associated data, and also to overwrite the end of the startup code to install a pointer to this data in <code>inet_protos[163]</code>.
+                                </li>
+                                <li>The startup code of the decompressed kernel runs and installs our handler in <code>inet_protos[163]</code>.
+                                </li>
+                                <li>The kernel continues to boot normally.
+                                </li>
+                            </ul>
+                            <p>
+                                We can now control the machine remotely over the Internet by sending it packets with protocol number 163.
+                            </p>
+                            <p>
+                                One neat thing about this setup is that it’s not so easy to detect that anything unusual has happened. The running Linux system reads from the disk using its own drivers, not BIOS calls via the real-mode interrupt table, so inspecting the on-disk kernel image will correctly show that it is unmodified. For the same reason, if we use our remote control of the machine to install some malicious software which is then detected by the system administrator, the usual procedure of reinstalling the operating system and restoring data from backups will not remove our backdoor, since it is not stored on the disk at all.
+                            </p>
+                            <p>
+                                What does all this mean in practice? Just like you should not run untrusted software, you should not install hardware provided by untrusted sources. Unless you work for something like a government intelligence agency, though, you shouldn’t realistically worry about installing commodity hardware from reputable vendors. After all, you’re already also trusting the manufacturer of your processor, RAM, etc., as well as your operating system and <a href="http://cm.bell-labs.com/who/ken/trust.html">compiler</a> providers. Of course, most real-world vulnerabilities are due to mistakes and not malice. An attacker can gain control of systems by exploiting bugs in popular operating systems much more easily than by distributing malicious hardware.
+                            </p>
+                            <hr>
+                            <div>
+                                <h3>
+                                    Ksplice Uptrack
+                                </h3>
+                                <p>
+                                    Like what you see? Subscribe to our blog or <a href="http://twitter.com/ksplice">Twitter feed</a>! From the fine folks at Ksplice, bringing you rebootless kernel updates with <a href="http://ksplice.com/">Ksplice Uptrack</a>.
+                                </p>
+                            </div><img src="http://feeds.feedburner.com/~r/Ksplice/~4/5wxTicyhnCk" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.ksplice.com/2010/10/hosting-backdoors-in-hardware/">http://blog.ksplice.com/2010/10/hosting-backdoors-in-hardware/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

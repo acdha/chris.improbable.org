@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Abstracting CouchDB
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 01 Aug 2010 22:31:50 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-01T18:31:50-04:00">
+                    <meta itemprop="dateModified" content="2010-08-01T18:31:50-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-01T22:31:50+00:00">Aug 01</time>
+                    <h2 itemprop="title">
+                        Abstracting CouchDB
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/37e7e7a92249aaae">
+                        <blockquote>
+                            <p>
+                                Karel Minařík sent <a href="http://gist.github.com/503660">this to the user list</a>. All the complaints are accurate and I don’t think they are specific to Ruby at all. I’m going to try and address why these issues exist, why they are unlikely to go away, and how developers can deal with them.
+                            </p>
+                            <h3>
+                                “plethora of gems”
+                            </h3>
+                            <p>
+                                The basic complaint here is that there are way too many CouchDB clients. This happens in pretty much every language. It’s just way too easy to write a CouchDB client. The REST API is pretty well defined and every language has support for HTTP already worked out.
+                            </p>
+                            <p>
+                                Languages that have better support for HTTP will end up having more clients. There are 4 or 5 competing Python clients, some of them actually include their own HTTP clients because Python’s stdlib HTTP client is crap. Compare that with node, which is relatively young, and there are already 4 competing clients all using the HTTP support provided by node which is quite nice (if you said “but it doesn’t support keep-alive yet” I’d yell back “I’m working on it!”).
+                            </p>
+                            <p>
+                                Even worse though, everyone is quite opinionated about which library you should use. This is similar to the situation with test frameworks in almost every language. There are a ton of test frameworks for any language you want to pick up and everyone is really opinionated about which one to use because it’s not very hard to write a test framework and anyone who has a complaint with the one they are using is free to go off and write their own. At the end of the day the best way to write tests is to use what ever tool provides the <strong>least</strong> “framework” putting your debugging closer to the tests and the system and not buried in the framework.
+                            </p>
+                            <p>
+                                Having some diversity can be healthy but it’s also confusing for new users. Most databases have a one-off binary protocol they invented for talking to the database. This means that the implementors of the database usually provide a “driver” for each language and that usually serves as the “definitive” client library in that language. Others may build on top of that to provide ORM’s or better APIs but the underlying library is usually the same which means that if you learn it well you can easily debug and work with all the higher level clients.
+                            </p>
+                            <p>
+                                CouchDB has a well defined API implemented by the CouchDB core committers available to every language that is close to the metal and provides well defined errors and responses to users, it’s the HTTP REST API. It’s definitive and well defined and needs very little abstraction if you have a good HTTP library. All the other libraries are just opinions and framework on top of that API. You can figure out what any library is actually doing by looking at the HTTP traffic with something like HTTPScoop.
+                            </p>
+                            <p>
+                                I’m not saying you should never use a higher level abstraction, but if you want to really understand CouchDB and always be able to debug any higher level library you’re going to need to understand the REST interface as well as you understand the abstractions.
+                            </p>
+                            <p>
+                                For me, I’m most comfortable with the REST API and when I write code that talks to CouchDB in node.js I just use my HTTP library, <a href="http://github.com/mikeal/node-utils/tree/master/request/">request</a>.
+                            </p>
+                            <h3>
+                                Compatibility With The Rest of the World
+                            </h3>
+                            <p>
+                                There are two other sections Karel wrote before this one but the reasons for them are essentially the same.
+                            </p>
+                            <p>
+                                We have a lot of libraries and frameworks that try to normalize between varied relational databases. We also have form libraries, authentication systems, and query libraries that expect database APIs to operate a certain way in order to integrate nicely.
+                            </p>
+                            <p>
+                                CouchDB does not fit well in to those abstractions. For what it’s worth, neither does Redis or Riak or a bunch of other damn good <em>new</em> databases.
+                            </p>
+                            <p>
+                                That’s because none of us are trying to make a “replacement” for relational databases. If you want a database that works well behind an ORM you should use a <strong>relational database</strong>. If your problems and all of your tools which you don’t want to put away fit the relational model there isn’t much need for you to be messing with CouchDB.
+                            </p>
+                            <p>
+                                CouchDB is trying to be something better and different. We’re trying to create a database, and an application platform, that fits in to the problem space of the web better than relational databases which grew to fit problems they were not originally architected for.
+                            </p>
+                            <p>
+                                You’re just never going to have a <strong>great</strong> experience using CouchDB behind ActiveRecord, or the Django ORM, or any other “generic” database API. Those abstractions work really well across a half dozen relational databases that have a similar structure and feature sets but with varied implementation details.
+                            </p>
+                            <p>
+                                What you <em>should</em> want is a good API for CouchDB if you want to use and learn CouchDB. CouchDB has a very large feature set and very little of it doesn’t map well to abstractions originally built for relational databases. It also requires you to think about solving you problem differently. It takes a while to really internalize the couch way of doing things, nothing happens overnight, but once you do you’re quite happy and incredibly productive.
+                            </p>
+                            <p>
+                                This also isn’t unique to CouchDB. Redis is fuckin’ awesome, but you wouldn’t have a good time trying to map your relational way of doing things to Redis. You’d think Redis was stupid and didn’t have the features you need. But really, you were trying to map not just your problem but your old way of solving your problem to Redis and Redis just isn’t for that. Neither is CouchDB.
+                            </p>
+                            <p>
+                                We’re all trying to build better tools for building stuff on the web and we won’t be weighed down by integrating with the legacy of relational dominance in the space. If we did, we’d never be able to make something truly better or different and that’s what we need.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.mikealrogers.com/2010/08/abstracting-couchdb/">http://www.mikealrogers.com/2010/08/abstracting-couchdb/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

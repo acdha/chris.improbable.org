@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            On Reducing the Size of Compressed Javascript (by up to 20%)
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 18 Aug 2009 19:53:39 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-08-18T15:53:39-04:00">
+                    <meta itemprop="dateModified" content="2009-08-18T15:53:39-04:00"><time class="date" itemprop="datePublished" datetime="2009-08-18T19:53:39+00:00">Aug 18</time>
+                    <h2 itemprop="title">
+                        On Reducing the Size of Compressed Javascript (by up to 20%)
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/27219ddfa4aff552">
+                        <p class="annotation">
+                            Not too surprising but for web old farts like me it's scary that there are apps with 500KB JavaScript files. I wonder if the next step is programatic transformation to hint the JIT engines in various browsers.
+                        </p>
+                        <blockquote>
+                            Recently, I've been studying ways of reducing the download size of Javascript applications produced by Google Web Toolkit, while preserving or improving startup time. There are a number of ways to do this, the first of which is to transform Javascript code into a form that is naturally more succinct, while eliminating unused code, or deferring the load of some code until later.<br>
+                            <br>
+                            Unfortunately, there is a tradeoff inherent in some of the fancier ways of making JS more succinct that use run-time code generation. This is put to good use in libraries like <i>jQuery</i>. For a large application, like Google Wave, this would increase startup time. Another technique is to teach a compiler even better optimizations for reducing redundant code, work which is ongoing in Google Web Toolkit.<br>
+                            <br>
+                            Other attempts to reduce JS size have looked at ways to remove extraneous whitespace, shorten identifiers, and tokenize/pack JS statements, and while the former two are win-win one-way transforms, the latter has the trade-off requirement of being a reversible transform, meaning that it has to be decoded by an additional JS stage after load, a step that hurts startup performance.<br>
+                            <br>
+                            Instead, I was drawn to a reversible transform the browser already includes support for: gzip compression, and decided to ask the question: what effect does the large-scale structure of the JS output code have on the <i><a href="http://en.wikipedia.org/wiki/DEFLATE_(algorithm)">DEFLATE</a></i> algorithm of GZIP which is used to serve up compressed script? The answer it turns out, is substantial.<br>
+                            <h2>
+                                Reversible Transforms
+                            </h2><br>
+                            If we didn't care about startup performance, we could spend all the time in the world unpacking JS code by including a custom tailored compressor, perhaps the <a href="http://en.wikipedia.org/wiki/Lzma">LZMA (Lempel-Ziv Markov Chaining)</a> algorithm or <a href="http://en.wikipedia.org/wiki/Prediction_by_partial_matching">PPM (Prediction by Partial Matching)</a>, but unfortunately, these algorithms would be very slow to run in Javascript.<br>
+                            <br>
+                            That leaves us with the built in GZIP compression that most web browsers include support for. The question is, can we improve compression while remaining compatible with the browser's decoder? There is an existing example of improving GZIP by injecting a reversible transform: bzip2 and the <a href="http://en.wikipedia.org/wiki/Burrows-Wheeler_transform">Burrows-Wheeler Transform</a>.<br>
+                            <br>
+                            Which brings up an interesting idea, can we do something like BWT's sort but for Javascript, in a way that doesn't require an extra pass to 'undo' the sorting?<br>
+                            <h2>
+                                Deflate: A digression
+                            </h2><br>
+                            Before answering that question, it would be helpful to look at some of the restrictions of the <i>deflate</i> algorithm, and how code ordering could affect the outcome.<br>
+                            <br>
+                            The deflate algorithm is a combination of two compression algorithms: <a href="http://en.wikipedia.org/wiki/LZ77_and_LZ78">LZ77</a> and <a href="http://en.wikipedia.org/wiki/Huffman_coding">Huffman coding</a>. Huffman coding is a variable length code technique where symbols are replaced with codes based on their frequency of occurrence. So for example, the most common letter in the English alphabet is the letter <tt>e</tt>, so replacing <tt>e</tt> with a short code, but giving <tt>q</tt>, the least frequent character, a longer code, leads to shorter text overall. Huffman encoding is order independent, so that 'eq' is the same length as 'qe'.<br>
+                            <br>
+                            LZ77 on the other hand, is a sliding window compression algorithm based on replacing strings with backwards references to previous strings in the input. For example, the string "this is a test" contains the substring 'is' repeated twice in a row, separated by a space, so that the second occurance of 'is' can be replaced with a length (2 characters, and a backwards distance (-3 positions), called the length-distance pair. The compressor typically scans backwards in the input within a certain window (e.g. 8,192 characters or 32,768 characters) looking for matches and then encoding them as length-distance pairs. The compressor has some freedom as to how hard it will search for a match before giving up (something I'll get to later).<br>
+                            <br>
+                            <b>One important effect of the sliding window limit is that if two Javascript functions with common substrings are separated by more than this distance, they cannot be matched.</b><br>
+                            <br>
+                            But DEFLATE has another trick up its sleeve. It encodes the output of the LZ77 algorithm using Huffman encoding, but uses one Huffman tree for the character literals and length codes, and another Huffman tree for the backwards distances.<br>
+                            <br>
+                            <b>Which suggests another potential gain is to try and arrange for the backwards distances to be both small, and frequently the same, so as it produce shorter Huffman codes.</b><br>
+                            <h2>
+                                A sort with no undo
+                            </h2><br>
+                            Thus far, intuition would tell us that if we could rearrange the input in order to bring more closely matched text closer together, we might be able to push up compression ratios, but how to do this without something to reverse the sort? Fortunately, unlike BWT, we are not working on plain text, but machine readable program code. We already know of something that rearranges code and moves it around, it's called a compiler!<br>
+                            <br>
+                            We would not want a one-way text compression sort which say, brings Hamlet's prologue, climax, and epilogue together and randomly rearranges the rest, but your browser has no problem running your Javascript code if function <tt>foo</tt> is declared after <tt>bar</tt>, or before it. Thus, as long as two statements do not have order-dependencies, we can arrange them freely, in fact, all top-level function declarations can be rearranged arbitrarily.<br>
+                            <h2>
+                                Sort by Clustering
+                            </h2><br>
+                            So, we've finally arrived at the point in which we have to devise our sort algorithm. What we want to do is, for any function <tt>Foo</tt> ensure that the best-match for this function in the whole program appears closest within the sliding window that the compressor will use. But bringing two functions that are most similar together in a greedy algorithm fashion won't necessarily produce the optimal result, as it is possible that by moving function <tt>Bar</tt> closer to function <tt>Foo</tt>, you've moved it away from lots of other functions that were good matches as well. As an example, consider these strings:<br>
+                            <pre>
+<br>"Hello World"<br>"Hello World is a common test string used."<br>...several thousand strings later including the phrase "hello world" ...<br>"Common test strings used are metasyntactic variables like Foo and Bar."<br>"Variables like Foo and Bar are very common."<br>
+</pre><br>
+                            <br>
+                            If we selectively moved the second string close to the first, we might prevent it from matching the other good matches later, especially if the window fills up.<br>
+                            <br>
+                            One idea I started to think about was to repurpose <i>Document Clustering</i> techniques towards code. Document Clustering is commonly used in information retrieval systems to find related documents. Typically, a document is encoded using some technique to measure word importance, such as representing each word by its <i><a href="http://en.wikipedia.org/wiki/Tf-idf">term frequency inverse document frequency</a></i>. Then, any two documents can be compared by some distance metric, for example, taking the tf-idf weightings of terms as a vector in N-space and computing the cosine between them.<br>
+                            <br>
+                            In this case, we'd let each function be a separate document, and the entire program be like the corpus of documents. We'd then choose some encoding to weigh Javascript grammar nodes by importance in a way that would produce good LZ77 matches, and then proceed in a bottom-up clustering fashion. First, we'd construct all the pairs of functions which match best. Pick a function, pair it with its best match, call that Cluster 1. Pick another function, pair it with its best match, call that Cluster 2, and so on. After this procedure is done, pick a Cluster, and find its nearest Cluster (according to some metric) and pair them up in a Cluster of 4 functions. After that's done, pair up 4-Clusters into Clusters of 8, and so on, until the final cluster encompasses the whole program.<br>
+                            <h2>
+                                What's a good metric?
+                            </h2><br>
+                            Ideally, a good metric for comparing two functions would take into account the way the GZIP compressor searches for matches and encodes them. It is an interesting theoretical question, but for practical implementation purposes, I needed something that performs reasonably well, now. One algorithm that is pretty good at finding strings of rough similarity, even in the presence of noise, is the dynamic programming edit-distance algorithm. It's deployed widely in one variant or another in the bioinformatics industry for gene sequence alignment (Smith-Waterman, HMMR, etc), but the version commonly used for general CS work is the <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein Distance</a>.<br>
+                            <br>
+                            <h2>
+                                Results
+                            </h2><br>
+                            Taking Levenshtein Distance as my metric, I produced a greedy variant as a patch to the GWT compiler. The greedy variant does not implement bottom-up clustering, but instead, sorts all functions by length first (suggested by GWT team member Lex Spoon), and then performs a linear scan over the sorted functions, picking the best match each time to the previous output. The source code is <a href="http://code.google.com/p/google-web-toolkit/source/detail?r=5972">here</a>. Remarkably, even this simple algorithm produces nice gains? How much? Well, if you do nothing else, it produces a 5-7% gain in GWT's Showcase application when compressed with gzip -9. But there's more that we can do!<br>
+                            <br>
+                            <h2>
+                                Optimizing GWT's Obfuscation
+                            </h2><br>
+                            When the GWT compiler is executed in obfuscated mode, it renames every single Javascript identifier in the whole program except for foreign Javascript. Ideally, you want the shortest id possible. Up until recently, GWT limited the first character of an identifier to an alphabet of 32-characters, and for strings of length 2 or more, it used base-64 characters. However, due to a clever patch by GWT community member Andriasyan (<a href="http://code.google.com/p/google-web-toolkit/issues/detail?id=2448">Issue #2448</a>), the first character can actually be chosen from a base-54 alphabet. This has the effect of shrinking output size by up to 1.75% prior to compression.<br>
+                            <br>
+                            We're not done yet! The GWT compiler has other tricks up its sleeve. It performs the renaming from the bottom-most scopes upwards, letting each scope reuse variable identifiers as they become free. However, it unfortunately did not insure that identifiers were picked in a stable order. Thus, a function of 3 variables could be declared as <tt>function foo(a,b,c){</tt> or as <tt>function foo(b,c,a){</tt>. Obviously, this would lead to suboptimal compression since every function of 3 variables should have the same suffix <tt>(a,b,c){</tt>. The effect of making obfuscated identifier allocation have a stable sort order combined with the base-54 patch produces an incredible gain of 10.5% when compressed with gzip -9.<br>
+                            <br>
+                            <h2>
+                                Choosing a different GZIP implementation
+                            </h2><br>
+                            The deflate algorithm actually gives some leeway to the compressor implementor in terms of how matches are found. ZLIB's implementation on which GZIP is based is actually not the best implementation, although it might be the best <i>patent unencumbered one.</i> Rather, the inventor of the <b>LZMA</b> algorithm has his own DEFLATE implementation in his <b>7-zip</b> utility, which produces 4% better output than gzip by my estimates.<br>
+                            <br>
+                            Combining base-54/base-64 obfuscated identifier encoding, stable sort-order for identifier allocation, my greedy clustering-by-edit-distance sort algorithm, and 7-zip as a gzip-compatible compressor, yields an incredible 21% reduction of the Showcase application. On a large 500k Javascript application, this means an additional 100k bandwidth is saved, with no performance penalty!<br>
+                            <br>
+                            <h2>
+                                Conclusion
+                            </h2><br>
+                            A general purpose technique (<b>Cromwell Clustering Transform? (CCT) :)</b>) for compilers to rearrange code for compression efficiency (vs say, cache locality) has been presented, which achieves non-trivial compression efficiency gains in Javascript output from the GWT compiler. Some of these techniques can also be applied to hand-written Javascript as well and included in 3rd party JS minification utilities.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/2515037436118935802-3371243308417222097?l=timepedia.blogspot.com">
+                            </div>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/blogspot/timepedia?a=TB-KJg_-RXQ:k-8q3UrdEao:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/blogspot/timepedia?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/blogspot/timepedia?a=TB-KJg_-RXQ:k-8q3UrdEao:dnMXMwOfBR0"><img src="http://feeds.feedburner.com/~ff/blogspot/timepedia?d=dnMXMwOfBR0" border="0"></a> <a href="http://feeds.feedburner.com/~ff/blogspot/timepedia?a=TB-KJg_-RXQ:k-8q3UrdEao:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/blogspot/timepedia?i=TB-KJg_-RXQ:k-8q3UrdEao:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/blogspot/timepedia?a=TB-KJg_-RXQ:k-8q3UrdEao:qj6IDK7rITs"><img src="http://feeds.feedburner.com/~ff/blogspot/timepedia?d=qj6IDK7rITs" border="0"></a> <a href="http://feeds.feedburner.com/~ff/blogspot/timepedia?a=TB-KJg_-RXQ:k-8q3UrdEao:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/blogspot/timepedia?i=TB-KJg_-RXQ:k-8q3UrdEao:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/blogspot/timepedia/~4/TB-KJg_-RXQ" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://timepedia.blogspot.com/2009/08/on-reducing-size-of-compressed.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+blogspot%2Ftimepedia+%28Timepedia%29">http://timepedia.blogspot.com/2009/08/on-reducing-size-of-compressed.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+blogspot%2Ftimepedia+%28Timepedia%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

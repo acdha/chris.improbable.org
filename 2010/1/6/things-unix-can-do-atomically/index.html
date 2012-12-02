@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Things UNIX can do atomically
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 07 Jan 2010 19:11:31 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-06T01:40:13-04:00">
+                    <meta itemprop="dateModified" content="2010-01-06T01:40:13-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-06T05:40:13+00:00">Jan 06</time>
+                    <h2 itemprop="title">
+                        Things UNIX can do atomically
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/e7ec804a51530e5e">
+                        <blockquote>
+                            <p>
+                                This is a catalog of things UNIX-like/POSIX-compliant operating systems can do atomically, making them useful as building blocks for thread-safe and multi-process-safe programs without mutexes or read/write locks.&nbsp; The list is by no means exhaustive and I expect it to be updated frequently for the foreseeable future.
+                            </p>
+                            <p>
+                                The philosophy here is to let the kernel do as much work as possible.&nbsp; At my most pessimistic, I trust the kernel developers more than a trust myself.&nbsp; More practically, it’s stupid to spend CPU time locking around an operation that’s already atomic.&nbsp; <em>Added 2010-01-07.</em>
+                            </p>
+                            <h2>
+                                Operating on a pathname
+                            </h2>
+                            <p>
+                                The operations below are best left to local filesystems.&nbsp; More than a few people have written in crying foul if any of these techniques are used on an NFS mount.&nbsp; True.&nbsp; When there are multiple kernels involved, the kernel can’t very well take care of all the locking for us.&nbsp; <em>Added 2010-01-06.</em>
+                            </p>
+                            <ul>
+                                <li>
+                                    <code>mv -T &lt;oldsymlink&gt; &lt;newsymlink&gt;</code> atomically changes the target of <code>&lt;newsymlink&gt;</code> to the directory pointed to by <code>&lt;oldsymlink&gt;</code> and is indispensable when deploying new code.&nbsp; <em>Updated 2010-01-06: both operands are symlinks.</em>&nbsp; (So this isn’t a system call, it’s still useful.)&nbsp; <del>A reader pointed out that <code>ln -Tfs &lt;directory&gt; &lt;symlink&gt;</code> accomplishes the same thing without the second symlink.&nbsp; <em>Added 2010-01-06.</em></del>&nbsp; <em>Deleted 2010-01-06: <code>strace(1)</code> shows that <code>ln -Tfs &lt;directory&gt; &lt;symlink&gt;</code> actually calls <code>symlink(2)</code>, <code>unlink(2)</code>, and <code>symlink(2)</code> once more, disqualifying it from this page.&nbsp; <code>mv -T &lt;oldsymlink&gt; &lt;newsymlink&gt;</code> ends up calling <code>rename(2)</code> which can atomically replace <code>&lt;newsymlink&gt;</code>.</em>&nbsp; <a href="http://linux.die.net/man/1/mv"><code>mv(1)</code></a>.
+                                </li>
+                                <li>
+                                    <code>link(oldpath, newpath)</code> creates a new hard link called <code>newpath</code> pointing to the same inode as <code>oldpath</code> and increases the link count by one.&nbsp; This will fail with the error code <code>EEXIST</code> if <code>newpath</code> already exists, making this a useful mechanism for locking a file amongst threads or processes that can all agree upon the name <code>newpath</code>.&nbsp; I prefer this technique for whole-file locking because the lock is visible to <code>ls(1)</code>.&nbsp; <a href="http://linux.die.net/man/2/link"><code>link(2)</code></a>.
+                                </li>
+                                <li>
+                                    <code>symlink(oldpath, newpath)</code> operates very much like <code>link(2)</code> but creates a symbolic link at a new inode rather than a hard link to the same inode.&nbsp; Symbolic links can point to directories, which hard links cannot, making them a perfect analogy to <code>link(2)</code> when locking entire directories.&nbsp; This will fail with the error code <code>EEXIST</code> if <code>newpath</code> already exists, making this a perfect analogy to <code>link(2)</code> that works for directories, too.&nbsp; Be careful of symbolic links whose target inode has been removed ("dangling" symbolic links) — <code>open(2)</code> will fail with the error code <code>ENOENT</code>.&nbsp; It should be mentioned that inodes are a finite resource (this particular machine has 1,245,184 inodes).&nbsp; <a href="http://linux.die.net/man/2/symlink"><code>symlink(2)</code></a>.&nbsp; <em>Added 2010-01-07</em>
+                                </li>
+                                <li>
+                                    <code>rename(oldpath, newpath)</code> can change a pathname atomically, provided <code>oldpath</code> and <code>newpath</code> are on the same filesystem.&nbsp; This will fail with the error code <code>ENOENT</code> if <code>oldpath</code> does not exist, enabling interprocess locking much like <code>link(oldpath, newpath)</code> above.&nbsp; I find this technique more natural when the files in question will be <code>unlink</code>ed later.&nbsp; <a href="http://linux.die.net/man/2/rename"><code>rename(2)</code></a>.
+                                </li>
+                                <li>
+                                    <code>open(pathname, O_CREAT | O_EXCL, 0644)</code> creates and opens a new file.&nbsp; (Don’t forget to set the mode in the third argument!)&nbsp; <code>O_EXCL</code> instructs this to fail with the error code <code>EEXIST</code> if <code>pathname</code> exists.&nbsp; This is a useful way to decide which process should handle a task: whoever successfully creates the file.&nbsp; <a href="http://linux.die.net/man/2/open"><code>open(2)</code></a>.
+                                </li>
+                                <li>
+                                    <code>mkdir(dirname, 0755)</code> creates a new directory but fails with the error code <code>EEXIST</code> if <code>dirname</code> exists.&nbsp; This provides for directories the same mechanism <code>link(2)</code> provides for files.&nbsp; <a href="http://linux.die.net/man/2/mkdir"><code>mkdir(2)</code></a>.&nbsp; <em>Added 2010-01-06.</em>
+                                </li>
+                            </ul>
+                            <h2>
+                                Operating on a file descriptor
+                            </h2>
+                            <ul>
+                                <li>
+                                    <code>fcntl(fd, F_GETLK, &amp;lock)</code>, <code>fcntl(fd, F_SETLK, &amp;lock)</code>, and <code>fcntl(fd, F_SETLKW, &amp;lock)</code> allow cooperating processes to lock regions of a file to serialize their access.&nbsp; <code>lock</code> is of type <code>struct flock</code> and describes the type of lock and the region being locked.&nbsp; <code>F_SETLKW</code> is particularly useful as it blocks the calling process until the lock is acquired.&nbsp; There is a “mandatory locking” mode but Linux’s implementation is unreliable as it’s subject to a race condition.&nbsp; <a href="http://linux.die.net/man/2/fcntl"><code>fcntl(2)</code></a>.
+                                </li>
+                                <li>
+                                    <code>fcntl(fd, F_GETLEASE)</code> and <code>fcntl(fd, F_SETLEASE, lease)</code> ask the kernel to notify the calling process with <code>SIGIO</code> when another process <code>open</code>s or <code>truncate</code>s the file referred to by <code>fd</code>.&nbsp; When that signals arrives, the lease needs to be removed by <code>fcntl(fd, F_SETLEASE, F_UNLCK)</code>.&nbsp; <code>fcntl(fd, F_NOTIFY, arg)</code> is similar but doesn’t block other processes, so it isn’t useful for synchronization.&nbsp; <a href="http://linux.die.net/man/2/fcntl"><code>fcntl(2)</code></a>.
+                                </li>
+                                <li>
+                                    <code>mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0)</code> returns a pointer from which a file’s contents can be read and written by normal memory operations.&nbsp; By making frequent use of <code>msync(addr, length, MS_INVALIDATE)</code>, data written in this manner can be shared between processes that both map the same file.&nbsp; <a href="http://linux.die.net/man/2/mmap"><code>mmap(2)</code></a>, <a href="http://linux.die.net/man/2/msync"><code>msync(2)</code></a>.
+                                </li>
+                            </ul>
+                            <h2>
+                                Operating on virtual memory
+                            </h2>
+                            <ul>
+                                <li>
+                                    <code>__sync_fetch_and_add</code>, <code>__sync_add_and_fetch</code>, <code>__sync_val_compare_and_swap</code>, and friends provide a full barrier so “no memory operand will be moved across the operation, either forward or backward.” These operations are the basis for most (all?) lock-free algorithms.&nbsp; <a href="http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html">GCC Atomic Builtins</a>.
+                                </li>
+                            </ul>
+                            <p>
+                                Something I should add to my repertoire?&nbsp; Race condition?&nbsp; Let me know at <a href="mailto:r@rcrowley.org">r@rcrowley.org</a> or <a href="http://twitter.com/rcrowley">@rcrowley</a> and I’ll fix it.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/rcrowley?a=82iyKgpKKzM:HoFQG-4RD8s:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/rcrowley?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/rcrowley?a=82iyKgpKKzM:HoFQG-4RD8s:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/rcrowley?i=82iyKgpKKzM:HoFQG-4RD8s:F7zBnMyn0Lo" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/rcrowley/~4/82iyKgpKKzM" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://rcrowley.org/2010/01/06/things-unix-can-do-atomically.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+rcrowley+%28Richard+Crowley%27s+blog%29">http://rcrowley.org/2010/01/06/things-unix-can-do-atomically.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+rcrowley+%28Richard+Crowley%27s+blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

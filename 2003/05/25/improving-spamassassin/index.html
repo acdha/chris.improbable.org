@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Improving SpamAssassin
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 25 May 2003 12:24:21 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2003-05-25T01:24:21-04:00">
+                    <meta itemprop="dateModified" content="2003-05-25T08:24:21-04:00"><time class="date" itemprop="datePublished" datetime="2003-05-25T12:24:21+00:00">May 25</time>
+                    <h2 itemprop="title">
+                        Improving SpamAssassin
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <p>
+                        John Gruber was recently <a href="http://daringfireball.net/2003/05/jackassassin.html">discussing his experience with SpamAssassin</a>. The best part about <a href="http://spamassassin.sf.net">SpamAssassin</a> is that you can tweak it to significantly improve accuracy. I've seen perhaps one or two spams a week making it through my filters out of perhaps 50+ per day and those weren't pure spam - unrequested mailings from companies I've done business with rather than pure unsolicited crap, resulting in prompt additions to my blacklist.
+                    </p>
+                    <p>
+                        There are three important things you can do to improve SpamAssassin's already excellent filtering:
+                    </p>
+                    <ol>
+                        <li>
+                            <p>
+                                <strong>Use sa-learn to give the Bayesian filter examples of the spam and ham (non-spam) messages you receive.</strong> I have a simple script I run every so often to update the filter after I've verified that I don't have any false negatives or positives:
+                            </p>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">echo Learning from INBOX</span>
+                            </div>
+                            <div class="Code">
+                                <font face="'Lucida Console'">nice -20&nbsp;sa-learn --ham --dir Library/Mail/HOME/INBOX.imapmbox/CachedMessages/ nice -20&nbsp;sa-learn --ham --dir Library/Mail/HOME/INBOX/Archive/*.imapmbox/CachedMessages/&nbsp;</font>
+                            </div>
+                            <div class="Code">
+                                <font face="'Lucida Console'">nice -20&nbsp;sa-learn --ham --dir Library/Mail/WORK/INBOX.imapmbox/CachedMessages/ echo Learning from Spam&nbsp;</font>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">nice -20 sa-learn --spam --dir Library/Mail/HOME/INBOX/Spam.imapmbox/CachedMessages/</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">nice -20 sa-learn --spam --dir Library/Mail/WORK/INBOX/Spam.imapmbox/CachedMessages/</span>
+                                <p>
+                                    The nice thing about sa-learn is that it keeps track of the messages it's seen before so there's no accuracy or significant performance hit from rescanning your mailboxes repeatedly.
+                                </p>
+                            </div>
+                        </li>
+                        <li>
+                            <p>
+                                <strong>Restrict messages to the languages and character sets you actually use</strong> by adding something like this to your .spamassassin/user_prefs:
+                            </p>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">ok_locales en</span>
+                            </div>
+                            <div class="Code">
+                                <font face="'Lucida Console'">ok_languages en</font>
+                            </div>
+                        </li>
+                        <li>
+                            <p>
+                                <strong>Use more DNS blacklists</strong> in your .spamassassin/user_prefs:
+                            </p>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header RCVD_IN_RFC_PM eval:check_rbl('relay', 'postmaster.rfc-ignorant.org.')&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe RCVD_IN_RFC_PM Received via a relay in postmaster.rfc-ignorant.org&nbsp;</span><br>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score RCVD_IN_RFC_PM 2.0&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header X_CHINESE_RELAY eval:check_rbl('relay', 'cn.rbl.cluecentral.net.')&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe X_CHINESE_RELAY Received via a relay in China</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score X_CHINESE_RELAY 1.5</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header X_KOREAN_RELAY eval:check_rbl('relay', 'korea.services.net.')&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe X_KOREAN_RELAY Received via a relay in Korea</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score X_KOREAN_RELAY 1.5&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header X_MONKEY_FORMMAIL eval:check_rbl('relay', 'formmail.relays.monkeys.com.')</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe X_MONKEY_FORMMAIL Received via relay in monkeys.com's open formmail scripts list</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score X_MONKEY_FORMMAIL 1.5&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header X_MONKEY_PROXY eval:check_rbl('relay', 'proxies.relays.monkeys.com.')</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe X_MONKEY_PROXY Received via relay in monkeys.com's open proxy list</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score X_MONKEY_PROXY 1.5&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header X_MONKEY_PROXY eval:check_rbl('relay','spamhaus.relays.osirusoft.com.')</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe X_MONKEY_PROXY Received via relay in Spamhaus Blacklist</span><br>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score X_MONKEY_PROXY 1.5 # Not Just Another BlackList tests from http://njabl.org/use.html</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header IN_NJABL_ORG rbleval:check_rbl('njabl','dnsbl.njabl.org.') describe IN_NJABL_ORG Received via a relay in dnsbl.njabl.org tflags IN_NJABL_ORG net</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header NJABL_OPEN_RELAY rbleval:check_rbl_results_for('njabl', '127.0.0.2')</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe NJABL_OPEN_RELAY DNSBL: sender is Confirmed Open Relay tflags NJABL_OPEN_RELAY net</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header NJABL_DUL rbleval:check_rbl_results_for('njabl', '127.0.0.3')&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe NJABL_DUL DNSBL: sender ip address in in a dialup block tflags NJABL_DUL net</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header NJABL_SPAM_SRC rbleval:check_rbl_results_for('njabl', '127.0.0.4')</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe NJABL_SPAM_SRC DNSBL: sender is Confirmed Spam Source tflags NJABL_SPAM_SRC net</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header NJABL_MULTI_STAGE rbleval:check_rbl_results_for('njabl', '127.0.0.5')</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe NJABL_MULTI_STAGE DNSBL: sent through multi-stage open relay tflags NJABL_MULTI_STAGE net</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header NJABL_CGI rbleval:check_rbl_results_for('njabl', '127.0.0.8')&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe NJABL_CGI DNSBL: sender is an open formmail tflags NJABL_CGI net</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">header NJABL_PROXY rbleval:check_rbl_results_for('njabl', '127.0.0.9')&nbsp;</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">describe NJABL_PROXY DNSBL: sender is an open proxy tflags NJABL_PROXY net</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';"><br></span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score IN_NJABL_ORG 0.38</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score NJABL_DUL 0.62</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score NJABL_MULTI_STAGE 0.75</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score NJABL_PROXY 3.00</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score NJABL_OPEN_RELAY 3.00</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score NJABL_CGI 1.50</span>
+                            </div>
+                            <div class="Code">
+                                <span style="font-family: 'Lucida Console';">score NJABL_SPAM_SRC 3.00</span>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

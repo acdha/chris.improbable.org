@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Invokedynamic in JRuby: Constant Lookup
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 10 Aug 2011 18:59:32 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-08-10T14:00:00-04:00">
+                    <meta itemprop="dateModified" content="2011-08-10T14:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-08-10T18:00:00+00:00">Aug 10</time>
+                    <h2 itemprop="title">
+                        Invokedynamic in JRuby: Constant Lookup
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/dc397706359b0c1d">
+                        <blockquote>
+                            <i>This is the first of a set (not a series...there's no particular order) of articles I'll write on how JRuby is using invokedynamic. Hopefully they will show Rubyists how drastically invokedynamic is going to improve JRuby, and show other JVM language folks how to use invokedynamic effectively.</i><br>
+                            <br>
+                            Hello friends!<br>
+                            <br>
+                            I figured it's about time for me to start writing a bit on how JRuby is actually using invokedynamic.<br>
+                            <br>
+                            As of today, JRuby utilizes invokedynamic far more than any other mainstream JVM language. We have worked very closely with the JSR leads and the OpenJDK developers to make sure invokedynamic runs well. And we have been advocating invokedynamic as a game-changer for the JVM and for JVM languages.<br>
+                            <br>
+                            Let's explore one area where JRuby is using invokedynamic: Ruby's "constant" lookup.<br>
+                            <br>
+                            <b>Non-constant "Constants"</b><br>
+                            <br>
+                            A constant in Ruby is defined on a class or module, and is subject to Ruby's typical namespacing logic. Constants start with a capital letter.<br>
+                            <br>
+                            I often put "constants" in parentheses because constant values can be reassigned. This will usually produce a warning...but not an error. This means we can't simply look up constant values once and never look them up again (without special tricks I'll get into later).<br>
+                            <br>
+                            Constant lookup is a also bit more complicated than method lookup. When retrieving a constant, Ruby first scans lexically-enclosing scopes' classes and modules for the constant. If the constant can't be found, the next search walks the current class's inheritance hierarchy. If we still can't find the constant, const_missing is called on the current class.<br>
+                            <br>
+                            In order to make constant lookup fast, we want to do some sort of caching. In classic JRuby, Ruby 1.9 (YARV), Rubinius, and probably most other modern Ruby implementations, this is done with a global serial number. Whenever a constant is updated or a module is included (changing the inheritance hierarchy) all cached constants everywhere are forced to lookup again.<br>
+                            <br>
+                            I have played with mechanisms for reducing the global impact of constant invalidation, but because constants can be looked up lexically it's simply too complicated to localize (since we need invalidate classes down-hierarchy from the change <b>and</b> we also need to update all lexical scopes that might see the change).<br>
+                            <br>
+                            <b>Constant Invalidation in JRuby 1.6</b><br>
+                            <br>
+                            The logic in JRuby 1.6 goes something like this:<br>
+                            <br>
+                            <ul>
+                                <li>If cache is empty or invalid, retrieve the constant value in the usual way (lexical, hierarchical search). Store the value with the current global constant serial number.
+                                </li>
+                                <li>On subsequent lookups, check cache for validity against the global constant serial number. If we have a value cached and the cache is still valid, return it.
+                                </li>
+                                <li>If any constant in the system is updated, or if a module is included into an existing class hierarchy, flip the serial number and force future constant lookups to re-cache.
+                                </li>
+                            </ul>
+                            <div>
+                                This turns out to work fairly well. The same mechanism in Ruby 1.9 produced drastically faster constant lookups, and JRuby's performance is even better than 1.9.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                But there's a problem here. Because there's this constant pinging of the global constant serial number, every constant access can potentially produce a new value. So we're paying the cost to check that serial number as well as interfering with optimizations that want to see constant values actually be constant.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Can we do better?
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>Quick Invokedynamic Primer</b>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                The main atom of invokedynamic is the MethodHandle. Method handles are essentially function pointers, which can point at Java methods or fields, constructors, constant values, or other method handles. Invokedynamic also provides the MethodHandles utility class, which lets us juggle method handles in various ways:
+                            </div>
+                            <div>
+                                <ul>
+                                    <li>adapting method signatures by casting, adding, moving, or dropping arguments
+                                    </li>
+                                    <li>combining three handles ("test", "target", and "fallback") to form new a "guard with test" if-statement-like handle
+                                    </li>
+                                    <li>wrap handles with exception handling or argument/return pre/post-processing
+                                    </li>
+                                </ul>
+                                <div>
+                                    You can think of method handles and the chains of adapter handles that stitch them together as a special sort of functional language the JVM knows how to optimize. Given a chain of handles, you should usually get a piece of code that optimizes as well as (or better, in some cases) writing the same logic by hand in Java.
+                                </div>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                The invokedynamic bytecode simply provides a place to plug a method handle chain into code. When the JVM encounters an invokedynamic bytecode, it calls a "bootstrap method" associated with that bytecode for further instructions.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                The bootstrap method returns a CallSite object, provided in java.lang.invoke. There are constant call sites for constant values, mutable call sites for when the target handle chain may have to change, and volatile call sites for when those changes must immediately be reflected across threads.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Once a CallSite has been installed for a given invokedynamic, subsequent hits skip the bootstrapping process, and we're off to the races.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>SwitchPoint</b>
+                            </div>
+                            <div>
+                                <b><br></b>
+                            </div>
+                            <div>
+                                I mentioned that the MethodHandles class provides a "guardWithTest" method for combining a test, a target (the "then" branch), and a fallback (the "else" branch). SwitchPoint, also in java.lang.invoke, acts like an on/off guardWithTest that once turned off can never be turned on again. You provide a target and fallback, and until the "switch" is thrown the target will be invoked. After the switch is thrown the fallback will be called.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                What's the difference between this and a guardWithTest where the test just pings some global value? The difference is that SwitchPoint doesn't need to check anything.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>Optimization and Deoptimization in the JVM</b>
+                            </div>
+                            <div>
+                                <b><br></b>
+                            </div>
+                            <div>
+                                When the JVM decides to optimize a piece of code, it does so in an <b>optimistic</b>&nbsp;way. In very broad terms, this means it assumes its information up to this point is perfect: no new methods or classes will be introduced, profiling information is accurate, etc. Based on this "perfect" view of the world, it aggressively optimizes code.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Of course, the world isn't perfect. The JVM has to give up profiling and monitoring at some point, so it always has an imperfect view of the system. In order to avoid its aggressive optimizations triggering a fatal error later on, JVMs like OpenJDK (Hotspot) do something called <b>deoptimization</b>.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Deoptimization is the process by which running, optimized code can adapt on-the-fly to a changing system. In OpenJDK, there's several ways this is accomplished:
+                            </div>
+                            <div>
+                                <ul>
+                                    <li>Branches out of compiled code back into the interpreter, when compiled code is determined to be invalid.
+                                    </li>
+                                    <li>Guards around inlined virtual method accesses, to ensure we're still calling against the same class.
+                                    </li>
+                                    <li>On-stack replacement, for fixing up a running method already on the native call stack
+                                    </li>
+                                    <li>...
+                                    </li>
+                                </ul>
+                                <div>
+                                    Because of this ability to deoptimize, it's possible to support zero-cost guards at the JVM level. Returning to SwitchPoint, we can see how this new form of "guardWithTest" can be basically free: we're explicitly telling the JVM this switch is a rare occurrence it can optimize aggressively.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    <b>SwitchPoint for Constant Lookup</b>
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    JRuby on invokedynamic uses SwitchPoint for constant lookup, as you'd expect. Instead of actively pinging that global constant serial number, we instead use a global SwitchPoint object to guard all cached constant accesses. When it comes time to invalidate the system's constants, we just flip the SwitchPoint off and create a new one. All SwitchPoint-guarded constant accesses in the system must then recache and use the new SwitchPoint.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    In a well-behaved system, we should reach a steady state where no new constants are being defined and no new modules are being introduced. Because we're using SwitchPoint, the stable state means all constant accesses are treated as truly constant by the JVM, allowing optimizations that were impossible before. And of course this also means that we've achieved constant lookup performance very near a theoretical maximum.
+                                </div>
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>Numbers</b>
+                            </div>
+                            <div>
+                                <b><br></b>
+                            </div>
+                            <div>
+                                First, a caveat: SwitchPoint is implemented in a fairly naïve way in the released OpenJDK 7, using a volatile field as the switch value. As a result, SwitchPoint guardWithTest is very slow currently, and JRuby's SwitchPoint-based constant logic must be enabled. I show numbers below based on leading-edge Hotspot compiler patches that will go into the first update release (numbers provided by one of the Hotspot devs, Christian Thalinger...thanks Christian!)<br>
+                                <br>
+                                The benchmark we're running is a modified version of <a href="https://github.com/jruby/jruby/blob/master/bench/language/bench_const_lookup.rb">bench_const_lookup</a> in JRuby's benchmark suite. The modification here runs more iterations (10M instead of 1M) with more constant lookups (50 instead of 10) to get a better idea of optimized performance.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Here's JRuby running our constant-lookup benchmark without SwitchPoint-based constants on Java 7:
+                            </div>
+                            <div>
+                                <br>
+                                <br>
+                                As I said before, this is pretty good. JRuby's existing constant lookup performance is roughly 2x faster than Ruby 1.9.2.<br>
+                                <br>
+                                Next, we'll try JRuby with SwitchPoint constants on Java 7 (released version, so we expect this to be slow):
+                            </div><br>
+                            <div>
+                                <br>
+                                <br>
+                                The perf hit of purely volatile SwitchPoint is apparent.<br>
+                                <br>
+                                And finally, JRuby with SwitchPoint constants on a dev build of Hotspot, which uses deoptimization rather than a volatile field:
+                            </div><br>
+                            <div>
+                                <br>
+                                <br>
+                                This is basically the performance of the 10M iteration loop alone. In fact, if you look at the resulting optimized assembly, the constant accesses have been <b>eliminated entirely</b>&nbsp;since they're optimistically inlined and never used. Of course this would normally not happen in real code, but it shows how much better the JVM can optimized Ruby's behavior using invokedynamic.
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/4704664917418794835-3395301669254719136?l=blog.headius.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.headius.com/2011/08/invokedynamic-in-jruby-constant-lookup.html">http://blog.headius.com/2011/08/invokedynamic-in-jruby-constant-lookup.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

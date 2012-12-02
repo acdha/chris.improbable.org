@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Some Notes on Distributed Key Stores
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 21 Apr 2009 05:39:51 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-21T01:39:51-04:00">
+                    <meta itemprop="dateModified" content="2009-04-21T01:39:51-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-21T05:39:51+00:00">Apr 21</time>
+                    <h2 itemprop="title">
+                        Some Notes on Distributed Key Stores
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/db46a98712366f44">
+                        <blockquote>
+                            <p>
+                                Last week I ended up building a distributed keystore for a client. That wasn’t my original intention, but after doing testing on just about every project out there, it turned out to be the best (only?) solution for our needs.
+                            </p>
+                            <p>
+                                Specifically, a production environment handling at least 100M items with an accelerating growth curve, very low latency retrievals, and the ability to handle 100s of inserts/s w/ variable-sized data (avg 1K, but up in many cases well beyond) … on EC2 hardware. The previous system had been using S3 (since SDB is limited to 1K values) – err, the lesson there, BTW is don’t do that.
+                            </p>
+                            <p>
+                                So, these requirements are decent – something that actually requires a distributed system, but something that shouldn’t be beyond what can be handled by a few nodes. My assumption was that I’d actually just be doing some load testing and documenting installation on the keystore the client picked out, and that would be that. This <b>was not the case</b>.
+                            </p>
+                            <p>
+                                I’m still catching up on a number of other projects, so I don’t have a great deal of time to do a formal writeup, hoewver, the work I’ve done may be useful for those who might actually need to <b>implement</b> a production keystore.
+                            </p>
+                            <p>
+                                Some other recent useful starting points may be <a href="http://www.metabrew.com/article/anti-rdbms-a-list-of-distributed-key-value-stores/">Richard Jones’ Anti-RDBMS roundup</a> and <a href="http://blip.tv/file/1949416/">Bob Ippolito’s Drop ACID and think about data Pycon talk</a>.
+                            </p>
+                            <ul>
+                                <li>MySQL – while the BDB backend is being phased out, MySQL is a good baseline. With my testing, on a single m1.large, I was able to store 20M items within one table at 400 inserts/s (with key indexes). Key retrievals were decently fast but sometimes variable. There are very large production keystores are being run on MySQL setups. Friendfeed has <a href="http://bret.appspot.com/entry/how-friendfeed-uses-mysql">an interesting writeup</a> of something they’re doing, and I have it on good authority that there are others running very big key stores w/ very simple distribution schemes (simple hashing into smaller table buckets). If you can’t beat this, you should probably take your ball and go home.
+                                </li>
+                                <li>
+                                    <a href="http://project-voldemort.com/">Project Voldemort</a> – Voldemort has a lot of velocity, and seems to be the de facto recommendation for distributed keystores. A friend had used this recently on a similar-scale (read-only) project, and this was what I spent the majority of my time initially working with. However, some issues…
+                                    <ul>
+                                        <li>Single node local testing was quite fast – 1000+ inserts/s, however, once run in a distributed setup, it was much slower. After about 50M insertions, a multinode cluster was running at &lt;150 inserts/s. This… was bad and led me to ultimately abandon Voldemort, although there were other issues…
+                                        </li>
+                                        <li>There is currently only a <a href="http://groups.google.com/group/project-voldemort/browse_thread/thread/e2bdca1f924493cf">partially complete</a> Python client. I added persistent connections in as well as client-side routing w/ the RouteToAll strategy, but well, see above
+                                        </li>
+                                        <li>Embedded in the previous statement is something worth mentioning – <a href="http://groups.google.com/group/project-voldemort/browse_thread/thread/cb7252ed7a2f9fca">server-side routing currently doesn’t exist</a>.
+                                        </li>
+                                        <li>While I’m mentioning important things that don’t exist, there is <a href="http://groups.google.com/group/project-voldemort/browse_thread/thread/685cc2623025c557">currently no way to rebalance or migrate partitions</a>, either online, or, as far as I could tell, even offline. This puts a damper on things, no?
+                                        </li>
+                                        <li>As a Dynamo implementation, a VectorClock (automatic versioning) is used – this is potentially a good thing for a large distributed infrastructure, but without the ability to add nodes or rebalance, it means that for a write-heavy load, it would lead to huge growth with no way for cleanup of old/unused items (this of course, also is not implemented)
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <a href="http://opensource.plurk.com/LightCloud/">LightCloud</a> – this is a simple layer on top of <a href="http://tokyocabinet.sourceforge.net/tyrantdoc/">Tokyo Tyrant</a> but the use of two hash rings was a bit confusing and the lack of production usage beyond by the author (on <a href="http://news.ycombinator.com/item?id=498914">a whopping 2 machines</a> containing “millions” of items) didn’t exactly inspire confidence. Another problem was that it’s setup was predicated on using master-master replication which requires update-logs to be turned on (again, storing all updates == bad for my use case). This was of course, discovered rooting through the source code, as the documentation (including basic setup or recommendations for # of lookup &amp; storage nodes, etc is nonexistent). The actual manager itself was pretty weak, requiring setup and management on a per-machine basis. I just couldn’t really figure out how it was useful.
+                                </li>
+                                <li>There were a number of projects that I tried, including <a href="http://incubator.apache.org/cassandra">Cassandra</a> (actually has some life to it now, lots of checkins recently), <a href="http://github.com/cliffmoon/dynomite">Dynomite</a> and <a href="http://hypertable.org/">Hypertable</a> that I tried and could not get compiled and or set up – my rule of thumb is that if I’m not smart enough to get it up and running without a problem, the chances that I’ll be able to keep it running w/o problems are pretty much nil.
+                                </li>
+                                <li>There were a number of other projects that were unsuitable due to non-distributed nature or other issues like lack of durable storage or general skeeviness and so were dismissed out of hand, like <a href="http://code.google.com/p/scalaris/">Scalaris</a> (no storage), <a href="http://memcachedb.org/">memcachedb</a> (not distributed, weird issues/skeeviness, issues compiling) and <a href="http://code.google.com/p/redis/">redis</a> (quite interesting but way too alpha). Oh, although not in consideration at all because of previous testing with a much smaller data set, on the skeeviness factor, I’ll give <a href="http://couchdb.apache.org/">CouchDB</a> a special shout out for having a completely aspirational (read: vaporware) architectural post-it note on its homepage. Not cool, guys.
+                                </li>
+                                <li>Also, there were one or two projects I didn’t touch because I had settled on a working approach (despite the sound of it, the timeline was super compressed – most of my testing was done in parallel with lots of EC2 test instances spun up (loading millions of nodes and watching for performance degradation just takes a long time no matter how you slice it). One was <a href="http://www.mongodb.org/">MongoDB</a>, a promising document-based store, although I’d wait until the auto-sharding bits get released to see how it really works. The other was <a href="http://labs.gree.jp/Top/OpenSource/Flare-en.html">Flare</a>, another Japanese project that sort of scares me. My eyes sort of glazed over while looking at the <a href="http://labs.gree.jp/Top/OpenSource/Flare/Document/Tutorial-en.html">setup tutorial</a> (although having a detailed doc was definitely a pleasant step up). Again, I’d finished working on my solution by then, but the release notes also gave me a chuckle:<br>
+                                    <blockquote>
+                                        released 1.0.8 (very stable)
+                                        <ul>
+                                            <li>fixed random infinite loop and segfault under heavy load
+                                            </li>
+                                        </ul>
+                                    </blockquote>
+                                </li>
+                            </ul>
+                            <p>
+                                OK, so enough with all that, What did I end up with you might ask? Well, while going through all this half-baked crap, what I <em>did</em> find that impressed me (<b>a lot</b>), was <a href="http://tokyocabinet.sourceforge.net/index.html">Tokyo Cabinet</a> and its network server, Tokyo Tyrant. Here was something fast, mature, and <a href="http://tokyocabinet.sourceforge.net/spex-en.html">very well documented</a> with multiple mature language bindings. Testing performance showed that storage-size/item was 1/4 of Voldemort’s, and actually 1/2 of actual size (Tokyo Cabinet comes with built-in ZLIB deflation).
+                            </p>
+                            <p>
+                                Additionally, Tokyo Tyrant came with built-in threading, and I was able to push 1600+ inserts/s (5 threads) over the network without breaking a sweat. With a large enough bucket size, it promised to average O(1) lookups and the memory footprint was tiny.
+                            </p>
+                            <p>
+                                So, it turns out the easiest thing to do was just throw up a thin layer to consistently hash the keys across a set of nodes (starting out with 8 nodes w/ a bucket-size of 40M – which means O(1) access on 80% of keys at 160M items). There’s a fair amount of headroom – I/O bottlenecks can be balanced out with more dedicated EC2 instances/EBS volumes, and the eventual need to add more nodes shouldn’t be too painful (i.e. adding nodes and either backfilling the 1/n items or adding inline moves).
+                            </p>
+                            <p>
+                                There are some issues (an issue w/ hanging on idle sockets) but current gets are at about 1.2-3ms across the network (ping is about 1ms) and it seems to otherwise be doing OK.
+                            </p>
+                            <p>
+                                Anyway, if you made it this far, the takeaways:
+                            </p>
+                            <ol>
+                                <li>The distributed stores out there is currently pretty half-baked at best right now. Your comfort-level running in prod may vary, but for most sane people, I doubt you’d want to.
+                                </li>
+                                <li>If you’re dealing w/ a reasonable number of items (&lt;50M), Tokyo Tyrant is crazy fast. If you're looking for a known, MySQL is probably an acceptable solution.
+                                </li>
+                                <li>Don’t believe the hype. There’s a lot of talk, but I didn’t find any public project that came close to the (implied?) promise of tossing nodes in and having it figure things out.
+                                </li>
+                                <li>Based on the maturity of projects out there, you could write your own in less than a day. It’ll perform as well and at least when it breaks, you’ll be more fond of it. Alternatively, you could go on the conference circuit and talk about how awesome your half-baked distributed keystore is.
+                                </li>
+                            </ol>
+                            <p>
+                                UPDATE: I’d be remiss if I didn’t stress that you should know your requirements and do your own testing. Any numbers I toss around are very specific to the hardware and (more importantly) the data set. Furthermore, most of these projects are moving at a fast clip so this may be out of date soon.
+                            </p>
+                            <p>
+                                And, when you do your testing, publish the results – there’s almost nothing out there currently so additional data points would be a big help for everyone.
+                            </p>
+                            <ul>
+                                <li>2009-04-22: <a href="http://anyall.org/blog/2009/04/performance-comparison-keyvalue-stores-for-language-model-counts/">Performance comparison: key/value stores for language model counts</a> – BDB, TC, TT memcache
+                                </li>
+                                <li>2009-04-24: <a href="http://michalfrackowiak.com/blog:redis-performance">Redis Performance on EC2</a> – tests on a couple EC2 instance sizes and vs real hardware
+                                </li>
+                            </ul><img src="http://feeds.feedburner.com/~r/randomfoo/~4/GVHdal4QiFc" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://randomfoo.net/2009/04/20/some-notes-on-distributed-key-stores?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+randomfoo+%28random%28%24foo%29%29">http://randomfoo.net/2009/04/20/some-notes-on-distributed-key-stores?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+randomfoo+%28random%28%24foo%29%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

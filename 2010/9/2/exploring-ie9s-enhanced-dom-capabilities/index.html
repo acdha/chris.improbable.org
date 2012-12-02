@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Exploring IE9's Enhanced DOM Capabilities
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 02 Sep 2010 22:25:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-09-02T18:25:00-04:00">
+                    <meta itemprop="dateModified" content="2010-09-02T18:25:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-09-02T22:25:00+00:00">Sep 02</time>
+                    <h2 itemprop="title">
+                        Exploring IE9's Enhanced DOM Capabilities
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/034d7ef0b22099ba">
+                        <blockquote>
+                            <p>
+                                For IE9 Platform Preview 4, we significantly re-architected how the Chakra JavaScript engine integrates into IE. This re-architecture, described in <a href="http://blogs.msdn.com/b/ie/archive/2010/08/04/html5-modernized-fourth-ie9-platform-preview-available-for-developers.aspx">Dean’s post</a>, subtly changes the programming model of the DOM for IE9 standards mode, making it consistent with new ECMAScript 5 capabilities, more interoperable with other browsers and aligned with emerging standards (<a href="http://www.w3.org/TR/WebIDL/">WebIDL</a>).
+                            </p>
+                            <p>
+                                In this post I want to dive into the details of some of these programming model changes. You can take advantage of these enhanced DOM capabilities in the latest platform preview build. To highlight these changes, I’ll reference the <a href="http://ie.microsoft.com/testdrive/HTML5/DOMCapabilities/Default.html">Enhanced DOM Capabilities demo page</a> that we released with the fourth Platform Preview.
+                            </p>
+                            <p align="center">
+                                <span><img height="233" width="377" src="http://ieblog.members.winisp.net/images/Travis_FastDom.jpg" alt="All 24 puzzle pieces assembled into the image of the IE logo. This is a screenshot of IE9 running the Enhanced DOM capabilities demo at the IE Test Drive web page: http://ie.microsoft.com/testdrive/" border="0" title="IE9 supporting 24/24 enhanced DOM capabilities"></span>
+                            </p>
+                            <p>
+                                That demo tests 24 capabilities that span 4 general categories:
+                            </p>
+                            <ul>
+                                <li>DOM object inheritance from native JavaScript objects
+                                </li>
+                                <li>JavaScript functional harmony with DOM objects
+                                </li>
+                                <li>Interoperable programming features
+                                </li>
+                                <li>New ECMAScript 5 support applied to DOM objects
+                                </li>
+                            </ul>
+                            <p>
+                                The first two are closely related, so I’ll discuss them together:
+                            </p>
+                            <p>
+                                <b>DOM object inheritance from native JavaScript objects and JavaScript functional harmony with DOM objects.</b>
+                            </p>
+                            <p>
+                                Prior to IE9, the JavaScript engine was connected to the DOM via classic COM bindings. These legacy bindings allowed for only primitive object and function representations of the DOM to the JavaScript engine. Consequently, many basic JavaScript features that developers expected to be available to all objects and functions (including DOM objects like Window, Document, NodeList, etc.) were only available to native JavaScript objects (Array, Number, etc.).
+                            </p>
+                            <p>
+                                The ECMAScript standard specifies basic operations that should work uniformly on all JavaScript objects, but allows “host objects” to deviate from those standard specifications. IE’s old JavaScript engine treated DOM objects as “host objects” which meant that basic JavaScript operations such as property access could behave oddly. While allowed by ECMAScript, inconsistent behavior between DOM objects and JavaScript objects created differences web developers had to account for.
+                            </p>
+                            <p>
+                                For example, one common puzzler for many web developers was why IE DOM functions were reported as “object” to the <b>typeof</b> JavaScript operator rather than "function" (this capability is specifically checked in the demo as piece #10).
+                            </p>
+                            <p>
+                                In IE9’s Standards Mode, we build our DOM as native JavaScript objects and functions rather than as “host objects,” thus enabling the features that web developers expect from native objects.
+                            </p>
+                            <p>
+                                <b>Interoperable programming features</b>
+                            </p>
+                            <p>
+                                The third group of capabilities showcase unique IE programming model behaviors that web developers commonly stumbled over. Because these behaviors were unique to the IE programming model, web developers found that their code didn't work the same across different browsers.
+                            </p>
+                            <p>
+                                As part of our new integration architecture, we removed many of the inconsistencies that kept the same script from working the same way across browsers. The programming model changes may cause sites that have conditional code written for IE to behave differently in IE9 than it did before. Therefore, it is worthwhile describing these changes in more depth.
+                            </p>
+                            <p>
+                                <i>Functions now enumerated</i>
+                            </p>
+                            <p>
+                                In IE8 and before, enumerating a DOM object did not include any of that DOM object’s member functions. IE9 now enumerates any property on a DOM object that has its “enumerable” property descriptor value set to ‘true’. (In other words, enumeration can be programmatically altered.) Functions are now enumerated by default to be consistent with other browsers.
+                            </p>
+                            <p>
+                                <i>Removed implicit function invocation</i>
+                            </p>
+                            <p>
+                                DOM functions in previous versions of IE were quite special. Not only did they claim to be <b>typeof</b> “object”, but they also retained a static ‘this’ value which referred to the object to which they belonged. Consequently, it was possible to cache a reference to a DOM function, and invoke it without explicitly passing the ‘this’ value:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <span style="color:#00b050">// Works in IE8 and earlier versions<br>
+                                    // Doesn't work in IE9 or other browsers</span> <span><br>
+                                    <b>var</b> cachedGetElementById = document.getElementById;<br>
+                                    cachedGetElementById('value');</span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                In IE9, this now throws an exception, as it does in other browsers. Code that formerly depended on this IE behavior may use the “.call” workaround:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <span style="color:#00b050">// Works in IE8/IE9 and other browsers<br>
+                                    // Doesn't work in IE7 and earlier versions;</span> <span><br>
+                                    <b>var</b> cachedGetElementById = document.getElementById;<br>
+                                    cachedGetElementById.<span style="background:yellow">call</span>(document, 'value');</span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                ECMAScript 5 provides a “bind” method for functions which allows them to take on the programming characteristics formerly supported by IE:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <span style="color:#00b050">// Works natively in IE9 because of ECMAScript 5's 'bind' API</span> <span><br>
+                                    <b>var</b> cachedGetElementById = document.getElementById.<span style="background:yellow">bind</span>(document);<br>
+                                    cachedGetElementById('value');</span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                <i>Support for DOM exceptions and ‘const’ properties</i>
+                            </p>
+                            <p>
+                                The IE9 enhanced DOM now includes W3C-specified <a href="http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-17189187">DOM exception</a> objects and standardized error codes that web developers can use to determine (generally) the nature of a DOM API failure. These codes are commonly compared against well-defined 'const' properties to aid in code readability:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <span>…<br>
+                                    <b>catch</b>(ex) {<br>
+                                    &nbsp;&nbsp; <b>if</b> (ex.code == DOMException.INDEX_SIZE_ERR)<br>
+                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; …<br>
+                                    }</span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                The enhanced DOM provides the pre-defined 'const' properties as well as the architecture to throw and catch DOM exceptions.
+                            </p>
+                            <p>
+                                <i>Consistent toString behavior</i>
+                            </p>
+                            <p>
+                                With Chakra and the DOM fully integrated, the DOM does not have its own implementation of toString (a function that converts any object into a string form). While the old DOM’s toString implementation was similar to the JavaScript built-in version, it was not the same and often returned inconsistent or puzzling results. IE9 DOM objects now inherit and use the JavaScript built-in toString for more uniform results.
+                            </p>
+                            <p>
+                                <i>Separation of property and attribute storage</i>
+                            </p>
+                            <p>
+                                In the previous architecture, DOM objects had their own property storage. This property storage was the same as the storage location for attributes (those found in the HTML markup). With IE9's new architecture, an element’s attribute storage is now separate from the dynamic properties assigned to an element's script object. To illustrate this separation, consider the following example markup:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <span>&lt;div <span style="color:#943634">id</span>="myId" <span style="color:#943634">class</span>="c" <span style="color:#943634">user-defined-attribute</span>="test"&gt;</span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                In the above example, “id”, “class”, and “user-defined-attribute” are attributes. The div element's JavaScript object also exposes similar properties:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <span style="color:green">// Get the JavaScript object representing the body</span> <span><br>
+                                    <b>var</b> divOb = document.getElementById(‘myId’);<br>
+                                    divOb.id; <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> <span style="color:green">// "myId"</span><br>
+                                    divOb.className; <span style="color:green">// "c"</span></span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                These JavaScript properties retrieve the values stored in an element’s attribute list. For example, “id” retrieves the value of the “id” attribute. “className” retrieves the value of the “class” attribute.
+                            </p>
+                            <p>
+                                In previous versions of IE, any dynamically-added properties would “magically” appear in the element’s attribute list and vice-versa due to the shared storage location. This could lead to unexpected results:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <span>&lt;div <span style="color:#943634">id</span>="myId" <span style="color:#943634">class</span>="c" <span style="color:#943634">user-defined-attribute</span>="test"&gt;<br>
+                                    …<br>
+                                    <b>var</b> divOb = document.getElementById("myId");<br>
+                                    <span style="color:#00b050">// The next statement unexpectedly adds "userProperty" as<br>
+                                    // an attribute to the element.</span> <span style="color:green"><br></span>divOb.userProperty = "test"<br>
+                                    <br>
+                                    <span style="color:#00b050">// How many attributes?</span><br>
+                                    alert("Total attributes = " + divOb.attributes.length);</span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                IE9 and other browsers alert three total attributes ("id", "class", and "user-defined-attribute"), whereas previous versions of IE alert 4, adding "userProperty" to the list. The reverse example is more common—code that expects user-defined attributes to appear as dynamic properties:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <span>&lt;div <span style="color:#943634">id</span>="myId" <span style="color:#943634">class</span>="c" <span style="color:#943634">user-defined-attribute</span>="test" <span style="color:#943634">userAttribute</span>="test"&gt;<br>
+                                    …<br>
+                                    <b>var</b> divOb = document.getElementById("myId"); <span style="color:green"><br>
+                                    // Get the "userAttribute" and "user-defined-attribute" value<br>
+                                    // (only worked in IE8 and previous versions)<br></span> <b>var</b> value1 = divOb.userAttribute;<br>
+                                    <b>var</b> value2 = divOb["user-defined-attribute"];</span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                We’ve seen a lot of code that expects this legacy IE behavior. The interoperable way to retrieve unknown attributes is to use “getAttribute,”
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <b><span>var</span></b> <span>value1 = divOb.getAttribute("userAttribute");<br>
+                                    <b>var</b> value2 = divOb.getAttribute("user-defined-attribute");</span>
+                                </p>
+                            </blockquote>
+                            <p>
+                                and dynamic properties should not be queried through the attributes collection.
+                            </p>
+                            <p>
+                                <b>New ECMAScript 5 capabilities<br></b>
+                            </p>
+                            <p>
+                                In the last group of capability tests, <i>new</i> functionality provided by Chakra’s implementation of ECMAScript 5 is applied to the DOM. One of the primary goals for the enhanced DOM in IE9 was to provide a representation of the DOM that made logical sense within the context of the ECMAScript 5 language semantics. This was made much easier because one of the primary goals of ECMAScript 5 is to better support the functionality needed by DOM objects! In our implementation, we represented the DOM using as many native ECMAScript 5 language features as possible, including extensive use of accessor (getter/setter) properties.
+                            </p>
+                            <p>
+                                This native integration allows <b>all</b> of the new ECMAScript5 features to work equally well with native objects as with DOM objects.
+                            </p>
+                            <p>
+                                The enhanced DOM capabilities demo shows only 24 samples of what is possible when the DOM is fully integrated with an ECMAScript 5-capable JavaScript engine like Chakra. We are very excited about this support in IE9 and want to help get better interoperability for ECMAScript language bindings across browsers. An important step is standardizing these binding within the W3C, and we’re happy to contribute to that effort.
+                            </p>
+                            <p>
+                                W3C web standards have always supplied <a href="http://www.w3.org/TR/DOM-Level-2-Core/ecma-script-binding.html">a language binding for ECMAScript</a> implementations as a way to translate the standard IDL (Interface Definition Language) into JavaScript objects. However, these bindings lacked sufficient detail to create much more than a simple “host object” binding (a binding without consideration of the full spectrum of ECMAScript language features). While other browsers have a much more comprehensive language binding than simply “host objects,” integration inconsistencies remain. These inconsistencies can really frustrate JavaScript framework developers who wish to write abstraction layers and features on top of the basic language support. The need for consistency led to a proposed standard called <a href="http://www.w3.org/TR/WebIDL/">WebIDL</a> (Web Interface Definition Language). The WebIDL specification describes in much more precise detail, how to translate a given W3C spec written using WebIDL into JavaScript objects.
+                            </p>
+                            <p>
+                                In a follow-up post, I will describe in more detail how we used WebIDL to inform and guide the development of the IE9 enhanced DOM.
+                            </p>
+                            <p>
+                                Please testdrive the IE9 enhanced DOM. We look forward to your comments and feedback.
+                            </p>
+                            <p>
+                                Travis Leithead<br>
+                                IE Program Manager
+                            </p>
+                            <div style="clear:both"></div><img src="http://blogs.msdn.com/aggbug.aspx?PostID=10057500" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blogs.msdn.com/b/ie/archive/2010/09/02/dup-exploring-ie9-s-enhanced-dom-capabilities.aspx">http://blogs.msdn.com/b/ie/archive/2010/09/02/dup-exploring-ie9-s-enhanced-dom-capabilities.aspx</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

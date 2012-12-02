@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            SSL FalseStart Performance Results
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 19 May 2011 06:45:17 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-05-19T02:34:00-04:00">
+                    <meta itemprop="dateModified" content="2011-05-19T02:34:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-05-19T06:34:00+00:00">May 19</time>
+                    <h2 itemprop="title">
+                        SSL FalseStart Performance Results
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/495dc6e9dc2c578c">
+                        <blockquote>
+                            <div>
+                                Last year, Google’s Adam Langley, Nagendra Modadugu, and Bodo Moeller proposed <a href="https://tools.ietf.org/html/draft-bmoeller-tls-falsestart-00">SSL False Start</a>, a client-side only change to reduce one round-trip from the <a href="http://en.wikipedia.org/wiki/Transport_Layer_Security">SSL</a> handshake.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                We implemented SSL False Start in Chrome 9, and the results are stunning, yielding a significant decrease in overall SSL connection setup times. SSL False Start reduces the latency of a SSL handshake by 30%<sup>1</sup>. That is a big number. And reducing the cost of a SSL handshake is critical as <a href="https://blog.facebook.com/blog.php?post=486790652130">more</a> and <a href="http://blog.twitter.com/2011/03/making-twitter-more-secure-https.html">more</a> content providers move to SSL.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <a href="http://1.bp.blogspot.com/-HEDDbzyoGJ8/TdS6mewxD9I/AAAAAAAAAEQ/hY4K6C97wBE/s1600/false%2Bstart%2Bgraph.png"><img style="display:block;margin:0px auto 10px;text-align:center;width:400px;height:241px" src="http://1.bp.blogspot.com/-HEDDbzyoGJ8/TdS6mewxD9I/AAAAAAAAAEQ/hY4K6C97wBE/s400/false%2Bstart%2Bgraph.png" border="0" alt=""></a>
+                            </div>
+                            <div>
+                                Our biggest concern with implementing SSL False Start was backward compatibility. Although nothing in the SSL specification (also known as TLS) explicitly prohibits FalseStart, there was no easy way to know whether it would work with all sites. Speed is great, but if it breaks user experience for even a small fraction of users, the optimization is non-deployable.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                To answer this question, we compiled a list of all known https websites from the Google index, and tested SSL FalseStart with all of them. The result of that test was encouraging: 94.6% succeeded, 5% timed out, and 0.4% failed. The sites that timed out were verified to be sites that are no longer running, so we could ignore them.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                To investigate the failing sites, we implemented a more robust check to understand how the failures occurred. We disregarded those sites that failed due to certificate failures or problems unrelated to FalseStart. Finally, we discovered that the sites which didn’t support FalseStart were using only a handful of SSL vendors. We reported the problem to the vendors, and most have fixed it already, while the others have fixes in progress. The result is that today, we have a manageable, small list of domains where SSL FalseStart doesn’t work, and we’ve added them to a list within Chrome where we simply won’t use FalseStart. This list is public and posted in the chromium source code. We are actively working to shrink the list and ultimately remove it.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                All of this represents a tremendous amount of work with a material gain for Chrome SSL users. We hope that the data will be confirmed by other browser vendors and adopted more widely.
+                            </div><br>
+                            <hr>
+                            <br>
+                            <span style="font-size:x-small"><sup>1</sup>Measured as the time between the initial TCP SYN packet and the end of the TLS handshake.</span>
+                            <div>
+                                <br>
+                                <span>Posted by Mike Belshe, Software Engineer</span>
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/2471378914199150966-8631890715756804734?l=blog.chromium.org" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.chromium.org/2011/05/ssl-falsestart-performance-results.html">http://blog.chromium.org/2011/05/ssl-falsestart-performance-results.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Smart meter crypto flaw worse than thought
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 11 Jan 2010 21:08:24 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-11T16:08:24-04:00">
+                    <meta itemprop="dateModified" content="2010-01-11T16:08:24-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-11T20:08:24+00:00">Jan 11</time>
+                    <h2 itemprop="title">
+                        Smart meter crypto flaw worse than thought
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/abb60b80dd38730f">
+                        <blockquote>
+                            <p>
+                                <a href="http://travisgoodspeed.blogspot.com/">Travis Goodspeed</a> has continued finding flaws in TI microcontrollers, branching out from the <a href="http://focus.ti.com/mcu/docs/mcuprodoverview.tsp?sectionId=95&amp;tabId=140&amp;familyId=342">MSP430</a> to <a href="http://focus.ti.com/docs/toolsw/folders/print/z-stack.html">ZigBee</a> radio chipsets. A few days ago, he <a href="http://travisgoodspeed.blogspot.com/2009/12/prng-vulnerability-of-z-stack-zigbee.html">posted a flaw in the random number generator</a>. Why is this important? Because the MSP430 and ZigBee are found in many wireless sensor systems, including most <a href="http://en.wikipedia.org/wiki/Smart_meter">Smart Meters</a>.
+                            </p>
+                            <p>
+                                Travis describes two flaws: the PRNG is a 16-bit <a href="http://en.wikipedia.org/wiki/Linear_feedback_shift_register">LFSR</a> and it is not seeded with very much entropy. However, the datasheet recommends this random number generator be used to create cryptographic keys. It’s extremely scary to find such a poor understanding of crypto in a device capable of forging billing records or turning off the power to your house.
+                            </p>
+                            <p>
+                                The first flaw is that the PRNG is not cryptographically secure. The entropy pool is extremely small (16 bits), which can be attacked with a brute-force search in a fraction of a second, even if used with a secure PRNG such as Yarrow. Also, the PRNG is never re-seeded, which could have helped if implemented properly.
+                            </p>
+                            <p>
+                                Even if the entropy pool was much larger, it would still be vulnerable because an LFSR is <a href="http://en.wikipedia.org/wiki/Linear_feedback_shift_register#Uses_in_cryptography">not a cryptographically-secure PRNG</a>. An attacker who has seen some subset of the output can recreate the LFSR taps (even if they’re secret) and then generate any future sequence from it.
+                            </p>
+                            <p>
+                                The second problem is that it is seeded from a random source that has very little entropy. Travis produced a <a href="http://www.flickr.com/photos/travisgoodspeed/4142689541/">frequency count graph</a> for the range of values returned by the random source, ADCTSTL, a radio register. As you can see from that graph, a few 8-bit values are returned many times (clustered around 0 and 100) and some are not returned at all. This bias could be exploited even if it was used with a cryptographically-secure PRNG.
+                            </p>
+                            <p>
+                                These problems are each enough to make the system trivially insecure to a simple brute-force attack, as Travis points out. However, it gets worse because the insecure PRNG is used with public-key crypto. The <a href="http://focus.ti.com/docs/toolsw/folders/print/z-stack.html">Z-Stack library</a> includes <a href="http://en.wikipedia.org/wiki/Elliptic_curve_cryptography">ECC</a> code written by Certicom. I have not reviewed that code, but it seems reasonable to use a library from a company that employs cryptographers. But the ECC code makes the critical mistake of leaving implementation of primitives such as the PRNG up to the developer. Other libraries (such as OpenSSL, Mozilla’s NSS, and Microsoft’s Crypto API) all have their own PRNG, even if seeding it has to be left up to the developer. That at least reduces the risk of PRNG flaws.
+                            </p>
+                            <p>
+                                ECC, like other public key crypto, falls on its face when the design spec is violated. In particular, <a href="http://rdist.root.org/2009/05/17/the-debian-pgp-disaster-that-almost-was/">ECDSA keys are completely exposed</a> if even a few bits of the random nonce are predictable. Even if the keys were securely generated in the factory during the manufacturing process, a predictable PRNG completely exposes them in the field. Since this kind of attack is based on poor entropy, it would still be possible even if TI replaced their PRNG with one that is cryptographically secure.
+                            </p>
+                            <p>
+                                Given that these chips are used in critical infrastructure such as smart meters and this attack can be mounted from remote, it is important that it be fixed carefully. This will be difficult to fix since it will require hardware changes to the random source of entropy, and there is already an unknown number of devices in the field. Once again, <a href="http://rdist.root.org/2009/08/06/google-tech-talk-on-common-crypto-flaws/">crypto proves fragile</a> and thorough review is vital.
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/rdist.wordpress.com/501/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/rdist.wordpress.com/501/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/rdist.wordpress.com/501/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/rdist.wordpress.com/501/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/rdist.wordpress.com/501/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/rdist.wordpress.com/501/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/rdist.wordpress.com/501/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/rdist.wordpress.com/501/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/rdist.wordpress.com/501/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/rdist.wordpress.com/501/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=rdist.root.org&amp;blog=893473&amp;post=501&amp;subd=rdist&amp;ref=&amp;feed=1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://rdist.root.org/2010/01/11/smart-meter-crypto-flaw-worse-than-thought/">http://rdist.root.org/2010/01/11/smart-meter-crypto-flaw-worse-than-thought/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

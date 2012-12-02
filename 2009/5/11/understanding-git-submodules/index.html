@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Understanding Git Submodules
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 11 May 2009 16:39:32 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-05-11T12:39:32-04:00">
+                    <meta itemprop="dateModified" content="2009-05-11T12:39:32-04:00"><time class="date" itemprop="datePublished" datetime="2009-05-11T16:39:32+00:00">May 11</time>
+                    <h2 itemprop="title">
+                        Understanding Git Submodules
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c7e2adc2f03d5732">
+                        <blockquote>
+                            <p>
+                                I’ve been using Git full-time for over a year now, but I had not yet adopted <a href="http://www.kernel.org/pub/software/scm/git/docs/git-submodule.html">Git’s submodule feature</a> for my projects. Git submodules are functionally similar to <a href="http://svnbook.red-bean.com/en/1.0/ch07s03.html">Subversion’s svn:externals mechanism</a>, but submodules do appear slightly alien and confusing at first (and second) glance.
+                            </p>
+                            <p>
+                                So I went deep and here, for the internet, is my best explanation: Git Submodules are basically the same as svn:externals, except that Git submodules are locked to a specific revision and don’t automatically track the external project’s HEAD.
+                            </p>
+                            <p>
+                                Git submodules behave more like svn:externals that are managed by <a href="http://piston.rubyforge.org/">Piston</a> than by Subversion’s default externals.
+                            </p>
+                            <p>
+                                In my experience, to understand Git, you have to understand its implementation. Git is very driven by its model layer and, once you understand the model layer, I find that everything else follows quite logically.
+                            </p>
+                            <p>
+                                As you may know, Git stores commits as blobs of data and trees which describe the layout of that data in the filesystem. The commit ID is the SHA-1 hash of the blob’s contents. I simplify slightly, but that’s the core. Keep this in mind.
+                            </p>
+                            <p>
+                                Git submodules are implemented using two moving parts: the .gitmodules file and a special kind of tree object. These together triangulate a specific revision of a specific repository which is checked out into a specific location in your project.
+                            </p>
+                            <p>
+                                The submodules file contains two parts:
+                            </p>
+                            <blockquote>
+                                <pre>
+[submodule "FooKit"]
+        path = FooKit
+        url = git@github.com:fspeirs/fookit.git
+</pre>
+                            </blockquote>
+                            <p>
+                                The submodule’s definition contains a path, which is the location in your repository where the submodule should be placed. The `url` is the URL of the repository to clone from. This example is a GitHub URL but it could equally be a path to a repository on your system. Thus far, Git knows where to get your submodule and where to put it.
+                            </p>
+                            <p>
+                                The second question is which commit should be checked out into the submodule’s path. You tell Git this by adding the submodule path to your index and committing.
+                            </p>
+                            <p>
+                                Let’s try an example. This is a repository which contains a Git repository called “a” and another called “super”. We will add “a” as a submodule of “super”:
+                            </p>
+                            <blockquote>
+                                <pre>
+[/tmp/git]$ ls -l
+total 0
+drwxr-xr-x  4 fspeirs  wheel  136 May 11 11:03 a
+drwxr-xr-x  4 fspeirs  wheel  136 May 11 11:03 super
+</pre>
+                            </blockquote>
+                            <p>
+                                The first thing to do is run “git submodule add” in super:
+                            </p>
+                            <blockquote>
+                                <pre>
+[/tmp/git/super(master)]$ git submodule add /tmp/git/a ProjectA
+Initialized empty Git repository in /private/tmp/git/super/ProjectA/.git/
+
+[/tmp/git/super(master)]$ git submodule status
+-85ab8ba4edf9168ab051ded7ddbbe20861b71528 ProjectA
+
+[/tmp/git/super(master)]$ ls ProjectA/
+a.txt
+</pre>
+                            </blockquote>
+                            <p>
+                                Having done that, let’s look at the impact of that command on the project “super”:
+                            </p>
+                            <blockquote>
+                                <pre>
+[/tmp/git/super(master)]$ git status
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD ..." to unstage)
+#
+#       new file:   .gitmodules
+#       new file:   ProjectA
+#
+</pre>
+                            </blockquote>
+                            <p>
+                                We have the new .gitmodules file, which should be checked in, and a new file called “ProjectA”, which is the “path” of our submodule. Let’s commit these two now:
+                            </p>
+                            <blockquote>
+                                <pre>
+[/tmp/git/super(master)]$ git commit -m "added submodule"
+[master]: created ffba648: "added submodule"
+ 2 files changed, 4 insertions(+), 0 deletions(-)
+ create mode 100644 .gitmodules
+ create mode 160000 ProjectA
+</pre>
+                            </blockquote>
+                            <p>
+                                Note the mode “160000″ on ProjectA – that’s a special mode for a certain kind of entry in the Git index. It’s different from normal files.
+                            </p>
+                            <p>
+                                Now, if we look at the contents of the Git index, we’ll see the SHA-1 for the tracked files:
+                            </p>
+                            <blockquote>
+                                <pre>
+[/tmp/git/super(master)]$ git ls-files --stage
+100644 831cdc0dc1b88e69aa9943cf09907ae1bcd031fc 0       .gitmodules
+160000 85ab8ba4edf9168ab051ded7ddbbe20861b71528 0       ProjectA
+100644 16f5c2d3aa9656fc424352e4cfaa2523c809778b 0       super.txt
+</pre>
+                            </blockquote>
+                            <p>
+                                Notice the SHA for ProjectA – 85ab8ba – this is the SHA-1 of the commit to which the submodule is locked in Project A. Commit 85ab8ba does not exist in the “super” repository – it refers to a commit in a submodule repository.
+                            </p>
+                            <p>
+                                So Git now knows the three things required to set up your submodules when cloning a project:
+                            </p>
+                            <ul>
+                                <li>The <em>what</em> comes from the “URL” property in the submodule’s entry in your .gitmodules file.
+                                </li>
+                                <li>The <em>where</em> comes from the corresponding “Path” entry in .gitmodules.
+                                </li>
+                                <li>The <em>when</em>, if you will, comes from the SHA-1 stored in the superproject’s index file for the remote.
+                                </li>
+                            </ul>
+                            <p>
+                                <strong>Working in a Submodule</strong>
+                            </p>
+                            <p>
+                                The checked out submodule is, of course, a full Git repository in itself and you should treat it that way. It is perfectly possible to make changes in your checked-out submodule. As you commit in your submodule, the SHA-1 of the submodule’s HEAD will advance away from the SHA-1 that the superproject has stored in its index.
+                            </p>
+                            <p>
+                                To return to the example, suppose some change is made in ProjectA:
+                            </p>
+                            <blockquote>
+                                <pre>
+[/tmp/git/super(master)]$ cd ProjectA/
+[/tmp/git/super/ProjectA(master)]$ echo "b" &gt;&gt; a.txt
+[/tmp/git/super/ProjectA(master)]$ git commit -a -m "Added B"
+[master]: created 82b6450: "Added B"
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+[/tmp/git/super/ProjectA(master)]$ cd ..
+Submodule 'ProjectA' (/tmp/git/a) registered for path 'ProjectA'
+[/tmp/git/super(master)]$ git submodule status
++82b64501654dca53ba570827d8d3e7d465abbae5 ProjectA (heads/master)
+[/tmp/git/super(master)]$ git ls-files --stage | grep ProjectA
+160000 85ab8ba4edf9168ab051ded7ddbbe20861b71528 0       ProjectA
+</pre>
+                            </blockquote>
+                            <p>
+                                Notice that, now, the SHA-1 of the submodule’s head is at 82b6450, whilst the superproject is expecting 85ab8ba4. There are two ways Git shows you that you’re out of sync:
+                            </p>
+                            <ul>
+                                <li>“git submodule status” will show a “+” in front of the SHA-1 of the HEAD of any submodule that has advanced from the SHA-1 stored in the superproject.
+                                </li>
+                                <li>Running “git status” in the superproject will show the submodule as modified.
+                                </li>
+                            </ul>
+                            <p>
+                                If you want to commit the superproject to using the new HEAD of the submodule, simply add and commit the submodule’s directory as you would any other file:
+                            </p>
+                            <blockquote>
+                                <pre>
+[/tmp/git/super(master)]$ git submodule status
++82b64501654dca53ba570827d8d3e7d465abbae5 ProjectA (heads/master)
+[/tmp/git/super(master)]$ git add ProjectA
+[/tmp/git/super(master)]$ git commit -m "Advanced ProjectA to new HEAD"
+[master]: created 37750a6: "Advanced ProjectA to new HEAD"
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+[/tmp/git/super(master)]$ git ls-files --stage
+100644 831cdc0dc1b88e69aa9943cf09907ae1bcd031fc 0       .gitmodules
+160000 82b64501654dca53ba570827d8d3e7d465abbae5 0       ProjectA
+100644 16f5c2d3aa9656fc424352e4cfaa2523c809778b 0       super.txt
+</pre>
+                            </blockquote>
+                            <p>
+                                Notice how ‘git ls-files –stage’ and ‘git submodule status’ now show the same SHA-1 for ProjectA?
+                            </p>
+                            <p>
+                                <strong>Gotcha’s for those used to svn:externals</strong>
+                            </p>
+                            <p>
+                                The big thing to remember is that, unlike svn:externals, updating your superproject from a master repository does not do the same for the project’s submodules. If you think about it, this makes sense: the submodules are locked to specific commits in their respective repositories.
+                            </p>
+                            <p>
+                                It’s also important to remember the distributed nature of what you’re doing. If you advance HEAD in a submodule, then update the superproject, it’s important to remember to push submodule changes before you push the superproject changes. If you don’t, your superproject will contain references to commits that only exist in your local clone of the subproject.
+                            </p>
+                            <p>
+                                <strong>Wrapping Up</strong>
+                            </p>
+                            <p>
+                                This post does not attempt to cover every command for working with Git submodules. In particular, you should be aware of the ‘git submodule init’ and ‘git submodule update’ subcommands – read the <a href="http://www.kernel.org/pub/software/scm/git/docs/git-submodule.html">man page for that</a>.
+                            </p>
+                            <p>
+                                Git submodules really aren’t that complex or scary. They have comparatively few moving parts and, to my mind, enforce a certain welcome stability and discipline in your use of external projects.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://speirs.org/2009/05/11/understanding-git-submodules/">http://speirs.org/2009/05/11/understanding-git-submodules/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

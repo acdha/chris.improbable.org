@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Firefox Sync : deploying Python apps on RPM-based systems
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 05 Nov 2010 12:46:58 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-05T08:46:58-04:00">
+                    <meta itemprop="dateModified" content="2010-11-05T08:46:58-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-05T12:46:58+00:00">Nov 05</time>
+                    <h2 itemprop="title">
+                        Firefox Sync : deploying Python apps on RPM-based systems
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/b5756733817ddc1d">
+                        <p class="annotation">
+                            I'm looking forward to even better integration with the platform packaging system. This is a great way to lower the barriers to entry for people who might be new to Unix along with an app they're interested in like SyncServer
+                        </p>
+                        <blockquote>
+                            <p>
+                                The Python Firefox Sync server is going to be deployed at Mozilla in production early next year, on RHEL-based servers. Working on packaging matters in Python, I focused a lot on the best way to deploy our Python applications and libraries, and make every involved party happy.
+                            </p>
+                            <h3>
+                                Our environment
+                            </h3>
+                            <p>
+                                Unlike a fully-featured website, our various web applications for Firefox Sync don’t have a lot of dependencies besides Python itself. This means that we don’t have a huge list of dependencies to deploy to set up every part of the infrastructure. Another important point is that unlike smaller projects where a single server/VM might manage several applications whose dependencies can conflict, we have dedicated environments for each application we are deploying. Hey, I am happily running 5 small websites with 5 different environments on my own server, thanks to zc.buildout, but for Sync it’s the other way around: many servers for the same app <img src="http://s2.wp.com/wp-includes/images/smilies/icon_smile.gif" alt=":)">
+                            </p>
+                            <p>
+                                In other words, tools like zc.buildout or virtualenv — which provide application-level isolated environments — are not really needed. We can happily install the different bits in the same Python environment.
+                            </p>
+                            <h3>
+                                Repository-oriented vs Release-oriented
+                            </h3>
+                            <p>
+                                One approach I have seen is to deploy applications in a directory using Git or Mercurial and just pull the code from a repository on a specific tag or branch. Dependencies can be fetch the same way by using a vendor repository, or simply installed locally using Pip or easy_install.
+                            </p>
+                            <p>
+                                The biggest caveat of this approach is that there’s no more static archive that freezes everything into a single object that can be manipulated by usual packaging systems the system provide — The Python packaging system or the OS packaging system –
+                            </p>
+                            <p>
+                                OS Packaging systems provide a lot of automation for sysadmins and more features for pre- and post- installation steps for the packager. Instead of using custom recipes to upgrade the application, they can use what they are using for everything else on the system, and with much more features like the ability to mark some files in the metadata as configuration files and tell the installer about it to avoid overriding existing files, etc.
+                            </p>
+                            <p>
+                                The Python packaging system is also simpler than a repository-based system when you want to run the application in any Operating System. You just install the application that was released, and don’t bother with source repositories.
+                            </p>
+                            <h3>
+                                Distutils-based and RPM-based
+                            </h3>
+                            <p>
+                                Sync is packaged in RPMs and in Distutils source archives. Every distribution has a .spec file containing the RPM metadata and also a setup.py file. Releasing the project into Distutils-based archive is done so people in the community that wish to deploy the server in a non-RPM based system can do it. In a near future, a simple “pip install SyncServer”&nbsp; will do the trick for them. They’ll have extra manual steps, like hooking the app in the web server of their choice, but they won’t have to checkout many repositories and create a dedicated environment.
+                            </p>
+                            <p>
+                                For the RPM based distribution, I was a bit annoyed by the <strong>bdist_rpm</strong> command Python/Distutils provides. It’s not good enough to easily tweak the RPM creation process and you always end-up writing your own <em>.spec</em> file. But build_rpm do provide a nice automation: it calls rpmbuild with good enough options, and for some distrtibutions I don’t need to write a custom .spec file as long as I am able to define a custom name for the RPM project. For instance, I prefix all my distributions with python-.
+                            </p>
+                            <p>
+                                Since we’ve removed build_rpm from Distutils2, I ended up writing an enhanced version in a project called pypi2rpm, that provides two new options: –name and –spec-file. I use them to build RPM on projects that have custom .spec files, or when I want to force the name of the RPM with a direct command-line option.
+                            </p>
+                            <p>
+                                The pypi2rpm project also provide a nice command-line script that uses the power of Distutils2 to generate RPMs for the latest versions of any project, as long as it is published at PyPI. That’s useful to complete my RPM collection when I cannot find a RPM for a project.
+                            </p>
+                            <p>
+                                So, if I want to create a RPM for the latest WebOb release, I do:
+                            </p>
+                            <p>
+                                $ pypy2rpm.py webob
+                            </p>
+                            <p>
+                                I’ve pushed pypi2rpm at PyPI if you want to play with it. It’s a work in progress and lacks of documentation, but is good enough for me for what I need to do right now. If you are interested in this small project let me know !
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/tarekziade.wordpress.com/1474/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/tarekziade.wordpress.com/1474/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/tarekziade.wordpress.com/1474/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/tarekziade.wordpress.com/1474/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/tarekziade.wordpress.com/1474/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/tarekziade.wordpress.com/1474/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/tarekziade.wordpress.com/1474/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/tarekziade.wordpress.com/1474/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/tarekziade.wordpress.com/1474/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/tarekziade.wordpress.com/1474/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/tarekziade.wordpress.com/1474/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/tarekziade.wordpress.com/1474/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/tarekziade.wordpress.com/1474/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/tarekziade.wordpress.com/1474/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=tarekziade.wordpress.com&amp;blog=448161&amp;post=1474&amp;subd=tarekziade&amp;ref=&amp;feed=1" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://tarekziade.wordpress.com/2010/11/04/firefox-sync-deploying-python-apps-on-rpm-based-systems/">http://tarekziade.wordpress.com/2010/11/04/firefox-sync-deploying-python-apps-on-rpm-based-systems/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

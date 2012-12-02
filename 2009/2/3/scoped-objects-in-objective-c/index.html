@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Scoped Objects in Objective-C
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 13 Nov 2009 23:50:59 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-03T00:55:37-04:00">
+                    <meta itemprop="dateModified" content="2009-02-03T00:55:37-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-03T04:55:37+00:00">Feb 03</time>
+                    <h2 itemprop="title">
+                        Scoped Objects in Objective-C
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/63ac14dc946ce886">
+                        <blockquote>
+                            <h2>
+                                Object Scope and Lifetime
+                            </h2>
+                            <p>
+                                In Objective-C the lifetime of an object is not governed by the scope in which it appears – it is managed manually by the programmer. – (id) retain, -(void) release, and – (id) autorelease are the methods we use to let the runtime know if we’re still interested in an object or not.
+                            </p>
+                            <p>
+                                Other variables in Objective-C don’t have to be managed in this way. Structures can be declared and will cease to exist once they leave the lexical scope in which they’re defined. Other languages, such as C++, can have instances that do the same thing – when the scope of a C++ stack allocated object is exited it’s destructor is called. That behaviour can be quite handy in that it allows the programmer to see the lifetime of the object simply by looking at the brackets in which it’s defined. It also means the programmer is less likely to accidentally leak an object since the scope will clean it up anyway. But we can’t do that in Objective-C.
+                            </p>
+                            <h2>
+                                How To Do That In Objective-C
+                            </h2>
+                            <pre>
+<code>{
+    NSObject *myObject KBScopeReleased = [[NSObject alloc] init];
+    NSLog( @"%@", myObject );
+} // myObject is sent a release message here.
+</code>
+</pre>
+                            <p>
+                                How does it work? Well first we notice that there’s something special in the declaration of <code>myObject</code>. <code>KBScopeReleased</code> lets the compiler know that we want this instance to be sent a release message as it leaves the scope it is defined in. Which seems like magic but here’s all that is involved:
+                            </p>
+                            <pre>
+<code>#define KBScopeReleased __attribute__((cleanup($kb_scopeReleaseObject)))
+</code>
+</pre>
+                            <p>
+                                We use the <code>__attribute__</code> feature of the GCC compiler to define a cleanup function. This cleanup function will be called when a variable leaves scope and will be passed a pointer to the variable. I’ve defined the cleanup function to be <code>$kb_scopeReleaseObject</code> and here’s what it looks like:
+                            </p>
+                            <pre>
+<code>void $kb_scopeReleaseObject( id *scopeReleasedObject )
+{
+    [*scopeReleasedObject release];
+    *scopeReleasedObject = nil;
+}
+</code>
+</pre>
+                            <p>
+                                You don’t even really need to set the object to nil at the end there but I do because I’m crazy that way.
+                            </p>
+                            <h2>
+                                “I’ve Already Got Autorelease So I Don’t Care”
+                            </h2>
+                            <p>
+                                Good point. Using scope released objects will keep your peak memory usage down – the objects are released immediately rather than waiting for the autorelease pool to be drained – but, in general, autorelease pools are perfectly fine and are a pattern that Cocoa developers are accustomed to. So let’s put two good things together and see what we come up with.
+                            </p>
+                            <pre>
+<code>KBScopeAutoreleased();
+</code>
+</pre>
+                            <p>
+                                Drop that at the top of your scope and anything autoreleased between it and the closing of the scope will be automaticaly autoreleased. That’s handy if you’ve got a loop and want to keep your memory overhead down. As my friend and <a href="http://www.rogueamoeba.com">Rogue Amoeba</a> colleague points out – <a href="http://www.mikeash.com/?page=pyblog/autorelease-is-fast.html">Autorelease Is Fast</a>. So just dropping a <code>KBScopeAutoreleased()</code> at the top of a loop will keep your memory overhead down at a very tiny speed cost.
+                            </p>
+                            <p>
+                                Here’s what <code>KBScopeAutoreleased()</code> looks like:
+                            </p>
+                            <pre>
+<code>#define KBScopeAutoreleased()\
+       NSAutoreleasePool *$kb_autoreleasePool##__LINE__             KBScopeReleased =\
+         [[NSAutoreleasePool alloc] init]
+</code>
+</pre>
+                            <p>
+                                There’s a bit of C Macro Voodoo in there to make sure the variable name is unique but otherwise all it does is allocate a new <code>NSAutoreleasePool</code> and fix it up so it’ll be released when it exists scope.
+                            </p>
+                            <h2>
+                                Garbage Collection
+                            </h2>
+                            <p>
+                                Under Garbage Collection this becomes less useful but you can still use this trick to keep peak memory consumption down by changing the definition of <code>KBScopeAutoreleased</code> to be:
+                            </p>
+                            <pre>
+<code>#define KBScopeAutoreleased()\
+  NSAutoreleasePool *$kb_autoreleasePool##__LINE__\
+        __attribute__((cleanup($kb_scopeDrainAutoreleasePool))) =\
+        [[NSAutoreleasePool alloc] init]
+
+void $kb_scopeDrainAutoreleasePool( NSAutoreleasePool *pool )
+{
+    [*pool drain];
+}
+</code>
+</pre>
+                            <p>
+                                With that in place the NSAutoreleasePool will be drained when exiting scope which will trigger a garbage collection cycle.
+                            </p>
+                            <h2>
+                                That’s It
+                            </h2>
+                            <p>
+                                Really, not much to it but it’s kind of cool. For fun sprinkle <code>KBScopeAutoreleased()</code> around your code and your peak memory usage will drop.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://kickingbear.com/blog/archives/13">http://kickingbear.com/blog/archives/13</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

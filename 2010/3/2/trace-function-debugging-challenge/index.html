@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Trace function debugging challenge
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 03 Mar 2010 01:09:11 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-02T20:09:11-04:00">
+                    <meta itemprop="dateModified" content="2010-03-02T20:09:11-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-03T00:09:11+00:00">Mar 03</time>
+                    <h2 itemprop="title">
+                        Trace function debugging challenge
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/cb778e4f3a07673e">
+                        <blockquote>
+                            <p>
+                                One of the more challenging aspects of maintaining a tool like <a href="http://nedbatchelder.com/code/coverage">coverage.py</a> is that people use it on complex code bases, and something goes wrong, they report it to me, and I have to dig in and figure out why.
+                            </p>
+                            <p>
+                                The latest head-scratcher was reported by Christophe Zwerschke as <a href="http://bitbucket.org/ned/coveragepy/issue/51/turbogears-15-test-failing-with-coverage">issue 51</a> on the coverage.py bitbucket tracker. After a few turns to shake out what the issue was, it came down to this: Christophe's code gets the right answer when run without coverage.py, or when run one way with coverage.py, but computes a different answer when run a second way with coverage.py. This is a real mystery, because it is the first report of code actually behaving differently because coverage.py is measuring it.
+                            </p>
+                            <p>
+                                This has all the markings of a bug in Python, but it could be my fault. In any case, we have to find out. I won't be able to get to it for a bit, and why should I have all the fun anyway? So I'm crowd-sourcing it here: maybe a reader will have an insight into what the heck is going on here.
+                            </p>
+                            <p>
+                                Here is the file, bug51.py (slightly simplified from the ticket):
+                            </p>
+                            <blockquote>
+                                <tt><span>class</span><span>&nbsp;</span><span>Foo</span><span>:</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>def</span><span>&nbsp;</span><span>__init__</span><span>(</span><span>self</span><span>,</span><span>&nbsp;</span><span>name</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>self</span><span>.</span><span>name</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>name</span><br>
+                                <br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>def</span><span>&nbsp;</span><span>__repr__</span><span>(</span><span>self</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>return</span><span>&nbsp;</span><span>"&lt;Foo&nbsp;%r&gt;"</span><span>&nbsp;</span><span>%</span><span>&nbsp;</span><span>self</span><span>.</span><span>name</span><br>
+                                <br>
+                                <br>
+                                <span>class</span><span>&nbsp;</span><span>MetaFooList</span><span>(</span><span>type</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>def</span><span>&nbsp;</span><span>__new__</span><span>(</span><span>mcs</span><span>,</span><span>&nbsp;</span><span>cls_name</span><span>,</span><span>&nbsp;</span><span>bases</span><span>,</span><span>&nbsp;</span><span>cls_dict</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>declared</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>[]</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>for</span><span>&nbsp;</span><span>base</span><span>&nbsp;</span><span>in</span><span>&nbsp;</span><span>bases</span><span>:</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>declared</span><span>.</span><span>extend</span><span>(</span><span>getattr</span><span>(</span><span>base</span><span>,</span><span>&nbsp;</span><span>'declared'</span><span>,</span><span>&nbsp;</span><span>[]))</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>for</span><span>&nbsp;</span><span>name</span><span>,</span><span>&nbsp;</span><span>value</span><span>&nbsp;</span><span>in</span><span>&nbsp;</span><span>cls_dict</span><span>.</span><span>items</span><span>():</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>if</span><span>&nbsp;</span><span>isinstance</span><span>(</span><span>value</span><span>,</span><span>&nbsp;</span><span>Foo</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>declared</span><span>.</span><span>append</span><span>(</span><span>value</span><span>)</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>declared</span><span>.</span><span>sort</span><span>(</span><span>key</span><span>=</span><span>lambda</span><span>&nbsp;</span><span>w</span><span>:</span><span>&nbsp;</span><span>w</span><span>.</span><span>name</span><span>)</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>cls</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>type</span><span>.</span><span>__new__</span><span>(</span><span>mcs</span><span>,</span><span>&nbsp;</span><span>cls_name</span><span>,</span><span>&nbsp;</span><span>bases</span><span>,</span><span>&nbsp;</span><span>cls_dict</span><span>)</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>cls</span><span>.</span><span>declared</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>declared</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>return</span><span>&nbsp;</span><span>cls</span><br>
+                                <br>
+                                <br>
+                                <span>class</span><span>&nbsp;</span><span>FooList</span><span>(</span><span>list</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>__metaclass__</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>MetaFooList</span><br>
+                                <br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>def</span><span>&nbsp;</span><span>__init__</span><span>(</span><span>self</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>super</span><span>(</span><span>FooList</span><span>,</span><span>&nbsp;</span><span>self</span><span>).</span><span>__init__</span><span>(</span><span>self</span><span>.</span><span>declared</span><span>)</span><br>
+                                <br>
+                                <br>
+                                <span>def</span><span>&nbsp;</span><span>test_foolist</span><span>():</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>w</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>Foo</span><span>(</span><span>name</span><span>=</span><span>"foo"</span><span>)</span><br>
+                                <br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>class</span><span>&nbsp;</span><span>W</span><span>(</span><span>FooList</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>foo</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>w</span><br>
+                                <br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>w2</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>Foo</span><span>(</span><span>name</span><span>=</span><span>"bar"</span><span>)</span><br>
+                                <br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>class</span><span>&nbsp;</span><span>W2</span><span>(</span><span>W</span><span>):</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>bar</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>w2</span><br>
+                                <br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>foolist</span><span>&nbsp;</span><span>=</span><span>&nbsp;</span><span>W2</span><span>()</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>print</span><span>&nbsp;</span><span>"foolist&nbsp;has&nbsp;%d&nbsp;entries"</span><span>&nbsp;</span><span>%</span><span>&nbsp;</span><span>len</span><span>(</span><span>foolist</span><span>)</span><br>
+                                <br>
+                                <span>if</span><span>&nbsp;</span><span>__name__</span><span>&nbsp;</span><span>==</span><span>&nbsp;</span><span>'__main__'</span><span>:</span><br>
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>test_foolist</span><span>()</span><br></tt>
+                            </blockquote>
+                            <p>
+                                Here are the three runs:
+                            </p>
+                            <blockquote>
+                                <tt>$&nbsp;python&nbsp;bug51.py<br>
+                                foolist&nbsp;has&nbsp;2&nbsp;entries<br>
+                                <br>
+                                $&nbsp;coverage&nbsp;run&nbsp;bug51.py<br>
+                                foolist&nbsp;has&nbsp;2&nbsp;entries<br>
+                                <br>
+                                $&nbsp;coverage&nbsp;run&nbsp;--timid&nbsp;bug51.py<br>
+                                foolist&nbsp;has&nbsp;4&nbsp;entries<br></tt>
+                            </blockquote>
+                            <p>
+                                An explanation about that last run: the --timid switch forces coverage.py to use a trace function written in Python rather than its fancier one written in C. Ironically, I added the switch as a way to use a gentler tracing mechanism that wouldn't interfere so much with other packages using a trace function, to prevent bizarre problems. But now, it seems to be the source of a real problem itself.
+                            </p>
+                            <p>
+                                Trace functions can do strange things that can affect the running program, but the ones in coverage.py don't, or at least they aren't supposed to. This test code has plenty of twisty turns, but still, how can it get different answers from two implementations of the same trace function?
+                            </p>
+                            <p>
+                                Anyone up for the challenge of figuring out what's going on here? If not, I'll get to it eventually, and report back.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://nedbatchelder.com/blog/201003/trace_function_debugging_challenge.html">http://nedbatchelder.com/blog/201003/trace_function_debugging_challenge.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

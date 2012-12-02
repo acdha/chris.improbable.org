@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The Anatomy of Hadoop I/O Pipeline
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 27 Aug 2009 23:45:51 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-08-27T19:45:51-04:00">
+                    <meta itemprop="dateModified" content="2009-08-27T19:45:51-04:00"><time class="date" itemprop="datePublished" datetime="2009-08-27T23:45:51+00:00">Aug 27</time>
+                    <h2 itemprop="title">
+                        The Anatomy of Hadoop I/O Pipeline
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/204e979f905d9505">
+                        <blockquote>
+                            <h3>
+                                Introduction
+                            </h3>
+                            <p>
+                                In a typical Hadoop MapReduce job, input files are read from HDFS. Data are usually compressed to reduce the file sizes. After decompression, serialized bytes are transformed into Java objects before being passed to a user-defined map() function. Conversely, output records are serialized, compressed, and eventually pushed back to HDFS. This seemingly simple, two-way process is in fact much more complicated due to a few reasons:
+                            </p>
+                            <ul>
+                                <li>Compression and decompression are typically done through native library code.
+                                </li>
+                                <li>End-to-end CRC32 checksum is always verified or calculated during reading or writing.
+                                </li>
+                                <li>Buffer management is complicated due to various interface restrictions.
+                                </li>
+                            </ul>
+                            <p>
+                                In this blog post, I attempt to decompose and analyze the Hadoop I/O pipeline in detail, and explore possible optimizations. To keep the discussion concrete, I am going to use the ubiquitous example of reading and writing line records from/to gzip-compressed text files. I will not get into details on the DataNode side of the pipeline, and instead mainly focus on the client-side (the map/reduce task processes). Finally, all descriptions are based on Hadoop 0.21 trunk at the time of this writing, which means you may see things differently if you are using older or newer versions of Hadoop.
+                            </p>
+                            <h3>
+                                Reading Inputs
+                            </h3>
+                            <p>
+                                Figure 1 illustrates the I/O pipeline when reading line records from a gzipped text file using TextInputFormat. The figure is divided in two sides separated by a thin gap. The left side shows the DataNode process, and the right side the application process (namely, the Map task). From bottom to top, there are three zones where buffers are allocated or manipulated: kernel space, native code space, and JVM space. For the application process, from left to right, there are the software layers that a data block needs to traverse through. Boxes with different colors are buffers of various sorts. An arrow between two boxes represents a data transfer or buffer-copy. The weight of an arrow indicates the amount of data being transferred. The label in each box shows the rough location of the buffer (either the variable that references to the buffer, or the module where the buffer is allocated). If available, the size of a buffer is described in square brackets. If the buffer size is configurable, then both the configuration property and the default size are shown. I tag each data transfer with the numeric step where the transfer happens:
+                            </p>
+                            <table cellspacing="0" cellpadding="0" border="1">
+                                <caption>
+                                    Figure 1: Reading line records from gzipped text files.
+                                </caption>
+                                <tr>
+                                    <td>
+                                        <img src="http://developer.yahoo.net/blogs/hadoop/hadoop-io-1.jpg" width="640">
+                                    </td>
+                                </tr>
+                            </table>
+                            <ol>
+                                <li>Data transferred from DataNode to MapTask process. DBlk is the file data block; CBlk is the file checksum block. File data are transferred to the client through Java nio transferTo (aka UNIX sendfile syscall). Checksum data are first fetched to DataNode JVM buffer, and then pushed to the client (details are not shown). Both file data and checksum data are bundled in an HDFS packet (typically 64KB) in the format of: {packet header | checksum bytes | data bytes}.
+                                </li>
+                                <li>Data received from the socket are buffered in a BufferedInputStream, presumably for the purpose of reducing the number of syscalls to the kernel. This actually involves two buffer-copies: first, data are copied from kernel buffers into a temporary direct buffer in JDK code; second, data are copied from the temporary direct buffer to the byte[] buffer owned by the BufferedInputStream. The size of the byte[] in BufferedInputStream is controlled by configuration property "io.file.buffer.size", and is default to 4K. In our production environment, this parameter is customized to 128K.
+                                </li>
+                                <li>Through the BufferedInputStream, the checksum bytes are saved into an internal ByteBuffer (whose size is roughly (PacketSize / 512 * 4) or 512B), and file bytes (compressed data) are deposited into the byte[] buffer supplied by the decompression layer. Since the checksum calculation requires a full 512 byte chunk while a user's request may not be aligned with a chunk boundary, a 512B byte[] buffer is used to align the input before copying partial chunks into user-supplied byte[] buffer. Also note that data are copied to the buffer in 512-byte pieces (as required by FSInputChecker API). Finally, all checksum bytes are copied to a 4-byte array for FSInputChecker to perform checksum verification. Overall, this step involves an extra buffer-copy.
+                                </li>
+                                <li>The decompression layer uses a byte[] buffer to receive data from the DFSClient layer. The DecompressorStream copies the data from the byte[] buffer to a 64K direct buffer, calls the native library code to decompress the data and stores the uncompressed bytes in another 64K direct buffer. This step involves two buffer-copies.
+                                </li>
+                                <li>LineReader maintains an internal buffer to absorb data from the downstream. From the buffer, line separators are discovered and line bytes are copied to form Text objects. This step requires two buffer-copies.
+                                </li>
+                            </ol>
+                            <h3>
+                                Optimizing Input Pipeline
+                            </h3>
+                            <p>
+                                Adding everything up, including a "copy" for decompressing bytes, the whole read pipeline involves seven buffer-copies to deliver a record to MapTask's map() function since data are received in the process's kernel buffer. There are a couple of things that could be improved in the above process:
+                            </p>
+                            <ul>
+                                <li>Many buffer-copies are needed simply to convert between direct buffer and byte[] buffer.
+                                </li>
+                                <li>Checksum calculation can be done in bulk instead of one chunk at a time.
+                                </li>
+                            </ul>
+                            <table cellspacing="0" cellpadding="0" border="1">
+                                <caption>
+                                    Figure 2: Optimizing input pipeline.
+                                </caption>
+                                <tr>
+                                    <td>
+                                        <img src="http://developer.yahoo.net/blogs/hadoop/hadoop-io-2.jpg" width="640">
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                Figure 2 shows the post-optimization view where the total number of buffer copies is reduced from seven to three:
+                            </p>
+                            <ol>
+                                <li>An input packet is decomposed into the checksum part and the data part, which are scattered into two direct buffers: an internal one for checksum bytes, and the direct buffer owned by the decompression layer to hold compressed bytes. The FSInputChecker accesses both buffers directly.
+                                </li>
+                                <li>The decompression layer deflates the uncompressed bytes to a direct buffer owned by the LineReader.
+                                </li>
+                                <li>LineReader scans the bytes in the direct buffer, finds the line separators from the buffer, and constructs Text objects.
+                                </li>
+                            </ol>
+                            <h3>
+                                Writing Outputs
+                            </h3>
+                            <p>
+                                Now let's shift gears and look at the write-side of the story. Figure 3 illustrates the I/O pipeline when a ReduceTask writes line records into a gzipped text file using TextOutputFormat. Similar to Figure 1, each data transfer is tagged with the numeric step where the transfer occurs:
+                            </p>
+                            <table cellspacing="0" cellpadding="0" border="1">
+                                <caption>
+                                    Figure 3: Writing line records into gzipped text files.
+                                </caption>
+                                <tr>
+                                    <td>
+                                        <img src="http://developer.yahoo.net/blogs/hadoop/hadoop-io-3.jpg" width="640">
+                                    </td>
+                                </tr>
+                            </table>
+                            <ol>
+                                <li>TextOutputFormat's RecordWriter is unbuffered. When a user emits a line record, the bytes of the Text object are copied straight into a 64KB direct buffer owned by the compression layer. For a very long line, it will be copied to this buffer 64KB at a time for multiple times.
+                                </li>
+                                <li>Every time the compression layer receives a line (or part of a very long line), the native compression code is called, and compressed bytes are stored into another 64KB direct buffer. Data are then copied from that direct buffer to an internal byte[] buffer owned by the compression layer before pushing down to the DFSClient layer because the DFSClient layer only accepts byte[] buffer as input. The size of this buffer is again controlled by configuration property "io.file.buffer.size". This step involves two buffer-copies.
+                                </li>
+                                <li>FSOutputSummer calculates the CRC32 checksum from the byte[] buffer from the compression layer, and deposits both data bytes and checksum bytes into a byte[] buffer in a Packet object. Again, checksum calculation must be done on whole 512B chunks, and an internal 512B byte[] buffer is used to hold partial chunks that may result from compressed data not aligned with chunk boundaries. Checksums are first calculated and stored in a 4B byte[] buffer before being copied to the packet. This step involves one buffer-copy.
+                                </li>
+                                <li>When a packet is full, the packet is pushed to a queue whose length is limited to 80. The size of the packet is controlled by configuration property "dfs.write.packet.size" and is default to 64KB. This step involves no buffer-copy.
+                                </li>
+                                <li>A DataStreamer thread waits on the queue and sends the packet to the socket whenever it receives one. The socket is wrapped with a BufferedOutputStream. But the byte[] buffer is very small (no more than 512B) and it is usually bypassed. The data, however, still needs to be copied to a temporary direct buffer owned by JDK code. This step requires two data copies.
+                                </li>
+                                <li>Data are sent from the ReduceTask's kernel buffer to the DataNode's kernel buffer. Before the data are stored in Block files and checksum files, there are a few buffer-copies in DataNode side. Unlike the case of DFS read, both file data and checksum data will traverse out of kernel, and into JVM land. The details of this process are beyond the discussion here and are not shown in the figure.
+                                </li>
+                            </ol>
+                            <h3>
+                                Optimizing Output Pipeline
+                            </h3>
+                            <p>
+                                Overall, including the "copy" for compressing bytes, the process described above requires six buffer-copies for an output line record to reach ReduceTask's kernel buffer. What could we do to optimize the write pipeline?
+                            </p>
+                            <ul>
+                                <li>We can probably reduce a few buffer-copies.
+                                </li>
+                                <li>The native compression code may be called less frequently if we call it only after the input buffer is full (block compression codecs like LZO already do this).
+                                </li>
+                                <li>Checksum calculations can be done in bulk instead of one chunk at a time.
+                                </li>
+                            </ul>
+                            <table cellspacing="0" cellpadding="0" border="1">
+                                <caption>
+                                    Figure 4: Optimizing output pipeline.
+                                </caption>
+                                <tr>
+                                    <td>
+                                        <img src="http://developer.yahoo.net/blogs/hadoop/hadoop-io-4.jpg" width="640">
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                Figure 4 shows how it looks like after these optimizations, where a total of four buffer-copies are necessary:
+                            </p>
+                            <ol>
+                                <li>Bytes from a user's Text object are copied to a direct buffer owned by the TextOutputFormat layer.
+                                </li>
+                                <li>Once this buffer is full, native compression code is called and compressed data is deposited to a direct buffer owned by the compression layer.
+                                </li>
+                                <li>FSOutputSummer computes the checksum for bytes in the direct buffer from the compression layer and saves both data bytes and checksum bytes into a packet's direct buffer.
+                                </li>
+                                <li>A full packet will be pushed into a queue, and, in background, the DataStreamer thread sends the packet through the socket, which copies the bytes to be copied to kernel buffers.
+                                </li>
+                            </ol>
+                            <h3>
+                                Conclusion
+                            </h3>
+                            <p>
+                                This blog post came out of an afternoon spent asking ourselves specific questions about Hadoop's I/O and validating the answers in the code. It turns out, after combing through class after class, that the pipeline is more complex than we originally thought. While each of us is familiar with one or more components, we found the preceding, comprehensive picture of Hadoop I/O elucidating, and we hope other developers and users will, too. Effecting the optimizations outlined above will be a daunting task, and this is the first step toward a more performant Hadoop.
+                            </p>
+                            <p>
+                                -- Hong Tang
+                            </p>
+                            <div>
+                                <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=G8h1KQju8iI:iQ_UkoD0tCQ:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=G8h1KQju8iI:iQ_UkoD0tCQ:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?i=G8h1KQju8iI:iQ_UkoD0tCQ:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=G8h1KQju8iI:iQ_UkoD0tCQ:qj6IDK7rITs"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=qj6IDK7rITs" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=G8h1KQju8iI:iQ_UkoD0tCQ:PhkjNP4BSzk"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?d=PhkjNP4BSzk" border="0"></a> <a href="http://feeds.developer.yahoo.net/~ff/YDNHadoop?a=G8h1KQju8iI:iQ_UkoD0tCQ:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/YDNHadoop?i=G8h1KQju8iI:iQ_UkoD0tCQ:F7zBnMyn0Lo" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/YDNHadoop/~4/G8h1KQju8iI" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://feeds.developer.yahoo.net/~r/YDNHadoop/~3/G8h1KQju8iI/the_anatomy_of_hadoop_io_pipel.html">http://feeds.developer.yahoo.net/~r/YDNHadoop/~3/G8h1KQju8iI/the_anatomy_of_hadoop_io_pipel.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

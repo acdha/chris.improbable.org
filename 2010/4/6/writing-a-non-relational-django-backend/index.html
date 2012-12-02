@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Writing a non-relational Django backend
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 06 Apr 2010 13:03:29 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-06T09:03:29-04:00">
+                    <meta itemprop="dateModified" content="2010-04-06T09:03:29-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-06T13:03:29+00:00">Apr 06</time>
+                    <h2 itemprop="title">
+                        Writing a non-relational Django backend
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c0c870439189d645">
+                        <blockquote>
+                            <div style="overflow:hidden;margin-bottom:8px"></div>
+                            <div>
+                                <p>
+                                    In our <a href="http://www.allbuttonspressed.com/blog/django/2010/04/SimpleDB-backend-and-JOIN-support">April 1st post</a> we claimed to have a simplified backend API. Well, this wasn't true, of course, but yesterday it has become true. The Django ORM is pretty complicated and it takes too much time for contributors to understand all the necessary details. In order to make the process as easy as possible we've implemented a <a href="http://bitbucket.org/wkornewald/backend-template/">backend template</a> which provides a simple starting point for a new backend based on our simplified API. It also contains sample code, so you can better understand what each function does. All places where you have to make changes are marked with "<tt># TODO:</tt>" comments. Note, you'll need <a href="http://www.allbuttonspressed.com/projects/djangotoolbox">djangotoolbox</a> which provides the base classes for nonrel backends.
+                                </p>
+                                <p>
+                                    Let's start with <tt>base.py</tt>. You can use the <tt>DatabaseCreation</tt> class to define a custom <tt>data_types</tt> mapping from Django's fields to your database types. The types will later be passed to functions which you'll have to implement to convert values from and to the DB (<tt>convert_value_from_db()</tt> and <tt>convert_value_to_db()</tt>). If the <a href="http://bitbucket.org/wkornewald/djangotoolbox/src/tip/db/creation.py">default values</a> work for you just leave the class untouched.
+                                </p>
+                                <p>
+                                    Also, if you want to maintain a DB connection we'd recommend storing it in <tt>DatabaseWrapper</tt>:
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+<span style="font-weight:bold">class</span> <span style="color:#445588;font-weight:bold">DatabaseWrapper</span>(NonrelDatabaseWrapper):
+    <span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">__init__</span>(<span style="color:#999999">self</span>, <span style="font-weight:bold">*</span>args, <span style="font-weight:bold">**</span>kwds):
+        <span style="color:#999999">super</span>(DatabaseWrapper, <span style="color:#999999">self</span>)<span style="font-weight:bold">.</span>__init__(<span style="font-weight:bold">*</span>args, <span style="font-weight:bold">**</span>kwds)
+        <span style="font-weight:bold">...</span>
+        <span style="color:#999999">self</span><span style="font-weight:bold">.</span>db_connection <span style="font-weight:bold">=</span> connect(
+            <span style="color:#999999">self</span><span style="font-weight:bold">.</span>settings_dict[<span style="color:#bb8844">'HOST'</span>], <span style="color:#999999">self</span><span style="font-weight:bold">.</span>settings_dict[<span style="color:#bb8844">'PORT'</span>],
+            <span style="color:#999999">self</span><span style="font-weight:bold">.</span>settings_dict[<span style="color:#bb8844">'USER'</span>], <span style="color:#999999">self</span><span style="font-weight:bold">.</span>settings_dict[<span style="color:#bb8844">'PASSWORD'</span>])
+</pre>
+                                </div>
+                                <p>
+                                    The real meat is in <tt>compiler.py</tt>. Here, you have to define a BackendQuery class which handles query creation and execution. In the constructor you should create a low-level query instance for your connection. Depending on your DB API this might be nothing more than a dict, but let's say your DB provides a <tt>LowLevelQuery</tt> class:
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+<span style="font-weight:bold">class</span> <span style="color:#445588;font-weight:bold">BackendQuery</span>(NonrelQuery):
+    <span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">__init__</span>(<span style="color:#999999">self</span>, compiler, fields):
+        <span style="color:#999999">super</span>(BackendQuery, <span style="color:#999999">self</span>)<span style="font-weight:bold">.</span>__init__(compiler, fields)
+        <span style="color:#999999">self</span><span style="font-weight:bold">.</span>db_query <span style="font-weight:bold">=</span> LowLevelQuery(<span style="color:#999999">self</span><span style="font-weight:bold">.</span>connection<span style="font-weight:bold">.</span>db_connection)
+</pre>
+                                </div>
+                                <p>
+                                    Note, <tt>self.connection</tt> is the <tt>DatabaseWrapper</tt> instance which is the high-level DB connection object in Django.
+                                </p>
+                                <p>
+                                    Then, you need to define a function that converts Django's filters from Django's internal query object (<tt>SQLQuery</tt>, accessible via <tt>self.query</tt>) to their counterparts for your DB. This should be done in the <tt>add_filters()</tt> function. Since quite a few nonrel DBs seem to only support AND queries we provide a default implementation which makes sure that there is no OR filter (well, it has some logic for converting certain OR filters to AND filters). It expects an <tt>add_filter()</tt> function (without the trailing "s"):
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+@safe_call
+<span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">add_filter</span>(<span style="color:#999999">self</span>, column, lookup_type, negated, db_type, value):
+    <span style="color:#999988;font-style:italic"># Emulated/converted lookups</span>
+    <span style="font-weight:bold">if</span> column <span style="font-weight:bold">==</span> <span style="color:#999999">self</span><span style="font-weight:bold">.</span>query<span style="font-weight:bold">.</span>get_meta()<span style="font-weight:bold">.</span>pk<span style="font-weight:bold">.</span>column:
+        column <span style="font-weight:bold">=</span> <span style="color:#bb8844">'_id'</span>
+
+    <span style="font-weight:bold">if</span> negated:
+        <span style="font-weight:bold">try</span>:
+            op <span style="font-weight:bold">=</span> NEGATION_MAP[lookup_type]
+        <span style="font-weight:bold">except</span> <span style="color:#990000;font-weight:bold">KeyError</span>:
+            <span style="font-weight:bold">raise</span> DatabaseError(<span style="color:#bb8844">"Lookup type %r can't be negated"</span> <span style="font-weight:bold">%</span> lookup_type)
+    <span style="font-weight:bold">else</span>:
+        <span style="font-weight:bold">try</span>:
+            op <span style="font-weight:bold">=</span> OPERATORS_MAP[lookup_type]
+        <span style="font-weight:bold">except</span> <span style="color:#990000;font-weight:bold">KeyError</span>:
+            <span style="font-weight:bold">raise</span> DatabaseError(<span style="color:#bb8844">"Lookup type %r isn't supported"</span> <span style="font-weight:bold">%</span> lookup_type)
+
+    <span style="color:#999988;font-style:italic"># Handle special-case lookup types</span>
+    <span style="font-weight:bold">if</span> <span style="color:#999999">callable</span>(op):
+        op, value <span style="font-weight:bold">=</span> op(lookup_type, value)
+
+    db_value <span style="font-weight:bold">=</span> <span style="color:#999999">self</span><span style="font-weight:bold">.</span>convert_value_for_db(db_type, value)
+    <span style="color:#999999">self</span><span style="font-weight:bold">.</span>db_query<span style="font-weight:bold">.</span>filter(column, op, db_value)
+</pre>
+                                </div>
+                                <p>
+                                    This is just an example implementation. You don't have to use the same code. At first, we convert the primary key column to the DB's internal reserved column for the primary key. Then, we check if the filter should be negated or not and retrieve the respective DB comparison operator from a mapping like this:
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+OPERATORS_MAP <span style="font-weight:bold">=</span> {
+    <span style="color:#bb8844">'exact'</span>: <span style="color:#bb8844">'='</span>,
+    <span style="color:#bb8844">'gt'</span>: <span style="color:#bb8844">'&gt;'</span>,
+    <span style="color:#bb8844">'gte'</span>: <span style="color:#bb8844">'&gt;='</span>,
+    <span style="color:#999988;font-style:italic"># ...</span>
+    <span style="color:#bb8844">'isnull'</span>: <span style="font-weight:bold">lambda</span> lookup_type, value: (<span style="color:#bb8844">'='</span> <span style="font-weight:bold">if</span> value <span style="font-weight:bold">else</span> <span style="color:#bb8844">'!='</span>, <span style="color:#999999">None</span>),
+}
+
+NEGATION_MAP <span style="font-weight:bold">=</span> {
+    <span style="color:#bb8844">'exact'</span>: <span style="color:#bb8844">'!='</span>,
+    <span style="color:#bb8844">'gt'</span>: <span style="color:#bb8844">'&lt;='</span>,
+    <span style="color:#999988;font-style:italic"># ...</span>
+    <span style="color:#bb8844">'isnull'</span>: <span style="font-weight:bold">lambda</span> lookup_type, value: (<span style="color:#bb8844">'!='</span> <span style="font-weight:bold">if</span> value <span style="font-weight:bold">else</span> <span style="color:#bb8844">'='</span>, <span style="color:#999999">None</span>),
+}
+</pre>
+                                </div>
+                                <p>
+                                    In our example implementation the operator can be a string or a callable that returns the comparison operator and a modified value. Finally, in the last two lines of <tt>add_filter()</tt> we convert the value to its low-level DB type and then add a filter to the low-level query object.
+                                </p>
+                                <p>
+                                    You might have noticed the <tt>@save_call</tt> decorator. This is important. It catches database exceptions and converts them to Django's <tt>DatabaseError</tt>. That decorator should be used for all your public API methods. Just modify the sample implementation in <tt>compiler.py</tt> to match your DB's needs.
+                                </p>
+                                <p>
+                                    Next, you have to define a <tt>fetch()</tt> function for retrieving the results from the configured query:
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+@safe_call
+<span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">fetch</span>(<span style="color:#999999">self</span>, low_mark, high_mark):
+    <span style="font-weight:bold">if</span> high_mark <span style="font-weight:bold">is</span> <span style="color:#999999">None</span>:
+        <span style="color:#999988;font-style:italic"># Infinite fetching</span>
+        results <span style="font-weight:bold">=</span> <span style="color:#999999">self</span><span style="font-weight:bold">.</span>db_query<span style="font-weight:bold">.</span>fetch_infinite(offset<span style="font-weight:bold">=</span>low_mark)
+    <span style="font-weight:bold">elif</span> high_mark <span style="font-weight:bold">&gt;</span> low_mark:
+        <span style="color:#999988;font-style:italic"># Range fetching</span>
+        results <span style="font-weight:bold">=</span> <span style="color:#999999">self</span><span style="font-weight:bold">.</span>db_query<span style="font-weight:bold">.</span>fetch_range(high_mark <span style="font-weight:bold">-</span> low_mark, low_mark)
+    <span style="font-weight:bold">else</span>:
+        results <span style="font-weight:bold">=</span> ()
+
+    <span style="font-weight:bold">for</span> entity <span style="font-weight:bold">in</span> results:
+        entity[<span style="color:#999999">self</span><span style="font-weight:bold">.</span>query<span style="font-weight:bold">.</span>get_meta()<span style="font-weight:bold">.</span>pk<span style="font-weight:bold">.</span>column] <span style="font-weight:bold">=</span> entity[<span style="color:#bb8844">'_id'</span>]
+        <span style="font-weight:bold">del</span> entity[<span style="color:#bb8844">'_id'</span>]
+        <span style="font-weight:bold">yield</span> entity
+</pre>
+                                </div>
+                                <p>
+                                    Here, <tt>low_mark</tt> and <tt>high_mark</tt> define the query range. If <tt>high_mark</tt> is not defined you should allow for iterating through the whole result set. At the end, we convert the internal primary key column, again, and return a dict representing the entity. If your DB also supports only fetching specific columns you should get the requested fields from <tt>self.fields</tt> (<tt>field.column</tt> contains the column name).
+                                </p>
+                                <p>
+                                    All values in the resulting dict are automatically converted via <tt>SQLCompiler.convert_value_from_db()</tt>. You have to implement that function (the backend template contains a sample implementation). That function gets a <tt>db_type</tt> parameter which is the type string as defined in your field type mapping in <tt>DatabaseCreation.data_types</tt>.
+                                </p>
+                                <p>
+                                    We won't look at the whole API in this post. There are additional functions for ordering, counting, and deleting the query results. It's pretty simple. The API might later get extended with support for aggregates, but currently you'll have to handle them at a lower level in your <tt>SQLCompiler</tt> implementation if your DB supports those features.
+                                </p>
+                                <p>
+                                    Another important function is called on <tt>Model.save()</tt>:
+                                </p>
+                                <div style="background-color:#F9F7ED;border:1px solid #36393D;padding:5px">
+                                    <pre style="line-height:125%">
+<span style="font-weight:bold">class</span> <span style="color:#445588;font-weight:bold">SQLInsertCompiler</span>(NonrelInsertCompiler, SQLCompiler):
+    @safe_call
+    <span style="font-weight:bold">def</span> <span style="color:#990000;font-weight:bold">insert</span>(<span style="color:#999999">self</span>, data, return_id<span style="font-weight:bold">=</span><span style="color:#999999">False</span>):
+        pk_column <span style="font-weight:bold">=</span> <span style="color:#999999">self</span><span style="font-weight:bold">.</span>query<span style="font-weight:bold">.</span>get_meta()<span style="font-weight:bold">.</span>pk<span style="font-weight:bold">.</span>column
+        <span style="font-weight:bold">if</span> pk_column <span style="font-weight:bold">in</span> data:
+            data[<span style="color:#bb8844">'_id'</span>] <span style="font-weight:bold">=</span> data[pk_column]
+            <span style="font-weight:bold">del</span> data[pk_column]
+
+        pk <span style="font-weight:bold">=</span> save_entity(<span style="color:#999999">self</span><span style="font-weight:bold">.</span>connection<span style="font-weight:bold">.</span>db_connection,
+            <span style="color:#999999">self</span><span style="font-weight:bold">.</span>query<span style="font-weight:bold">.</span>get_meta()<span style="font-weight:bold">.</span>db_table, data)
+        <span style="font-weight:bold">return</span> pk
+</pre>
+                                </div>
+                                <p>
+                                    Again, <tt>data</tt> is a dict because that maps naturally to nonrel DBs. Note, before insert() is called, all values are automatically converted via <tt>SQLCompiler.convert_value_for_db()</tt> (which you have to implement, too), so you don't have to deal with value conversions in that function.
+                                </p>
+                                <p>
+                                    I hope this gives you enough information to get started with a new backend. Please spread the word, so we can find backend contributors for all non-relational DBs. Django 1.3 development is getting closer and in order to get officially integrated into Django we have to prove that it's possible to use Django-nonrel with a wide variety of NoSQL DBs.
+                                </p>
+                                <p>
+                                    Please comment on the API. Should we improve anything? Is it flexible and easy enough?
+                                </p>
+                            </div>
+                            <div style="overflow:hidden">
+                                <a title="Tweet this!" style="margin-right:5px" href="http://twitter.com/share?text=Writing%20a%20non-relational%20Django%20backend&amp;url=http%3A//www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend&amp;via=wkornewald"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/twitter-ba4f7679fb49cd4eb99cae4267d48d23c81137d4.png" alt="Tweet this!" width="32" height="32"></a> <a title="Share on Facebook" style="margin-right:5px" href="http://www.facebook.com/share.php?u=http%3A//www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend&amp;t=Writing%20a%20non-relational%20Django%20backend"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/facebook-4b8233c3eb59d633eacdc5dbd8b98be769b9386d.png" alt="Share on Facebook" width="32" height="32"></a> <a title="Email a friend" style="margin-right:5px" href="http://feedburner.google.com/fb/a/emailFlare?itemTitle=Writing%20a%20non-relational%20Django%20backend&amp;uri=http%3A//www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/email-e5a5556616278659d7761a5df6c58238d77ec47c.png" alt="Email a friend" width="32" height="32"></a> <a title="Share on Delicious" style="margin-right:5px" href="http://del.icio.us/post?url=http%3A//www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend&amp;title=Writing%20a%20non-relational%20Django%20backend"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/delicious-400c2ae7e6871479f4bb34a4f8f476784a0992bf.png" alt="Share on Delicious" width="32" height="32"></a> <a title="Share on StumbleUpon" style="margin-right:5px" href="http://www.stumbleupon.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend&amp;title=Writing%20a%20non-relational%20Django%20backend"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/stumbleupon-b725d91b84d24fa42787a8c79aa2695c5e5fb288.png" alt="Share on StumbleUpon" width="32" height="32"></a> <a title="Share on Digg" style="margin-right:5px" href="http://digg.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend&amp;title=Writing%20a%20non-relational%20Django%20backend"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/digg-8ada117a5610042c9fd592d3f4d3d20be242334d.png" alt="Share on Digg" width="32" height="32"></a> <a title="Share on Reddit" style="margin-right:5px" href="http://reddit.com/submit?url=http%3A//www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend&amp;title=Writing%20a%20non-relational%20Django%20backend"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/reddit-f2c9d5792319c1a340054f310f4646642a48fe43.png" alt="Share on Reddit" width="32" height="32"></a> <a title="Share on Technorati" style="margin-right:5px" href="http://technorati.com/faves?sub=favthis&amp;add=http%3A//www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend"><img src="http://www.allbuttonspressed.com/media/simplesocial/icons32/technorati-1fa5656a85357eba71c018c718a7b36561a6f71c.png" alt="Share on Technorati" width="32" height="32"></a>
+                            </div>
+                            <p>
+                                <a href="http://www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend#disqus_thread">Leave a comment</a>
+                            </p><img src="http://feeds.feedburner.com/~r/AllButtonsPressed/~4/cN8h0OVn0CY" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend">http://www.allbuttonspressed.com/blog/django/2010/04/Writing-a-non-relational-Django-backend</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

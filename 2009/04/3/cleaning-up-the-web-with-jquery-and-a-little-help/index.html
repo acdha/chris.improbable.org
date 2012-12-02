@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Cleaning up the web with jQuery and a little help from Google
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta name="description" content="My guide to creating jQuery-based bookmarklets">
+        <meta http-equiv="last-modified" content="Fri, 03 Apr 2009 11:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2008-09-05T18:44:41-04:00">
+                    <meta itemprop="dateModified" content="2009-04-03T07:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-03T11:00:00+00:00">Apr 03</time>
+                    <h2 itemprop="title">
+                        Cleaning up the web with jQuery and a little help from Google
+                    </h2>
+                </header>
+                <p class="summary">
+                    My guide to creating jQuery-based bookmarklets
+                </p>
+                <div class="body" itemprop="articleBody">
+                    <p>
+                        Recently the topic of enhancing web pages came up at work. It's a lot easier than it used to be thanks to two trends: the rise of modern JavaScript libraries and public <a href="http://en.wikipedia.org/wiki/Content_delivery_network">CDNs</a> hosting those libraries. This makes a lot easier to enhance content which you can't easily alter (e.g. the forms used by various big companies with marginal web competency) or in situations where you're worried about compatibility with existing code (some squirrelly vertical apps in our case).
+                    </p>
+                    <p>
+                        <strong>Updated 2009-04-03:</strong> Moved the template and example scripts to <a href="http://gist.github.com/">Gist</a> for ease of copying/maintenance: <a href="http://gist.github.com/89968">bookmarklet-template.js</a>, <a href="http://gist.github.com/89969">enable-autocomplete.js</a> and <a href="http://gist.github.com/89970">resize-textareas.js</a>
+                    </p>
+                    <p>
+                        <strong>Updated 2008-10-14:</strong> there's a very similar jQuery-lovefest on <a href="http://intertwingly.net/blog/2008/10/12/jQuery-and-Closures">Sam Ruby's weblog</a> with plenty of useful tips.
+                    </p>
+                    <p>
+                        To illustrate just how little code this can require, here's an example which uses <a href="http://www.jquery.com">jQuery</a> to install a function which sanitizes input (we have a legacy app chokes on smart-quotes and people paste text in from Word), copies the submit buttons from the bottom of the form to the top and adds a graphical datepicker for every date field on the page:
+                    </p>
+                    <pre class="textmate-source lazy">
+<span class="source source_js">jQuery</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>:text,textarea<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>bind<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>change<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">, </span>sanitizer<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>form<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>bind<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>submit<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">,</span>
+<span class="storage storage_type storage_type_js">function</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span> <span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+
+  jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>:text,textarea<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>each<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span>sanitizer<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span>
+<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="storage storage_type storage_type_js">var</span> submit_buttons <span class="keyword keyword_operator keyword_operator_js">=</span> jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>input[type="submit"]<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+submit_buttons<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">parent</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>clone<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="constant constant_language constant_language_boolean constant_language_boolean_true constant_language_boolean_true_js">true</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>prependTo<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span>
+
+ submit_buttons<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>parents<span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>filter<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>form<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span>
+<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+
+
+jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>input[id*="DATE"]<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>datepicker<span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+</pre>
+                    <p>
+                        That's the complete, ready-to-go, “even works with crotchety old Internet Explorer” guts of the code (the take-home lesson is that jQuery is awesome for busy developers). The downside is that this requires a little but of work: you need to have jQuery (and possibly dependencies like the UI plugin I used above) available and you need to jump through some hoops to load jQuery into an existing page efficiently and without conflicts.
+                    </p>
+                    <h2>
+                        Didn't we used to pay for hosting?
+                    </h2>
+                    <p>
+                        One drawback to all of this is that you need somewhere to host your external libraries since you can't fit the core jQuery into a URL, much less UI components or the less svelte libraries. This meant setting up a server, getting an SSL certificate if you need to work on HTTPS sites, etc. Not that much work but it's now a lot easier and quite noticeably faster because <a href="http://code.google.com/apis/ajaxlibs/">Google makes it trivial to get the popular AJAX libraries from their CDN</a>.
+                    </p>
+                    <h2>
+                        Developing with Bookmarklets
+                    </h2>
+                    <p>
+                        The deployment scenario for the major projects where I've used these techniques is a situation where you have some limited access to the page source: perhaps inserting a single <code>script</code> tag into a template or using something like <a href="http://monkeygrease.org/">MonkeyGrease</a> or an <a href="http://httpd.apache.org/docs/2.2/mod/mod_substitute.html">Apache proxy with mod_substitute</a> to rewrite the generated HTML as it passes through. This is great for making minimal changes but a bit cumbersome to develop and test with, particularly if you need to work on a production site or your instructions begin something like “Go change your browser's proxy settings…”
+                    </p>
+                    <p>
+                        If I was only working in Firefox I could use <a href="http://www.greasespot.net/">GreaseMonkey</a> but I need to test in Safari and Internet Explorer, too. The portable solution is a simple <a href="httphttp://en.wikipedia.org/wiki/Bookmarklet">bookmarklet</a>. I use a simple template (<a href="http://gist.github.com/89968">bookmarklet-template.js</a>) which loads jQuery from the Google CDN and, after everything is ready to go, runs either a simple function or the external script of my choosing. This makes it easy to prepare an injector bookmarklet which can be used to pull my code into the current page, after which I can run and debug it using <a href="http://getfirebug.com">Firebug</a>.
+                    </p>
+                    <h2>
+                        Useful Examples
+                    </h2>
+                    <p>
+                        This is also a useful technique for fixing other people's pages. Here are two bookmarklets and the commented source for tools which I use often:
+                    </p>
+                    <ol>
+                        <li>
+                            <a href="javascript:(function()%7B(function(target,msg)%7Bvar%20loader=function()%7Bif(arguments.callee._executed)return;arguments.callee._executed=true;if(typeof%20target===%22function%22)%7Btarget();%7Delse%7BjQuery.getScript(target);%7Dvar%20el=document.createElement('div');el.style.position='absolute';el.style.height='30px';el.style.width='200px';el.style.margin='0%20auto%200%20auto';el.style.top='0';el.style.left='40%';el.style.padding='5px%2010px%205px%2010px';el.style.backgroundColor='#f99';el.innerHTML=msg;document.body.appendChild(el);window.setTimeout(function()%7BjQuery(el).fadeOut('slow',function()%7BjQuery(this).remove();%7D);%7D,2500);%7D;if(typeof%20jQuery!=='undefined')%7Bloader();%7Delse%7Bvar%20s=document.createElement('script');s.type=%22text/javascript%22;s.setAttribute('src',document.location.protocol+'//ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js');if(s.addEventListener)%7Bs.addEventListener(%22load%22,loader,false);%7Delse%20if(%22onreadystatechange%22%20in%20s)%7Bs.onreadystatechange=function()%7Bif(this.readyState=='complete'%7C%7Cthis.readyState=='loaded')%7Bloader();%7D%7D;%7Delse%7Bwindow.setTimeout(loader(),2500);%7Ddocument.getElementsByTagName('head')%5B0%5D.appendChild(s);%7D%7D)(function()%7BjQuery('%5Bautocomplete%5D').attr(%22autocomplete%22,%22on%22);%7D,%22autocomplete%20enabled!%22);%7D)();">Enable autocomplete</a> - changes autocomplete="off" to on throughout the page (<a href="http://gist.github.com/89969">Source: enable-autocomplete.js</a>)
+                        </li>
+                        <li>
+                            <a href="javascript:(function()%7B(function(target,msg)%7Bvar%20loader=function()%7Bif(arguments.callee._executed)return;arguments.callee._executed=true;if(typeof%20target===%22function%22)%7Btarget();%7Delse%7BjQuery.getScript(target);%7Dvar%20el=document.createElement('div');el.style.position='absolute';el.style.height='30px';el.style.width='200px';el.style.margin='0%20auto%200%20auto';el.style.top='0';el.style.left='40%';el.style.padding='5px%2010px%205px%2010px';el.style.backgroundColor='#f99';el.innerHTML=msg;document.body.appendChild(el);window.setTimeout(function()%7BjQuery(el).fadeOut('slow',function()%7BjQuery(this).remove();%7D);%7D,2500);%7D;if(typeof%20jQuery!=='undefined')%7Bloader();%7Delse%7Bvar%20s=document.createElement('script');s.type=%22text/javascript%22;s.setAttribute('src',document.location.protocol+'//ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js');if(s.addEventListener)%7Bs.addEventListener(%22load%22,loader,false);%7Delse%20if(%22onreadystatechange%22%20in%20s)%7Bs.onreadystatechange=function()%7Bif(this.readyState=='complete'%7C%7Cthis.readyState=='loaded')%7Bloader();%7D%7D;%7Delse%7Bwindow.setTimeout(loader(),2500);%7Ddocument.getElementsByTagName('head')%5B0%5D.appendChild(s);%7D%7D)(function()%7BjQuery.getScript(document.location.protocol+%22//ajax.googleapis.com/ajax/libs/jqueryui/1.5.2/jquery-ui.js%22,function()%7BjQuery(%22textarea%22).resizable();%7D);%7D,%22Textareas%20are%20now%20resizable%22);%7D)();">Resizable Textareas</a> - makes all textareas resizable (alá Safari 3) using <a href="http://docs.jquery.com/UI/Resizables">jQuery UI Resizable (</a><a href="http://gist.github.com/89970">Source: resize-textareas.js</a>)
+                        </li>
+                    </ol>
+                    <p>
+                        I keep both of these in my Firefox &amp; IE bookmark toolbar since they come in handy throughout the day and I've created more any time I find myself regularly needing to deal with a cranky legacy site. The process is simple: copy <a href="http://gist.github.com/89968">bookmarklet-template.js</a>, add the code which does whatever fixups the target page needs, run the entire thing through <a href="http://jslint.com/">JSLint</a> and, finally paste it into Ted Mielczarek's very handy <a href="http://ted.mielczarek.org/code/mozilla/bookmarklet.html">Bookmarklet Crunchinator</a>.
+                    </p>
+                    <h1>
+                        Good Code Injection Practices
+                    </h1>
+                    <h2>
+                        Use Anonymous functions
+                    </h2>
+                    <p>
+                        What's the difference between this bit of code and the first example above?
+                    </p>
+                    <pre class="textmate-source lazy">
+<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="storage storage_type storage_type_js">function</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+
+ jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>:text,textarea<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>bind<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>change<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">, </span>sanitizer<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+ jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>form<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>bind<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>submit<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">,</span>
+<span class="storage storage_type storage_type_js">function</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span> <span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+
+   jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>:text,textarea<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>each<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span>sanitizer<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span>
+<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="storage storage_type storage_type_js">var</span> submit_buttons <span class="keyword keyword_operator keyword_operator_js">=</span> jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>input[type="submit"]<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+ submit_buttons<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">parent</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>clone<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="constant constant_language constant_language_boolean constant_language_boolean_true constant_language_boolean_true_js">true</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>prependTo<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span>
+
+  submit_buttons<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>parents<span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>filter<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>form<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span>
+<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+
+
+ jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>input[id*="DATE"]<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>datepicker<span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)()</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+</pre>
+                    <p>
+                        It looks almost identical but there's a key difference: this code is inside an anonymous function and that means that all of my variables are local to the function itself, which means that they won't be visible to other JavaScript on the page and I don't have to worry about conflicting variable or function names. Note that <a href="http://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Statements/var">this is only true for variables declared using "var"</a> - if you leave that out or do something like <code>window.foo</code> you can still touch the rest of the page if you need to - for example, replacing the broken validation logic on Comcast's forms.
+                    </p>
+                    <h2>
+                        Reliably detecting when external code has loaded
+                    </h2>
+                    <p>
+                        When jQuery has loaded, it's easy to say "Load this .js file and run this function when it's ready" - here's how the text-area resizer works:
+                    </p>
+                    <pre class="textmate-source lazy">
+<span class="source source_js source_js_yui">jQuery</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>getScript<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="support support_class support_class_js">document</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">location</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">protocol</span> <span class="keyword keyword_operator keyword_operator_js">+</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>//ajax.googleapis.com/ajax/libs/jqueryui/1.5.2/jquery-ui.js<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">,</span>
+<span class="storage storage_type storage_type_js">function</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span> <span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+
+  jQuery<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>textarea<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>resizable<span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span>
+<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+</pre>
+                    <p>
+                        Loading jQuery itself requires you to do this the hard way: generate a script tag on the fly, insert it into the document and listen for the load events to tell when it's safe to run code which depends on the library you're loading. This is easy for Safari, Firefox, etc. which support the <a href="http://developer.mozilla.org/En/DOM/Element.addEventListener">standard W3C DOM addEventListener</a>: simply run your code after the script tag fires a "load" event. Unfortunately, it's not that simple for Internet Explorer: in theory <code>attachEvent("onload")</code> would be equivalent but unfortunately load events are quite unreliable for script tags with IE and so we need to use an <code>onReadyStateChange</code> handler as seen below and check for either of two events which may be fired:
+                    </p>
+                    <pre class="textmate-source lazy">
+<span class="storage storage_type storage_type_js">var</span> s <span class="keyword keyword_operator keyword_operator_js">=</span> <span class="support support_class support_class_js">document</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_function support_function_dom support_function_dom_js">createElement</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>script<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+s<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_dom support_constant_dom_js">type</span> <span class="keyword keyword_operator keyword_operator_js">=</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>text/javascript<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+s<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_function support_function_dom support_function_dom_js">setAttribute</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>src<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">, </span><span class="support support_class support_class_js">document</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">location</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">protocol</span> <span class="keyword keyword_operator keyword_operator_js">+</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>//ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="keyword keyword_control keyword_control_js">if</span> <span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span>s<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>addEventListener<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span> <span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+
+ s<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>addEventListener<span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>load<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span><span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">, </span>loader<span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">, </span><span class="constant constant_language constant_language_boolean constant_language_boolean_false constant_language_boolean_false_js">false</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span> <span class="keyword keyword_control keyword_control_js">else</span> <span class="keyword keyword_control keyword_control_js">if</span> <span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">"</span>onreadystatechange<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">"</span> <span class="keyword keyword_operator keyword_operator_js">in</span> s<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span> <span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+<span class="support support_class support_class_js">s</span>.<span class="entity entity_name entity_name_function entity_name_function_js">onreadystatechange</span> <span class="keyword keyword_operator keyword_operator_js">=</span> <span class="storage storage_type storage_type_function storage_type_function_js">function</span><span class="punctuation punctuation_definition punctuation_definition_parameters punctuation_definition_parameters_begin punctuation_definition_parameters_begin_js">(</span><span class="punctuation punctuation_definition punctuation_definition_parameters punctuation_definition_parameters_end punctuation_definition_parameters_end_js">)</span> <span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+<span class="keyword keyword_control keyword_control_js">if</span> <span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="variable variable_language variable_language_js">this</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">readyState</span> <span class="keyword keyword_operator keyword_operator_js">==</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>complete<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span> <span class="keyword keyword_operator keyword_operator_js">||</span> <span class="variable variable_language variable_language_js">this</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">readyState</span> <span class="keyword keyword_operator keyword_operator_js">==</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>loaded<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span> <span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+
+   loader<span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span> <span class="keyword keyword_control keyword_control_js">else</span> <span class="meta meta_brace meta_brace_curly meta_brace_curly_js">{</span>
+<span class="punctuation punctuation_definition punctuation_definition_comment punctuation_definition_comment_js">//</span> Chances are if your browser is this old jQuery won't even work but just in case:
+
+ <span class="support support_class support_class_js">window</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_function support_function_js">setTimeout</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span>loader<span class="meta meta_brace meta_brace_round meta_brace_round_js">()</span><span class="meta meta_delimiter meta_delimiter_object meta_delimiter_object_comma meta_delimiter_object_comma_js">, </span><span class="constant constant_numeric constant_numeric_js">2500</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+<span class="meta meta_brace meta_brace_curly meta_brace_curly_js">}</span>
+<span class="support support_class support_class_js">document</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_function support_function_dom support_function_dom_js">getElementsByTagName</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span><span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>head<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="meta meta_brace meta_brace_square meta_brace_square_js">[</span><span class="constant constant_numeric constant_numeric_js">0</span><span class="meta meta_brace meta_brace_square meta_brace_square_js">]</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_function support_function_dom support_function_dom_js">appendChild</span><span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span>s<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+</pre>
+                    <p>
+                        It's conceivable that a buggy browser could fire the same event twice in an unusual scenario and if you have any sort of user-driven or timer-based code, you'll want to prevent your payload from being run multiple times using a guard like this which allows the function to check whether it has executed before without using the more common approach of relying on a global variable. Besides cleanliness, this also makes it easy if you might inject multiple things onto a page and don't want to have to rely only on a global variable naming convention to prevent chaos:
+                    </p>
+                    <pre class="lazy textmate-source">
+<span class="punctuation punctuation_definition punctuation_definition_comment punctuation_definition_comment_js">//</span> Avoid executing this function twice:
+
+<span class="keyword keyword_control keyword_control_js">if</span> <span class="meta meta_brace meta_brace_round meta_brace_round_js">(</span>arguments<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">callee</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>_executed<span class="meta meta_brace meta_brace_round meta_brace_round_js">)</span> <span class="keyword keyword_control keyword_control_js">return</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+
+arguments<span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">callee</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span>_executed <span class="keyword keyword_operator keyword_operator_js">=</span> <span class="constant constant_language constant_language_boolean constant_language_boolean_true constant_language_boolean_true_js">true</span><span class="punctuation punctuation_terminator punctuation_terminator_statement punctuation_terminator_statement_js">;</span>
+</pre>
+                    <h2>
+                        Avoid HTTP/HTTPS conflicts
+                    </h2>
+                    <p>
+                        If you're injecting code into pages which may or may not use SSL, you have a problem: if you hard-code a URL in your code and the protocol doesn't match you'll either incur the extra overhead of starting an SSL session (which isn't a major problem) by using <code>https</code> even when you don't need to or encounter Internet Explorer's popular mixed-mode security warning. This is easy to avoid by using the current page's protocol for your scripts as long as you're using a server which can handle either protocol (Google's CDN does; Yahoo's does not):
+                    </p>
+                    <pre class="lazy textmate-source">
+<span class="support support_class support_class_js">document</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">location</span><span class="meta meta_delimiter meta_delimiter_method meta_delimiter_method_period meta_delimiter_method_period_js">.</span><span class="support support_constant support_constant_js">protocol</span> <span class="keyword keyword_operator keyword_operator_js">+</span> <span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_begin punctuation_definition_string_begin_js">'</span>//path.to.example.com/something.js<span class="punctuation punctuation_definition punctuation_definition_string punctuation_definition_string_end punctuation_definition_string_end_js">'</span>
+</pre>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

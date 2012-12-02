@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            PyTPMOTW: py-amqplib
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 04 Apr 2010 02:56:02 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-03T22:56:02-04:00">
+                    <meta itemprop="dateModified" content="2010-04-03T22:56:02-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-04T02:56:02+00:00">Apr 04</time>
+                    <h2 itemprop="title">
+                        PyTPMOTW: py-amqplib
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a3914a54d155e0ae">
+                        <blockquote>
+                            <h3>
+                                What’s This Module For?
+                            </h3>
+                            <p>
+                                To interact with a queue broker implementing version 0.8 of the Advanced Message Queueing Protocol (AMQP) standard. Copies of various versions of the specification can be found <a href="http://www.amqp.org/confluence/display/AMQP/AMQP+Specification">here</a>. At time of writing, 0.10 is the latest version of the spec, but it seems that many popular implementations used in production environments today are still using 0.8, presumably awaiting a finalization of v.1.0 of the spec, which is a work in progress.
+                            </p>
+                            <h3>
+                                What is AMQP?
+                            </h3>
+                            <p>
+                                AMQP is a queuing/messaging protocol that is implemented by server daemons (called ‘brokers’) like RabbitMQ, ActiveMQ, Apache Qpid, Red Hat Enterprise MRG, and OpenAMQ. Though messaging protocols used in the enterprise are historically proprietary, AMQP has a bold and vocal stance that AMQP will be:
+                            </p>
+                            <ul>
+                                <li>Broadly applicable for enterprise use
+                                </li>
+                                <li>Totally open
+                                </li>
+                                <li>Platform agnostic
+                                </li>
+                                <li>Interoperable
+                                </li>
+                            </ul>
+                            <p>
+                                The working group consists of several huge enterprises who have a vested interest in a protocol that meets these requirements. Most are either huge enterprises who are (or were) a victim of the proprietary lock-in that came with what will now likely become ‘legacy’ protocols, or implementers of the protocols, who will sell products and services around their implementation. Here’s a brief list of those involved in the AMQP working group:
+                            </p>
+                            <ul>
+                                <li>JPMorgan Chase (the initial developers of the protocol, along with iMatix)
+                                </li>
+                                <li>Goldman Sachs
+                                </li>
+                                <li>Red Hat Software
+                                </li>
+                                <li>Cisco Systems
+                                </li>
+                                <li>Novell
+                                </li>
+                            </ul>
+                            <p>
+                                Message brokers can facilitate an awfully large amount of flexibility in an architecture. They can be used to integrate applications across platforms and languages, enable asynchronous operations for web front ends, modularize and more easily distribute complex processing operations.
+                            </p>
+                            <h3>
+                                Basic Publishing
+                            </h3>
+                            <p>
+                                The first thing to know is that when you code against an AMQP broker, you’re dealing with a hierarchy: a ‘vhost’ contains one or more ‘exchanges’ which themselves can be bound to one or more ‘queues’. Here’s how you can programmatically create an exchange and queue, bind them together, and publish a message:
+                            </p>
+                            <pre>
+from amqplib import client_0_8 as amqp
+
+conn = amqp.Connection(userid='guest', password='guest', host='localhost', virtual_host='/', ssl=False)
+
+# Create a channel object, queue, exchange, and binding.
+chan = conn.channel()
+chan.queue_declare('myqueue', durable=True)
+chan.exchange_declare('myexchange', type='direct', durable=True)
+chan.queue_bind('myqueue', 'myexchange', routing_key='myq.myx')
+
+# Create an AMQP message object
+
+msg = amqp.Message('This is a test message')
+chan.basic_publish(msg, 'myexchange', 'myq.myx')
+</pre>
+                            <p>
+                                As far as we know, we have one exchange and one queue on our server right now, and if that’s the case, then technically the routing key I’ve used isn’t required. However, I strongly suggest that you always use a routing key to avoid really odd (and implementation-specific) behavior like getting multiple copies of a message on the consumer side of the equation, or getting odd exceptions from the server. The routing key can be arbitrary text like I’ve used above, or you can use a common formula of using ‘.’ as your routing key. Just remember that without the routing key, the minute more than one queue is bound to an exchange, the exchange has no way of knowing which queue to route a message to. Remeber: you don’t publish to a queue, you publish to an exchange and tell it which queue it goes in via the routing key.
+                            </p>
+                            <h3>
+                                Basic Consumption
+                            </h3>
+                            <p>
+                                Now that we’ve published a message, how do we get our hands on it? There are two methods: basic_get, which will ‘get’ a single message from the queue, or ‘basic_consume’, which technically doesn’t get *any* messages: it registers a handler with the server and tells it to send messages along as they arrive, which is great for high-volume messaging operations.
+                            </p>
+                            <p>
+                                Here’s the ‘basic_get’ version of a client to grab the message we just published:
+                            </p>
+                            <pre>
+msg = chan.basic_get(queue='myqueue', no_ack=False)
+chan.basic_ack(msg.delivery_tag)
+</pre>
+                            <p>
+                                In the above, I’ve used the same channel I used to publish the message to get it back again using the basic_get operation. I then acknowledged receipt of the message by sending the server a ‘basic_ack’, passing along the delivery_tag the server included as part of the incoming message.
+                            </p>
+                            <h3>
+                                Consuming Mass Quantities
+                            </h3>
+                            <p>
+                                Using basic_consume takes a little more thought than basic_get, because basic_consume does nothing more than register a method with the server to tell it to start sending messages down the pipe. Once that’s done, however, it’s up to you to do a chan.wait() to wait for messages to show up, and find some elegant way of breaking out of this wait() operation. I’ve seen and used different techniques myself, and the right thing will depend on the application.
+                            </p>
+                            <p>
+                                The basic_consume method also requires a callback method which is called for each incoming message, and is passed the amqp.Message object when it arrives.
+                            </p>
+                            <p>
+                                Here’s a bit of code that defines a callback method, calls basic_consume, and does a chan.wait():
+                            </p>
+                            <pre>
+consumer_tag = 'foo'
+def process(msg):
+   txt = msg.body
+   if '-1' in txt:
+      print 'Got -1'
+      chan.basic_cancel(consumer_tag)
+      chan.close()
+   else:
+      print 'Got message!'
+
+chan.basic_consume('messages', callback=process, consumer_tag=consumer_tag)
+while True:
+   print 'Message processed. Next?'
+   try:
+      chan.wait()
+   except IOError as out:
+      print "Got an IOError: %s" % out
+      break
+   if not chan.is_open:
+      print "Done processing. Later"
+      break
+</pre>
+                            <p>
+                                So, basic_consume tells the server ‘Start sending any and all messages!’. The server registers a method with a name given by the consumer_tag argument, or it assigns one and it becomes the return value of basic_consume(). I define one here because I don’t want to run into race conditions where I want to call basic_cancel() with a consumer_tag variable that doesn’t exist yet, or is out of scope, or whatever. In the callback, I look for a sentinel message whose body contains ‘-1′, and at that point I call basic_cancel (passing in the consumer_tag so the server knows who to stop sending messages to), and I close the channel. In the ‘while True’, the channel object checks its status and exits if it’s not open.
+                            </p>
+                            <p>
+                                The above example starts to uncover some issues with py-amqplib. It’s not clear how errors coming back from the server are handled, as opposed to errors caused by the processing code, for example. It’s also a little clumsy trying to determine the logic for breaking out of the loop. In this case there’s a sentinel message sent to the queue representing the final message on the stack, at which point our ‘process()’ callback closes the channel, but then the channel has to check its own status to move forward. Just returning False from process() doesn’t break out of the while loop, because it’s not looking for a return value from that function. We could have our process() function raise an error of its own as well, which might be a bit more elegant, if also a bit more work.
+                            </p>
+                            <h3>
+                                Moving Ahead
+                            </h3>
+                            <p>
+                                What I’ve covered here actually covers perhaps 90% of the common cases for amqplib, but there’s plenty more you can do with it. There are various exchange types, including fanout exchanges and topic exchanges, which can facilitate more interesting messaging and pub/sub models. To learn more about them, here are a couple of places to go for information:
+                            </p>
+                            <p>
+                                <a href="http://notes.variogr.am/post/143623387/broadcasting-your-logs-with-rabbitmq-and-python">Broadcasting your logs with RabbitMQ and Python</a><br>
+                                <a href="http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/">Rabbits and Warrens</a><br>
+                                <a href="http://www.rabbitmq.com/faq.html#managing-concepts-exchanges">RabbitMQ FAQ section “Messaging Concepts: Exchanges</a>
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?a=8jLgkkYROQ4:YZkKtLcZfao:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?a=8jLgkkYROQ4:YZkKtLcZfao:bcOpcFrp8Mo"><img src="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?d=bcOpcFrp8Mo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?a=8jLgkkYROQ4:YZkKtLcZfao:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/MusingsOfAnAnonymousGeek?i=8jLgkkYROQ4:YZkKtLcZfao:V_sGLiPBpWU" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/MusingsOfAnAnonymousGeek/~4/8jLgkkYROQ4" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.protocolostomy.com/2010/04/03/pytpmotw-py-amqplib/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+MusingsOfAnAnonymousGeek+%28Musings+of+an+anonymous+geek%29">http://www.protocolostomy.com/2010/04/03/pytpmotw-py-amqplib/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+MusingsOfAnAnonymousGeek+%28Musings+of+an+anonymous+geek%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

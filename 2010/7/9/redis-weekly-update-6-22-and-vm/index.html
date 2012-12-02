@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Redis weekly update #6 - 2.2 and VM
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 09 Jul 2010 15:53:47 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-07-09T11:53:47-04:00">
+                    <meta itemprop="dateModified" content="2010-07-09T11:53:47-04:00"><time class="date" itemprop="datePublished" datetime="2010-07-09T15:53:47+00:00">Jul 09</time>
+                    <h2 itemprop="title">
+                        Redis weekly update #6 - 2.2 and VM
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/488aa9cbdad333d4">
+                        <blockquote>
+                            <div>
+                                <div style="clear:both"></div>
+                                <div>
+                                    Hello again and welcome to the Redis weekly update #6!<br>
+                                    <br>
+                                    The latest weeks have been very busy and interesting, I and Pieter Noordhuis visited VMware and attended the <a href="http://www.meetup.com/San-Francisco-Redis-Meetup/">SF Redis Meetup</a>, as you can guess quite exciting experiences for both us :)<br>
+                                    <br>
+                                    Redis 2.0 reached RC2 in the meantime and is going to be shipped as stable in a few weeks.<br>
+                                    <br>
+                                    Simultaneously Redis 2.2 is almost complete from the point of view of features, with the biggest thing currently in the workings being replication fo DELs on expires in slaves and append only file so that it will be possible to perform write operations against expiring keys.<br>
+                                    <br>
+                                    But let's talk a bit about what we <i>already</i> got into 2.2.
+                                    <h3>
+                                        Redis 2.2 is an order of magnitude less memory hungry for aggregates
+                                    </h3>Maybe you remember that in the implementation of the Hash data type I did a trick: instead of saving small hashes (hashes composed of a few tens of elements, where every element is not too big) as hash tables, I encoded them in a special way. What I did was creating a simple special encoding that was suited for <i>string to string maps</i>, something like a unique blob of data with prefixed length, so if you have an hash that is "name =&gt; foo, surname =&gt; bar", this is stored in a unique string like
+                                    <pre>
+4:name3:foo7:surname3:bar
+</pre>This is just an example, the actual format is different (and binary). As you probably already know Pieter Noordhuis implemented similar encodings for Lists, and for Sets composed of integers in Redis master.<br>
+                                    <br>
+                                    In the meantime I reworked the top-level key-&gt;value dictionary in order to save memory using directly C strings instead of Redis Objects for keys. Another minor fix to sds also saved a lot of memory in 64 bit systems.<br>
+                                    <br>
+                                    All this changes make Redis an order of magnitude less memory hungry for many kind of datasets!<br>
+                                    <br>
+                                    What kind of datasets?
+                                    <ul>
+                                        <li>Many keys containing lists with an average length of 10, 100, 300, 500 elements
+                                        </li>
+                                        <li>Many keys containing sets of integers with less than 1000 elements or so
+                                        </li>
+                                        <li>Many keys containing hashes representing objects with 10, 20, 50 fields
+                                        </li>
+                                    </ul>some actual measurement of memory used:
+                                    <ul>
+                                        <li>1 million keys with 500 elements list in each key: 2GB of memory used
+                                        </li>
+                                        <li>1 million of keys with an Hash representing an user with name,surname,10 more random fields: 300 MB of memory used.
+                                        </li>
+                                    </ul>With sets composed of numbers (even large 64 bit numbers) expect the same order of magnitude.
+                                    <div>
+                                        Note: all this benchmarks are about 64 bit builds, expect a 35% - 40% memory saving with 32 bit builds.
+                                    </div>
+                                    <h3>
+                                        The meaning of this numbers
+                                    </h3>Now it's time to analyze this data. 1 million keys with 500 elements lists, are, in SQL terms, <b>500 millions rows</b>. You are storing this in 2 GB of RAM, and as you know even cheap servers today have 8 GB of RAM.<br>
+                                    <br>
+                                    What about, for instance, very big lists? Over a given threshold this lists will not be specially encoded, and will use much more space. But this is also a use case where VM will create troubles, as there is to deserialize-serialize too much objects per key.<br>
+                                    <br>
+                                    Accessing the different types provided by Redis directly on disk with "element" granularity is not an opinion: Redis is atomic and fast because it took the other path, is a different project than an on-disk database with complex data type, threaded, and with tons of synchronization needed to handle this kind of complex data types with atomic operations.<br>
+                                    <br>
+                                    So basically with Redis the matter is, there is no way to have long aggregate data types like long lists without using the RAM needed to store an actual linked list in memory (the same concept also holds true for sets, sorted sets, and all the other types). And I think this is fine, Redis can't do everything: be fast, use little memory, support huge data types, at the same time.<br>
+                                    <br>
+                                    It tries to do trade offs: it's fast, sometimes it's memory cheap as it can do some trick, it still supports lists of hundred of millions of elements, but using more memory.
+                                    <h3>
+                                        The case for many keys with small values
+                                    </h3>What happens when instead there are many keys with small values? This is not the best case for VM, there is basically no memory saving as the key need to stay in memory, and in place of the original object there is the "VM pointer" object to locate the serialized object inside the swap file.
+                                    <h3>
+                                        When VM is still useful?
+                                    </h3>The most interesting case for VM is when there are big objects and there is really a lot of bias in the dataset access, but for this to justify the use of VM the dataset must be very large, and the bias very ... biased, as otherwise as you saw even with millions of users it is still not a problem to save a lot of data in a single box with a decent amount of memory. Why should you support million of users and be <i>so</i> cheap on RAM and hardware? Does not look like a real world scenario.<br>
+                                    <br>
+                                    Another case is that you have many large "stupid" values (string values). Like HTML pages stored at every key and so forth. But in this case Redis performances will start to be more and more similar to on-disk solutions, as actually it <i>is</i> a disk-backed store in this configuration. Still it is useful that you don't need an additional caching layer as Redis will work both as memcached and MySQL in some way.<br>
+                                    <br>
+                                    My point here is: before using VM make <i>sure</i> that you need it if you plan to use 2.2: the dataset in memory is more fun ;) and definitely more viable when 2.2 will be released as stable.<br>
+                                    <br>
+                                    When Redis Cluster will be available you'll also have a straightforward path to add nodes when you need more memory.<br>
+                                    <br>
+                                    All this facts together means that VM is being marginalized by the optimizations in memory usage that 2.2 is implementing. I had the impression that it was important to communicate this to users.
+                                </div>
+                                <div>
+                                    <div>
+                                        post read 20557 times<sup><a href="http://antirez.com/page/uniquevisitors">*</a></sup> (average 66.7 visits/day)
+                                    </div>Posted at 15:53:47 <a href="http://antirez.com/post/redis-weekly-update-6.html">permalink</a> | <a href="http://antirez.com/post/redis-weekly-update-6.html">2 comments</a> | <a href="http://antirez.com/print.php?postid=213">print</a> | <a href="http://postli.com/post?t=Redis+weekly+update+%236+-+2.2+and+VM&amp;u=http%3A%2F%2Fantirez.com%2Fpost%2Fredis-weekly-update-6.html">post it</a> | <a href="http://technorati.com/search/http://antirez.com/post/redis-weekly-update-6.html">View blog reactions</a>
+                                </div>
+                            </div><img src="http://feeds.feedburner.com/~r/antirez/~4/NU7IUek3lhY" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://antirez.com/post/redis-weekly-update-6.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+antirez+%28antirez+weblog%29">http://antirez.com/post/redis-weekly-update-6.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+antirez+%28antirez+weblog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

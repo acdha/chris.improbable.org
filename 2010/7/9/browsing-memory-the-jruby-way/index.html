@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Browsing Memory the JRuby Way
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 09 Jul 2010 12:33:40 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-07-09T08:33:40-04:00">
+                    <meta itemprop="dateModified" content="2010-07-09T08:33:40-04:00"><time class="date" itemprop="datePublished" datetime="2010-07-09T12:33:40+00:00">Jul 09</time>
+                    <h2 itemprop="title">
+                        Browsing Memory the JRuby Way
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/f68885573b19447c">
+                        <p class="annotation">
+                            Nice perk of being on the JVM
+                        </p>
+                        <blockquote>
+                            There's been a lot of fuss made lately over memory inspection and profiling tools for Ruby implementations. And it's not without reason; inspecting a Ruby application's memory profile, much less diagnosing problems, has traditionally been very difficult. At least, difficult if you don't use JRuby.
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Because JRuby runs on the JVM, we benefit from the dozens of tools that have been written for the JVM. Among these tools are numerous memory inspection, profiling, and reporting tools, some built into the JDK itself. Want a heap dump? Check out the jmap (Java memory map) and jhat (Java heap analysis tool) shipped with Hotspot-based JVMs (Sun, OpenJDK). Looking for a bit more? There's the Memory Analysis Tool based on Eclipse, the YourKit memory and CPU profiling app, VisualVM, now also shipped with Hotspot JVMs...and many more. There's literally dozens of these tools, and they provide just about everything you can imagine for investigating memory.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                In this post, I'll show how you can use two of these tools: VisualVM, a simple, graphical tool for exploring a <b>running</b> JVM; and the jmap/jhat combination, which allows you to dump the memory heap to disk for inspection offline.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>Getting JRuby Prepared</b>
+                            </div>
+                            <div>
+                                <b><br></b>
+                            </div>
+                            <div>
+                                All these tools work with any version of JRuby, but as part of JRuby 1.6 development I've been adding some enhancements. Specifically, I've made some modifications that allow Ruby objects to show up side-by-side with Java objects in memory profiles. A little explanation is in order.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                In JRuby, all the core classes are represented by "native" Java classes. Object is represented by org.jruby.RubyObject, String is org.jruby.RubyString, and so on. Normally, if you extend one of the core classes, we don't actually create a new "native" class to represent it; instead, all user-created classes that extend Object simply show up as RubyObject in memory. This is still incredibly useful; you can look into RubyObject and see the metaClass field, which indicates the actual Ruby type.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Let's see what that looks like, so we know where we're starting from. We'll run a simple script that creates a custom class, instantiates and saves 10000 instances of it, and then sleeps.
+                            </div>
+                            <div>
+                                <br>
+                            </div><br>
+                            <pre>
+~/projects/jruby ➔ cat foo_heap_example.rb <br>class Foo<br>end<br><br>ary = []<br>10000.times { ary &lt;&lt; Foo.new }<br><br>puts "ready for analysis!"<br>sleep<br><br>~/projects/jruby ➔ jruby foo_heap_example.rb <br>ready for analysis!
+</pre><br>
+                            <br>
+                            So we have our test subject ready to go. To use the jmap tool, we need the pid of this process. Of course we can use the usual shell tricks to get it, but the JDK comes with a nice tool for finding all JVM pids active on the system: jps<br>
+                            <br>
+                            <pre>
+~/projects/jruby ➔ jps -l<br>52862 sun.tools.jps.Jps<br>52857 org/jruby/Main<br>48716 com.sun.enterprise.glassfish.bootstrap.ASMain<br>
+</pre><br>
+                            <br>
+                            From this, you can see I have three JVMs running on my system right now: jps itself; our JRuby instance; and a GlassFish server I used for testing earlier today. We're interested in the JRuby instance, pid 52857. Let's see what jmap can do with that.<br>
+                            <br>
+                            <pre>
+~/projects/jruby ➔ jmap<br>Usage:<br>    jmap [option] &lt;pid&gt;<br>        (to connect to running process)<br>    jmap [option] &lt;executable &lt;core&gt;<br>        (to connect to a core file)<br>    jmap [option] [server_id@]&lt;remote server IP or hostname&gt;<br>        (to connect to remote debug server)<br><br>where &lt;option&gt; is one of:<br>    &lt;none&gt;               to print same info as Solaris pmap<br>    -heap                to print java heap summary<br>    -histo[:live]        to print histogram of java object heap; if the "live"<br>                         suboption is specified, only count live objects<br>    -permstat            to print permanent generation statistics<br>    -finalizerinfo       to print information on objects awaiting finalization<br>    -dump:&lt;dump-options&gt; to dump java heap in hprof binary format<br>                         dump-options:<br>                           live         dump only live objects; if not specified,<br>                                        all objects in the heap are dumped.<br>                           format=b     binary format<br>                           file=&lt;file&gt;  dump heap to &lt;file&gt;<br>                         Example: jmap -dump:live,format=b,file=heap.bin &lt;pid&gt;<br>    -F                   force. Use with -dump:&lt;dump-options&gt; &lt;pid&gt; or -histo<br>                         to force a heap dump or histogram when &lt;pid&gt; does not<br>                         respond. The "live" suboption is not supported<br>                         in this mode.<br>    -h | -help           to print this help message<br>    -J&lt;flag&gt;             to pass &lt;flag&gt; directly to the runtime system<br><br>&lt;
+</pre><br>
+                            <br>
+                            The simplest option here is -histo, to print out a histogram of the objects on the heap. Let's run that against our JRuby instance.<br>
+                            <br>
+                            <pre>
+~/projects/jruby ➔ jmap -histo:live 52857<br><br> num     #instances         #bytes  class name<br>----------------------------------------------<br>   1:         22677        3192816  &lt;constMethodKlass&gt;<br>   2:         22677        1816952  &lt;methodKlass&gt;<br>   3:         35089        1492992  &lt;symbolKlass&gt;<br>   4:          2860        1389352  &lt;instanceKlassKlass&gt;<br>   5:          2860        1193536  &lt;constantPoolKlass&gt;<br>   6:          2798         739264  &lt;constantPoolCacheKlass&gt;<br>   7:          5861         465408  [B<br>   8:          5399         298120  [C<br>   9:          3042         292032  java.lang.Class<br>  10:          4037         261712  [S<br>  11:         10002         240048  org.jruby.RubyObject<br>  12:          3994         179928  [[I<br>  13:          5474         131376  java.lang.String<br>  14:          1661          95912  [I<br>...
+</pre><br>
+                            <br>
+                            The resulting output is a listing of literally <span style="font-weight:bold">every</span> object in the system...not just Ruby objects even! The value of this should be apparent; not only can you start to investigate the memory overhead of code you've written, you'll also be able to investigate the memory overhead of every library and every piece of code running in the same process, right down to byte arrays (the "[B" above) and "native" Java strings ("java.lang.String" above). And so far we haven't had to do anything special to JRuby. Nice, eh?<br>
+                            <br>
+                            So, back to the matter at hand: the Foo class from our example. Where is it?<br>
+                            <br>
+                            Well, the answer is that it's right there; 10000 of those 10002 org.jruby.RubyObject instances are our Foo objects; the other two are probably objects constructed for JRuby runtime purposes. But obviously, there's nothing in this output that tells us how to find our Foo instances. This is what I'm remedying in JRuby 1.6.<br>
+                            <br>
+                            On JRuby master, there's now a flag you can pass that will stand up a JVM class for every user-created Ruby class. Among the many benefits of doing this, we also get a more useful profile. Let's see how to use the flag (which will either be default or very easy to access by the time we release JRuby 1.6).<br>
+                            <br>
+                            <pre>
+~/projects/jruby ➔ jruby -J-Djruby.reify.classes=true foo_heap_example.rb <br>ready for analysis!
+</pre><br>
+                            <br>
+                            If we run jmap against this new instance, we see a more interesting result.<br>
+                            <br>
+                            <pre>
+ num     #instances         #bytes  class name<br>----------------------------------------------<br>   1:         22677        3192816  &lt;constMethodKlass&gt;<br>   2:         22677        1816952  &lt;methodKlass&gt;<br>   3:         35089        1492992  &lt;symbolKlass&gt;<br>   4:          2860        1389352  &lt;instanceKlassKlass&gt;<br>   5:          2860        1193536  &lt;constantPoolKlass&gt;<br>   6:          2798         739264  &lt;constantPoolCacheKlass&gt;<br>   7:          5863         465456  [B<br>   8:          5401         298208  [C<br>   9:          3042         292032  java.lang.Class<br>  10:          4037         261712  [S<br><b>  11:         10000         240000  ruby.Foo</b><br>  12:          3994         179928  [[I<br>  13:          5476         131424  java.lang.String<br>  14:          1661          95912  [I
+</pre><br>
+                            <br>
+                            A-ha! There's our Foo instances! The "reify classes" option generates a JVM class of the same name as the Ruby class, prefixed by "ruby." to separate it from other JVM classes. Now we can start to see the real power of the tools, and we're just at the beginning. Let's see what a simple Rails application looks like.<br>
+                            <br>
+                            <pre>
+~/projects/jruby ➔ jmap -histo:live 52926 | grep " ruby."<br>  29:         11685         280440  ruby.TZInfo.TimezoneTransitionInfo<br>  97:           970          23280  ruby.Gem.Version<br>  98:           914          21936  ruby.Gem.Requirement<br> 122:           592          14208  ruby.TZInfo.TimezoneOffsetInfo<br> 138:           382           9168  ruby.Gem.Dependency<br> 159:           265           6360  ruby.Gem.Specification<br> 201:           142           3408  ruby.ActiveSupport.TimeZone<br> 205:           118           2832  ruby.TZInfo.DataTimezoneInfo<br> 206:           118           2832  ruby.TZInfo.DataTimezone<br> 273:            41            984  ruby.Gem.Platform<br> 383:            14            336  ruby.Mime.Type<br> 403:            13            312  ruby.Set<br> 467:             8            192  ruby.ActionController.MiddlewareStack.Middleware<br> 476:             8            192  ruby.ActionView.Template<br> 487:             7            168  ruby.ActionController.Routing.DividerSegment<br> 508:             6            144  ruby.TZInfo.LinkedTimezoneInfo<br> 523:             6            144  ruby.TZInfo.LinkedTimezone<br> 810:             4             96  ruby.ActionController.Routing.DynamicSegment<br>2291:             2             48  ruby.ActionController.Routing.Route<br>2292:             2             48  ruby.I18n.Config<br>2293:             2             48  ruby.ActiveSupport.Deprecation.DeprecatedConstantProxy<br>2298:             2             48  ruby.ActionController.Routing.ControllerSegment<br>...
+</pre><br>
+                            <br>
+                            This time I've opted to grep out just the "ruby." items in the histogram, and the results are pretty impressive! We can see the baffling fact that there's 970 instance of Gem::Version, using at least 23280 bytes of memory. We can see the even more depressing fact that there's 11685 <span style="font-weight:bold">live</span> instances of TZInfo::TimezoneTransitionInfo, using at least 280440 bytes.<br>
+                            <br>
+                            Now that we're getting useful data, let's look at the first of our tools in more detail: jmap and jhat.<br>
+                            <br>
+                            <span style="font-weight:bold">jmap and jhat</span><br>
+                            <br>
+                            As you might guess, I do a lot of profiling in the process of developing JRuby. I've used probably a dozen different tools at different times. But the first tool I always reach for is the jmap/jhat combination.<br>
+                            <br>
+                            You've seen the simple case of using jmap above, generating a histogram of the live heap. Let's take a look at an offline heap dump.<br>
+                            <br>
+                            <pre>
+~/projects/jruby ➔ jmap -dump:live,format=b,file=heap.bin 52926<br>Dumping heap to /Users/headius/projects/jruby/heap.bin ...<br>Heap dump file created
+</pre><br>
+                            <br>
+                            That's how easy it is! The binary dump in heap.bin is supported by several tools: jhat (obviously), VisualVM, the Eclipse Memory Analysis Tool, and others. It's not officially a "standard" format, but it hasn't changed in a long time. Let's have a look at jhat options.<br>
+                            <br>
+                            <pre>
+~/projects/jruby ➔ jhat<br>ERROR: No arguments supplied<br>Usage:  jhat [-stack &lt;bool&gt;] [-refs &lt;bool&gt;] [-port &lt;port&gt;] [-baseline &lt;file&gt;] [-debug &lt;int&gt;] [-version] [-h|-help] &lt;file&gt;<br><br> -J&lt;flag&gt;          Pass &lt;flag&gt; directly to the runtime system. For<br>     example, -J-mx512m to use a maximum heap size of 512MB<br> -stack false:     Turn off tracking object allocation call stack.<br> -refs false:      Turn off tracking of references to objects<br> -port &lt;port&gt;:     Set the port for the HTTP server.  Defaults to 7000<br> -exclude &lt;file&gt;:  Specify a file that lists data members that should<br>     be excluded from the reachableFrom query.<br> -baseline &lt;file&gt;: Specify a baseline object dump.  Objects in<br>     both heap dumps with the same ID and same class will<br>     be marked as not being "new".<br> -debug &lt;int&gt;:     Set debug level.<br>       0:  No debug output<br>       1:  Debug hprof file parsing<br>       2:  Debug hprof file parsing, no server<br> -version          Report version number<br> -h|-help          Print this help and exit<br> &lt;file&gt;            The file to read<br><br>For a dump file that contains multiple heap dumps,<br>you may specify which dump in the file<br>by appending "#&lt;number&gt;" to the file name, i.e. "foo.hprof#3".<br><br>All boolean options default to "true"
+</pre><br>
+                            <br>
+                            Generally you can just point jhat at a heap dump and away it goes. Occasionally if the heap is large, you may need to use the -J option to increase the maximum heap size of the JVM jhat runs in. Since we're running a Rails app, we'll bump the heap up a little bit.<br>
+                            <br>
+                            <pre>
+~/projects/jruby ➔ jhat -J-Xmx200M heap.bin<br>Reading from heap.bin...<br>Dump file created Fri Jul 09 02:07:46 CDT 2010<br>Snapshot read, resolving...<br>Resolving 604115 objects...<br>[much verbose logging elided for brevity]<br><br>Chasing references, expect 120 dots........................................................................................................................<br>Eliminating duplicate references........................................................................................................................<br>Snapshot resolved.<br>Started HTTP server on port 7000<br>Server is ready.
+</pre><br>
+                            <br>
+                            "Server is ready"? Damn you Java people! Does everything have to be a server with you?<br>
+                            <br>
+                            In this case, it's actually an incredibly useful tool. jhat starts up a small web application on port 7000 that allows you to click through the dump file. Let's see what that looks like.<br>
+                            <br>
+                            <a href="http://4.bp.blogspot.com/_HWobMsJuRHc/TDbM3T7q-lI/AAAAAAAAADg/RZpaIJpL86k/s1600/Screen+shot+2010-07-09+at+2.15.35+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:335px" src="http://4.bp.blogspot.com/_HWobMsJuRHc/TDbM3T7q-lI/AAAAAAAAADg/RZpaIJpL86k/s400/Screen+shot+2010-07-09+at+2.15.35+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Here's the front page of the tool. We see a listing of all JVM classes in the system. If you scroll to the bottom, there's a few more general functions.<br>
+                            <br>
+                            <a href="http://1.bp.blogspot.com/_HWobMsJuRHc/TDbNTB2gDTI/AAAAAAAAADo/LLJAmpUJiIM/s1600/Screen+shot+2010-07-09+at+2.18.13+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:177px" src="http://1.bp.blogspot.com/_HWobMsJuRHc/TDbNTB2gDTI/AAAAAAAAADo/LLJAmpUJiIM/s400/Screen+shot+2010-07-09+at+2.18.13+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Let's go with what we know and view the heap histogram again.<br>
+                            <br>
+                            <a href="http://2.bp.blogspot.com/_HWobMsJuRHc/TDbNz_OCMFI/AAAAAAAAADw/hqej4bZxrzA/s1600/Screen+shot+2010-07-09+at+2.20.09+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:269px" src="http://2.bp.blogspot.com/_HWobMsJuRHc/TDbNz_OCMFI/AAAAAAAAADw/hqej4bZxrzA/s400/Screen+shot+2010-07-09+at+2.20.09+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Here we can see that there's lots of objects taking up memory, and they're a mix of JVM-native types, JRuby implementation classes, and actual Ruby classes. In fact, here we can see our friend TZInfo::TimezoneTransitionInfo again. Let's click through.<br>
+                            <br>
+                            <a href="http://2.bp.blogspot.com/_HWobMsJuRHc/TDbOgzZ653I/AAAAAAAAAD4/DUpJF2xtB3Q/s1600/Screen+shot+2010-07-09+at+2.23.16+AM.png"><img style="margin:0 10px 10px 0;width:328px;height:400px" src="http://2.bp.blogspot.com/_HWobMsJuRHc/TDbOgzZ653I/AAAAAAAAAD4/DUpJF2xtB3Q/s400/Screen+shot+2010-07-09+at+2.23.16+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Pretty mundane stuff so far; basically just information about the class itself. But you see at the bottom of this screenshot that we can go from here to viewing all instances of TimezoneTransitionInfo. Let's try that.<br>
+                            <br>
+                            <a href="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbO_ofMtbI/AAAAAAAAAEA/D0lMZsk1EgQ/s1600/Screen+shot+2010-07-09+at+2.25.20+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:380px" src="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbO_ofMtbI/AAAAAAAAAEA/D0lMZsk1EgQ/s400/Screen+shot+2010-07-09+at+2.25.20+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Ahh, that's more like it! Now we can see that there's a heck of a lot of these things floating around. Let's investigate a bit more and click through the first instance.<br>
+                            <br>
+                            <a href="http://4.bp.blogspot.com/_HWobMsJuRHc/TDbPW_EcOlI/AAAAAAAAAEI/MujaHdUTDrI/s1600/Screen+shot+2010-07-09+at+2.26.53+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:380px" src="http://4.bp.blogspot.com/_HWobMsJuRHc/TDbPW_EcOlI/AAAAAAAAAEI/MujaHdUTDrI/s400/Screen+shot+2010-07-09+at+2.26.53+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Now this is some cool stuff!<br>
+                            <br>
+                            We can see that the JVM class generated for TimezoneTransitionInfo has three fields: metaClass, which points at the Ruby Class object; varTable, which is an array of Object references used for instance variables and other "internal" variables; and a flags field containing runtime flags for the object, like whether it's frozen, tainted, and so on. We can see that this object has no special flags set, and we can dig deeper into those fields if we like. We'll skip that today.<br>
+                            <br>
+                            Moving further down, we see a few more amazing links. First, there's a list of all references to this object. Ahh, now we can start to investigate why they're staying in memory, even though we're not using them. We can even have jhat show us the full chains of references keeping these objects alive; a series of objects leading all the way back to one "rooted" by a thread or by global JVM state. And we can explore the other direction as well, walking all objects reachable from this one.<br>
+                            <br>
+                            This is only a small part of what you can do with jmap and jhat, and they're so simple to use it feels almost criminal. But what if we want to inspect an application while it's running? Dumping heaps and analyzing them offline can tell you much of the story, but sometimes you just want to see the objects coming and going yourself. Let's move on to VisualVM.<br>
+                            <br>
+                            <span style="font-weight:bold">VisualVM</span><br>
+                            <br>
+                            VisualVM spawned out of the NetBeans profiling tools. One of the biggest complaints about the JVMs of old were that all the built-in tooling seemed to be designed for JVM engineers alone. Because Sun had the foresight to build and own their own IDE and related modules, it eventually became a natural fit to pull out the profiling tools for use by everyone. And so VisualVM was born.<br>
+                            <br>
+                            On most systems with Java 6 installed, you should have a "jvisualvm" command. Let's run it now.<br>
+                            <br>
+                            <a href="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbRjfKhrtI/AAAAAAAAAEQ/_vOOoMds6ec/s1600/Screen+shot+2010-07-09+at+2.36.21+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:263px" src="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbRjfKhrtI/AAAAAAAAAEQ/_vOOoMds6ec/s400/Screen+shot+2010-07-09+at+2.36.21+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            When you start up VisualVM, you're presented with a list of running JVMs, similar to using the 'jps' command. You can also connect to remote machines, browse offline heap and core dump files, and look through memory and CPU profiling snapshots from previous runs. Today, we'll just open up our running Rails app and see what we can see.<br>
+                            <br>
+                            <a href="http://2.bp.blogspot.com/_HWobMsJuRHc/TDbSJZbUp9I/AAAAAAAAAEY/mGwMpr2mMrA/s1600/Screen+shot+2010-07-09+at+2.38.59+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:229px" src="http://2.bp.blogspot.com/_HWobMsJuRHc/TDbSJZbUp9I/AAAAAAAAAEY/mGwMpr2mMrA/s400/Screen+shot+2010-07-09+at+2.38.59+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            VisualVM connects to the running process and brings up a basic information pane with process information, JVM information, and so on. We're interested in monitoring heap usage, so let's move to the "Monitor" tab.<br>
+                            <br>
+                            <a href="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbSmuGkczI/AAAAAAAAAEg/jQ6lizETlk4/s1600/Screen+shot+2010-07-09+at+2.40.55+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:227px" src="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbSmuGkczI/AAAAAAAAAEg/jQ6lizETlk4/s400/Screen+shot+2010-07-09+at+2.40.55+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Already we're getting some useful information. This view shows CPU usage (currently zero, since it's an idle Rails app), Heap usage over time, and the number of JVM classes and threads that are active. We can trigger a full GC, if we'd like to tidy things up before we start poking around. But most importantly, we can do the jmap/jhat dance in one step, by clicking the Heap Dump button. Tantalizing, isn't it?<br>
+                            <br>
+                            <a href="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbTPcZVqoI/AAAAAAAAAEo/w4Bt_TiP7-U/s1600/Screen+shot+2010-07-09+at+2.43.36+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:228px" src="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbTPcZVqoI/AAAAAAAAAEo/w4Bt_TiP7-U/s400/Screen+shot+2010-07-09+at+2.43.36+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Initially, we see a basic summary of the heap: total size, number of classes and GC roots, and so on. We're looking for our friend TimezoneTransitionInfo, so let's look for it in the "Classes" pane.<br>
+                            <br>
+                            <a href="http://2.bp.blogspot.com/_HWobMsJuRHc/TDbUOd8sliI/AAAAAAAAAE4/peOO8-U1SVw/s1600/Screen+shot+2010-07-09+at+2.47.52+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:196px" src="http://2.bp.blogspot.com/_HWobMsJuRHc/TDbUOd8sliI/AAAAAAAAAE4/peOO8-U1SVw/s400/Screen+shot+2010-07-09+at+2.47.52+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Ahh, there it is, just a little ways down the list. The counts are as we expect, so let's double-click and dig a bit deeper.<br>
+                            <br>
+                            <a href="http://1.bp.blogspot.com/_HWobMsJuRHc/TDbUcM5s1vI/AAAAAAAAAFA/HMDT88mRIBs/s1600/Screen+shot+2010-07-09+at+2.48.41+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:176px" src="http://1.bp.blogspot.com/_HWobMsJuRHc/TDbUcM5s1vI/AAAAAAAAAFA/HMDT88mRIBs/s400/Screen+shot+2010-07-09+at+2.48.41+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Here we have a lot of the same information about object instances that we did with jhat, but presented in a much richer format. Almost everything is active; you can jump around the heap and do analysis that would take a lot of manual work very easily. Let's try another tool: the Retained Size calculator.<br>
+                            <br>
+                            Because our JVM tools see all objects equally, the reported size for a Ruby object on the heap is only part of the story. There's also the variable table, the object's instance variables, and objects they reference to consider. Let's jump to a different object now, Gem::Version.<br>
+                            <br>
+                            We don't want to have to scroll through the list of classes to find ruby.Gem.Version, so let's make use of the Object Query Language console. With the OQL console, you can write SQL-like queries to retrieve listings of objects in the heap. We'll search for all instances of ruby.Gem.Version.<br>
+                            <br>
+                            <a href="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbVuq380RI/AAAAAAAAAFI/aXCwt3BRsWU/s1600/Screen+shot+2010-07-09+at+2.53.44+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:261px" src="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbVuq380RI/AAAAAAAAAFI/aXCwt3BRsWU/s400/Screen+shot+2010-07-09+at+2.53.44+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            The query runs and we get a listing of Gem::Version objects. Let's dig deeper and see how much retained memory each Version object is keeping alive.<br>
+                            <br>
+                            <a href="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbWHvnwVEI/AAAAAAAAAFQ/q4X3F07ZvTc/s1600/Screen+shot+2010-07-09+at+2.55.53+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:162px" src="http://3.bp.blogspot.com/_HWobMsJuRHc/TDbWHvnwVEI/AAAAAAAAAFQ/q4X3F07ZvTc/s400/Screen+shot+2010-07-09+at+2.55.53+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Clicking on the "Compute Retained Sizes" link in the "Instances" pane prompts us with this dialog. We're tough...we can take it.<br>
+                            <br>
+                            <a href="http://4.bp.blogspot.com/_HWobMsJuRHc/TDbWaK5bGOI/AAAAAAAAAFY/AnidY4PVb9M/s1600/Screen+shot+2010-07-09+at+2.57.08+AM.png"><img style="margin:0 10px 10px 0;width:348px;height:106px" src="http://4.bp.blogspot.com/_HWobMsJuRHc/TDbWaK5bGOI/AAAAAAAAAFY/AnidY4PVb9M/s400/Screen+shot+2010-07-09+at+2.57.08+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Reticulating splines...<br>
+                            <br>
+                            <a href="http://2.bp.blogspot.com/_HWobMsJuRHc/TDcBUC7ML_I/AAAAAAAAAFo/MYGEKCqzU2U/s1600/Screen+shot+2010-07-09+at+2.59.20+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:190px" src="http://2.bp.blogspot.com/_HWobMsJuRHc/TDcBUC7ML_I/AAAAAAAAAFo/MYGEKCqzU2U/s400/Screen+shot+2010-07-09+at+2.59.20+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            So it looks like each of the Version objects take from 125 to 190 bytes for a total of 19400 bytes, most of which is from the variable table. What's in there?<br>
+                            <br>
+                            <a href="http://1.bp.blogspot.com/_HWobMsJuRHc/TDbXNQMb4nI/AAAAAAAAAFg/yWfkrni0snI/s1600/Screen+shot+2010-07-09+at+3.00.31+AM.png"><img style="margin:0 10px 10px 0;width:400px;height:77px" src="http://1.bp.blogspot.com/_HWobMsJuRHc/TDbXNQMb4nI/AAAAAAAAAFg/yWfkrni0snI/s400/Screen+shot+2010-07-09+at+3.00.31+AM.png" border="0" alt=""></a><br>
+                            <br>
+                            Ahh...looks like there's a String and an Array. And of course we can poke around the heap ad infinatum, into and out of "native" JRuby and JVM classes, and truly get a complete picture of what our running applications look like. Now you're playing with power.<br>
+                            <br>
+                            <span style="font-weight:bold">Your Turn</span><br>
+                            <br>
+                            This is obviously only the tip of the iceberg. Tools like Eclipse Memory Analysis Tool include features for detecting leaks; VisualVM and NetBeans both allow you to turn on allocation tracing, to show <span style="font-weight:bold">where</span> in your code all those objects are being created. There's tools for monitoring live GC behavior, and many of these tools even allow you to dig into a running heap and <span style="font-weight:bold">modify live objects</span>. If you can dream it, there's a tool that can do it. And you get all that for free by using JRuby.<br>
+                            <br>
+                            If you'd like to play with this, it all works with JRuby 1.5.1 but you won't get the nice JVM classes for Ruby classes. For that, you can pull and build JRuby master, download a 1.6.0.dev snapshot, or just wait for JRuby 1.6. And if you do play with these or other tools, I hope you'll let us know and blog about your experience!<br>
+                            <br>
+                            In the future, I'll try to show some of the other tools plus some of the CPU profiling capabilities they bring to the table. For now, rest assured that if you're using JRuby, you really do have the best tools available to you.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/20975090-1965835751183434626?l=blog.headius.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.headius.com/2010/07/browsing-memory-jruby-way.html">http://blog.headius.com/2010/07/browsing-memory-jruby-way.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

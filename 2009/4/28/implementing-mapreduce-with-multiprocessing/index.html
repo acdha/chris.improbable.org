@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Implementing MapReduce with multiprocessing
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 28 Apr 2009 12:13:35 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-28T08:13:00-04:00">
+                    <meta itemprop="dateModified" content="2009-04-28T08:13:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-28T12:13:00+00:00">Apr 28</time>
+                    <h2 itemprop="title">
+                        Implementing MapReduce with multiprocessing
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/da4a7ef848c42813">
+                        <blockquote>
+                            <div>
+                                <h1>
+                                    Implementing MapReduce with multiprocessing
+                                </h1>
+                                <p>
+                                    <i>While looking for example applications for Python's multiiprocessing module to use in this week's PyMOTW, someone suggested implementing MapReduce. Below is the simple implementation I came up with (the source is included in the PyMOTW tarball as of version 1.89).</i>
+                                </p>
+                                <p>
+                                    The Pool class can be used to create a simple single-server MapReduce implementation. Although it does not give the full benefits of distributed processing, it does illustrate how easy it is to break some problems down into distributable units of work.
+                                </p>
+                                <div>
+                                    <h2>
+                                        SimpleMapReduce
+                                    </h2>
+                                    <p>
+                                        In MapReduce, input data is broken down into chunks for processing by different worker instances. Each chunk of input data is <em>mapped</em> to an intermediate state using a simple transformation. The intermediate data is then collected together and partitioned based on a key value so that all of the related values are together. Finally, the partitioned data is <em>reduced</em> to a result set.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>collections</span><br><span>import</span> <span>multiprocessing</span><br><br><span>class</span> <span>SimpleMapReduce</span><span>(</span><span>object</span><span>):</span><br><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>map_func</span><span>,</span> <span>reduce_func</span><span>,</span> <span>num_workers</span><span>=</span><span>None</span><span>):</span><br><span>"""</span><br><span>        map_func</span><br><br><span>          Function to map inputs to intermediate data. Takes as argument one input value and</span><br><span>          returns a tuple with the key and a value to be reduced.</span><br><span>        </span><br><span>        reduce_func</span><br><span>          Function to reduce partitioned version of intermediate data to final output. Takes</span><br><span>          as argument a key as produced by map_func and a sequence of the values associated</span><br><span>          with that key.</span><br><span>         </span><br><span>        num_workers</span><br><span>          The number of workers to create in the pool. Defaults to the number of CPUs</span><br><span>          available on the current host.</span><br><span>        """</span><br><span>self</span><span>.</span><span>map_func</span> <span>=</span> <span>map_func</span><br><span>self</span><span>.</span><span>reduce_func</span> <span>=</span> <span>reduce_func</span><br><span>self</span><span>.</span><span>pool</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Pool</span><span>(</span><span>num_workers</span><span>)</span><br><br><span>def</span> <span>partition</span><span>(</span><span>self</span><span>,</span> <span>mapped_values</span><span>):</span><br><span>"""Organize the mapped values by their key.</span><br><span>        Returns a dictionary mapping each key to a sequence of values.</span><br><span>        """</span><br><span>partitioned_data</span> <span>=</span> <span>collections</span><span>.</span><span>defaultdict</span><span>(</span><span>list</span><span>)</span><br><span>for</span> <span>sublist</span> <span>in</span> <span>mapped_values</span><span>:</span><br><span>for</span> <span>key</span><span>,</span> <span>value</span> <span>in</span> <span>sublist</span><span>:</span><br><span>partitioned_data</span><span>[</span><span>key</span><span>]</span><span>.</span><span>append</span><span>(</span><span>value</span><span>)</span><br><span>return</span> <span>partitioned_data</span><br><br><span>def</span> <span>__call__</span><span>(</span><span>self</span><span>,</span> <span>inputs</span><span>,</span> <span>chunksize</span><span>=</span><span>1</span><span>):</span><br><span>"""Process the inputs through the map and reduce functions given.</span><br><span>        </span><br><span>        inputs</span><br><span>          An iterable containing the input data to be processed.</span><br><span>        </span><br><span>        chunksize=1</span><br><span>          The portion of the input data to hand to each worker.  This</span><br><span>          can be used to tune performance during the mapping phase.</span><br><span>        """</span><br><span>mapped_values</span> <span>=</span> <span>self</span><span>.</span><span>pool</span><span>.</span><span>map</span><span>(</span><span>self</span><span>.</span><span>map_func</span><span>,</span> <span>inputs</span><span>,</span> <span>chunksize</span><span>=</span><span>chunksize</span><span>)</span><br><span>partitioned_data</span> <span>=</span> <span>self</span><span>.</span><span>partition</span><span>(</span><span>mapped_values</span><span>)</span><br><span>reduced_values</span> <span>=</span> <span>self</span><span>.</span><span>pool</span><span>.</span><span>map</span><span>(</span><span>self</span><span>.</span><span>reduce_func</span><span>,</span> <span>partitioned_data</span><span>.</span><span>items</span><span>())</span><br><span>return</span> <span>reduced_values</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Counting Words in Files
+                                    </h2>
+                                    <p>
+                                        The following example script uses SimpleMapReduce to counts the “words” in the reStructuredText source for this article, ignoring some of the markup.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><span>import</span> <span>string</span><br><br><span>from</span> <span>multiprocessing_mapreduce</span> <span>import</span> <span>SimpleMapReduce</span><br><br><span>def</span> <span>file_to_words</span><span>(</span><span>filename</span><span>):</span><br><span>"""Read a file and return a sequence of (word, occurances) values.</span><br><span>    """</span><br><span>STOP_WORDS</span> <span>=</span> <span>set</span><span>([</span><br><span>'a'</span><span>,</span> <span>'an'</span><span>,</span> <span>'and'</span><span>,</span> <span>'are'</span><span>,</span> <span>'as'</span><span>,</span> <span>'be'</span><span>,</span> <span>'for'</span><span>,</span> <span>'if'</span><span>,</span> <span>'in'</span><span>,</span> <br><span>'is'</span><span>,</span> <span>'it'</span><span>,</span> <span>'of'</span><span>,</span> <span>'or'</span><span>,</span> <span>'py'</span><span>,</span> <span>'rst'</span><span>,</span> <span>'the'</span><span>,</span> <span>'to'</span><span>,</span> <span>'with'</span><span>,</span><br><span>])</span><br><span>TR</span> <span>=</span> <span>string</span><span>.</span><span>maketrans</span><span>(</span><span>string</span><span>.</span><span>punctuation</span><span>,</span> <span>' '</span> <span>*</span> <span>len</span><span>(</span><span>string</span><span>.</span><span>punctuation</span><span>))</span><br><br><span>print</span> <span>multiprocessing</span><span>.</span><span>current_process</span><span>()</span><span>.</span><span>name</span><span>,</span> <span>'reading'</span><span>,</span> <span>filename</span><br><span>output</span> <span>=</span> <span>[]</span><br><br><span>with</span> <span>open</span><span>(</span><span>filename</span><span>,</span> <span>'rt'</span><span>)</span> <span>as</span> <span>f</span><span>:</span><br><span>for</span> <span>line</span> <span>in</span> <span>f</span><span>:</span><br><span>if</span> <span>line</span><span>.</span><span>lstrip</span><span>()</span><span>.</span><span>startswith</span><span>(</span><span>'..'</span><span>):</span> <span># Skip rst comment lines</span><br><span>continue</span><br><span>line</span> <span>=</span> <span>line</span><span>.</span><span>translate</span><span>(</span><span>TR</span><span>)</span> <span># Strip punctuation</span><br><span>for</span> <span>word</span> <span>in</span> <span>line</span><span>.</span><span>split</span><span>():</span><br><span>word</span> <span>=</span> <span>word</span><span>.</span><span>lower</span><span>()</span><br><span>if</span> <span>word</span><span>.</span><span>isalpha</span><span>()</span> <span>and</span> <span>word</span> <span>not</span> <span>in</span> <span>STOP_WORDS</span><span>:</span><br><span>output</span><span>.</span><span>append</span><span>(</span> <span>(</span><span>word</span><span>,</span> <span>1</span><span>)</span> <span>)</span><br><span>return</span> <span>output</span><br><br><br><span>def</span> <span>count_words</span><span>(</span><span>item</span><span>):</span><br><span>"""Convert the partitioned data for a word to a</span><br><span>    tuple containing the word and the number of occurances.</span><br><span>    """</span><br><span>word</span><span>,</span> <span>occurances</span> <span>=</span> <span>item</span><br><span>return</span> <span>(</span><span>word</span><span>,</span> <span>sum</span><span>(</span><span>occurances</span><span>))</span><br><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>import</span> <span>operator</span><br><span>import</span> <span>glob</span><br><br><span>input_files</span> <span>=</span> <span>glob</span><span>.</span><span>glob</span><span>(</span><span>'*.rst'</span><span>)</span><br><br><span>mapper</span> <span>=</span> <span>SimpleMapReduce</span><span>(</span><span>file_to_words</span><span>,</span> <span>count_words</span><span>)</span><br><span>word_counts</span> <span>=</span> <span>mapper</span><span>(</span><span>input_files</span><span>)</span><br><span>word_counts</span><span>.</span><span>sort</span><span>(</span><span>key</span><span>=</span><span>operator</span><span>.</span><span>itemgetter</span><span>(</span><span>1</span><span>))</span><br><span>word_counts</span><span>.</span><span>reverse</span><span>()</span><br><br><span>print</span> <span>'</span><span>\n</span><span>TOP 20 WORDS BY FREQUENCY</span><span>\n</span><span>'</span><br><span>top20</span> <span>=</span> <span>word_counts</span><span>[:</span><span>20</span><span>]</span><br><span>longest</span> <span>=</span> <span>max</span><span>(</span><span>len</span><span>(</span><span>word</span><span>)</span> <span>for</span> <span>word</span><span>,</span> <span>count</span> <span>in</span> <span>top20</span><span>)</span><br><span>for</span> <span>word</span><span>,</span> <span>count</span> <span>in</span> <span>top20</span><span>:</span><br><span>print</span> <span>'</span><span>%-*s</span><span>: </span><span>%5s</span><span>'</span> <span>%</span> <span>(</span><span>longest</span><span>+</span><span>1</span><span>,</span> <span>word</span><span>,</span> <span>count</span><span>)</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        Each input filename is converted to a sequence of <tt><span>(word,</span> <span>1)</span></tt> pairs by <tt><span>file_to_words</span></tt>. The data is partitioned by <tt><span>SimpleMapReduce.partition()</span></tt> using the word as the key, so the partitioned data consists of a key and a sequence of 1 values representing the number of occurrences of the word. The reduction phase converts that to a pair of <tt><span>(word,</span> <span>count)</span></tt> values by calling <tt><span>count_words</span></tt> for each element of the partitioned data set.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_wordcount.py<br>PoolWorker-1 reading communication.rst<br>PoolWorker-1 reading index.rst<br>PoolWorker-1 reading mapreduce.rst<br>PoolWorker-2 reading basics.rst<br><br>TOP 20 WORDS BY FREQUENCY<br><br>process         :    74<br>multiprocessing :    42<br>worker          :    35<br>after           :    31<br>running         :    30<br>start           :    29<br>python          :    28<br>processes       :    27<br>literal         :    26<br>header          :    26<br>pymotw          :    26<br>end             :    26<br>daemon          :    23<br>now             :    22<br>consumer        :    20<br>starting        :    18<br>exiting         :    17<br>event           :    16<br>that            :    16<br>by              :    15
+</pre><br>
+                                    </div>
+                                    <div>
+                                        <p>
+                                            See also
+                                        </p>
+                                        <dl>
+                                            <dt>
+                                                <a href="http://en.wikipedia.org/wiki/MapReduce">MapReduce - Wikipedia</a>
+                                            </dt>
+                                            <dd>
+                                                Overview of MapReduce on Wikipedia.
+                                            </dd>
+                                            <dt>
+                                                <a href="http://labs.google.com/papers/mapreduce.html">MapReduce: Simplified Data Processing on Large Clusters</a>
+                                            </dt>
+                                            <dd>
+                                                Google Labs presentation and paper on MapReduce.
+                                            </dd>
+                                        </dl>
+                                    </div>
+                                    <p>
+                                        <em>Special thanks to Jesse Noller for helping review this information.</em>
+                                    </p>
+                                </div>
+                            </div>
+                            <p>
+                                <a href="http://www.doughellmann.com/PyMOTW/">PyMOTW Home</a>
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/5440028356946346379-3858839206773586932?l=blog.doughellmann.com">
+                            </div>
+                            <div>
+                                <a href="http://feeds2.feedburner.com/~ff/PyMOTW?a=ONZDm44mbQk:yBvR-QMO2UA:yIl2AUoC8zA"><img src="http://feeds2.feedburner.com/~ff/PyMOTW?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds2.feedburner.com/~ff/PyMOTW?a=ONZDm44mbQk:yBvR-QMO2UA:bcOpcFrp8Mo"><img src="http://feeds2.feedburner.com/~ff/PyMOTW?d=bcOpcFrp8Mo" border="0"></a> <a href="http://feeds2.feedburner.com/~ff/PyMOTW?a=ONZDm44mbQk:yBvR-QMO2UA:V_sGLiPBpWU"><img src="http://feeds2.feedburner.com/~ff/PyMOTW?i=ONZDm44mbQk:yBvR-QMO2UA:V_sGLiPBpWU" border="0"></a>
+                            </div><img src="http://feeds2.feedburner.com/~r/PyMOTW/~4/ONZDm44mbQk" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.doughellmann.com/2009/04/implementing-mapreduce-with.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyMOTW+%28Python+Module+of+the+Week%29">http://blog.doughellmann.com/2009/04/implementing-mapreduce-with.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyMOTW+%28Python+Module+of+the+Week%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

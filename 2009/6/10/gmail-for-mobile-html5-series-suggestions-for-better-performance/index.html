@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Gmail for Mobile HTML5 Series: Suggestions for Better Performance
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 27 Jul 2009 22:51:31 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-06-10T14:50:00-04:00">
+                    <meta itemprop="dateModified" content="2009-06-10T14:50:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-06-10T18:50:00+00:00">Jun 10</time>
+                    <h2 itemprop="title">
+                        Gmail for Mobile HTML5 Series: Suggestions for Better Performance
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a3860347d77c8306">
+                        <blockquote>
+                            <i>On April 7th, Google launched a new version of Gmail for mobile for iPhone and Android-powered devices. We shared the behind-the-scenes story through <a href="http://google-code-updates.blogspot.com/2009/04/html5-and-webkit-pave-way-for-mobile.html" title="this blog">this blog</a> and decided to share more of our learnings in a brief series of follow-up blog posts. This week, I'll talk about a few small things you can do to improve performance of your HTML5-based applications. Our focus here will be on performance bottlenecks related to the database and AppCache.</i><br>
+                            <br>
+                            <b>Optimizing Database Performance</b><br>
+                            <br>
+                            There are hundreds of books written about optimizing SQL and database performance, so I won't bother to get into these details, but instead focus on things which are of particular interest for mobile HTML5 apps.<br>
+                            <br>
+                            Problem: <b>Creating and deleting tables is slow!</b> It can take upwards of 200 ms to create or delete a table. This means a simple database schema with 10 tables can easily take 2-4 seconds (or more!) just to delete and recreate the tables. Since this often needs to be done at startup time, this really hurts your launch time.<br>
+                            <br>
+                            Solution: <b>Smart versioning and backwards compatible schema changes (whenever possible).</b> A simple way of doing this is to have a VERSION table with a single row that includes the version number (e.g., 1.0). For backwards-compatible version changes, just update the number after the decimal (e.g., 1.1) and apply any updates to the schema. For changes that aren't backwards compatible, update the number before the decimal (e.g., 2.0) at which point you can drop all the tables and recreate them all. With a reasonable schema design to begin with, it should be very rare that a schema change is not backwards compatible and even if this happens every month or so, users should get to use your application 20, 30 even 100 times before they hit this startup delay again. If your schema changes very infrequently, a simple 1, 2, 3 versioning scheme will probably work fine; just make sure to only recreate the database when the version changes!<br>
+                            <br>
+                            Problem: <b>Queries are slow!</b> Queries are faster than creates and updates, but they can still take 100ms-150ms to execute. It's not uncommon for traditional applications to execute dozens or even hundreds of queries at startup – on mobile this is not an option.<br>
+                            <br>
+                            Solution: <b>Defer and/or combine queries.</b> Any queries that can be deferred from startup (or at any other significant point in the application) should be deferred until the data is absolutely needed. Adding 2-3 more queries on a user-driven operation can turn an action from appearing instantaneous to feeling unresponsive. Any queries that are performed at startup should be optimized to require as few hits to the database as possible. For example, if you're storing data about books and magazines, you could use the following two queries to get all the authors along with the number of books and magazine articles they've writen:<br>
+                            <br>
+                            <code>SELECT Author, COUNT(*) as NumArticles<br>
+                            FROM Magazines<br>
+                            GROUP BY Author<br>
+                            ORDER BY NumArticles;<br>
+                            <br>
+                            SELECT Author, COUNT(*) as NumBooks<br>
+                            FROM Books<br>
+                            GROUP BY Author<br>
+                            ORDER BY NumBooks;</code><br>
+                            <br>
+                            This will work fine, but the additional query will generally cost you about 100-200 ms over a different (albeit less pretty) query like:<br>
+                            <br>
+                            <pre>
+<code>SELECT Author, NumPublications, PubType<br>FROM (<br>  SELECT Author, COUNT(*) as NumPublications, 'Magazine' as PubType, 0 as SortIndex<br>  FROM Magazines<br>  GROUP BY Author<br>  UNION<br>  SELECT Author, COUNT(*) as NumPublications, 'Book' as PubType, 1 as SortIndex<br>  FROM Books<br>  GROUP BY Author<br>)<br>ORDER BY SortIndex, NumPublications;</code>
+</pre><br>
+                            This will return all the entries we want, with the magazine entries first in increasing order of number of articles, followed by the book entries, in increasing order of the number of books. This is a toy example and there are clearly other ways of improving this, such as merging the Magazines and Books tables, but this type of scenario shows up all the time. There's always a trade-off between simplicity and speed when dealing with databases, but in the case of HTML5 on mobile, this trade-off is even more important.<br>
+                            <br>
+                            Problem: <b>Multiple updates is slow!</b><br>
+                            <br>
+                            Solution: <b>Use Triggers whenever possible.</b> When the result of a database update requires updating other rows in the database, try to do it via SQL triggers. For example, let's say you have a table called Books listing all the books you own and another called Authors storing the names of all the authors of books you own. If you give a book away, you'll want to remove it from the Books table. However, if this was the only book you owned by that author, you would also want to remove the author from the Authors table. This can be done with two UPDATE statements, but a "better" way is to write a trigger that automatically deletes the author from the Authors table when the last book by this author is removed. This will execute faster and because triggers happen asynchronously in the background, it will have less of an impact on the UI than executing two statements. Here's an example of a simple trigger for this case:<br>
+                            <br>
+                            <pre>
+<code>CREATE TRIGGER IF NOT EXISTS RemoveAuthor<br>AFTER DELETE ON Books<br>BEGIN<br>  DELETE FROM Authors<br>  WHERE Author NOT IN<br>    (SELECT Author<br>     FROM Books);<br>END;<br></code>
+</pre>We'll get into more detail on triggers and how to use them in another performance post to come.<br>
+                            <br>
+                            <b>Optimizing AppCache Performance</b><br>
+                            <br>
+                            Problem: <b>Logging in is slow!</b><br>
+                            <br>
+                            Solution: Avoid redirects to the login page. App-Cache is great because it can launch the application without needing to hit the network, which makes it much faster and allows you to launch offline. One problem you might encounter though, is that the application will launch and then you'll need to hit the network to get some data for the current user. At this point you'll have to check that the user is authenticated and it might turn out that they're not (e.g., their cookies might have expired or have been deleted). One option is to redirect the user to a login page somewhere, allow him to authenticate and then redirect him back to the application. Regardless of whether or not the login page is listed in the manifest, when it redirects back to your application, the entire application will reload. A nicer approach is for the application itself to display an authentication interface which sends the credentials and does the authentication seamlessly in the background. This will avoid any additional reloads of the application and makes everything feel faster and better integrated.<br>
+                            <br>
+                            Problem: <b>AppCache reloading causes my app to be slow!</b><br>
+                            <br>
+                            Solution: <b>List as few URLs in the manifest as possible.</b> In a <a href="http://google-code-updates.blogspot.com/search/label/html5/" title="series of posts">series of posts</a> on code.google.com, we talked about the HTML5 AppCache manifest file. An important aspect of the manifest file is that when the version gets updated, all the URLs listed in the file are fetched again. This happens in the background while the user is using the application, but opening all these network connections and transferring all that data can cause the application to slow down considerably during this process. Try to setup your application so that all the resources can be fetched from as few URLs as possible to speed up the manifest download and minimize this effect. Of course you could also just never update your manifest version, but what's the point of having rapid development if you never make any changes?<br>
+                            <br>
+                            <a href="http://4.bp.blogspot.com/_EuCTzLdp3vE/Si_-aCA2LpI/AAAAAAAACrU/j0S5qabuqro/s1600-h/html5_table.png"><img style="display:block;margin:0px auto 10px;text-align:center;width:400px;height:132px" src="http://4.bp.blogspot.com/_EuCTzLdp3vE/Si_-aCA2LpI/AAAAAAAACrU/j0S5qabuqro/s400/html5_table.png" border="0" alt=""></a><br>
+                            That's a brief intro to some performance considerations when developing HTML5 applications. These are all issues that we ran into ourselves and have either fixed or are in the process of fixing in our application. I hope this helps you to avoid some of the issues we ran into and makes your application blazing fast!<br>
+                            <br>
+                            We plan to write several more performance related posts in the future, but for now stay tuned for next post where we'll discuss the cache pattern for building offline capable web applications.<br>
+                            <br>
+                            <span style="font-style:italic">By Derek Phillips, Software Engineer, Google Mobile</span><br>
+                            <br>
+                            <i>Previous posts from Gmail for Mobile HTML5 Series</i><br>
+                            <i><a title="HTML5 and Webkit pave the way for mobile web applications" href="http://google-code-updates.blogspot.com/2009/04/html5-and-webkit-pave-way-for-mobile.html">HTML5 and Webkit pave the way for mobile web applications</a><br>
+                            <a title="Using AppCache to launch offline - Part 1" href="http://google-code-updates.blogspot.com/2009/04/gmail-for-mobile-html5-series-using.html">Using AppCache to launch offline - Part 1</a><br>
+                            <a title="Using AppCache to launch offline - Part 1" href="http://google-code-updates.blogspot.com/2009/05/gmail-for-mobile-html5-series-part-2.html">Using AppCache to launch offline - Part 2</a><br>
+                            <a title="Using AppCache to launch offline - Part 1" href="http://google-code-updates.blogspot.com/2009/05/gmail-for-mobile-html5-series-part-3.html">Using AppCache to launch offline - Part 3</a><br>
+                            <a href="http://google-code-updates.blogspot.com/2009/05/gmail-for-mobile-html5-series-common.html" title="A Common API for Web Storage">A Common API for Web Storage</a></i>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/11300808-4701777515401684746?l=googlecode.blogspot.com">
+                            </div>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/blogspot/Dcni?a=mLo2z6kE7qk:PflgBQX4f2U:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/blogspot/Dcni?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/blogspot/Dcni?a=mLo2z6kE7qk:PflgBQX4f2U:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/blogspot/Dcni?i=mLo2z6kE7qk:PflgBQX4f2U:V_sGLiPBpWU" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/blogspot/Dcni/~4/mLo2z6kE7qk" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://googlecode.blogspot.com/2009/06/gmail-for-mobile-html5-series.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+blogspot%2FDcni+%28Google+Code+Blog%29">http://googlecode.blogspot.com/2009/06/gmail-for-mobile-html5-series.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+blogspot%2FDcni+%28Google+Code+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

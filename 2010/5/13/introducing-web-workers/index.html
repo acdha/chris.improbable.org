@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Introducing Web Workers
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 13 May 2010 16:41:17 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-13T12:41:17-04:00">
+                    <meta itemprop="dateModified" content="2010-05-13T12:41:17-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-13T16:41:17+00:00">May 13</time>
+                    <h2 itemprop="title">
+                        Introducing Web Workers
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ddf636feec044f74">
+                        <blockquote>
+                            <p>
+                                The HTML 5 specification introduces a new technology called Web Workers, allowing developers to spawn new threads for processing JavaScript code. This is a major improvement from the current state of the web, as it allows JavaScript code to execute outside of the UI thread, so your application is still responsive during long-running scripts. However, due to the nature of Web Workers there are restrictions to what they can and can't do, and how to interact with them. Today's article will explain what they are and how to use Web Workers.
+                            </p>
+                            <h3>
+                                How to do it…
+                            </h3>
+                            <p>
+                                To start a Web Worker, you point it at a JavaScript file:
+                            </p>
+                            <pre>
+var myWorker = new Worker("myworker.js");
+</pre>
+                            <p>
+                                Once you have a worker, you can subscribe to message events from the worker:
+                            </p>
+                            <pre>
+myWorker.onmessage = function(event) {
+        console.log("Web Worker returned: " + event.data);
+};
+</pre>
+                            <p>
+                                Additionally, you can subscribe to error events from the worker:
+                            </p>
+                            <pre>
+myWorker.onerror = function(event) {
+        console.log("There was an error in " + event.filename + " at " + event.lineno + ": " + event.message");
+};
+</pre>
+                            <p>
+                                A message can be passing into the Web Worker using:
+                            </p>
+                            <pre>
+myWorker.postMessage({foo: 'bar'});
+// then inside the Web Worker's code
+onmessage = function(event) {
+        postMessage(event.data.foo + " == 'bar'");
+};
+</pre>
+                            <p>
+                                The scripts executed by the Web Worker ("myworker.js" in this example) have a global function that allows them to import other scripts:
+                            </p>
+                            <pre>
+        importScripts("foo.js", "bar.js", ...);
+</pre>
+                            <p>
+                                And a Web Worker can be stopped by calling:
+                            </p>
+                            <pre>
+myWorker.terminate();
+</pre>
+                            <h3>
+                                How it works…
+                            </h3>
+                            <p>
+                                Instantiating a new Web Worker creates a new processing thread that executes the desired script. The thread executes until it is finished or the <code>terminate()</code> function is called. The code executed by the Web Worker is normal JavaScript, but does not have access to the DOM, since making the DOM threadsafe would break the web. If you need to manipulate the DOM, your Web Worker should send messages to its creator, which in turn should update the DOM.
+                            </p>
+                            <p>
+                                You can pass data to and from the Web Worker using the <code>postMessage</code> function. Inside the Web Worker <code>postMessage</code> is a global function that accepts an object as its only argument. This will trigger the <code>myWorker.onmessage</code> callback function. Where the <code>event.data</code> property will be set to the object passed into <code>postMessage</code>. To pass data into the Web Worker, call the <code>myWorker.postMessage</code> function and pass in an object as its only argument. This will fire the global <code>onmessage</code> function inside of the Web Worker, and again <code>event.data</code> will be the object.
+                            </p>
+                            <p>
+                                Objects that are passed through the <code>postMessage</code> infrastructure should serialization, meaning it does not contain functions or cyclical references. You may pass simple values such as Strings and Numbers, or more complex values such as Objects and Arrays. All values are serialized to JSON for transportation between threads.
+                            </p>
+                            <p>
+                                The <code>onerror</code> callback function is fired when a runtime error occurs while the Web Worker is executing. The callback event has three properties: the error <code>message</code>, the offending <code>filename</code>, and the line number that through the error (<code>lineno</code>).
+                            </p>
+                            <p>
+                                Additionally, web workers can be used to send IO requests using the <code>XMLHttpRequest</code> object, but the <code>responseXML</code> and <code>channel</code> properties are always <code>null</code>. You can also spawn sub Web Workers from inside of a running Web Worker to fork tasks. This can be particularly useful one machines that have multiple processors.
+                            </p>
+                            <h3>
+                                There's more…
+                            </h3>
+                            <p>
+                                The issue with Web Workers are that they are not supported by all browsers. They are supported by FireFox 3.5, Safari 4, and Chrome. They are not supported by IE and so far IE has not announced supporting them in IE 9 either. However, just because they aren't supported by every browsers, doesn't mean we shouldn't start using them. Developers just need to implement them in a way that is backwards compatible, only using Web Workers if available, and falling back to standard JavaScript.
+                            </p>
+                            <p>
+                                I have not seen a wide use of Web Workers in mainstream applications yet, but I am hopeful it will happen soon. Probably the most applicable technology for leveraging Web Workers is in conjunction with the Canvas element. There can be a lot of number crunching required for 2d and 2.5d animations, whose behavior would be improved by leveraging Web Workers.
+                            </p>
+                            <p>
+                                There are definitely other useful applications for Web Workers, feel free to leave your ideas in the comment section.
+                            </p>
+                            <h3>
+                                See also
+                            </h3>
+                            <ul>
+                                <li>See the <a href="https://developer.mozilla.org/En/Using_web_workers">FireFox MDC document</a> for more details on how to use Web Workers.
+                                </li>
+                                <li>See John Resig's article, <a href="http://ejohn.org/blog/web-workers/">Computing with JavaScript Web Workers</a>, for more ideas and a working example.
+                                </li>
+                                <li>See the project, <a href="http://code.google.com/p/ie-web-worker/">IE Web Worker</a>, for a way to emulate Web Workers in browsers that don't support them.
+                                </li>
+                                <li>See the <a href="http://www.whatwg.org/specs/web-workers/current-work/">Web Worker Specification</a> for the exact implementation details.
+                                </li>
+                            </ul>
+                            <p>
+                                <img src="http://feeds.feedburner.com/~r/WebDevelopmentByMattSnider/~4/hBDwepeLBME" height="1" width="1">
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://mattsnider.com/javascript/introducing-web-workers/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+WebDevelopmentByMattSnider+%28A+JavaScript+and+Web+Design%2FProgramming+Resource+By+Matt+Snider%29">http://mattsnider.com/javascript/introducing-web-workers/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+WebDevelopmentByMattSnider+%28A+JavaScript+and+Web+Design%2FProgramming+Resource+By+Matt+Snider%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

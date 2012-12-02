@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            ControlJS part 3: overriding document.write
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 09 Feb 2011 01:39:34 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-16T02:18:32-04:00">
+                    <meta itemprop="dateModified" content="2010-12-16T02:18:32-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-16T06:18:32+00:00">Dec 16</time>
+                    <h2 itemprop="title">
+                        ControlJS part 3: overriding document.write
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/2239a8a71dbd8897">
+                        <blockquote>
+                            <p>
+                                <em>This is the third of three blog posts about <a href="http://stevesouders.com/controljs/">ControlJS</a> – a JavaScript module for making scripts load faster. The three blog posts describe how ControlJS is used for <a href="http://www.stevesouders.com/blog/2010/12/15/controljs-part-1/">async loading</a>, <a href="http://www.stevesouders.com/blog/2010/12/15/controljs-part-2/">delayed execution</a>, and <a href="http://www.stevesouders.com/blog/2010/12/15/controljs-part-3/">overriding document.write</a>.</em>
+                            </p>
+                            <p>
+                                The goal of <a href="http://stevesouders.com/controljs/">ControlJS</a> is to give developers more control over how JavaScript is loaded. The key insight is to recognize that “loading” has two phases: download (fetching the bytes) and execution (including parsing). In <a href="http://www.stevesouders.com/blog/2010/12/15/controljs-part-1/">ControlJS part 1</a> I focused on the download phase using ControlJS to download scripts asynchronously. <a href="http://www.stevesouders.com/blog/2010/12/15/controljs-part-2/">ControlJS part 2</a> showed how delaying script execution makes pages load faster, especially for Ajax web apps that download a lot of JavaScript that’s not used immediately. In this post I look at how document.write causes issues when loading scripts asynchronously.
+                            </p>
+                            <p>
+                                I like ControlJS, but I’ll admit now that I was unable to solve the document.write problem to my satisfaction. Nevertheless, I describe the dent I put in the problem of document.write and point out two alternatives that do a wonderful job of making async work in spite of document.write.
+                            </p>
+                            <h1>
+                                Async and document.write
+                            </h1>
+                            <p>
+                                ControlJS loads scripts asynchronously. By default these async scripts are executed after window onload. If one of these async scripts calls document.write the page is erased. That’s because calling document.write after the document is loaded <a href="https://developer.mozilla.org/en/document.write">automatically calls document.open</a>. Anything written to the open document replaces the existing document content. Obviously, this is not the desired behavior.
+                            </p>
+                            <p>
+                                I wanted ControlJS to work on all scripts in the page. Scripts for ads are notorious for using document.write, but I also found scripts created by website owners that use document.write. I didn’t want those scripts to be inadvertently loaded with ControlJS and have the page get wiped out.
+                            </p>
+                            <p>
+                                The problem was made slightly easier for me because ControlJS is in control when each inline and external script is being executed. My solution is to override document.write and capture the output for each script one at a time. If there’s no document.write output then proceed to the next script. If there is output then I create an element (for now a SPAN), insert it into the DOM immediately before the SCRIPT tag that’s being executed, and set the SPAN’s innerHTML to the output from document.write.
+                            </p>
+                            <p>
+                                This works pretty well. I downloaded a local copy of CNN.com and converted it to ControlJS. There were two places where document.write was used (including an ad) and both worked fine. But there are issues. One issue I encountered is that wrapping the output in a SPAN can break certain behavior like hover handlers. But a bigger issue is that browsers ignore “&lt;script…” added via innerHTML, and one of the main ways that ads use document.write is to insert scripts. I have a weak solution to this that parses out the “&lt;script…” HTML and creates a SCRIPT DOM element with the appropriate SRC. It works, but is not very robust.
+                            </p>
+                            <p>
+                                ControlJS is still valuable even without a robust answer for document.write. You don’t have to convert every script in the page to use ControlJS. If you know an ad or widget uses document.write you can load those scripts the normal way. Or you can test and see how complex the document.write is – perhaps it’s a use cases that ControlJS handles.
+                            </p>
+                            <h1>
+                                Real solutions for async document.write
+                            </h1>
+                            <p>
+                                I can’t end this series of posts without highlighting two alternatives that have solved the asynchronous document.write issue: Aptimize and GhostWriter.
+                            </p>
+                            <p>
+                                <a href="http://www.aptimize.com/">Aptimize</a> sells a web accelerator that changes HTML markup on the fly to have better performance. In September they <a href="http://www.aptimize.com/blog/wax-2-3">announced</a> the capability to load scripts asynchronously – including ads. As far as I know this is the first product that offered this feature. I had lunch with Ed and Derek from Aptimize this week and found out more about their implementation. It sounds solid.
+                            </p>
+                            <p>
+                                Another solution is <a href="http://digital-fulcrum.com/solutions/ghostwriter-complete-control/">GhostWriter</a> from Digital Fulcrum. Will contacted me and we had a concall and a few email exchanges about his implementation that uses an HTML parser on the document.write output. You can <a href="http://digital-fulcrum.com/solutions/ghostwriter-complete-control/ghostwriter-code-sample/">try the code</a> for free.
+                            </p>
+                            <h1>
+                                Wrapping it up
+                            </h1>
+                            <p>
+                                ControlJS has many features including some that aren’t found in other script loading modules:
+                            </p>
+                            <ul>
+                                <li>downloads scripts asynchronously
+                                </li>
+                                <li>handles both inline scripts and external scripts
+                                </li>
+                                <li>delays script execution until after the page has rendered
+                                </li>
+                                <li>allows for scripts to be downloaded and <em>not</em> executed
+                                </li>
+                                <li>integrates with simple changes to HTML – no code changes
+                                </li>
+                                <li>solves some document.write async use cases
+                                </li>
+                                <li>control.js itself is loaded asynchronously
+                                </li>
+                            </ul>
+                            <p>
+                                ControlJS is open source. I hope some of these features are borrowed and added to other script loaders. There’s still more features to implement (async stylesheets, better document.write handling) and ControlJS has had minimal testing. If you’d like to add features or fix bugs please take a look at the <a href="http://code.google.com/p/controljs/">ControlJS project on Google Code</a> and contact the group via the <a href="http://groups.google.com/group/controljs">ControlJS discussion list</a>.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.stevesouders.com/blog/2010/12/15/controljs-part-3/">http://www.stevesouders.com/blog/2010/12/15/controljs-part-3/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

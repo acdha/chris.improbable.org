@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            It’s Faster Because It’s C
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 07 Jul 2010 14:23:47 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-07-07T10:23:47-04:00">
+                    <meta itemprop="dateModified" content="2010-07-07T10:23:47-04:00"><time class="date" itemprop="datePublished" datetime="2010-07-07T14:23:47+00:00">Jul 07</time>
+                    <h2 itemprop="title">
+                        It’s Faster Because It’s C
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/dddc12120289c5bd">
+                        <blockquote>
+                            <p>
+                                I was recently drawn into another discussion about a claim that project Foo was faster than project Bar because Foo is written in C (or maybe C++) and Bar is written in Java. In my experience, as a long-time kernel programmer and as someone who often codes in C even when there are almost certainly better choices, such claims are practically always false. The speed at which a particular piece of code executes only has a significant effect if your program can find something else to do after that piece is done – in other words, if your program is CPU-bound and/or well parallelized. Most programs are neither. The great majority of programs fit into one or more of the following categories.
+                            </p>
+                            <ul>
+                                <li>I/O-bound. Completing a unit of work earlier just means waiting longer for the next block/message.
+                                </li>
+                                <li>Memory-bound. Completing a unit of work earlier just means more time spent thrashing the virtual-memory system.
+                                </li>
+                                <li>Synchronization-bound (i.e. non-parallel). Completing a unit of work earlier just means waiting longer for another thread to release a lock or signal an event – and for the subsequent context switch.
+                                </li>
+                                <li>Algorithm-bound. There’s plenty of other work to do, and the program can get to it immediately, but it’s wasted work because a better algorithm would have avoided it altogether. We did all learn in school why better algorithms matter more than micro-optimization, didn’t we?
+                                </li>
+                            </ul>
+                            <p>
+                                If you look at this <a href="http://blog.dynatrace.com/2010/06/15/top-10-performance-problems-taken-from-zappos-monster-and-co/">excellent list</a> of performance problems based on real-world observation, you’ll see that most of the problems mentioned (except #5) fit this characterization and wouldn’t be solved by using a different language. It’s possible to run many synchronization-bound programs on one piece of hardware, with or without virtualization, but the fewer resources these programs share the more likely it becomes that you’ll just become memory-bound instead. On the flip side, if a program is purely disk-bound or memory-bound then you can obtain more of those resources by distributing work across many machines, but if you don’t know how to implement distributed systems well you’ll probably just become network-bound or synchronization-bound. In fact, the class of programs that exhibit high sensitivity to network latency – a combination of I/O-boundedness and synchronization-boundedness – is large and growing.
+                            </p>
+                            <p>
+                                So, you have a program that uses efficient algorithms with a well-parallelized implementation, and it’s neither I/O-bound nor memory-bound. Will it be faster in C? Yes, it very well might. It might also be faster in Fortran, which is why many continue to use it for scientific computation but that hardly makes it a good choice for more general use. Everyone thinks they’re writing the most performance-critical code in the world, but in reality maybe one in twenty programmers are writing code where anything short of the most egregious bloat and carelessness will affect the performance of the system overall. (Unfortunately, egregious bloat and carelessness are quite common.) There are good reasons for many of those one in twenty to be writing their code in C, but even then most of the reasons might not be straight-line performance. JIT code can be quite competitive with statically compiled code, and even better in many cases, once it has warmed up, but performance-critical code often has to be not only fast but predictable. GC pauses, JIT delays, and unpredictable context-switch behavior all make such languages unsuitable for truly performance-critical tasks, and many of those effects remain in the runtime libraries or frameworks/idioms even when the code is compiled. Similarly, performance-critical code often needs to interact closely with other code that’s already written in C, and avoiding “impedance mismatches” is important. Most importantly, almost all programmers need to be concerned with making their code run well on multiple processors. I’d even argue that the main reason kernel code tends to be efficient is not because it’s written in C but because it’s written with parallelism and reentrancy in mind, by people who understand those issues. A lot of code is faster not because it’s written in C but for the same reasons that it’s written in C. It’s common cause, not cause and effect. The most common cause of all is that C code tends to be written by people who have actually lived outside the Java reality-distortion bubble and been forced to learn how to write efficient code (which they could then do in Java but no longer care to).
+                            </p>
+                            <p>
+                                For those other nineteen out of twenty programmers who are not implementing kernels or embedded systems or those few pieces of user-level infrastructure such as web servers (web applications don’t count) where these concerns matter, the focus should be on programmer productivity, not machine cycles. “Horizontal scalability” might seem like a euphemism for “throw more hardware at it” and I’ve been conditioned to abhor that as much as anyone, but hyper-optimization is only a reasonable alternative when you have a long time to do it. Especially at startups, VC-funded or otherwise, you probably won’t. Focus on stability and features first, scalability and manageability second, per-unit performance last of all, because if you don’t take care of the first two nobody will care about the third. If you’re bogged down chasing memory leaks or implementing data/control structures that already exist in other languages instead of on better algorithms or new features, you’re spending your time on the wrong things. Writing code in C(++) won’t magically make it faster where it counts, across a whole multi-processor (and possibly multi-node) system, and even if it did that might be missing the point. Compare results, not approaches.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://pl.atyp.us/wordpress/?p=2947">http://pl.atyp.us/wordpress/?p=2947</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

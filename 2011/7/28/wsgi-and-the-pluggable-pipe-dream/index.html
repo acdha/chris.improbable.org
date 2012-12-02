@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            WSGI and the Pluggable Pipe Dream
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 28 Jul 2011 13:01:49 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-07-28T09:01:49-04:00">
+                    <meta itemprop="dateModified" content="2011-07-28T09:01:49-04:00"><time class="date" itemprop="datePublished" datetime="2011-07-28T13:01:49+00:00">Jul 28</time>
+                    <h2 itemprop="title">
+                        WSGI and the Pluggable Pipe Dream
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/98002dd6acb51767">
+                        <p class="annotation">
+                            One nice emerging solution for this is gunicorn, getting back to nice, simple http as the interconnect protocol
+                        </p>
+                        <blockquote>
+                            <p>
+                                As a Python web developer you are at one point confronted with the term “<a href="http://www.python.org/dev/peps/pep-0333/">WSGI</a>” (which after 6 years of existence still does not have an official truncation. Some rhyme it with “Whisky”, others just pronounce the abbreviation, other's just call it by the pep number 333). WSGI when it was created was a pretty awesome thing. It made it possible to use any Python web application with any webserver by specifying a gateway layer.
+                            </p>
+                            <p>
+                                In fact, it became so popular and well supported in the Python world that similar protocols were created for other languages as well. One of the first was <a href="http://rack.rubyforge.org/">Rack</a> for Ruby, then came <a href="http://jackjs.org/jsgi-spec.html">Jack</a>/JSGI for JavaScript, <a href="http://plackperl.org/">PSGI</a>/Plack for Perl and many others. And yet ever since WSGI became from a niche protocol nobody knew to <em>the</em> protocol for web applications people tried to change and replace it. Why is that and why does nobody succeed in replacing it?
+                            </p>
+                            <p>
+                                WSGI stands for “Webserver Gateway Interface” and it really envisioned as this bridge between server and application. Additionally the PEP explained how you can use middlewares and this was the beginning of the end. The PEP also suggested that people would write their frameworks around WSGI which certainly many did. People tried to cram over the years more and more services into the WSGI layer with varying success. Session middlewares, authentication systems, caching layers etc. The vision of many people is or was to use the WSGI layer as a way to combine multiple applications together.
+                            </p>
+                            <p>
+                                WebOb for instance went very far with that. For as long as all your applications are only using WebOb and nothing else you can “attach” a request object to a WSGI environment at any point in the WSGI chain and you are operating on basically the same request object with the same data behind. This however goes well beyond what WSGI specifies or encourages.
+                            </p>
+                            <p>
+                                If you mix a WebOb application with Django, Werkzeug or anything your options of what is possible are greatly reduced.
+                            </p>
+                            <p>
+                                <small>Consider this post a personal brain dump. It might be unstructured and appear raw and there is a reason for this: it's one of the topic where the more you think about it, the more details jump into your mind. WSGI is such a simple specification but there is so much around it that it can really make your head hurt.</small>
+                            </p>
+                            <p>
+                                <small>I rewrote parts of this now a couple of times and I am still unhappy with it, so please just take it for what it is.</small>
+                            </p>
+                            <div>
+                                <h2>
+                                    What WSGI Broke
+                                </h2>
+                                <p>
+                                    If you look at APIs before WSGI or even at new frameworks that don't support WSGI, a common pattern is having a request object that not only gives access to the incoming data but also allows you to send data back to the client. For instance by having a <tt>write()</tt> method. WSGI broke with this convention early and this was a major step because it meant that you had to use buffering internally or change their API to use generators.
+                                </p>
+                                <p>
+                                    The thing with Python is that you cannot stop execution in a frame by hand unless you are using greenlets which back in 2004 were not available. As such you could not transparently convert an API like this into WSGI:
+                                </p>
+                                <div>
+                                    <pre>
+<span>def</span> <span>my_view</span><span>(</span><span>request</span><span>):</span>
+    <span>request</span><span>.</span><span>start_response</span><span>(</span><span>'200 OK'</span><span>)</span>
+    <span>request</span><span>.</span><span>send_header</span><span>(</span><span>'Content-Type'</span><span>,</span> <span>'text/plain'</span><span>)</span>
+    <span>request</span><span>.</span><span>end_headers</span><span>()</span>
+    <span>request</span><span>.</span><span>write</span><span>(</span><span>'Hello World!'</span><span>)</span>
+    <span>request</span><span>.</span><span>write</span><span>(</span><span>'Goodbye World!'</span><span>)</span>
+    <span>request</span><span>.</span><span>end</span><span>()</span>
+</pre>
+                                </div>
+                                <p>
+                                    The direct the entirely equivalent example would be this:
+                                </p>
+                                <div>
+                                    <pre>
+<span>def</span> <span>my_view</span><span>(</span><span>environ</span><span>,</span> <span>start_response</span><span>):</span>
+    <span>def</span> <span>generate</span><span>():</span>
+        <span>yield</span> <span>'Hello World!'</span>
+        <span>yield</span> <span>'Goodbye World!'</span>
+    <span>start_response</span><span>(</span><span>'200 OK'</span><span>,</span> <span>[(</span><span>'Content-Type'</span><span>,</span> <span>'text/plain'</span><span>)])</span>
+    <span>return</span> <span>generate</span><span>()</span>
+</pre>
+                                </div>
+                                <p>
+                                    While it is indeed now possible to utilize greenlets to convert multiple function calls into yields in a generator, it's still something you would not do. So you can imagine that when WSGI came out it was quite a challenge to convert to it.
+                                </p>
+                                <p>
+                                    If you look at other protocols that are WSGI inspired you can see that the iterator concept was adapted and modified. In Python iteration works by calling a method on the iterator until it signals that it finished. In Ruby it's the other way round. You provide a function and pass it to the iterator which will then call the function until it exhausts. The Ruby way has the nice advantage that you don't need generators and can easily convert from this Rack interface to an old-school write + flush method pair.
+                                </p>
+                                <p>
+                                    This is one of the things that some people are not happy with when they think about WSGI.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    The WSGI Quirks
+                                </h2>
+                                <p>
+                                    When you ask people what their opinion on WSGI is, they will always tell you that the <tt>start_response()</tt> callable is just bad. And they are quite correct in saying that we can get rid of it. But before you blindly throw it away you have to understand why it was created in the first place. The common way to call <tt>start_response()</tt> with the status code as string + explanation and a list of key-value tuples which represent the headers. But what many people miss is that <tt>start_response()</tt> can do more than just that!
+                                </p>
+                                <p>
+                                    First of all, remember when I said that you cannot generate <tt>response.write()</tt> calls transparently into <cite>yield</cite> statements. When the PEP was written it was quite obvious that this would be a problem for existing applications that need to stream out data via <tt>request.write()</tt>. And as such <tt>start_response()</tt> was given a return value which many developers don't know about. What <tt>start_response()</tt> returns is a function that directly writes into the client's stream. Surely that problem could have been solved in a different way, for instance by putting that function into the WSGI environment but the intention here was very simply that just the caller that starts the response gets this function.
+                                </p>
+                                <p>
+                                    Have you ever used that direct write function? Me neither and for good reasons: It bypasses processing by middlewares since it directly goes to the output stream. But it set the path to WSGI acceptance as it was a simple way to WSGI-ify CGI scripts. For instance the mercurial hgweb interface was a prominent user of that write function.
+                                </p>
+                                <p>
+                                    But that's not where <tt>start_response()</tt> ends. It has a third parameter that people commonly miss: <tt>exc_info</tt>. It's rarely used because error handling is typically handled at a higher level in the stack but the intention of course was to make the server aware of errors. Here is how it's supposed to work: You start the response and are about to send data but an error happens, you can change your mind and start the response a second time with the error information. You could also not have started the response before and directly inform it about the errors. Why is this? This comes in combination with another fact: headers are not sent, they are set.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    The Async Nod
+                                </h2>
+                                <p>
+                                    WSGI as a protocol was designed to also support async applications in theory. When you start the response, you're not actually starting the response. You are informing the server about the headers you want to send but they are not actually sent until you yield a non empty string. This allows you to change from an already notified <tt>200 OK</tt> to a <tt>500 INTERNAL SERVER ERROR</tt> until a later point. For instance this is perfectly valid WSGI code:
+                                </p>
+                                <div>
+                                    <pre>
+<span>def</span> <span>fail_late</span><span>():</span>
+    <span>yield</span> <span>''</span>
+    <span>yield</span> <span>''</span>
+    <span>raise</span> <span>Exception</span><span>(</span><span>'Something went wrong late'</span><span>)</span>
+
+<span>def</span> <span>weird_app</span><span>(</span><span>environ</span><span>,</span> <span>start_response</span><span>):</span>
+    <span>try</span><span>:</span>
+        <span>start_response</span><span>(</span><span>'200 OK'</span><span>,</span> <span>[(</span><span>'Content-Type'</span><span>,</span> <span>'text/plain'</span><span>)])</span>
+        <span>fail_late</span><span>()</span>
+    <span>except</span> <span>Exception</span><span>,</span> <span>e</span><span>:</span>
+        <span>start_response</span><span>(</span><span>'500 INTERNAL SERVER ERROR'</span><span>,</span>
+                       <span>[(</span><span>'Content-Type'</span><span>,</span> <span>'text/plain'</span><span>)],</span>
+                       <span>sys</span><span>.</span><span>exc_info</span><span>())</span>
+        <span>return</span> <span>[</span><span>'Application Failed'</span><span>]</span>
+</pre>
+                                </div>
+                                <p>
+                                    This is the extreme example which you will not see in practice. The server should attempt to change the headers if still not sent or recover in whatever way possible from that error condition. The “headers are sent when the first non empty string is yielded” rule is nothing more than a neat nod to async systems that can use this neat trick to yield empty strings to signal that they are not ready yet. I don't know if this was intentional behavior but the PEP is quite elaborate on mentioning that it's for async systems, so I suppose someone thought about it.
+                                </p>
+                                <p>
+                                    Generally though you will never find this particular usage used in practice. It's just generally something that makes processing WSGI code harder than it needs to be.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    Relaying and Proxying
+                                </h2>
+                                <p>
+                                    Where WSGI is annoying is relaying messages from one WSGI app to another. Let's assume for a moment WSGI would lack the <tt>start_response()</tt> callable and that empty string thing and a write callable. The canonical “Hello World” would probably look like this:
+                                </p>
+                                <div>
+                                    <pre>
+<span>def</span> <span>hello_world</span><span>(</span><span>environ</span><span>):</span>
+    <span>return</span> <span>'200 OK'</span><span>,</span> <span>[(</span><span>'Content-Type'</span><span>,</span> <span>'text/plain'</span><span>)],</span> \
+           <span>[</span><span>'Hello World!'</span><span>]</span>
+</pre>
+                                </div>
+                                <p>
+                                    Simple and straightforward indeed, and it would be incredible easy to proxy these things. All you have to do would be to call that function, pass it an environment dictionary and then take the return value, work with it, and forward it.
+                                </p>
+                                <p>
+                                    WSGI itself makes this really hard for a bunch of reasons:
+                                </p>
+                                <ol>
+                                    <li>The return value of an application. When you have it, was <tt>start_response()</tt> already called or not? If you directly return a list it was called, if the whole function however has a <tt>yield</tt> in there anywhere the <tt>start_response()</tt> function will not be called until the first iteration on the return value.
+                                    </li>
+                                    <li>Does anyone at any point mix <tt>write()</tt> and an iterable return value? If yes how do they mix?
+                                    </li>
+                                    <li>You have to be careful that headers can change until a non empty string came back from the iterable.
+                                    </li>
+                                    <li>The iterator can have a close method which you are required to call.
+                                    </li>
+                                </ol>
+                                <p>
+                                    All in all this makes WSGI a terrible protocol for the simple case where you want to invoke another application, munch with the return value and then forward it.
+                                </p>
+                                <p>
+                                    Why if that's so bad, why was it decided to work that way in the first place? Because obviously you will sacrifice something if you change that into a flat tuple as return value. For starters you lose:
+                                </p>
+                                <ol>
+                                    <li>The ability to change a success response into an internal server error response.
+                                    </li>
+                                    <li>Async systems would need to come up with the result right away when you call the function or block (bad) until they know what to return.
+                                    </li>
+                                    <li>Everything has to be generator powered, no more <tt>response.write()</tt> unless you introduce greenlets.
+                                    </li>
+                                </ol>
+                            </div>
+                            <div>
+                                <h2>
+                                    Everybody wants a Revolution
+                                </h2>
+                                <p>
+                                    WSGI is far from being flawless. But the problem is that most of the time when people try to replace it they will also attempt to fix the other issues it has. So instead of a nice little step forward it's a completely new proposal. For instance my attempt to do that for Python 3 was so naively wrong that I like to think that I did not have my hands in such a WSGI replacement PEP in the first place. And I can tell you right away why a small evolving of WSGI is pointless and why a big step is even worse:
+                                </p>
+                                <p>
+                                    Let's ask the question first: why would we want to improve WSGI? On the surface because there are a few things that don't work or are unnecessarily complex. And here comes the problem: <em>for different reasons</em>.
+                                </p>
+                                <p>
+                                    Half the people just want the gory details improved to simplify implementations of servers and client libraries, others want it simplified and extended to support pluggable applications. And this is where it all falls apart.
+                                </p>
+                                <p>
+                                    Let's look at what could be improved in WSGI itself:
+                                </p>
+                                <ol>
+                                    <li>
+                                        <tt>'wsgi.input'</tt> is ill-specified but in practice it rarely causes troubles because a) half the servers are already extending WSGI and b) even though half the libraries are in violation it's only the edge cases that cause problems and those are rare.
+                                    </li>
+                                    <li>Headers cannot be streamed which might be a problem with responses that have a huge amount of headers.
+                                    </li>
+                                    <li>Trailers are not specified at all except for that “servers might do chunked responses”
+                                    </li>
+                                    <li>Chunked request data is totally unimplementable on top of the current specification due to the ill-specified WSGI input thing.
+                                    </li>
+                                    <li>WSGI can be hard to implement in an environment where you are running inside a server like Apache that is already doing request filtering that is outside of your control. WSGI assumes HTTP level access which inside a webserver you usually no longer have.
+                                    </li>
+                                    <li>WSGI extends CGI's environment and inherits the problem that paths are decoded which comes with loss of information.
+                                    </li>
+                                    <li>The <tt>start_response()</tt> machinery seems unnecessarily complex for the fact that barely anybody these days needs the <tt>exc_info</tt> or <tt>write()</tt> callable any more.
+                                    </li>
+                                    <li>The <tt>'wsgi.file_wrapper'</tt> is complete garbage because it does not work in practice as soon as middlewares are involved that process responses.
+                                    </li>
+                                </ol>
+                                <p>
+                                    But you know what? WebOb, Werkzeug, Django and all the other frameworks out there learned to live with WSGI as it is and it works for us. There are some corner cases where we would love it to be improved like the input thing, but it's hardly something that's worth breaking API over. We already wrote the code and coming up with a new spec at that point mostly just supports the “the great thing about standards is that there are so many to chose from” sentiment. Especially now that WSGI was just extended to deal with Python 3's unicode behavior we have to be very careful not to force more complexity into everybody's code.
+                                </p>
+                                <p>
+                                    On top of that however there is so stuff that is missing in WSGI that many want to see solved:
+                                </p>
+                                <ol>
+                                    <li>Allowing an application to notify the server that it wants to be reloaded next request.
+                                    </li>
+                                    <li>Have a documented point in the application that is executed before the first request in the most efficient way possible but already with information at hand that would otherwise only be available during request (like: where the hell am I located? What's my base URL etc.)
+                                    </li>
+                                </ol>
+                                <p>
+                                    But here is the problem: Changing WSGI now would only mean that we would have to replace all our WSGI servers, WSGI client implementations, Framework bridges and whatnot. We would have to replace our middlewares that adopt to different server environments, work around browser bugs, that implement profiling and debugging functionality, that handle error logging and whatnot. We have a lot already that interfaces with WSGI and knows how to deal with the protocol.
+                                </p>
+                                <p>
+                                    Of course if we could just come up with a new WSGI from ground up we would make it different. But would we make it more pluggable? Probably not, and here is why.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    The Magic Plug
+                                </h2>
+                                <p>
+                                    I love small applications that work together. And the layer I let those applications work together is called HTTP. In fact, I will even have a talk about this at PyCodeConf. But what I do not believe in is that magical plug that is called “framework independent pluggable application”. I don't know where this idea came from that it might work, but it does not. The idea that you can reused code on top of WSGI to work with Framework 1 and Framework 2 is not working out. If they are truly divided of course, you can nicely use WSGI as a layer to speak to both apps depending on an HTTP request that came to a central dispatch point. If the user wanted to <tt>/app1</tt> I can dispatch to application 1, if the user went to <tt>/app2</tt> I just point them to application 2. But that's something I can already do.
+                                </p>
+                                <p>
+                                    But that's now what this is about, is it? Commonly the idea is that you can take any return value from any WSGI application and then mangle it a bit so that it fits into your environment. The idea is that a middleware could look at submitted form data and do some processing on it or anything else that is currently not really possible with WSGI.
+                                </p>
+                                <p>
+                                    What you need at that point is not a new WSGI: you need a whole new machinery that deals with so much more than just HTTP. Because we're doing so much more than we did a few years ago.
+                                </p>
+                                <p>
+                                    If you want to replace WSGI, you would not replace it, you would put a new layer on top of it. One that has extensive knowledge about everything that happens. You would have a standardized request/response library that covers every single case that is currently needed and make it extensible enough to handle future cases as well.
+                                </p>
+                                <p>
+                                    If we would have designed a request/response object in 2004 when WSGI was created, it would look vastly different from what we know about web applications today. Back then we would probably have supported URL encoded form data and XForms (since that was the latest hip thing), now we know nobody uses XForms but JSON encoded data is pretty damn common, both in incoming and outgoing direction.
+                                </p>
+                                <p>
+                                    Then there is the general trend currently towards async servers and frameworks. That's pretty awesome, but all of them are considering WSGI to be a hurdle and are bypassing it. Which then again means that a layer on top of WSGI would not be that magic plug either since it would not work for non WSGI environments. If we want to step into that direction WSGI itself would need an update to make it work better with async environments.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    Where to Go?
+                                </h2>
+                                <p>
+                                    Every once in a while someone shows up with an idea how to replace WSGI. In the end however every new conflicting specification does not really solve what people hope it would solve: making frameworks work better with each other. And there I think the glue that brings everything together will not be on the server side. It won't be a new version of WSGI, it will be client side JavaScript that synchronizes authentication from one part of the application to another without he user realizing that. It will be JavaScript that speaks to different backend servers written in different frameworks of languages even and then render that on the client side into whatever is necessary.
+                                </p>
+                                <p>
+                                    Personally I am pretty damn sure that WSGI no longer carries the importance it had a few years ago. I think it no longer makes sense to merge different applications on the WSGI level together, it should be done on a higher level and JavaScript is a nice way to do that.
+                                </p>
+                                <p>
+                                    Just think about Google's gray bar. You can totally throw such a bar on top of different independent parts of the application by emitting a tiny piece of JavaScript that generates that bar and handles your user session.
+                                </p>
+                                <p>
+                                    In general JSON via HTTP or zeromq is so much cooler and more flexible than WSGI could ever be. I think if we accept that as a possible way to build applications out of components and start experimenting with it we could build some really cool stuff.
+                                </p>
+                                <p>
+                                    But that's just my 50 cents on this topic.
+                                </p>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://lucumr.pocoo.org/2011/7/27/the-pluggable-pipedream">http://lucumr.pocoo.org/2011/7/27/the-pluggable-pipedream</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

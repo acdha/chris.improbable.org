@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How I learned to stop worrying and love python packaging - Jannis Leidel (djangocon.eu)
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 06 Jun 2011 09:45:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-06-05T19:00:00-04:00">
+                    <meta itemprop="dateModified" content="2011-06-05T19:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-06-05T23:00:00+00:00">Jun 05</time>
+                    <h2 itemprop="title">
+                        How I learned to stop worrying and love python packaging - Jannis Leidel (djangocon.eu)
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/40e1acba3e7dedad">
+                        <blockquote>
+                            <div>
+                                <div>
+                                    <p>
+                                        Regular python packaging (in <a href="http://www.nelen-schuurmans.nl">our</a> case in combination with buildout) is something we use a lot. So a talk on this at the djangocon.eu is something I look upon with a favourable eye. (I'll even take the opportunity to point you at my <a href="http://reinout.vanrees.org/weblog/tags/softwarereleasesseries.html">software releases series</a>.)
+                                    </p>
+                                    <div>
+                                        <h1>
+                                            The past of python packaging
+                                        </h1>
+                                        <p>
+                                            Some terms are ambiguous:
+                                        </p>
+                                        <ul>
+                                            <li>A python package is a directory with python files and an <tt>__init__.py</tt>. This is a module.
+                                            </li>
+                                            <li>A release is something like "django 1.3".
+                                            </li>
+                                            <li>A distribution is a source/binary form of a release, though this is often called a package.
+                                            </li>
+                                        </ul>
+                                        <p>
+                                            It started out with distutils: a standard way for building, distributing and installing python modules. Especially also C extensions. It installs into a library directory.
+                                        </p>
+                                        <p>
+                                            It wasn't completely up to the task, so several extensions showed up. Some of those came with a PEP, for instance <a href="http://www.python.org/dev/peps/pep-0241/">PEP 241</a> for package metadata such as "version", "description", "author". And also now there are some PEPs that are currently being implemented. There's continuous work in this area.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h1>
+                                            Common pitfalls and gotchas and tips
+                                        </h1>
+                                        <p>
+                                            The basis for packaging is a <tt>setup.py</tt> file. A problem with this is that such a setup file is used for a couple of dissimilar tasks:
+                                        </p>
+                                        <ul>
+                                            <li>Generating documentation.
+                                            </li>
+                                            <li>Creating a release (source/binary).
+                                            </li>
+                                            <li>Actually installing the software.
+                                            </li>
+                                        </ul>
+                                        <p>
+                                            Combining these tasks in one file is a bit of a hazard and leads to problems now and then.
+                                        </p>
+                                        <p>
+                                            Tip regarding documentation: add a so-called "long description" by concatenating the readme and changelog and other documentation files into the <tt>description</tt> field in your setup.py. This is rendered as restructured text on the pypi page if you upload it.
+                                        </p>
+                                        <p>
+                                            List all additional non-python files that you need in <tt>package_data</tt>, otherwise they won't get installed. Likewise, add a <tt>MANIFEST.in</tt> that lists all your files.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h1>
+                                            Everyday software development
+                                        </h1>
+                                        <p>
+                                            Use sane versions. <tt>1.2</tt>, <tt>1.3.2</tt>, not <tt>.000001</tt> or <tt>unreleased.unofficialdev</tt>. And use release names in any prose instead of version numbers: release "batman" is nicer than release "1.2".
+                                        </p>
+                                        <p>
+                                            Regarding regular package management versus python-only installations? Just use your regular package management ("apt-get install xyz") in case it are binary packages. They have dependencies and header file requirements that are best handled globally by the OS (PIL, lxml, database adapters, etc.)
+                                        </p>
+                                        <p>
+                                            Install often-updated python-only packages locally, on the other hand. Don't install them globally. Isolate with, for instance, virtualenv. Tip when you're using virtualenv: <a href="http://www.doughellmann.com/docs/virtualenvwrapper/">http://www.doughellmann.com/docs/virtualenvwrapper/</a> .
+                                        </p>
+                                        <p>
+                                            Combine virtualenv with <a href="http://www.pip-installer.org">pip</a> for sane installation and uninstalling. It can also "freeze" and "unfreeze" your requirements and your versions. You can just copy a text file to another machine and re-create your environment there.
+                                        </p>
+                                        <p>
+                                            Pip also has automatic support for pypi mirrors (the <a href="http://d.pypi.python.org/">http://d.pypi.python.org/</a> ones). You can configure pip to globally cache your downloaded packages, handy in case you're without internet.
+                                        </p>
+                                        <p>
+                                            You can also make your own simple package index with apache's <tt>DirectoryIndex</tt>. There's also a pypi clone made with django: <a href="http://pypi.python.org/pypi/chishop">Chishop</a>.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h1>
+                                            The future of python packaging
+                                        </h1>
+                                        <p>
+                                            There's a lot of work happening, revolving around Tarek Ziade: <a href="http://packages.python.org/Distutils2/">distutils2</a>. It is much cleaner and set up more as a toolbox than as a stand-alone do-everything packaging tool. There <em>is</em> an associated install tool called "pysetup" that is pip-like. Distutils2 has just landed in python 3 trunk as "packaging". It is (being) backported to python2, too.
+                                        </p>
+                                        <p>
+                                            Some good new features: better requirement specifications. "On python 2.5, I need package x, 2.6+ doesn't need it". "I make package xyz obsolete". "I only run with python 2.4+".
+                                        </p>
+                                        <p>
+                                            Also possible: you can specify that you need some external non-python package, like libxml2 which is needed by python's lxml. The hope is that external packagers will start to work with that metadata.
+                                        </p>
+                                        <p>
+                                            Moving from distutils to distutils2: there's "pysetup3 create" for automatic conversion from setup.py to the new setup.cfg format.
+                                        </p>
+                                        <p>
+                                            Some closing comments:
+                                        </p>
+                                        <ul>
+                                            <li>Keep your setup.py files simple. It is a python file, so you can do anything with it. But restrict yourself.
+                                            </li>
+                                            <li>Follow the standards.
+                                            </li>
+                                            <li>Use virtualenv/pip.
+                                            </li>
+                                            <li>Look out for distutils2.
+                                            </li>
+                                            <li>When in doubt, read the <a href="http://guide.python-distribute.org/">hitchhikers' guide to packaging</a>
+                                            </li>
+                                        </ul><a href="http://photos.reinout.vanrees.org/Trains/Model-train-exhibitions/4740025_WhKhi#1223908708_EY5Zp-A-LB"><img alt="0-scale cats and a delipidated station building" src="http://photos.reinout.vanrees.org/photos/1223908708_EY5Zp-M.jpg"></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://reinout.vanrees.org/weblog/2011/06/06/python-packaging.html">http://reinout.vanrees.org/weblog/2011/06/06/python-packaging.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

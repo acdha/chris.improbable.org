@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Using pyearthquake to plot Japan USGS earthquake data into the near real-time MODIS satellite imagery
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 12 Mar 2011 03:05:37 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-11T22:05:37-04:00">
+                    <meta itemprop="dateModified" content="2011-03-11T22:05:37-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-12T02:05:37+00:00">Mar 12</time>
+                    <h2 itemprop="title">
+                        Using pyearthquake to plot Japan USGS earthquake data into the near real-time MODIS satellite imagery
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/24aff56e751e25ad">
+                        <blockquote>
+                            <p>
+                                The aim of this post is to show to the reader how to plot the recent Japan earthquake data from the USGS using the pyearthquake module. If you want to know more information about the <strong><a title="PyPI: pyearthquake" href="http://pypi.python.org/pypi/pyearthquake">pyearthquake</a></strong> module, take a look <a title="Using pyearthquake to plot USGS data from the Haiti earthquake Jan, 2010" href="http://pyevolve.sourceforge.net/wordpress/?p=1013">in this post</a> where I previously used it. <strong>pyearthquake</strong> is a pure-python module which exposes an API to retrieve data from the <a title="USGS" href="http://earthquake.usgs.gov/">USGS site</a> as well from the <a title="MODIS Rapid Response System" href="http://rapidfire.sci.gsfc.nasa.gov/">MODIS Rapid Response System</a> (recently, they created a <a title="MODIS: Japan Earthquake Project" href="http://rapidfire.sci.gsfc.nasa.gov/subsets/?project=japanearthquake">separate project</a> to handle Japan daily images).<a title="MODIS Rapid Response System" href="http://rapidfire.sci.gsfc.nasa.gov/"></a>
+                            </p>
+                            <h3>
+                                Installing pyearthquake
+                            </h3>
+                            <p>
+                                The first thing we need to do is to install the Python <strong>pyearthquake</strong> module, you can do it using <em>easy_install</em> from <strong>setuptools</strong>:
+                            </p>
+                            <blockquote>
+                                <pre>
+easy_install pyearthquake
+</pre>
+                            </blockquote>
+                            <p>
+                                The easy_install should automatically handle the required modules, but if you face problems (specially in Ubuntu with basemap, here is the version requirements: <strong>matplotlib</strong> &gt;= 0.99.0, <strong>numpy</strong> &gt;= 1.3.0, <strong>PIL</strong> &gt;= 1.1.6 and <strong>basemap</strong> &gt;= 0.99.4.
+                            </p>
+                            <h3>
+                                Retrieving USGS catalogs
+                            </h3>
+                            <p>
+                                USGS provides the follow catalog datasets:
+                            </p>
+                            <p>
+                                <strong><a href="http://earthquake.usgs.gov/earthquakes/catalogs/eqs1hour-M1.txt">M1+ Earthquakes</a> (past hour) –</strong> M1+PAST_HOUR
+                            </p>
+                            <p style="padding-left:30px">
+                                This is the worldwide catalog with earthquake data from the past hour;
+                            </p>
+                            <p>
+                                <strong><a href="http://earthquake.usgs.gov/earthquakes/catalogs/eqs1day-M1.txt">M1+ Earthquakes</a> (past day) –</strong> M1+PAST_DAY
+                            </p>
+                            <p style="padding-left:30px">
+                                This is the worldwide catalog with earthquake data from the past day;
+                            </p>
+                            <p>
+                                <strong><a href="http://earthquake.usgs.gov/earthquakes/catalogs/eqs7day-M1.txt">M1+ Earthquakes</a> (past 7 days) –</strong> M1+PAST_7DAY
+                            </p>
+                            <p style="padding-left:30px">
+                                This is the worldwide catalog with earthquake data from the past 7 days;
+                            </p>
+                            <p>
+                                This is how you retrieve any of these catalogs using <strong>pyearthquake</strong>:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; from pyearthquake import *
+&gt;&gt;&gt; catalog = usgs.retrieve_catalog("M1+PAST_7DAY")
+&gt;&gt;&gt; len(catalog)
+1179
+</pre>
+                            </blockquote>
+                            <p>
+                                In that context, we have <strong>1179</strong> incidents with <strong>magnitude 1+</strong> from the past 7 days.
+                            </p>
+                            <p>
+                                Lets filter now only events with magnitude 6+, which represents the recent significant earthquakes:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; mag6_list = [event for event in catalog if float(event["Magnitude"]) &gt;= 6.0]
+&gt;&gt;&gt; len(mag6_list)
+30
+</pre>
+                            </blockquote>
+                            <p>
+                                We have now 30 events with magnitude 6+ from the past 7 days, let’s print it:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; for row in mag6_list:
+...    print row["Eqid"], row["Magnitude"], row["Depth"],
+...          row["Datetime"], row["Depth"], row["Region"]
+...
+c0001z5z 6.3 8.70 Friday, March 11, 2011 20:11:22 UTC 8.70 near the east coast of Honshu, Japan
+c0001z4n 6.6 10.00 Friday, March 11, 2011 19:46:49 UTC 10.00 near the west coast of Honshu, Japan
+c0001z2t 6.1 24.80 Friday, March 11, 2011 19:02:58 UTC 24.80 near the east coast of Honshu, Japan
+c0001z2a 6.2 10.00 Friday, March 11, 2011 18:59:15 UTC 10.00 near the west coast of Honshu, Japan
+c0001yib 6.2 18.90 Friday, March 11, 2011 15:13:14 UTC 18.90 near the east coast of Honshu, Japan
+c0001y4u 6.5 11.60 Friday, March 11, 2011 11:36:39 UTC 11.60 near the east coast of Honshu, Japan
+(...)
+</pre>
+                            </blockquote>
+                            <p>
+                                As you can see, almost all last events are earthquakes from the Japan coast. Here, you can extract any individual event and retrieve USGS products like ShakeMaps, etc (see more information in <a title="Exploring real-time Haiti USGS Earthquake data with near real-time MODIS Aqua+Terra satellite imagery using Python" href="http://pyevolve.sourceforge.net/wordpress/?p=1013">this post</a> on how to fetch and show those USGS products).
+                            </p>
+                            <h3>
+                                Plotting events into the map
+                            </h3>
+                            <p>
+                                Now we will plot those events into the map (<strong>pyearthquake</strong> uses the <strong>matplotlib</strong> toolkit called <strong>basemap</strong> to plot events into the map):
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; usgs.plot_events(catalog)
+</pre>
+                            </blockquote>
+                            <p>
+                                The “catalog” variable is the same we retrieved before using the USGS <strong>M1+PAST_7DAY</strong> catalog.
+                            </p>
+                            <p>
+                                Here is what what this statement will show:
+                            </p>
+                            <p>
+                                <a href="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/map_plot.png" rel="lightbox[1471]"><img title="Map plot" src="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/map_plot.png" alt="" width="538" height="266"></a>
+                            </p>
+                            <p>
+                                Now we can zoom into Japan using the button <a href="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/zoom_button.png" rel="lightbox[1471]"><img title="Zoom Button" src="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/zoom_button.png" alt="" width="33" height="31"></a>, and this is the result:
+                            </p>
+                            <p>
+                                <a href="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/map_plot_zoom.png" rel="lightbox[1471]"><img title="map_plot_zoom" src="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/map_plot_zoom.png" alt="" width="470" height="414"></a>The colored dots are the events from the retrieved catalog, the more strong the color the more strong was the earthquake; see the dark red color near the cost, that event was the unfortunate and catastrophic 8.9 magnitude earthquake which devastated Japan yesterday.
+                            </p>
+                            <h3>
+                                Retrieving near real-time MODIS Rapid Response images
+                            </h3>
+                            <p>
+                                MODIS has processed image subsets of Aqua and Terra satellites. One of these subsets is called <a title="MODIS: Japan subset" href="http://rapidfire.sci.gsfc.nasa.gov/subsets/?subset=Japan">“japan”</a> and it has the entire country coverage. Let’s retrieve this MODIS subset and then plot our events in this same map:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; import datetime
+&gt;&gt;&gt; now = datetime.datetime.now()
+&gt;&gt;&gt; bmap = modis.get_modis_subset(now,
+                              "Japan",
+                              satellite_name="terra",
+                              resolution="250m",
+                              show=False)
+&gt;&gt;&gt; usgs.plot_events(catalog, bmap)
+</pre>
+                            </blockquote>
+                            <p>
+                                What <strong>pyearthquake</strong> is going to do here is to download (this may take some time) the entire subset for the resolution of 250m (the best available), parse the subset metadata, align image into the map between the lat/lng bounds and then plot the events over this satellite image, so we’ll have the last high resolution satellite images from the Japan together with the earthquake events plot, and here is the result:
+                            </p>
+                            <p>
+                                <a href="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/modis_japan.png" rel="lightbox[1471]"><img title="Japan Modis Image" src="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/modis_japan.png" alt="" width="466" height="434"></a>
+                            </p>
+                            <p>
+                                And here is the zoom near the coast:
+                            </p>
+                            <p>
+                                <a href="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/modis_japan_zoom.png" rel="lightbox[1471]"><img title="modis_japan_zoom" src="http://pyevolve.sourceforge.net/wordpress/wp-content/uploads/2011/03/modis_japan_zoom.png" alt="" width="462" height="435"></a>
+                            </p>
+                            <div style="width:1px;height:1px;overflow:hidden">
+                                <strong>matplotlib</strong> &gt;= 0.99.0, <strong>numpy</strong> &gt;= 1.3.0, <strong>PIL</strong> &gt;= 1.1.6 and <strong>basemap</strong> &gt;= 0.99.4
+                            </div><img src="http://feeds.feedburner.com/~r/pyevolve/~4/zR_64S9guXI" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://pyevolve.sourceforge.net/wordpress/?p=1471&amp;utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+pyevolve+%28Pyevolve%29">http://pyevolve.sourceforge.net/wordpress/?p=1471&amp;utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+pyevolve+%28Pyevolve%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

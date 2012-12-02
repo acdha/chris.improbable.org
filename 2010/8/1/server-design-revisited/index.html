@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Server Design Revisited
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 02 Aug 2010 01:00:35 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-01T21:00:35-04:00">
+                    <meta itemprop="dateModified" content="2010-08-01T21:00:35-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-02T01:00:35+00:00">Aug 02</time>
+                    <h2 itemprop="title">
+                        Server Design Revisited
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/2e1563ededc3c419">
+                        <blockquote>
+                            <p>
+                                About eight years ago, I wrote a series of posts about server design, which I then <a href="http://pl.atyp.us/wordpress/?page_id=1277">combined into one post</a>. That was also a time when debates were raging about multi-threaded vs. event-based programming models, about the benefits and drawbacks of TCP, etc. For a long time, my posts on those subjects constituted my main claim to fame in the tech-blogging community, until more recent posts on startup failures and CAP theorem and language wars started reaching an even broader audience, and that server-design article was the centerpiece of that set. Now some of those old debates have been revived, and Matt Welsh has written a <a href="http://matt-welsh.blogspot.com/2010/07/retrospective-on-seda.html">SEDA retrospective</a>, so maybe it’s a good time for me to follow suit to see what I and the rest of the community have learned since then.
+                            </p>
+                            <p>
+                                Before I start talking about the Four Horsemen of Poor Performance, it’s worth establishing a bit of context. Processors have actually not gotten a lot faster in terms of raw clock speed since 2002 – <a href="http://www.intel.com/pressroom/kits/quickrefyr.htm#2002">Intel</a> was introducing a 2.8GHz Pentium 4 then – but they’ve all gone multi-core with bigger caches and faster buses and such. Memory and disk sizes have gotten much bigger; speeds have increased less, but still significantly. Gigabit Ethernet was at the same stage back then that 10GbE is at today. Java has gone from being the cool new kid on the block to being the grumpy old man the new cool kids make fun of, with nary a moment spent in between. Virtualization and cloud have become commonplace. Technologies like map/reduce and NoSQL have offered new solutions to data problems, and created new needs as well. All of the tradeoffs have changed, and of course we’ve learned a bit as well. Has any of that changed how the Four Horsemen ride?<br>
+                                <br>
+                                With regard to data copies, I think we’ve lost ground. More people now realize that data copies are bad, but with processors and memory being so much faster they seem less inclined to do anything about it. Many “modern” languages have absolutely atrocious support for the kind of efficient buffer-list methods I recommended. Immutable-data languages inevitably force programmers to copy data into new variables where once they would have updated in place. Sometimes they even force the new variable to be local in a new function called only for that purpose. You can argue all you like about the concurrency or robustness advantages of the immutable-data approach, you can argue that good programmers won’t “subvert” your favorite language that way, but the fact is that real-world programmers do engage in such subversion and it does carry a performance cost. Even if much of that cost is ameliorated by using reference counts instead of true copies, it’s still less efficient than modifiable buffer chains.
+                            </p>
+                            <p>
+                                The context-switch issue is the one being debated most nowadays, but surprisingly little has actually changed. Pretty much all of what I said earlier – about the ratio of threads to processors, about single-threaded approaches being beneath contempt, about coroutines giving all of the headaches of concurrency with none of the advantages – remains true. I guess that’s not all that much of a surprise since I’d been working on multiprocessors for years when I wrote the article even though they weren’t fully mainstream yet. Sure, the scalability of native threads has improved a lot, most notably in Linux, but context switches still aren’t free. In a multiprocessor system, you also have the problem of resuming a thread on a different processor with a stone-cold cache. Some people who just heard of <a href="http://research.microsoft.com/apps/pubs/default.aspx?id=69844">cohort scheduling</a> think it provides a silver-bullet solution, but it really doesn’t. If you want to worry about cache warmth, you have to think about three kinds of cached data.
+                            </p>
+                            <ul>
+                                <li>Instructions (yes, even with a unified I+D cache)
+                                </li>
+                                <li>The actual data being operated on.
+                                </li>
+                                <li>The secondary data representing request state, global/persistent data structures, etc.
+                                </li>
+                            </ul>
+                            <p>
+                                Cohort scheduling mostly addresses the first of these, and somewhat the third. Inevitably, by preserving locality in these cases it tends to make things a bit worse for the second – and largest – category of cache contents. The paper was written in the same era as my own post. It made a certain amount of sense in the context of the type/size/speed of caches in use at the time, and the loads being placed on them. Does it make an equal amount of sense in today’s context? Maybe. Sometimes. There’s no silver-bullet solution here. If you really want to optimize for cache warmth, you’ll still have to think hard about what data is being cached, how it’s moving between cache levels, and what program structures will create access patterns that minimize that movement.
+                            </p>
+                            <p>
+                                My conclusion, just as before: by all means use multiple native threads, and use multiple coroutines on top of those if it suits you, but use both judiciously and pragmatically. Above all, try to program in a way that maximizes your flexibility to adjust the balance between event-based and multi-threaded and coroutine-based approaches in your program, as the tradeoffs and the program itself continue to change.
+                            </p>
+                            <p>
+                                On the last two issues – memory allocation and lock contention – there has also been little change. Memory allocation is becoming a bit of a hot issue as more people realize that their oh-so-convenient languages and frameworks are in some cases creating/deleting <a href="http://merbist.com/2010/07/29/object-allocation-why-you-should-care/">thousands of objects</a> per request. That’s just obscene. The best response is to avoid the overhead altogether, going as far up the stack as you have to, but for those unwilling to do so there’s still ample opportunity to make those wasteful operations less costly. Similarly, there have been some advances in avoiding lock contention – most notably wider knowledge and acceptance of the actor model – but it remains a very thorny problem that I’d need a whole separate post to address.
+                            </p>
+                            <p>
+                                Perhaps the biggest change I’d make to the original post, if I were writing it today, is to the grab-bag of items at the end. For example, many people are coming up with code to exploit the vast differences in latency and throughput between sequential and random disk I/O. Log-structured filesystems are relevant again, even if many insist on embedding ad-hoc, informally specified, bug-ridden, slow implementations (with apologies to <a href="http://en.wikipedia.org/wiki/Greenspun's_Tenth_Rule">Greenspun</a>) in other systems before they’ve even read up on the original. There’s a fifth horseman there, which is the failure to account for the motion of data between levels of the storage hierarchy, or deal properly with the fundamental differences between those levels. Think about the following differences.
+                            </p>
+                            <ul>
+                                <li>Cache: extremely fast, seemingly byte-addressable but really more alignment-sensitive than people think, very limited size.
+                                </li>
+                                <li>Memory: slower than cache but faster than storage by an even greater degree, byte addressable
+                                </li>
+                                <li>Direct-connected SSD (e.g. Fusion): very alignment sensitive, low/flat latency but some artifacts due to wear leveling and garbage collection
+                                </li>
+                                <li>External SSD: a tiny bit slower than direct-connected, but otherwise similar
+                                </li>
+                                <li>Single disk: slower, more variable latency due to seeks (few people can deal with seek issues well enough to notice rotational latency any more), internal caches which affect both durability and performance ratios
+                                </li>
+                                <li>Disk array: faster than single disk but different ratios for read vs. write and sequential vs. random, cache is usually battery-backed and large enough that writes very rarely have to wait (but reads often do)
+                                </li>
+                            </ul>
+                            <p>
+                                That’s a lot of differences, which can be hard to account for. Failing to understand these different characteristics and the consequences of translating between them is what’s behind misunderstandings about caches and cohort scheduling, behind those loathsome memory-only “data stores” and even behind a lot of SSD mania. In many cases this data motion is the primary determinant of overall program performance. It needs to be carefully managed to ensure that data will be where you want it, when you want it, with a minimum of time spent playing “musical chairs” with it.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://pl.atyp.us/wordpress/?p=2973">http://pl.atyp.us/wordpress/?p=2973</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

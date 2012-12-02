@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Git pre-commit hooks and the Clang Static Analyzer
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 03 Apr 2009 09:17:45 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-03T05:17:45-04:00">
+                    <meta itemprop="dateModified" content="2009-04-03T05:17:45-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-03T09:17:45+00:00">Apr 03</time>
+                    <h2 itemprop="title">
+                        Git pre-commit hooks and the Clang Static Analyzer
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5014ce7f72f3bba0">
+                        <blockquote>
+                            <p>
+                                For the solo developer, it’s easy to kid yourself into believing that you’ll run those tests “when appropriate”. It never really happens, does it?
+                            </p>
+                            <p>
+                                I’ve always liked the <a href="http://clang.llvm.org/StaticAnalysis.html">Clang Static Analyzer</a> as a tool for finding code oversights, but I’ve always found it a bit annoying to run. I always forgot the options, or something didn’t quite work as expected. That’s really my fault, rather than CSA’s.
+                            </p>
+                            <p>
+                                Anyway, it occurred to me that I could use my tools to keep myself more honest about regularly running the static analyzer. I use <a href="http://git-scm.org">Git</a> for source control and Git provides a <em>pre-commit hook</em> feature. The idea of pre-commit hooks is that you get to run a script before the commit happens. Depending on the result code of the script, the commit will either proceed or be aborted.
+                            </p>
+                            <p>
+                                I wrote a wrapper around the scan-build tool, so that I could run the analyzer by hand with my preferred options at any time:
+                            </p>
+                            <blockquote>
+                                <pre>
+#!/bin/sh
+~/Scripts/clang/latest/scan-build --status-bugs \
+        -warn-objc-missing-dealloc \
+        xcodebuild -sdk iphonesimulator2.2.1 -configuration Debug
+</pre>
+                            </blockquote>
+                            <p>
+                                The <code>--status-bugs</code> flag is the trick here: it makes <code>scan-build</code> return a non-zero status code if it detects bugs. That’s what we want with Git pre-commit hooks: a non-zero status indicates a possible bug, and that causes the Git commit to be aborted.
+                            </p>
+                            <p>
+                                Also, I <em>think</em> I’m right in saying that you can’t run the static analyzer on ARM code, hence the use of the iPhone Simulator SDK.
+                            </p>
+                            <p>
+                                The pre-commit hook is a script at <code>.git/hooks/pre-commit</code> in your repository. There’s an example file in every <code>.git/hooks</code> that you can copy and edit. Because I wrote my wrapper script above, the pre-commit is trivial:
+                            </p>
+                            <blockquote>
+                                <pre>
+[(master)]$ cat .git/hooks/pre-commit
+#!/bin/sh
+./clang.sh
+</pre>
+                            </blockquote>
+                            <p>
+                                The working directory for the pre-commit script is the parent directory of your <code>.git</code> directory.
+                            </p>
+                            <p>
+                                [<strong>Update</strong>: <a href="http://boredzo.org/blog/archives/2009-04-03/hg-precommit-hooks-and-the-clang-static-analyzer">Peter Hosey tells you how to do this for Mercurial</a>]
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://speirs.org/2009/04/03/git-pre-commit-hooks-and-the-clang-static-analyzer/">http://speirs.org/2009/04/03/git-pre-commit-hooks-and-the-clang-static-analyzer/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

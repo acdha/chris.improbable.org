@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Will HTTP/2.0 Happen After All?
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 12 Nov 2009 19:27:29 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-12T14:27:29-04:00">
+                    <meta itemprop="dateModified" content="2009-11-12T14:27:29-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-12T18:27:29+00:00">Nov 12</time>
+                    <h2 itemprop="title">
+                        Will HTTP/2.0 Happen After All?
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c999ac67ff498460">
+                        <blockquote>
+                            <p>
+                                (for comments by: Sam Johnston, Alfred Hoenes, Koranteng Ofosu-Amaah, Bill de hOra, antony, Mark Nottingham, see <a href="http://www.mnot.net/blog/2009/11/13/flip">this entry's page</a>.)
+                            </p>
+                            <p>
+                                A couple of nights ago, I had a casual chat with Google’s Mike Belshe, who gave me a preview of how their “<a href="http://code.google.com/speed/">Let’s make the Web faster</a>” effort looks at HTTP itself.
+                            </p>
+                            <p>
+                                <a href="http://blog.chromium.org/2009/11/2x-faster-web.html">SP</a><a href="http://googleresearch.blogspot.com/2009/11/2x-faster-web.html">DY</a> (nee FLIP) is an alternate application protocol that’s in <a href="http://www.chromium.org/">Chromium</a>, but buried so deeply that you have to enable it with a command-line option (—use-flip). AFAICT there aren’t even any public servers that support it yet, but it’s still a very exciting development.
+                            </p>
+                            <p>
+                                Why? In a nutshell, it’s a binary, frame-based protocol for multiplexing bidirectional data streams over TCP (to start with). See <a href="http://src.chromium.org/viewvc/chrome/trunk/src/net/flip/flip_protocol.h?revision=31564&amp;view=markup">flip_protocol.h</a> for an idea of what it looks like, as well as the <a href="http://dev.chromium.org/spdy/spdy-whitepaper">whitepaper</a>.
+                            </p>
+                            <h3>
+                                HTTP’s Limits
+                            </h3>
+                            <p>
+                                HTTP-over-TCP has some pretty basic limits; most seriously, you can practically only have one request or response in flight on a connection at the same time.
+                            </p>
+                            <p>
+                                <a href="http://en.wikipedia.org/wiki/HTTP_pipelining">Pipelining</a> was designed to alleviate this, but at best it’s only a partial fix (<a href="http://en.wikipedia.org/wiki/Head-of-line_blocking">head-of-line blocking</a> is still an issue), and implementation problems means it’s almost unusable on the open Web (although <a href="http://code.google.com/p/serf/">Serf</a> has had success in using pipelining in Subversion). It also can’t be used for methods like POST, which is important for interactive applications.
+                            </p>
+                            <p>
+                                This drives people to use multiple, parallel TCP connections — something that we’ve accommodated in HTTPbis by <a href="http://trac.tools.ietf.org/wg/httpbis/trac/ticket/131">lifting the two-connection limit for clients</a>. However, that’s not a great solution either; TCP doesn’t allow you to share connection state between them, which brings problems when dealing with congestion.
+                            </p>
+                            <h3>
+                                What about WAKA?
+                            </h3>
+                            <p>
+                                These problems are well-known and have been discussed for years, all the way back to <a href="http://www.w3.org/Protocols/HTTP-NG/">HTTP-NG</a>, <a href="http://www.w3.org/Protocols/MUX/WD-mux-980722.html">WebMUX</a> and other efforts. More recently, Roy Fielding has been working behind the scenes on <a href="http://en.wikipedia.org/wiki/Waka_(protocol)">WAKA</a>, with similar goals. So similar that I had to smile when Belshe explained what they were doing; it’s very similar to how Roy explains WAKA’s use of the transport.
+                            </p>
+                            <p>
+                                However, I wouldn’t say that SPDY is competing with WAKA — yet. Belshe goes out of his way to point out that SPDY is more about doing real-world experimentation rather than saying “this is the protocol we’ll use.” In his words;
+                            </p>
+                            <blockquote>
+                                <p>
+                                    We're hoping to put theories to the test; while many of the ideas are not new, we're aggregating them, making them cooperate together, implementing them, and then measuring them. We hope that others will appreciate and expand this effort so that we can all evolve toward a protocol we think is universally better in a relatively quick timeframe.
+                                </p>
+                            </blockquote>
+                            <p>
+                                In other words, they seem to be positioning this as input to the eventual design of HTTP/2.0, WAKA or whatever, rather than a browser-specific push to define a new protocol alone.
+                            </p>
+                            <h3>
+                                … and the IETF
+                            </h3>
+                            <p>
+                                The other interesting aspect, of course, is the relationship to <a href="http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol">WebSockets</a>, especially since there was a pretty strong sense in the IETF <a href="http://www.ietf.org/proceedings/09nov/agenda/hybi.html">earlier this week</a> in Hiroshima that a Working Group to standardise it should be started. if SPDY really does eventually follow the path of WAKA, it could be that some HTTP-like use cases that people have planned for WebSockets may have another outlet instead.
+                            </p>
+                            <p>
+                                Finally, you might ask what bearing this has on our efforts in <a href="http://trac.tools.ietf.org/wg/httpbis/trac/wiki">HTTPbis</a>. Right now, the answer is “nothing”, in that we’re chartered explicitly NOT to create a new version of HTTP. However, I think that our work — especially in splitting up the spec (a decision driven by Roy a long time ago) — will help any eventual successor protocol, whether it be WAKA, SPDY, their child or something completely different.
+                            </p>
+                            <p>
+                                That’s because the minimum bar to entry for replacing HTTP/1.1 is to exactly support its semantics and capabilities, while making it more efficient. The fact that all of the wire-level goop in HTTP is now moving to a <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging">single, separate document</a> helps that.
+                            </p>
+                            <p>
+                                The last thing that I’d mention is that when we started HTTPbis a couple of years ago, there was a strong sentiment against creating a new protocol, both because of the can of worms it would open, and because of deployment problems in doing so. However, I’ve recently heard many people complaining about the limitations of HTTP over TCP, and it seems that one way or another, we’re going to start tackling that problem soon.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.mnot.net/blog/2009/11/13/flip">http://www.mnot.net/blog/2009/11/13/flip</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

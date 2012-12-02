@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Multi-browser heap address leak in XSLT
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 09 Mar 2011 21:48:41 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-09T13:10:00-04:00">
+                    <meta itemprop="dateModified" content="2011-03-09T13:10:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-09T17:10:00+00:00">Mar 09</time>
+                    <h2 itemprop="title">
+                        Multi-browser heap address leak in XSLT
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/fc08b9ec407a5906">
+                        <blockquote>
+                            It's not often that I find a bug that affects multiple different codebases in the same way, but here is an interesting info-leak bug that is currently unpatched in Firefox, Internet Explorer and Safari.<br>
+                            <br>
+                            I'm releasing it now for a few reasons:<br>
+                            <ol>
+                                <li>The bug was already publicly noted <a href="http://git.gnome.org/browse/libxslt/commit/?id=ecb6bcb8d1b7e44842edde3929f412d46b40c89f">here</a>.<br>
+                                </li>
+                                <li>This bug cannot damage anyone in and of itself; it's a low severity info-leak that does not corrupt anything. It needs to be paired with other bugs, perhaps as an exploit aid against ASLR.<br>
+                                </li>
+                                <li>This is a rare and unique opportunity to directly compare vendor responses and response times for a near-identical bug. It's nice that this is a lower-severity issue as all vendors tend to treat critical issues with at least some urgency; lower severity issues serve as a better differentiator.
+                                </li>
+                            </ol><br>
+                            <b>The bug</b><br>
+                            The bug is in the generate-id() XPath function, and is sometimes used in XSL transforms. Here's an web page that simply calls generate-id() and renders the result as a web page:<br>
+                            <br>
+                            <a href="https://cevans-app.appspot.com/static/genid.xml">https://cevans-app.appspot.com/static/genid.xml</a><br>
+                            <br>
+                            Let's see how this renders in different browsers:<br>
+                            <br>
+                            <b>Firefox</b> (64-bit Linux)<br>
+                            <code>id0x00007fbac51c1000</code><br>
+                            <br>
+                            There is no "obfuscation" that this is a raw heap address. Since Firefox is open source, we can go and look at the source code to find that indeed, the string is generated from a pointer (txXPathNodeUtils::getXSLTId):<br>
+                            <pre>
+const char gPrintfFmt[] = "id0x%016p";
+</pre><br>
+                            <b>Internet Explorer 8</b> (Windows 7)<br>
+                            <code>IDAW0MLB</code><br>
+                            <br>
+                            Doesn't look like a heap address, does it? If, however, you strip off the "ID" prefix and treat the string as a [A-Z0-5] base32 encoded "little endian" string, you resolve to a nice heap address. At that address is a pointer in msxml.dll, possibly the address of a vtable for some internal xml node class.<br>
+                            <br>
+                            <b>Safari 5</b> (Mac OS X)<br>
+                            <code>id35865226</code><br>
+                            <br>
+                            Also does not immediately look like a heap address, but libxslt is doing a simple transform on a heap address:<br>
+                            <pre>
+<br>    val = (unsigned long)((char *)cur - (char *)0);<br>    val /= sizeof(xmlNode);<br>    sprintf((char *)str, "id%ld", val);<br>
+</pre><br>
+                            <b>Opera</b><br>
+                            <code>o14022440</code><br>
+                            <code>o2148150600</code><br>
+                            These object ids bounce around all over the place. I don't know what is going on so I'm not making the claim that Opera is affected.<br>
+                            <br>
+                            <b>Chrome</b><br>
+                            Latest stable Chrome (Chrome 10) is not affected. It has been removed from the "time to fix" competition in order to keep things fair.<br>
+                            <br>
+                            <br>
+                            It's on!! Who will fix it first and who will be the security laggard? Updates to be provided via Twitter: <a href="http://twitter.com/#!/scarybeasts">@scarybeasts</a>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3024470480937744884-6483071935887850597?l=scarybeastsecurity.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://scarybeastsecurity.blogspot.com/2011/03/multi-browser-heap-address-leak-in-xslt.html">http://scarybeastsecurity.blogspot.com/2011/03/multi-browser-heap-address-leak-in-xslt.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

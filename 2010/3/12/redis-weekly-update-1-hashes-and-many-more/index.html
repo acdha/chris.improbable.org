@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Redis weekly update #1 - Hashes and... many more!
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 12 Mar 2010 15:16:58 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-12T10:16:58-04:00">
+                    <meta itemprop="dateModified" content="2010-03-12T10:16:58-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-12T14:16:58+00:00">Mar 12</time>
+                    <h2 itemprop="title">
+                        Redis weekly update #1 - Hashes and... many more!
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0ac868c9d0f27f6b">
+                        <blockquote>
+                            <div>
+                                <div style="clear:both"></div>
+                                <div>
+                                    This is the first article of a serie called, with little imagination, Redis Weekly Updates. The idea is to provide some insight in the Redis development process: what's new in Redis master this week? What are the new directions? The people involved in the development process?<br>
+                                    <br>
+                                    I'll try keeping this articles as informative as possible and, when it is possible, not too long, or at least split in paragraphs for easy scanning, so that this can become a weekly appointment for everybody following the Redis development. So... let's start!
+                                    <h3>
+                                        Hashes
+                                    </h3>One of the biggest changes of the last week is without dubt the support for the hash data type. Redis already supported four data types: Strings, Lists, Sets, and Sorted Sets. Hashes were missing, so there was not a simple way to have a key holding an object composed of different fields. The only two alternatives were:
+                                    <ul>
+                                        <li>Using one key for every field of an object. Like obj:1:name, obj:2:surname.
+                                        </li>
+                                        <li>Using some form of encoding, like JSON, storing the encoded object in a single key.
+                                        </li>
+                                    </ul>Both are suboptimal, as the first consumes too much memory, the latter does not allow accessing single fields. To set a field is a not atomic operation it is required to GET the old value, decode the object, modify the field, encode again, SET back the value. Not cool.<br>
+                                    <br>
+                                    Hahes are solving this problem in the right way: they are even less memory intensive of JSON encoded objects. Fields can be accessed independently. And I plan to support a few atomic operations against fields, for instance INCRBY.<br>
+                                    <br>
+                                    Even if Hashes <i>internals</i> are almost finished, the command set is currently limited: only two commands are supported:
+                                    <ul>
+                                        <li>HSET key field value
+                                        </li>
+                                        <li>HGET key field
+                                        </li>
+                                    </ul>There is no HDEL, nor ways to retrieve the full list of fields, values, or both. But it's a matter of days, I'm working on it.<br>
+                                    <br>
+                                    An interesting implementation detail of hashes (and the root of the interesting property of being so memory efficient) is that they use a compact representation of string =&gt; string maps for hashes with less than N field (configurable) where every field is not bigger than a given amount of bytes (configurable). I called this data simple structure <a href="http://github.com/antirez/redis/blob/master/zipmap.c">zipmap</a> (Zipped Map), and it is an O(N) compact data structure (nothing is free in computer science, but for few fields, and given the little constant times, this is not a problem at all). Once this limits are reached, the hash is automatically converted into a real hash table. This way we can support both small hashes (objects encoded as hashes) in a space efficient way and bigger hashes (using hashes as sub-dictionaries) in a time efficient way.<br>
+                                    <br>
+                                    How much space can hashes save? Basically for 5 fields objects storing them as hashes will take just a bit more than 20% of the memory required to store every field as a separated key. So it's a pretty big win. The more fields, the more memory they'll save.
+                                    <h3>
+                                        Redis cli interactive mode and DISCARD in MULTI/EXEC
+                                    </h3>Thanks to <a href="http://twitter.com/soveran">Michel Martens</a> and <a href="http://twitter.com/djanowski">Damian Janowski</a> Redis-cli now supports interactive mode (that is now the default mode). That is, a REPL interface where you can type one command after the other in a prompt, with a persistent connection (so that it is possible to test things like MULTI/EXEC).<br>
+                                    <br>
+                                    Also Damian implemented DISCARD. So now Redis transactions can be "aborted". This new command has effects in the field of higher level interfaces, for instance it's now possible to support cool things like <a href="http://github.com/djanowski/redis-rb/commit/31b754">aborting a transaction implemented as a Ruby block if there is an exception</a>. Probably this change will be merged in <a href="http://twitter.com/ezmobius">Ezra Zygmuntowicz</a>'s Redis ruby library (the most used Redis library probably, from a great coder and long term contributor to Redis as well, but if you are reading this you already know about Ezra I bet!).<br>
+                                    <br>
+                                    Just in case you are not aware of it, this two guys are also the authors of <a href="http://ohm.keyvalue.org/">Ohm Object-hash mapping</a> :)
+                                    <h3>
+                                        Sorted Sets advanced operations
+                                    </h3><a href="http://twitter.com/pnoordhuis">Pieter Noordhuis</a> was able to understand the Redis code base, modify the Redis skip list implementation into an augmented one able to support things like ZRANK (given an element, find the position in the sorted set in O(log(N))), and build things like ZREMRANGEBYINDEX, that is a more powerful LTRIM alike command for sorted sets, in just a couple of days, showing how much a talented programmer he is.<br>
+                                    <br>
+                                    If this is not enough, check the work he did lately: <a href="http://github.com/pietern/redis">sorted set union and intersection, with different ways to combine the score in the resulting sorted set</a>, (like sum, average, min, max). This is already superb, but it's not just a matter of coding skills. Instead to send pull requests Pieter spent a lot of time on the Redis IRC channel designing this commands together with me, so that we evaluated different solutions for different problems. In the process Pieter showed to be also a great designer. It was a great collaboration. If Redis were a company, I would hire it in <i>no time</i>.
+                                    <h3>
+                                        Try Redis: in your browser
+                                    </h3><a href="http://twitter.com/alexmchale">Alex McHale</a> simply amazed me. While chatting in the IRC channel he exposed the idea of helping Redis in some way, so I manifested my interest in having a simple way to try Redis in your browser, similar to the famous <a href="http://tryruby.org/">Try Ruby</a>, that MongoDB guys also replicated with <a href="http://try.mongodb.org/">Try Mongo</a>.<br>
+                                    <br>
+                                    A few days later we had <a href="http://try.redis-db.com">Try Redis</a> working! With many touches of class, like history pressing the up arrow and the use of namespaces so that all the users are using the same Redis instance without noticing this fact at all :) (I think the namespace code is originally from another great coder, <a href="http://twitter.com/defunkt">Chris Wanstrath</a> from Github, aka defunkt, but Alex improved the support and Chris is merging the changes).<br>
+                                    <br>
+                                    Try Redis had a lot of success just after its release :) And now is the first entry of the Redis documentation. Thanks Alex!
+                                    <h3>
+                                        The replication bug
+                                    </h3>Well another very important issue of this week was a not easy to spot bug in the Redis replication code :)<br>
+                                    <br>
+                                    The bug was found to <a href="http://twitter.com/jzawodn">Jeremy Zawodny</a> from Craigslist (they are using a fairly large Redis farm!). Not only Jeremy found the bug and was extremely supportive while I was trying to fix the bug, he also finally <i>fixed</i> it :)<br>
+                                    <br>
+                                    The story and the cause of this bug are interesting IMHO, so I'm going to briefly write what happened. Jeremy filed a bug report about replication failing: slaves were unable to parse the .rdb file received from the master.<br>
+                                    <br>
+                                    My best guess was that this was related to a broken .rdb file generation, both I and Petern spent many hours trying to find a sorted set that would corrupt the generated .rdb file. What was really strange was that the file was corrupted in a <i>bad</i> way but still no crashes or alike in the masters. If it was a memory corruption bug, there were good chances of the master failing as well in random ways. Instead everything was fine.<br>
+                                    <br>
+                                    Jeremy investigated more and finally found and fixed the bug: the .rdb was corrupting <i>while</i> it was transfered from master to slave. In fact at craigslist they run a number of slaves for every host sharing the same work dir, and this is the code Redis was using in order to generate the temp file used to save the dump:
+                                    <pre>
+snprintf(tmpfile,256,"temp-%d.%ld.rdb",(int)time(NULL),(long int)random());
+</pre>This looks random enough, instead it's lame. For a few reasons:
+                                    <ul>
+                                        <li>In redis there is no seeding of the PRNG via srand() because we want deterministic behavior, otherwise bug fixing is hard.
+                                        </li>
+                                        <li>it's not so unlike that two slaves will sync with masters at the same time, especially in big environments where there are scripts handing replication.
+                                        </li>
+                                        <li>why I did't used the pid that is <i>ways</i> more unique? two processes can't have the same pid at the same time, so the right thing was to use pid+time, and as Jeremy suggested, to use O_EXCL so even if there is a collision we are safe. This is how the new code looks like:
+                                        </li>
+                                        <li style="list-style: none; display: inline">
+                                            <pre>
+    while(maxtries--) {
+        snprintf(tmpfile,256,
+            "temp-%d.%ld.rdb",(int)time(NULL),(long int)getpid());
+        dfd = open(tmpfile,O_CREAT|O_WRONLY|O_EXCL,0644);
+        if (dfd != -1) break;
+        sleep(1);
+    }
+</pre>
+                                        </li>
+                                    </ul>This should be much better ;) I'm going to release 1.2.6 today or in the week end at max, with this fix.
+                                    <h3>
+                                        There is something good about open source
+                                    </h3>I'm <i>so happy</i> because of this stories, involving five people willing to share their work for free, to push their knowledge forward. This are a few of the best traits of humanity itself. There is really something good about open source, and I'm honored to collaborate with such great guys. Thanks.
+                                </div>
+                                <div>
+                                    <div>
+                                        post read 20881 times<sup><a href="http://antirez.com/page/uniquevisitors">*</a></sup> (average 59.7 visits/day)
+                                    </div>Posted at 15:16:58 <a href="http://antirez.com/post/redis-weekly-update-1.html">permalink</a> | <a href="http://antirez.com/post/redis-weekly-update-1.html">28 comments</a> | <a href="http://antirez.com/print.php?postid=206">print</a> | <a href="http://postli.com/post?t=Redis+weekly+update+%231+-+Hashes+and...+many+more%21&amp;u=http%3A%2F%2Fantirez.com%2Fpost%2Fredis-weekly-update-1.html">post it</a> | <a href="http://technorati.com/search/http://antirez.com/post/redis-weekly-update-1.html">View blog reactions</a>
+                                </div>
+                            </div><img src="http://feeds.feedburner.com/~r/antirez/~4/lgxdJVvRoqQ" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://antirez.com/post/redis-weekly-update-1.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+antirez+%28antirez+weblog%29">http://antirez.com/post/redis-weekly-update-1.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+antirez+%28antirez+weblog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

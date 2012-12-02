@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            ECMAScript 5 strict mode in Firefox 4
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 25 Jan 2011 15:37:24 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-25T10:37:24-04:00">
+                    <meta itemprop="dateModified" content="2011-01-25T10:37:24-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-25T14:37:24+00:00">Jan 25</time>
+                    <h2 itemprop="title">
+                        ECMAScript 5 strict mode in Firefox 4
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/b7449f04d2e0cbd6">
+                        <blockquote>
+                            <p>
+                                <strong>Editor’s note</strong>: This article is posted by Chris Heilmann but authored by <a href="http://whereswalden.com">Jeff Walden</a> – credit where credit is due.
+                            </p>
+                            <p>
+                                Developers in the Mozilla community have made major improvements to the JavaScript engine in Firefox 4. We have devoted much effort to improving performance, but we’ve also worked on new features. We have particularly focused on <a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">ECMAScript 5</a>, the latest update to the standard underlying JavaScript.
+                            </p>
+                            <p>
+                                Strict mode is arguably the most interesting new feature in ECMAScript 5. It’s a way to <em>opt in</em> to a restricted variant of JavaScript. Strict mode isn’t just a subset: it <em>intentionally</em> has different semantics from normal code. Browsers not supporting strict mode will run strict mode code with different behavior from browsers that do, so don’t rely on strict mode without feature-testing for support for the relevant aspects of strict mode.
+                            </p>
+                            <p>
+                                Strict mode code and non-strict mode code can coexist, so scripts can opt into strict mode incrementally. Strict mode blazes a path to future ECMAScript editions where new code with a particular <code>&lt;script type="..."&gt;</code> will likely automatically be executed in strict mode.
+                            </p>
+                            <p>
+                                What does strict mode do? First, it eliminates some JavaScript pitfalls that didn’t cause errors by changing them to produce errors. Second, it fixes mistakes that make it difficult for JavaScript engines to perform optimizations: strict mode code can sometimes be made to run faster than identical code that’s not strict mode. Firefox 4 generally hasn’t optimized strict mode yet, but subsequent versions will. Third, it prohibits some syntax likely to be defined in future versions of ECMAScript.
+                            </p>
+                            <h2>
+                                Invoking strict mode
+                            </h2>
+                            <p>
+                                Strict mode applies to <em>entire scripts</em> or to <em>individual functions</em>. It doesn’t apply to block statements enclosed in <code>{}</code> braces; attempting to apply it to such contexts does nothing. <code>eval</code> code, event handler attributes, strings passed to <a href="https://developer.mozilla.org/en/DOM/window.setTimeout"><code>setTimeout</code></a>, and the like are entire scripts, and invoking strict mode in them works as expected.
+                            </p>
+                            <h3>
+                                Strict mode for scripts
+                            </h3>
+                            <p>
+                                To invoke strict mode for an entire script, put the <em>exact</em> statement <code>"use strict";</code> (or <code>'use strict';</code>) before any other statements.
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#006600;font-style:italic">// Whole-script strict mode syntax</span>
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> v <span style="color:#339933">=</span> <span style="color:#3366CC">"Hi!  I'm a strict mode script!"</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                This syntax has a trap that has <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=579119">already bitten</a> <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=627531">a major site</a>: it isn’t possible to blindly concatenate non-conflicting scripts. Consider concatenating a strict mode script with a non-strict mode script: the entire concatenation looks strict! The inverse is also true: non-strict plus strict looks non-strict. Concatenation of strict mode scripts with each other is fine, and concatenation of non-strict mode scripts is fine. Only <a href="http://en.wikipedia.org/wiki/Proton_pack">crossing the streams</a> by concatenating strict and non-strict scripts is problematic.
+                            </p>
+                            <h3>
+                                Strict mode for functions
+                            </h3>
+                            <p>
+                                Likewise, to invoke strict mode for a function, put the <em>exact</em> statement <code>"use strict";</code> (or <code>'use strict';</code>) in the function’s body before any other statements.
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#003366;font-weight:bold">function</span> strict<span style="color:#009900">(</span><span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#006600;font-style:italic">// Function-level strict mode syntax</span>
+  <span style="color:#3366CC">'use strict'</span><span style="color:#339933">;</span>
+  <span style="color:#003366;font-weight:bold">function</span> nested<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#000066;font-weight:bold">return</span> <span style="color:#3366CC">"And so am I!"</span><span style="color:#339933">;</span> <span style="color:#009900">}</span>
+  <span style="color:#000066;font-weight:bold">return</span> <span style="color:#3366CC">"Hi!  I'm a strict mode function!  "</span> <span style="color:#339933">+</span> nested<span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+<span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">function</span> notStrict<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#000066;font-weight:bold">return</span> <span style="color:#3366CC">"I'm not strict."</span><span style="color:#339933">;</span> <span style="color:#009900">}</span>
+</pre>
+                                </div>
+                            </div>
+                            <h2>
+                                Changes in strict mode
+                            </h2>
+                            <p>
+                                Strict mode changes both syntax and runtime behavior. Changes generally fall into these categories:
+                            </p>
+                            <ul>
+                                <li>Converting mistakes into errors (as syntax errors or at runtime)
+                                </li>
+                                <li>Simplifying how the particular variable for a given use of a name is computed
+                                </li>
+                                <li>Simplifying <code>eval</code> and <code>arguments</code>
+                                </li>
+                                <li>Making it easier to write “secure” JavaScript
+                                </li>
+                                <li>Anticipating future ECMAScript evolution
+                                </li>
+                            </ul>
+                            <h3>
+                                Converting mistakes into errors
+                            </h3>
+                            <p>
+                                Strict mode changes some previously-accepted mistakes into errors. JavaScript was designed to be easy for novice developers, and sometimes it gives operations which should be errors non-error semantics. Sometimes this fixes the immediate problem, but sometimes this creates worse problems in the future. Strict mode treats these mistakes as errors so that they’re discovered and promptly fixed.
+                            </p>
+                            <p>
+                                First, strict mode makes it impossible to accidentally create global variables. In normal JavaScript, mistyping a variable in an assignment creates a new property on the global object and continues to “work” (although future failure is possible: likely, in modern JavaScript). Assignments which would accidentally create global variables instead throw errors in strict mode:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+mistypedVaraible <span style="color:#339933">=</span> <span style="color:#CC0000">17</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// throws a ReferenceError</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Second, strict mode makes assignments which would otherwise silently fail throw an exception. For example, <code>NaN</code> is a non-writable global variable. In normal code assigning to <code>NaN</code> does nothing; the developer receives no failure feedback. In strict mode assigning to <code>NaN</code> throws an exception. Any assignment that silently fails in normal code will throw errors in strict mode:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+NaN <span style="color:#339933">=</span> <span style="color:#CC0000">42</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// throws a TypeError</span>
+<span style="color:#003366;font-weight:bold">var</span> obj <span style="color:#339933">=</span> <span style="color:#009900">{</span> get x<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#000066;font-weight:bold">return</span> <span style="color:#CC0000">17</span><span style="color:#339933">;</span> <span style="color:#009900">}</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+obj.<span style="color:#660066">x</span> <span style="color:#339933">=</span> <span style="color:#CC0000">5</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// throws a TypeError</span>
+<span style="color:#003366;font-weight:bold">var</span> fixed <span style="color:#339933">=</span> <span style="color:#009900">{</span><span style="color:#009900">}</span><span style="color:#339933">;</span>
+Object.<span style="color:#660066">preventExtensions</span><span style="color:#009900">(</span>fixed<span style="color:#009900">)</span><span style="color:#339933">;</span>
+fixed.<span style="color:#660066">newProp</span> <span style="color:#339933">=</span> <span style="color:#3366CC">"ohai"</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// throws a TypeError</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Third, if you attempt to delete undeletable properties, strict mode throws errors (where before the attempt would simply have no effect):
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#000066;font-weight:bold">delete</span> Object.<span style="color:#660066">prototype</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// throws a TypeError</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Fourth, strict mode requires that all properties named in an object literal be unique. Normal code may duplicate property names, with the last one determining the property’s value. But since only the last one does anything, the duplication is simply a vector for bugs, if the code is modified to change the property value other than by changing the last instance. Duplicate property names are a syntax error in strict mode:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> o <span style="color:#339933">=</span> <span style="color:#009900">{</span> p<span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span> p<span style="color:#339933">:</span> <span style="color:#CC0000">2</span> <span style="color:#009900">}</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// !!! syntax error</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Fifth, strict mode requires that function argument names be unique. In normal code the last duplicated argument hides previous identically-named arguments. Those previous arguments remain available through <code>arguments[i]</code>, so they’re not completely inaccessible. Still, this hiding makes little sense and is probably undesirable (it might hide a typo, for example), so in strict mode duplicate argument names are a syntax error:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#003366;font-weight:bold">function</span> sum<span style="color:#009900">(</span>a<span style="color:#339933">,</span> a<span style="color:#339933">,</span> c<span style="color:#009900">)</span> <span style="color:#006600;font-style:italic">// !!! syntax error</span>
+<span style="color:#009900">{</span>
+  <span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+  <span style="color:#000066;font-weight:bold">return</span> a <span style="color:#339933">+</span> b <span style="color:#339933">+</span> c<span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// wrong if this code ran</span>
+<span style="color:#009900">}</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Sixth, strict mode forbids octal syntax. Octal syntax isn’t part of ECMAScript, but it’s supported in all browsers by prefixing the octal number with a zero: <code>0644 === 420</code> and <code>"\\045" === "%"</code>. Novice developers sometimes believe a leading zero prefix has no semantic meaning, so they use it as an alignment device — but this changes the number’s meaning! Octal syntax is rarely useful and can be mistakenly used, so strict mode makes octal a syntax error:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> sum <span style="color:#339933">=</span> 015 <span style="color:#339933">+</span> <span style="color:#006600;font-style:italic">// !!! syntax error</span>
+          <span style="color:#CC0000">197</span> <span style="color:#339933">+</span>
+          <span style="color:#CC0000">142</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <h3>
+                                Simplifying variable uses
+                            </h3>
+                            <p>
+                                Strict mode simplifies how variable uses map to particular variable definitions in the code. Many compiler optimizations rely on the ability to say that <em>this</em> variable is stored in <em>this</em> location: this is critical to fully optimizing JavaScript code. JavaScript sometimes makes this basic mapping of name to variable definition in the code impossible to perform except at runtime. Strict mode removes most cases where this happens, so the compiler can better optimize strict mode code.
+                            </p>
+                            <p>
+                                First, strict mode prohibits <code>with</code>. The problem with <code>with</code> is that any name in it might map either to a property of the object passed to it, or to a variable in surrounding code, at runtime: it’s impossible to know which beforehand. Strict mode makes <code>with</code> a syntax error, so there’s no chance for a name in a <code>with</code> to refer to an unknown location at runtime:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> x <span style="color:#339933">=</span> <span style="color:#CC0000">17</span><span style="color:#339933">;</span>
+<span style="color:#000066;font-weight:bold">with</span> <span style="color:#009900">(</span>obj<span style="color:#009900">)</span> <span style="color:#006600;font-style:italic">// !!! syntax error</span>
+<span style="color:#009900">{</span>
+  <span style="color:#006600;font-style:italic">// If this weren't strict mode, would this be var x, or</span>
+  <span style="color:#006600;font-style:italic">// would it instead be obj.x?  It's impossible in general</span>
+  <span style="color:#006600;font-style:italic">// to say without running the code, so the name can't be</span>
+  <span style="color:#006600;font-style:italic">// optimized.</span>
+  x<span style="color:#339933">;</span>
+<span style="color:#009900">}</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                The simple alternative of assigning the object to a variable, then accessing the corresponding property on that variable, stands ready to replace <code>with</code>.
+                            </p>
+                            <p>
+                                Second, <a href="http://whereswalden.com/2011/01/10/new-es5-strict-mode-support-new-vars-created-by-strict-mode-eval-code-are-local-to-that-code-only/"><code>eval</code> of strict mode code does not introduce new variables into the surrounding code</a>. In normal code <code>eval("var x;")</code> introduces a variable <code>x</code> into the surrounding function or the global scope. This means that, in general, in a function containing a call to <code>eval</code>, every name not referring to an argument or local variable must be mapped to a particular definition at runtime (because that <code>eval</code> might have introduced a new variable that would hide the outer variable). In strict mode <code>eval</code> creates variables only for the code being evaluated, so <code>eval</code> can’t affect whether a name refers to an outer variable or some local variable:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#003366;font-weight:bold">var</span> x <span style="color:#339933">=</span> <span style="color:#CC0000">17</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> evalX <span style="color:#339933">=</span> <span style="color:#000066;font-weight:bold">eval</span><span style="color:#009900">(</span><span style="color:#3366CC">"'use strict'; var x = 42; x"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+assert<span style="color:#009900">(</span>x <span style="color:#339933">===</span> <span style="color:#CC0000">17</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+assert<span style="color:#009900">(</span>evalX <span style="color:#339933">===</span> <span style="color:#CC0000">42</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Relatedly, if the function <code>eval</code> is invoked by an expression of the form <code>eval(...)</code> in strict mode code, the code will be evaluated as strict mode code. The code may explicitly invoke strict mode, but it’s unnecessary to do so.
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#003366;font-weight:bold">function</span> strict1<span style="color:#009900">(</span>str<span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+  <span style="color:#000066;font-weight:bold">return</span> <span style="color:#000066;font-weight:bold">eval</span><span style="color:#009900">(</span>str<span style="color:#009900">)</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// str will be treated as strict mode code</span>
+<span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">function</span> strict2<span style="color:#009900">(</span>f<span style="color:#339933">,</span> str<span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+  <span style="color:#000066;font-weight:bold">return</span> f<span style="color:#009900">(</span>str<span style="color:#009900">)</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// not eval(...): str is strict iff it invokes strict mode</span>
+<span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">function</span> nonstrict<span style="color:#009900">(</span>str<span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#000066;font-weight:bold">return</span> <span style="color:#000066;font-weight:bold">eval</span><span style="color:#009900">(</span>str<span style="color:#009900">)</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// str is strict iff it invokes strict mode</span>
+<span style="color:#009900">}</span>
+strict1<span style="color:#009900">(</span><span style="color:#3366CC">"'Strict mode code!'"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+strict1<span style="color:#009900">(</span><span style="color:#3366CC">"'use strict'; 'Strict mode code!'"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+strict2<span style="color:#009900">(</span><span style="color:#000066;font-weight:bold">eval</span><span style="color:#339933">,</span> <span style="color:#3366CC">"'Non-strict code.'"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+strict2<span style="color:#009900">(</span><span style="color:#000066;font-weight:bold">eval</span><span style="color:#339933">,</span> <span style="color:#3366CC">"'use strict'; 'Strict mode code!'"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+nonstrict<span style="color:#009900">(</span><span style="color:#3366CC">"'Non-strict code.'"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+nonstrict<span style="color:#009900">(</span><span style="color:#3366CC">"'use strict'; 'Strict mode code!'"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Third, strict mode forbids deleting plain names. Thus names in strict mode <code>eval</code> code behave identically to names in strict mode code not being evaluated as the result of <code>eval</code>. Using <code>delete name</code> in strict mode is a syntax error:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#000066;font-weight:bold">eval</span><span style="color:#009900">(</span><span style="color:#3366CC">"var x; delete x;"</span><span style="color:#009900">)</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// !!! syntax error</span>
+</pre>
+                                </div>
+                            </div>
+                            <h3>
+                                Making <code>eval</code> and <code>arguments</code> simpler
+                            </h3>
+                            <p>
+                                Strict mode makes <code>arguments</code> and <code>eval</code> less bizarrely magical. Both involve a considerable amount of magical behavior in normal code: <code>eval</code> to add or remove bindings and to change binding values, and <code>arguments</code> by its indexed properties aliasing named arguments. Strict mode makes great strides toward treating <code>eval</code> and <code>arguments</code> as keywords, although full fixes will not come until a future edition of ECMAScript.
+                            </p>
+                            <p>
+                                First, the names <code>eval</code> and <code>arguments</code> can’t be bound or assigned in language syntax. All these attempts to do so are syntax errors:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#000066;font-weight:bold">eval</span> <span style="color:#339933">=</span> <span style="color:#CC0000">17</span><span style="color:#339933">;</span>
+arguments<span style="color:#339933">++;</span>
+<span style="color:#339933">++</span><span style="color:#000066;font-weight:bold">eval</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> obj <span style="color:#339933">=</span> <span style="color:#009900">{</span> set p<span style="color:#009900">(</span>arguments<span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> <span style="color:#000066;font-weight:bold">eval</span><span style="color:#339933">;</span>
+<span style="color:#000066;font-weight:bold">try</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span> <span style="color:#000066;font-weight:bold">catch</span> <span style="color:#009900">(</span>arguments<span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">function</span> x<span style="color:#009900">(</span><span style="color:#000066;font-weight:bold">eval</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">function</span> arguments<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">var</span> y <span style="color:#339933">=</span> <span style="color:#003366;font-weight:bold">function</span> <span style="color:#000066;font-weight:bold">eval</span><span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> f <span style="color:#339933">=</span> <span style="color:#003366;font-weight:bold">new</span> <span style="color:#003366;font-weight:bold">Function</span><span style="color:#009900">(</span><span style="color:#3366CC">"arguments"</span><span style="color:#339933">,</span> <span style="color:#3366CC">"'use strict'; return 17;"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Second, strict mode code doesn’t alias properties of <code>arguments</code> objects created within it. In normal code within a function whose first argument is <code>arg</code>, setting <code>arg</code> also sets <code>arguments[0]</code>, and vice versa (unless no arguments were provided or <code>arguments[0]</code> is deleted). For strict mode functions, <code>arguments</code> objects store the original arguments when the function was invoked. The value of <code>arguments[i]</code> does not track the value of the corresponding named argument, nor does a named argument track the value in the corresponding <code>arguments[i]</code>.
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#003366;font-weight:bold">function</span> f<span style="color:#009900">(</span>a<span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+  a <span style="color:#339933">=</span> <span style="color:#CC0000">42</span><span style="color:#339933">;</span>
+  <span style="color:#000066;font-weight:bold">return</span> <span style="color:#009900">[</span>a<span style="color:#339933">,</span> arguments<span style="color:#009900">[</span><span style="color:#CC0000">0</span><span style="color:#009900">]</span><span style="color:#009900">]</span><span style="color:#339933">;</span>
+<span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">var</span> pair <span style="color:#339933">=</span> f<span style="color:#009900">(</span><span style="color:#CC0000">17</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+assert<span style="color:#009900">(</span>pair<span style="color:#009900">[</span><span style="color:#CC0000">0</span><span style="color:#009900">]</span> <span style="color:#339933">===</span> <span style="color:#CC0000">42</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+assert<span style="color:#009900">(</span>pair<span style="color:#009900">[</span><span style="color:#CC0000">1</span><span style="color:#009900">]</span> <span style="color:#339933">===</span> <span style="color:#CC0000">17</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Third, <code>arguments.callee</code> is no longer supported. In normal code <code>arguments.callee</code> refers to the enclosing function. This use case is weak: simply name the enclosing function! Moreover, <code>arguments.callee</code> substantially hinders optimizations like inlining functions, because it must be made possible to provide a reference to the un-inlined function if <code>arguments.callee</code> is accessed. For strict mode functions, <code>arguments.callee</code> is a non-deletable property which throws an error when set or retrieved:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">var</span> f <span style="color:#339933">=</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#000066;font-weight:bold">return</span> arguments.<span style="color:#660066">callee</span><span style="color:#339933">;</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+f<span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// throws a TypeError</span>
+</pre>
+                                </div>
+                            </div>
+                            <h3>
+                                “Securing” JavaScript
+                            </h3>
+                            <p>
+                                Strict mode makes it easier to write “secure” JavaScript. Some websites now provide ways for users to write JavaScript which will be run by the website <em>on behalf of other users</em>. JavaScript in browsers can access the user’s private information, so such JavaScript must be partially transformed before it is run, to censor access to forbidden functionality. JavaScript’s flexibility makes it effectively impossible to do this without many runtime checks. Certain language functions are so pervasive that performing runtime checks has considerable performance cost. A few strict mode tweaks, plus requiring that user-submitted JavaScript be strict mode code and that it be invoked in a certain manner, substantially reduce the need for those runtime checks.
+                            </p>
+                            <p>
+                                First, the value passed as <code>this</code> to a function in strict mode isn’t boxed into an object. For a normal function, <code>this</code> is always an object: the provided object if called with an object-valued <code>this</code>; the value, boxed, if called with a Boolean, string, or number <code>this</code>; or the global object if called with an <code>undefined</code> or <code>null</code> <code>this</code>. (Use <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/call"><code>call</code></a>, <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/apply"><code>apply</code></a>, or <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind"><code>bind</code></a> to specify a particular <code>this</code>.) Automatic boxing is a performance cost, but exposing the global object in browsers is a security hazard, because the global object provides access to functionality “secure” JavaScript environments must invariably. Thus for a strict mode function, the specified <code>this</code> is used unchanged:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">function</span> fun<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#000066;font-weight:bold">return</span> <span style="color:#000066;font-weight:bold">this</span><span style="color:#339933">;</span> <span style="color:#009900">}</span>
+assert<span style="color:#009900">(</span>fun<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#339933">===</span> undefined<span style="color:#009900">)</span><span style="color:#339933">;</span>
+assert<span style="color:#009900">(</span>fun.<span style="color:#660066">call</span><span style="color:#009900">(</span><span style="color:#CC0000">2</span><span style="color:#009900">)</span> <span style="color:#339933">===</span> <span style="color:#CC0000">2</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+assert<span style="color:#009900">(</span>fun.<span style="color:#660066">apply</span><span style="color:#009900">(</span><span style="color:#003366;font-weight:bold">null</span><span style="color:#009900">)</span> <span style="color:#339933">===</span> <span style="color:#003366;font-weight:bold">null</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+assert<span style="color:#009900">(</span>fun.<span style="color:#660066">call</span><span style="color:#009900">(</span>undefined<span style="color:#009900">)</span> <span style="color:#339933">===</span> undefined<span style="color:#009900">)</span><span style="color:#339933">;</span>
+assert<span style="color:#009900">(</span>fun.<span style="color:#660066">bind</span><span style="color:#009900">(</span><span style="color:#003366;font-weight:bold">true</span><span style="color:#009900">)</span><span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#339933">===</span> <span style="color:#003366;font-weight:bold">true</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                (Tangentially, built-in methods also now won’t box <code>this</code> if it is <code>null</code> or <code>undefined</code>. [This change is independent of strict mode but is motivated by the same concern about exposing the global object.] Historically, passing <code>null</code> or <code>undefined</code> to a built-in method like <code>Array.prototype.sort()</code> would act as if the global object had been specified. Now passing either value as <code>this</code> to most built-in methods throws a <code>TypeError</code>. Booleans, numbers, and strings are still boxed by these methods: it’s only when these methods would otherwise act on the global object that they’ve been changed.)
+                            </p>
+                            <p>
+                                Second, in strict mode it’s no longer possible to “walk” the JavaScript stack via commonly-implemented extensions to ECMAScript. In normal code with these extensions, when a function <code>fun</code> is in the middle of being called, <code>fun.caller</code> is the function that most recently called <code>fun</code>, and <code>fun.arguments</code> is the <code>arguments</code> for that invocation of <code>fun</code>. Both extensions are problematic for “secure” JavaScript, because they allow “secured” code to access “privileged” functions and their (potentially unsecured) arguments. If <code>fun</code> is in strict mode, both <code>fun.caller</code> and <code>fun.arguments</code> are non-deletable properties which throw an error when set or retrieved:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#003366;font-weight:bold">function</span> restricted<span style="color:#009900">(</span><span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+  restricted.<span style="color:#660066">caller</span><span style="color:#339933">;</span>    <span style="color:#006600;font-style:italic">// throws a TypeError</span>
+  restricted.<span style="color:#660066">arguments</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// throws a TypeError</span>
+<span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">function</span> privilegedInvoker<span style="color:#009900">(</span><span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#000066;font-weight:bold">return</span> restricted<span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+<span style="color:#009900">}</span>
+privilegedInvoker<span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Third, <code>arguments</code> for strict mode functions no longer provide access to the corresponding function call’s variables. In some old ECMAScript implementations <code>arguments.caller</code> was an object whose properties aliased variables in that function. This is a <a href="http://stuff.mit.edu/iap/2008/facebook/">security hazard</a> because it breaks the ability to hide privileged values via function abstraction; it also precludes most optimizations. For these reasons no recent browsers implement it. Yet because of its historical functionality, <code>arguments.caller</code> for a strict mode function is also a non-deletable property which throws an error when set or retrieved:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#003366;font-weight:bold">function</span> fun<span style="color:#009900">(</span>a<span style="color:#339933">,</span> b<span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+  <span style="color:#003366;font-weight:bold">var</span> v <span style="color:#339933">=</span> <span style="color:#CC0000">12</span><span style="color:#339933">;</span>
+  <span style="color:#000066;font-weight:bold">return</span> arguments.<span style="color:#660066">caller</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// throws a TypeError</span>
+<span style="color:#009900">}</span>
+fun<span style="color:#009900">(</span><span style="color:#CC0000">1</span><span style="color:#339933">,</span> <span style="color:#CC0000">2</span><span style="color:#009900">)</span><span style="color:#339933">;</span> <span style="color:#006600;font-style:italic">// doesn't expose v (or a or b)</span>
+</pre>
+                                </div>
+                            </div>
+                            <h3>
+                                Paving the way for future ECMAScript versions
+                            </h3>
+                            <p>
+                                Future ECMAScript versions will likely introduce new syntax, and strict mode in ECMAScript 5 applies some restrictions to ease the transition. It will be easier to make some changes if the foundations of those changes are prohibited in strict mode.
+                            </p>
+                            <p>
+                                First, in strict mode a short list of identifiers become reserved keywords. These words are <code>implements</code>, <code>interface</code>, <code>let</code>, <code>package</code>, <code>private</code>, <code>protected</code>, <code>public</code>, <code>static</code>, and <code>yield</code>. In strict mode, then, you can’t name or use variables or arguments with these names. A Mozilla-specific caveat: if your code is JavaScript 1.7 or greater (you’re chrome code, or you’ve used the right <code>&lt;script type=""&gt;</code>) and is strict mode code, <code>let</code> and <code>yield</code> have the functionality they’ve had since those keywords were first introduced. But strict mode code on the web, loaded with <code>&lt;script src=""&gt;</code> or <code>&lt;script&gt;...&lt;/script&gt;</code>, won’t be able to use <code>let</code>/<code>yield</code> as identifiers.
+                            </p>
+                            <p>
+                                Second, <a href="http://whereswalden.com/2011/01/24/new-es5-strict-mode-requirement-function-statements-not-at-top-level-of-a-program-or-function-are-prohibited/">strict mode prohibits function statements not at the top level of a script or function</a>. In normal code in browsers, function statements are permitted “everywhere”. <em>This is not part of ES5!</em> It’s an extension with incompatible semantics in different browsers. Future ECMAScript editions hope to specify new semantics for function statements not at the top level of a script or function. <a href="http://wiki.ecmascript.org/doku.php?id=conventions:no_non_standard_strict_decls">Prohibiting such function statements in strict mode</a> “clears the deck” for specification in a future ECMAScript release:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#3366CC">"use strict"</span><span style="color:#339933">;</span>
+<span style="color:#000066;font-weight:bold">if</span> <span style="color:#009900">(</span><span style="color:#003366;font-weight:bold">true</span><span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#003366;font-weight:bold">function</span> f<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span> <span style="color:#006600;font-style:italic">// !!! syntax error</span>
+  f<span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+<span style="color:#009900">}</span>
+<span style="color:#000066;font-weight:bold">for</span> <span style="color:#009900">(</span><span style="color:#003366;font-weight:bold">var</span> i <span style="color:#339933">=</span> <span style="color:#CC0000">0</span><span style="color:#339933">;</span> i <span style="color:#339933">&amp;</span>lt<span style="color:#339933">;</span> <span style="color:#CC0000">5</span><span style="color:#339933">;</span> i<span style="color:#339933">++</span><span style="color:#009900">)</span>
+<span style="color:#009900">{</span>
+  <span style="color:#003366;font-weight:bold">function</span> f2<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span> <span style="color:#006600;font-style:italic">// !!! syntax error</span>
+  f2<span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+<span style="color:#009900">}</span>
+<span style="color:#003366;font-weight:bold">function</span> baz<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#006600;font-style:italic">// kosher</span>
+<span style="color:#009900">{</span>
+  <span style="color:#003366;font-weight:bold">function</span> eit<span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009900">}</span> <span style="color:#006600;font-style:italic">// also kosher</span>
+<span style="color:#009900">}</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                This prohibition isn’t strict mode proper, because such function statements are an extension. But it is the recommendation of the ECMAScript committee, and browsers will implement it.
+                            </p>
+                            <h2>
+                                Strict mode in browsers
+                            </h2>
+                            <p>
+                                Firefox 4 is the first browser to fully implement strict mode. The Nitro engine found in many WebKit browsers isn’t far behind with nearly-complete strict mode support. Chrome has also <a href="http://codereview.chromium.org/6144005/">started</a> to implement strict mode. Internet Explorer and Opera haven’t started to implement strict mode; feel free to send those browser makers feedback requesting strict mode support.
+                            </p>
+                            <p>
+                                Browsers don’t reliably implement strict mode, so don’t blindly depend on it. <em>Strict mode changes semantics.</em> Relying on those changes will cause mistakes and errors in browsers which don’t implement strict mode. Exercise caution in using strict mode, and back up reliance on strict mode with feature tests that check whether relevant features of strict mode are implemented.
+                            </p>
+                            <p>
+                                To test out strict mode, download <a href="http://nightly.mozilla.org/">a Firefox nightly</a> and start playing. Also consider its restrictions when writing new code and when updating existing code. (To be absolutely safe, however, it’s probably best to wait to use it in production until it’s shipped in browsers.)
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://hacks.mozilla.org/2011/01/ecmascript-5-strict-mode-in-firefox-4/">http://hacks.mozilla.org/2011/01/ecmascript-5-strict-mode-in-firefox-4/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

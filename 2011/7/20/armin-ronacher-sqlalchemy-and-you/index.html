@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Armin Ronacher: SQLAlchemy and You
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 20 Jul 2011 13:37:58 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-07-20T09:37:58-04:00">
+                    <meta itemprop="dateModified" content="2011-07-20T09:37:58-04:00"><time class="date" itemprop="datePublished" datetime="2011-07-20T13:37:58+00:00">Jul 20</time>
+                    <h2 itemprop="title">
+                        Armin Ronacher: SQLAlchemy and You
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/6b8ea529ac9471a1">
+                        <p class="annotation">
+                            I've used SQLAlchemy a few times but it's rare for a project to need more than Django's ORM without having a reason to write SQL directly, usually for a DB-specific feature like tree assembly
+                        </p>
+                        <blockquote>
+                            <p>
+                                Without doubt are most new Python web programmers these days chosing the Django framework as their gateway drug to Python web development. As such many people's first experience with a Python ORM (or maybe an ORM altogether) is the Django one. When they are later switching to something else they often find SQLAlchemy unnecessarily complex and hard to use. Why is that the case?
+                            </p>
+                            <p>
+                                I made a quick poll on Twitter about why people prefer the Django ORM over SQLAlchemy and I got back a few interesting results. First of all that question was obviously asked with the intent to attract answers from people that do prefer Django over SQLAlchemy or at least have some issues with SQLAlchemy that they don't seem to have with Django. Without a doubt there is a large fanbase behind SQLAlchemy, myself included.
+                            </p>
+                            <p>
+                                SQLAlchemy in general just has a much larger featureset and it's the only ORM for Python which allows you to take full advantage of your database and does not stand in your way. It exposes all features of your underlying database if you want and can be heavily fine tuned.
+                            </p>
+                            <p>
+                                This article assumes that you have some basic Django knowledge and want to give SQLAlchemy a try. Step by step it walks through the differences and common idioms.
+                            </p>
+                            <div>
+                                <h2>
+                                    Design Differences
+                                </h2>
+                                <p>
+                                    There are two very important differences between SQLAlchemy and Django. The first one is the less obvious one: SQLAlchemy is a deeply layered system, whereas Django's ORM is basically just one layer which is the ORM you see. In SQLAlchemy you have at the very bottom the engine which with abstracts away connection pools and basic API differences between different databases, on top of that you have the SQL abstraction language, sitting on top of that and the table definitions you have the basic ORM and on top of that you have the declarative ORM which looks very closely to the Django ORM. The other more striking difference however is that SQLAlchemy follows the “Unit of Work” pattern whereas Django's ORM follows something that is very close to the “Active Record” pattern.
+                                </p>
+                                <p>
+                                    What's the difference? Django's ORM is basically quite simple. Each time you do any query it generates a SQL expression for you and sends a query to the database. Then it constructs and object for you. That object can be modified and if you call <tt>save()</tt> on it, it will update the record in the database with the new values of the attributes. This is not at all how SQLAlchemy's ORM component works. In SQLAlchemy you have an object called the “session”. It basically encapsulates a transaction. However it does more. Each object is tracked by primary key in this session. As such each object only exists once by primary key. As such you can safe a lot of queries and you never have things out of sync. When you commit the session it will send all changes at once to the database in correct order, if you rollback the session nothing happens instead.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    SQLAlchemy's Complexity
+                                </h2>
+                                <p>
+                                    SQLAlchemy has to fight with some basic acceptance problems which are caused by the fact that it's framework independent and is not even something you would only use in web applications. This is why projects like <a href="http://packages.python.org/Flask-SQLAlchemy/">Flask-SQLAlchemy</a> exist to make the integration for you. Many frameworks either provide something that preconfigures SQLAlchemy for you with some sane defaults or have a section in the cookbook to copy/paste code from.
+                                </p>
+                                <p>
+                                    This also is the reason why many people find SQLAlchemy's documentation overwhelming. Not only does the documentation guide you through the different levels of SQLAlchemy but also shows all the different ways you can configure SQLAlchemy and the ORM.
+                                </p>
+                                <p>
+                                    Djang on the other hand does not have many different ways the configure the ORM. It comes preconfigured with the exception of some database related setting such as server name, port and a few other things.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    The Session — The Heart of the ORM
+                                </h2>
+                                <p>
+                                    If you chose to use SQLAlchemy's ORM component and not just the engine or SQL abstraction layer you will sooner or later be confronted with the session object. What is the session object? It is the one object that records all the changes on models you do. How does a model know about the session? Let's compare this to Django for a moment.
+                                </p>
+                                <p>
+                                    In Django if you have a model it also has an <cite>objects</cite> attribute attached. That attribute points to a manager object which in turn can generate queryset objects and the queryset objects then fire the query and hold the results. How does this queryset object find the current transaction? In Django the answer is that transactions are bound to a thread always. Each thread can have one transaction and the queryset uses. So Django needs to find the transaction in the queryset when the actual query fires and it does that by finding the current thread which owns a transaction.
+                                </p>
+                                <p>
+                                    So how does that work in SQLAlchemy? As we have established, objects are always “owned” by a session and keyed by primary key. Each primary key can only exist once. Because that session is quite fundamental and needs to work in many setups this is configurable. But first we need to figure out what the difference between a Django queryset and a SQLAlchemy query object is. They look similar on the surface, but are very different in practice. A Django queryset is created by the manager of a model and also holds the results once the query is fired. In SQLAlchemy the query object can be created in many different ways and unifies the idea of the manager and Django's querysets in itself. When the query object is evaluated (the query is sent to the database) it instead returns a list or the only result object, depending on what methods are used. This means the manager object is entirely unnecessary in SQLAlchemy, if you need custom manager methods you would just subclass the query and attach new methods on there. Since the query object can be joined it makes for quite a nice API.
+                                </p>
+                                <p>
+                                    But back to sessions. In Django default of having one transaction per thread makes a lot of sense, but limits the usefulness when you have other means of concurrency somewhat. Also it makes it hard if you want to use the same model against two different databases. This is where the explicit API comes into play which is the one that the documentation uses.
+                                </p>
+                                <p>
+                                    So instead of this Django idiom:
+                                </p>
+                                <div>
+                                    <pre>
+<span>MyModel</span><span>.</span><span>objects</span><span>.</span><span>all</span><span>()</span>
+</pre>
+                                </div>
+                                <p>
+                                    In default SQLAlchemy you would do this instead:
+                                </p>
+                                <div>
+                                    <pre>
+<span>session</span><span>.</span><span>query</span><span>(</span><span>MyModel</span><span>)</span><span>.</span><span>all</span><span>()</span>
+</pre>
+                                </div>
+                                <p>
+                                    Here it's explicit what session object should be used and you can have multiple of those side by side obviously. Since many people do not need this and are fine with having one session per thread you can take advantage of the scoped session support in SQLAlchemy. For instance the Flask-SQLAlchemy extension will by default attach a <cite>query</cite> class level attribute to your models which looks at the current thread and it's session object. So each thread will only have one session. Furthermore at the end of an HTTP request in Flask the extension will automatically destroy the session and discarding uncommitted changes.
+                                </p>
+                                <p>
+                                    With that, it looks a lot closer to Django:
+                                </p>
+                                <div>
+                                    <pre>
+<span>MyModel</span><span>.</span><span>query</span><span>.</span><span>all</span><span>()</span>
+</pre>
+                                </div>
+                                <p>
+                                    You however will still need the session to commit and insert and delete objects from the database. The scoped session automatically provides a proxy that always point to the current active session.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    The Declarative Extension
+                                </h2>
+                                <p>
+                                    For a long time SQLAlchemy made you declare table objects first and then separately create the classes and map those together. This has the advantage over just subclassing some magical baseclass that you can map already existing classes to things in the database. The downside always was however that you had to declare multiple objects and the common case was unnecessarily complex.
+                                </p>
+                                <p>
+                                    SQLAlchemy since introduced the declarative base. It's a extension module shipped with SQLAlchemy that provides a function which creates a brand new baseclass (which you can also customize) which does metaclass magic very similar to Django. As such you can directly declare relationships and attributes in the class itself.
+                                </p>
+                                <p>
+                                    There are still some differences though:
+                                </p>
+                                <ul>
+                                    <li>Relationships are not magically created for you, you have to be expicit. The same is true with foreign keys.
+                                    </li>
+                                    <li>Primary keys are not automatically generated for you for the simple reason that SQLAlchemy supports more than one primary key type. If you want one chosen by default, you can provide a baseclass that implements that.
+                                    </li>
+                                    <li>The table name has to be set explicitly. Again you can customize the baseclass to derive the table name from the class name if you like.
+                                    </li>
+                                </ul>
+                                <p>
+                                    To get this baseclass you basically just need this:
+                                </p>
+                                <div>
+                                    <pre>
+<span>from</span> <span>sqlalchemy.ext.declarative</span> <span>import</span> <span>declarative_base</span>
+<span>Base</span> <span>=</span> <span>declarative_base</span><span>()</span>
+</pre>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Basic Models
+                                    </h3>
+                                    <p>
+                                        A basic Django model looks something like this:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>class</span> <span>Person</span><span>(</span><span>models</span><span>.</span><span>Model</span><span>):</span>
+    <span>first_name</span> <span>=</span> <span>models</span><span>.</span><span>CharField</span><span>(</span><span>max_length</span><span>=</span><span>30</span><span>)</span>
+    <span>last_name</span> <span>=</span> <span>models</span><span>.</span><span>CharField</span><span>(</span><span>max_length</span><span>=</span><span>30</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        The equivalent SQLAlchemy model with declarative base looks like this:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>from</span> <span>sqlalchemy</span> <span>import</span> <span>Column</span><span>,</span> <span>Integer</span><span>,</span> <span>String</span>
+
+<span>class</span> <span>Person</span><span>(</span><span>Base</span><span>):</span>
+    <span>__tablename__</span> <span>=</span> <span>'persons'</span>
+    <span>id</span> <span>=</span> <span>Column</span><span>(</span><span>Integer</span><span>,</span> <span>primary_key</span><span>=</span><span>True</span><span>)</span>
+    <span>first_name</span> <span>=</span> <span>Column</span><span>(</span><span>String</span><span>(</span><span>30</span><span>))</span>
+    <span>last_name</span> <span>=</span> <span>Column</span><span>(</span><span>String</span><span>(</span><span>30</span><span>))</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        It's a little more to type, but if you want to make this implicit you just need a proper baseclass. Flask-SQLAlchemy for instance sets the lowercase version of the class as default tablename unless overridden.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Many-to-One Relationships
+                                    </h3>
+                                    <p>
+                                        In Django this is straightforward:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>class</span> <span>Manufacturer</span><span>(</span><span>models</span><span>.</span><span>Model</span><span>):</span>
+    <span>name</span> <span>=</span> <span>models</span><span>.</span><span>CharField</span><span>(</span><span>max_length</span><span>=</span><span>30</span><span>)</span>
+
+<span>class</span> <span>Car</span><span>(</span><span>models</span><span>.</span><span>Model</span><span>):</span>
+    <span>manufacturer</span> <span>=</span> <span>models</span><span>.</span><span>ForeignKey</span><span>(</span><span>Manufacturer</span><span>,</span>
+                                     <span>related_name</span><span>=</span><span>'cars'</span><span>)</span>
+    <span>name</span> <span>=</span> <span>models</span><span>.</span><span>CharField</span><span>(</span><span>max_length</span><span>=</span><span>30</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        In SQLAlchemy we have to be a little bit more expressive:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>from</span> <span>sqlalchemy</span> <span>import</span> <span>Column</span><span>,</span> <span>Integer</span><span>,</span> <span>String</span><span>,</span> <span>ForeignKey</span>
+<span>from</span> <span>sqlalchemy.orm</span> <span>import</span> <span>relationship</span><span>,</span> <span>backref</span>
+
+<span>class</span> <span>Manufacturer</span><span>(</span><span>Base</span><span>):</span>
+    <span>__tablename__</span> <span>=</span> <span>'manufacturers'</span>
+    <span>id</span> <span>=</span> <span>Column</span><span>(</span><span>Integer</span><span>,</span> <span>primary_key</span><span>=</span><span>True</span><span>)</span>
+    <span>name</span> <span>=</span> <span>Column</span><span>(</span><span>String</span><span>(</span><span>30</span><span>))</span>
+
+<span>class</span> <span>Car</span><span>(</span><span>models</span><span>.</span><span>Model</span><span>):</span>
+    <span>__tablename__</span> <span>=</span> <span>'cars'</span>
+    <span>id</span> <span>=</span> <span>Column</span><span>(</span><span>Integer</span><span>,</span> <span>primary_key</span><span>=</span><span>True</span><span>)</span>
+    <span>manufacturer_id</span> <span>=</span> <span>Column</span><span>(</span><span>Integer</span><span>,</span> <span>ForeignKey</span><span>(</span><span>'manufacturers.id'</span><span>))</span>
+    <span>name</span> <span>=</span> <span>Column</span><span>(</span><span>String</span><span>(</span><span>30</span><span>))</span>
+
+    <span>manufacturer</span> <span>=</span> <span>relationship</span><span>(</span><span>'Manufacturer'</span><span>,</span> <span>backref</span><span>=</span>
+        <span>backref</span><span>(</span><span>'cars'</span><span>,</span> <span>lazy</span><span>=</span><span>'dynamic'</span><span>))</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Here we have to model the relationship ourself. First we need to declare the foreign key. It has to have the same type as the primary key of the table we want to point to and additionally the column needs to be given a <cite>ForeignKey</cite> instance with the first argument being the dotted name to the column referenced. Note that this is the table name, not the class name.
+                                    </p>
+                                    <p>
+                                        The relationship is then declared on <cite>Car</cite> with <cite>relationship</cite>. The first argument is a class or the name of a class we want to have the relationship with. By default it will try to find a valid join condition automatically. If it does not, you can explicitly provide one as a string or real expression:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>manufacturer</span> <span>=</span> <span>relationship</span><span>(</span><span>'Manufacturer'</span><span>,</span>
+    <span>primaryjoin</span><span>=</span><span>'Car.manufacturer_id == Manufacturer.id'</span><span>,</span>
+    <span>backref</span><span>=</span><span>backref</span><span>(</span><span>'cars'</span><span>,</span> <span>lazy</span><span>=</span><span>'dynamic'</span><span>))</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        The <cite>backref</cite> argument automatically declares the reverse. It will attach a <cite>cars</cite> property on the manufacturer. The <tt><span>lazy='dynamic'</span></tt> tells SQLAlchemy to make the backref lazy and a dynamic loading one. In that case accessing <cite>manufacturer.cars</cite> will be a query object you can further refine instead of directly firing the query and returning a list.
+                                    </p>
+                                    <p>
+                                        Other lazy settings:
+                                    </p>
+                                    <ul>
+                                        <li>
+                                            <tt>'select'</tt>: if accessed load everything as list with another select statement. This is the default.
+                                        </li>
+                                        <li>
+                                            <tt>'joined'</tt>: uses a join to automatically load that backref with the query of the parent itself.
+                                        </li>
+                                        <li>
+                                            <tt>'dynamic'</tt>: returns a query object instead of firing the query. This can be sliced and further extended.
+                                        </li>
+                                    </ul>
+                                    <p>
+                                        The lazy settings can also be set on <cite>relationship</cite> and not just backref.
+                                    </p>
+                                    <p>
+                                        Backref in a nutshell:
+                                    </p>
+                                    <p>
+                                        <tt>'lazy'</tt> and <tt>'select'</tt>. The first one fires a query when <cite>honda.cars</cite> is accessed, the other one will fetch it when honda is queried:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>&gt;&gt;&gt; </span><span>honda</span><span>.</span><span>cars</span>
+<span>[&lt;Car 1&gt;, &lt;Car 2&gt;]</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        And here with <tt>'dynamic'</tt>:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>&gt;&gt;&gt; </span><span>honda</span><span>.</span><span>cars</span>
+<span>&lt;AppenderQuery ...&gt;</span>
+<span>&gt;&gt;&gt; </span><span>honda</span><span>.</span><span>cars</span><span>.</span><span>all</span><span>()</span>
+<span>[&lt;Car 1&gt;, &lt;Car 2&gt;]</span>
+</pre>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Many-To-Many
+                                    </h3>
+                                    <p>
+                                        Many to many relationships in Django are easy cake because everything is done for you:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>class</span> <span>Topping</span><span>(</span><span>models</span><span>.</span><span>Model</span><span>):</span>
+    <span>name</span> <span>=</span> <span>models</span><span>.</span><span>CharField</span><span>(</span><span>max_length</span><span>=</span><span>30</span><span>)</span>
+
+<span>class</span> <span>Pizza</span><span>(</span><span>models</span><span>.</span><span>Model</span><span>):</span>
+    <span>toppings</span> <span>=</span> <span>models</span><span>.</span><span>ManyToManyField</span><span>(</span><span>Topping</span><span>)</span>
+    <span>name</span> <span>=</span> <span>models</span><span>.</span><span>CharField</span><span>(</span><span>max_length</span><span>=</span><span>30</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        In SQLAlchemy we have to construct a helper table to join over:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>from</span> <span>sqlalchemy</span> <span>import</span> <span>Column</span><span>,</span> <span>Integer</span><span>,</span> <span>String</span><span>,</span> <span>ForeignKey</span><span>,</span> <span>Table</span>
+<span>from</span> <span>sqlalchemy.orm</span> <span>import</span> <span>relationship</span><span>,</span> <span>backref</span>
+
+<span>pizza_toppings</span> <span>=</span> <span>Table</span><span>(</span><span>'pizza_toppings'</span><span>,</span> <span>Base</span><span>.</span><span>metadata</span><span>,</span>
+    <span>Column</span><span>(</span><span>'topping_id'</span><span>,</span> <span>Integer</span><span>,</span> <span>ForeignKey</span><span>(</span><span>'toppings.id'</span><span>)),</span>
+    <span>Column</span><span>(</span><span>'pizza_id'</span><span>,</span> <span>Integer</span><span>,</span> <span>ForeignKey</span><span>(</span><span>'pizzas.id'</span><span>))</span>
+<span>)</span>
+
+<span>class</span> <span>Topping</span><span>(</span><span>Base</span><span>):</span>
+    <span>__tablename__</span> <span>=</span> <span>'toppings'</span>
+    <span>id</span> <span>=</span> <span>Column</span><span>(</span><span>Integer</span><span>,</span> <span>primary_key</span><span>=</span><span>True</span><span>)</span>
+    <span>name</span> <span>=</span> <span>Column</span><span>(</span><span>String</span><span>(</span><span>30</span><span>))</span>
+
+<span>class</span> <span>Pizza</span><span>(</span><span>models</span><span>.</span><span>Model</span><span>):</span>
+    <span>__tablename__</span> <span>=</span> <span>'pizzas'</span>
+    <span>id</span> <span>=</span> <span>Column</span><span>(</span><span>Integer</span><span>,</span> <span>primary_key</span><span>=</span><span>True</span><span>)</span>
+    <span>name</span> <span>=</span> <span>Column</span><span>(</span><span>String</span><span>(</span><span>30</span><span>))</span>
+
+    <span>toppings</span> <span>=</span> <span>relationship</span><span>(</span><span>'Topping'</span><span>,</span> <span>secondary</span><span>=</span><span>pizza_toppings</span><span>,</span>
+                            <span>backref</span><span>=</span><span>backref</span><span>(</span><span>'pizzas'</span><span>,</span> <span>lazy</span><span>=</span><span>'dynamic'</span><span>))</span>
+</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h2>
+                                    Translating Queries From Django To SQLAlchemy
+                                </h2>
+                                <p>
+                                    So this here assumes that you are using scoped sessions like Flask-SQLAlchemy does and unmodified Django. The first example is always how the equivalent Django code looks like and how you would do that with SQLAlchemy:
+                                </p>
+                                <div>
+                                    <h3>
+                                        Inserting Entries
+                                    </h3>
+                                    <p>
+                                        Inserting entries in Django can be done with either creating an instance of a model or by using the <tt>create()</tt> method of the object manager:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>foo</span> <span>=</span> <span>MyModel</span><span>(</span><span>field1</span><span>=</span><span>'value'</span><span>,</span> <span>field2</span><span>=</span><span>'value'</span><span>)</span>
+<span>foo</span><span>.</span><span>save</span><span>()</span>
+
+<span># or alternatively</span>
+<span>foo</span> <span>=</span> <span>MyModel</span><span>.</span><span>objects</span><span>.</span><span>create</span><span>(</span><span>field1</span><span>=</span><span>'value'</span><span>,</span> <span>field2</span><span>=</span><span>'value'</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        In SQLAlchemy you need to do this instead:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>foo</span> <span>=</span> <span>MyModel</span><span>(</span><span>field1</span><span>=</span><span>'value'</span><span>,</span> <span>field2</span><span>=</span><span>'value'</span><span>)</span>
+<span>session</span><span>.</span><span>add</span><span>(</span><span>foo</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        But with that you have only added the object to the session, at that point it has not yet committed the transaction. This has to be done explicitly by yourself when you are happy with all the changes:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>session</span><span>.</span><span>commit</span><span>()</span>
+</pre>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Deleting Entries
+                                    </h3>
+                                    <p>
+                                        Deleting works very much like saving in Django. You get your object and then call the <tt>delete()</tt> method on it:
+                                    </p>
+                                    <div>
+                                        <pre>
+obj = MyModel.objects.filter(pk=the_id).get()
+obj.delete()
+</pre>
+                                    </div>
+                                    <p>
+                                        In SQLAlchemy that operation is performed via the session:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>obj</span> <span>=</span> <span>MyModel</span><span>.</span><span>query</span><span>.</span><span>get</span><span>(</span><span>the_id</span><span>)</span>
+<span>session</span><span>.</span><span>delete</span><span>(</span><span>obj</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Again, remember to commit your session.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Updating Entries
+                                    </h3>
+                                    <p>
+                                        How do you update an entry? Just get the object, modify it and commit the session:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>obj</span> <span>=</span> <span>MyModel</span><span>.</span><span>query</span><span>.</span><span>get</span><span>(</span><span>the_id</span><span>)</span>
+<span>obj</span><span>.</span><span>name</span> <span>=</span> <span>'New Value'</span>
+<span>session</span><span>.</span><span>commit</span><span>()</span>
+</pre>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Primary Key Queries
+                                    </h3>
+                                    <p>
+                                        Queries is where Django and SQLAlchemy are the most different. Django uses keyword arguments to the query functions to filter the query, SQLAlchemy generally uses expressions composed out operator objects.
+                                    </p>
+                                    <p>
+                                        Query by primary key in Django:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>obj</span> <span>=</span> <span>MyModel</span><span>.</span><span>query</span><span>.</span><span>filter</span><span>(</span><span>pk</span><span>=</span><span>the_id</span><span>)</span><span>.</span><span>get</span><span>()</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        And in SQLAlchemy:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>obj</span> <span>=</span> <span>MyModel</span><span>.</span><span>query</span><span>.</span><span>get</span><span>(</span><span>the_id</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Note that <tt>get()</tt> returns <cite>None</cite> if the primary key does not exist in SQLAlchemy and will raise a <cite>DoesNotExist</cite> exception in Django.
+                                    </p>
+                                    <p>
+                                        Generally the <tt>get()</tt> method is a shortcut in SQLAlchemy that will also not issue a query for that object if it was already queried for that session before. Also unlike Django your primary key can be of any type or be a compound of more than one column.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        General Query Syntax
+                                    </h3>
+                                    <p>
+                                        If you want to filter a query in Django you generally use keyword arguments in the format <tt>column__operation=value</tt>. For instance <tt><span>column__contains='e'</span></tt> to check if a string column named <cite>column</cite> contains the letter “e”. In SQLAlchemy instead you are using expressions. These expressions can be printed to see what query they would generate.
+                                    </p>
+                                    <p>
+                                        Here some examples:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>&gt;&gt;&gt; </span><span>print</span> <span>MyModel</span><span>.</span><span>id</span> <span>==</span> <span>23</span>
+<span>model.model_id = :model_id_1</span>
+<span>&gt;&gt;&gt; </span><span>print</span> <span>MyModel</span><span>.</span><span>id</span><span>.</span><span>in_</span><span>([</span><span>1</span><span>,</span> <span>2</span><span>,</span> <span>3</span><span>])</span>
+<span>model.model_id IN (:model_id_1, :model_id_2, :model_id_3)</span>
+<span>&gt;&gt;&gt; </span><span>print</span> <span>MyModel</span><span>.</span><span>name</span><span>.</span><span>contains</span><span>(</span><span>'e'</span><span>)</span>
+<span>model.name LIKE '%%' || :name_1 || '%%'</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Note that SQLAlchemy shows you the placeholders there because it will let the database insert those values later.
+                                    </p>
+                                    <p>
+                                        The whole expression language expresses pretty much everything that SQL has to offer:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>&gt;&gt;&gt; </span><span>print</span> <span>MyModel</span><span>.</span><span>thread_count</span> <span>+</span> <span>MyModel</span><span>.</span><span>post_count</span> <span>+</span> <span>1</span>
+<span>(model.thread_count + model.post_count) + :param_1</span>
+<span>&gt;&gt;&gt; </span><span>print</span> <span>MyModel</span><span>.</span><span>id</span><span>.</span><span>between</span><span>(</span><span>1</span><span>,</span> <span>10</span><span>)</span> <span>&amp;</span> <span>MyModel</span><span>.</span><span>name</span><span>.</span><span>startswith</span><span>(</span><span>'a'</span><span>)</span>
+<span>model.model_id BETWEEN :model_id_1 AND :model_id_2 AND</span>
+<span>    model.name LIKE :name_1 || '%%'</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Now this is a biggie, because this is how you can filter for anything if you pass such an expression to <tt>filter()</tt>:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>active_users_with_a_or_b</span> <span>=</span> <span>User</span><span>.</span><span>query</span><span>.</span><span>filter</span><span>(</span>
+    <span>(</span><span>User</span><span>.</span><span>name</span><span>.</span><span>startswith</span><span>(</span><span>'a'</span><span>)</span> <span>|</span> <span>User</span><span>.</span><span>name</span><span>.</span><span>startswith</span><span>(</span><span>'b'</span><span>))</span> <span>&amp;</span>
+    <span>User</span><span>.</span><span>is_active</span> <span>==</span> <span>True</span>
+<span>)</span><span>.</span><span>all</span><span>()</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        To evaluate a query you have a few choices:
+                                    </p>
+                                    <ol>
+                                        <li>
+                                            <tt>first()</tt> returns the first result from the query and will also tell the database to perform an implicit <tt>LIMIT 1</tt>. If more than one result is found you won't know and if none is found you get <cite>None</cite> back.
+                                        </li>
+                                        <li>
+                                            <tt>one()</tt> is similar to <tt>first()</tt> but it will not limit the result in any way but perform a sanity check on getting the results. It will raise an <cite>NoResultFound</cite> exception back if it did not found a single row or a <cite>MultipleResultsFound</cite> exception if it got more than one result which indicates a bug on your part.
+                                        </li>
+                                        <li>
+                                            <tt>all()</tt> just evaluates the whole query and returns each row as a list. Why as a list and not as an iterator? First of all because each object returned is also immediately registered on the session. There are of course ways to bypass that, but unless you have an enormous result count you won't notice, secondly because most Python database adapters don't support streaming results anyways.
+                                        </li>
+                                    </ol>
+                                    <p>
+                                        Now this is nice and everything, but all that model repetition can be annoying. For as long as you are just comparing a column to a given value you can use the <tt>filter_by()</tt> function and pass keyword arguments:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>user</span> <span>=</span> <span>User</span><span>.</span><span>query</span><span>.</span><span>filter_by</span><span>(</span><span>username</span><span>=</span><span>username</span><span>)</span><span>.</span><span>first</span><span>()</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Multiple arguments are automatically joined with <tt>AND</tt>.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Date Based Queries
+                                    </h3>
+                                    <p>
+                                        In Django you can use <tt>field__year=2011</tt> to select all entries where the year of a field has a specific value. Underneath what usually happens is that an <cite>EXTRACT</cite> expression is issued. Unfortunately that's hugely database dependent and does not map nicely to a function. Thankfully SQLAlchemy provides a helper for that which automatically does the right thing for each database:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>from</span> <span>sqlalchemy.sql</span> <span>import</span> <span>extract</span>
+
+<span>entries_a_month</span> <span>=</span> <span>Entry</span><span>.</span><span>query</span><span>.</span><span>filter</span><span>(</span>
+    <span>(</span><span>extract</span><span>(</span><span>Entry</span><span>.</span><span>pub_date</span><span>,</span> <span>'year'</span><span>)</span> <span>==</span> <span>2011</span><span>)</span> <span>&amp;</span>
+    <span>(</span><span>extract</span><span>(</span><span>Entry</span><span>.</span><span>pub_date</span><span>,</span> <span>'month'</span><span>)</span> <span>==</span> <span>1</span><span>)</span>
+<span>)</span><span>.</span><span>all</span><span>()</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Quite a few extractions are possible. The most common ones are <tt>month</tt>, <tt>day</tt>, <tt>year</tt>, <tt>hour</tt>, <tt>minute</tt>, <tt>second</tt>, <tt>doy</tt> (day of year) and <tt>dow</tt> (day of week).
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Sorting
+                                    </h3>
+                                    <p>
+                                        In Django if you sort something you do that by calling <tt>order_by()</tt> and passing it some strings with the columns to order by:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>forwards</span> <span>=</span> <span>MyModel</span><span>.</span><span>objects</span><span>.</span><span>order_by</span><span>(</span><span>'pub_date'</span><span>)</span>
+<span>backwards</span> <span>=</span> <span>MyModel</span><span>.</span><span>objects</span><span>.</span><span>order_by</span><span>(</span><span>'-pub_date'</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        While it appears that the same is possible in SQLAlchemy you have to be careful because it only works as SQLAlchemy inserts that text directly into the query. What instead you want to be doing is using the expressions again:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>forwards</span> <span>=</span> <span>MyModel</span><span>.</span><span>query</span><span>.</span><span>order_by</span><span>(</span><span>MyModel</span><span>.</span><span>pub_date</span><span>)</span>
+<span>backwards</span> <span>=</span> <span>MyModel</span><span>.</span><span>query</span><span>.</span><span>order_by</span><span>(</span><span>MyModel</span><span>.</span><span>pub_date</span><span>.</span><span>desc</span><span>())</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        And again, any expression works in that situation, so you can just easily order by ridiculous expressions if you want.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Aggregates
+                                    </h3>
+                                    <p>
+                                        Aggregates in Django are a quite new feature and generally not all that awesome, so we're skipping the Django part here. Thankfully they are much better supported in SQLAlchemy as SQLAlchemy just handles them by querying over arbitrary expressions. Functions on the database can be expressed by <tt>sqlalchemy.func.functionname</tt> in SQLAlchemy. This in combination with arbitrary expressions makes it quite potent. But first the simple case:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>from</span> <span>sqlalchemy.sql</span> <span>import</span> <span>func</span>
+
+<span>q</span> <span>=</span> <span>session</span><span>.</span><span>query</span><span>(</span><span>func</span><span>.</span><span>count</span><span>(</span><span>User</span><span>.</span><span>id</span><span>))</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Now that query obviously does not resolve to a model but a scalar value. In this case if we would call <tt>q.first()</tt> we would get a single tuple back with a single item: the count. For this case SQLAlchemy provides a nice shortcut: <tt>scalar()</tt>:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>&gt;&gt;&gt; </span><span>session</span><span>.</span><span>query</span><span>(</span><span>func</span><span>.</span><span>count</span><span>(</span><span>User</span><span>.</span><span>id</span><span>))</span><span>.</span><span>scalar</span><span>()</span>
+<span>1337</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        What if we want to group by something? Use <tt>group_by()</tt> and just iterate over it:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>for</span> <span>age</span><span>,</span> <span>count</span> <span>in</span> <span>session</span><span>.</span><span>query</span><span>(</span><span>User</span><span>.</span><span>age</span><span>,</span>
+        <span>func</span><span>.</span><span>count</span><span>(</span><span>User</span><span>.</span><span>id</span><span>))</span><span>.</span><span>group_by</span><span>(</span><span>User</span><span>.</span><span>age</span><span>)</span><span>.</span><span>all</span><span>():</span>
+    <span>print</span> <span>'Users aged </span><span>%d</span><span>: </span><span>%d</span><span>'</span> <span>%</span> <span>(</span><span>age</span><span>,</span> <span>count</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Distinct counts are simple as well, just call <tt>.distinct()</tt> on the query. In fact: if you have a rough idea of what the SQL would look like you can get to the expected result with pure guesswork and SQLAlchemy will most likely “just work” ™.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Joins
+                                    </h3>
+                                    <p>
+                                        Now this is the part where people get constantly confused with SQLAlchemy but fear not, I have you covered. Django hides the business of joins from you. For instance if you want to get all posts written by a specific author that is known by name you would do something like this:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>posts</span> <span>=</span> <span>Post</span><span>.</span><span>objects</span><span>.</span><span>filter</span><span>(</span><span>author__name__exact</span><span>=</span><span>the_author_name</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        So how do you do that in SQLAlchemy? The answer is that this means a join is taking place. There are two ways to model that select. First the simple one:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>posts</span> <span>=</span> <span>Post</span><span>.</span><span>query</span><span>.</span><span>join</span><span>(</span><span>Author</span><span>)</span><span>.</span><span>filter</span><span>(</span><span>Author</span><span>.</span><span>name</span> <span>==</span> <span>the_author_name</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        That wasn't too tricky. How does SQLAlchemy know how to do the right thing? It looks at what joins are possible and if only one is, it selects the right one. Alternatively you can explicitly provide what to join on as an expression as second argument to <tt>join()</tt>. Again, you can get arbitrarily complex there. Everything after the join automatically operates on the last <tt>.join()</tt>-ed model. If you want to further filter the former model (here <cite>Post</cite>) you can either move them before the <tt>.join()</tt> call or use <tt>.reset_joinpoint()</tt>.
+                                    </p>
+                                    <p>
+                                        Alternatively you could also express this as a subselect:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>author_query</span> <span>=</span> <span>Author</span><span>.</span><span>query</span><span>.</span><span>filter</span><span>(</span><span>Author</span><span>.</span><span>name</span> <span>==</span> <span>the_author_name</span><span>)</span>
+<span>posts</span> <span>=</span> <span>Post</span><span>.</span><span>query</span><span>.</span><span>filter</span><span>(</span><span>Post</span><span>.</span><span>author_id</span><span>.</span><span>in_</span><span>(</span><span>author_query</span><span>))</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        Why does SQLAlchemy not do what Django does? Well, first of all explicit is better than implicit: you know exactly what happens. A regular join is not always what you want or SQL would not provide an outerjoin which of course you can use with SQLAlchemy as well. Secondly, it's really easy to replicated. If you are curious of how that works you can have a look at this subclass of the builtin query that implements Django's filtering with keyword arguments: <a href="https://github.com/mitsuhiko/sqlalchemy-django-query/">sqlalchemy-django-query</a>.
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <h2>
+                                    Why Consider SQLAlchemy?
+                                </h2>
+                                <p>
+                                    This article did not really give you any reasons to use SQLAlchemy, did it? But the simple cases is not where SQLAlchemy shines. It's the more complex situations which you can't do at all in Django that work nicely in SQLAlchemy. Oh, and SQLAlchemy does not override all your columns when you just changed one on update ;-)
+                                </p>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://lucumr.pocoo.org/2011/7/19/sqlachemy-and-you">http://lucumr.pocoo.org/2011/7/19/sqlachemy-and-you</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

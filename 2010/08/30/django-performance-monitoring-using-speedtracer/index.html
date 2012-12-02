@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Django performance monitoring using Chrome's SpeedTracer
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta name="description" content="Detailed stack-level performance monitoring of your Django app using the excellent Google Chrome SpeedTracer UI">
+        <meta http-equiv="last-modified" content="Mon, 30 Aug 2010 15:56:17 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-30T12:19:24.100505-04:00">
+                    <meta itemprop="dateModified" content="2010-08-30T11:56:17-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-30T15:56:17+00:00">Aug 30</time>
+                    <h2 itemprop="title">
+                        Django performance monitoring using Chrome's SpeedTracer
+                    </h2>
+                </header>
+                <p class="summary">
+                    Detailed stack-level performance monitoring of your Django app using the excellent Google Chrome SpeedTracer UI
+                </p>
+                <div class="body" itemprop="articleBody">
+                    <p>
+                        The modern web browsers have increasingly good tools for monitoring client-side performance - perhaps the best being the WebKit <a href="http://webkit.org/blog/1091/more-web-inspector-updates/#timeline_panel">Timeline</a> but there's only so much you can improve when most of the processing happens on the server side.
+                    </p>
+                    <p>
+                        For those of us writing Django apps, there are fairly good tools for monitoring database performance by tracking slow queries (e.g. <a href="http://github.com/robhudson/django-debug-toolbar">django-debug-toolbar</a> or <a href="http://github.com/dcramer/django-devserver">django-devserver</a>) but there's not much else out there for measuring any of the other sources of delay (filesystem or network I/O, inefficient Python code, etc.) except the lower-level <a href="http://www.doughellmann.com/PyMOTW/profile/">profile module</a>. Most of these tools have the problem that getting useful data out requires a bit of work manipulating data, filtering out noise and assigning blame to the correct place (e.g. it's more likely that your code is calling an API poorly rather than that underlying API's implementation) - simply sorting a two-dimensional list is not enough for a large application.
+                    </p>
+                    <p>
+                        One of the challenges for building better tools is building an interface which can interact with potentially very large amounts of trace data. Fortunately, Google's Chrome team <a href="http://code.google.com/webtoolkit/doc/latest/ReleaseNotes.html#ServerSideSpeedTraces">added server-side trace support</a> to <a href="http://code.google.com/webtoolkit/speedtracer/get-started.html">SpeedTracer</a>, making it possible for us to focus entirely on the problem of getting that data and simply reuse the work which the Chrome team has already done building the SpeedTracer UI and making it fast. Best of all, it uses only HTTP headers so there's no way for it to interfere with your sites' generated HTML and it works for any type of resource as long as it's served by Django.<br>
+                        <a href="http://www.flickr.com/photos/acdha/4815493734/" title="Server-side Django performance data in Chrome SpeedTracer"><img src="http://farm5.static.flickr.com/4115/4815493734_4c20d6894f.jpg" width="500" height="356" alt="Server-side Django performance data in Chrome SpeedTracer"></a>
+                    </p>
+                    <h4>
+                        Getting Started
+                    </h4>
+                    <ol>
+                        <li>
+                            <a href="http://code.google.com/webtoolkit/speedtracer/get-started.html">Download and install Speed Tracer</a>
+                        </li>
+                        <li>Download and install my <a href="http://github.com/acdha/django-sugar">django-sugar</a> fork - e.g. <code>pip install git://github.com/acdha/django-sugar.git</code>
+                        </li>
+                        <li>Add <code>"sugar"</code> to your <code>INSTALLED_APPS</code>
+                        </li>
+                        <li>Add <code>"sugar.middleware.speedtracer. SpeedTracerMiddleware"</code> to your <code>MIDDLEWARE_CLASSES</code>
+                        </li>
+                        <li>Load your page inside Chrome with SpeedTracer enabled
+                        </li>
+                        <li>Open SpeedTracer and expand the "Server Trace" in the page's detailed report which should look something like the picture above
+                        </li>
+                    </ol>
+                    <h4>
+                        Next steps
+                    </h4>
+                    <p>
+                        This has already proven itself to be somewhat handy for me at work but there's obvious improvement which could be made: this really should be converted into WSGI middleware so any Python-based webapp could benefit.
+                    </p>
+                    <h4>
+                        Inspiration
+                    </h4>
+                    <p>
+                        Thanks to <a href="http://www.igvita.com/">Ilya Grigorik</a> for his <a href="http://www.igvita.com/2010/07/19/speed-tracer-server-side-tracing-with-rack/">blog post</a> about his <a href="http://github.com/igrigorik/rack-speedtracer">racks-speedtracer module</a> which inspired a night of tinkering last month. No thanks to my memory for not hitting publish sooner…
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

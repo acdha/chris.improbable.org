@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            An Efficient and Elegant Regular Expression Matcher in Python
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 21 May 2010 12:45:19 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-21T08:34:00-04:00">
+                    <meta itemprop="dateModified" content="2010-05-21T08:34:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-21T12:34:00+00:00">May 21</time>
+                    <h2 itemprop="title">
+                        An Efficient and Elegant Regular Expression Matcher in Python
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/4afb89613c149e48">
+                        <blockquote>
+                            <p>
+                                Two weeks ago, I was at the Workshop <a href="http://www-ps.informatik.uni-kiel.de/fg214/Honnef2010/">Programmiersprachen und Rechenkonzepte</a>, a yearly meeting of German programming language researchers. At the workshop, <a href="http://www-ps.informatik.uni-kiel.de/~fhu/">Frank Huch</a> and <a href="http://www-ps.informatik.uni-kiel.de/~sebf/">Sebastian Fischer</a> gave a really <a href="http://www-ps.informatik.uni-kiel.de/fg214/Honnef2010/Abstracts/Fischer.pdf">excellent talk</a> about an elegant regular expression matcher written in Haskell. One design goal of the matcher was to run in time linear to the length of the input string (i.e. without backtracking) and linear in the size of the regular expression. The memory use should also only be linear in the regular expression.
+                            </p>
+                            <p>
+                                During the workshop, some of the Haskell people and me then implemented the algorithm in (R)Python. Involved were Frank, Sebastian, <a href="http://www.bayceer.uni-bayreuth.de/mod/de/mitarbeiter/mit/mitarbeiter_detail.php?id_obj=59348">Baltasar Trancón y Widemann</a>, <a href="http://www.informatik.uni-kiel.de/prog/mitarbeiter/bernd-brassel/">Bernd Braßel</a> and <a href="http://www.informatik.uni-kiel.de/prog/mitarbeiter/fabian-reck/">Fabian Reck</a>.
+                            </p>
+                            <p>
+                                In this blog post I want to describe this implementation and show the code of it, because it is quite simple. In a later post I will show what optimizations PyPy can perform on this matcher and also do some benchmarks.
+                            </p>
+                            <p>
+                                <strong>A Note on terminology:</strong> In the rest of the post "regular expression" is meant in the <a href="http://en.wikipedia.org/wiki/Regular_expressions#Formal_language_theory">Computer Science sense</a>, not in the <a href="http://en.wikipedia.org/wiki/Regular_expressions#POSIX_.28Portable_Operating_System_Interface_.5Bfor_Unix.5D.29">POSIX sense</a>. Most importantly, that means that back-references are not allowed.
+                            </p>
+                            <p>
+                                <strong>Another note:</strong> This algorithm could not be used to implement PyPy's <tt>re</tt> module! So it won't help to speed up this currently rather slow implementation.
+                            </p>
+                            <div>
+                                <h2>
+                                    Implementing Regular Expression Matchers
+                                </h2>
+                                <p>
+                                    There are two typical approaches to implement regular expression. A naive one is to use a back-tracking implementation, which can lead to exponential matching times given a sufficiently evil regular expression.
+                                </p>
+                                <p>
+                                    The other, more complex one, is to transform the regular expression into a <a href="http://en.wikipedia.org/wiki/Nondeterministic_finite_state_machine">non-deterministic finite automaton</a> (NFA) and then transform the NFA into a <a href="http://en.wikipedia.org/wiki/Deterministic_finite_automaton">deterministic finite automaton</a> (DFA). A DFA can be used to efficiently match a string, the problem of this approach is that turning an NFA into a DFA can lead to exponentially large automatons.
+                                </p>
+                                <p>
+                                    Given this problem of potential memory explosion, a more sophisticated approach to matching is to not construct the DFA fully, but instead use the NFA for matching. This requires some care, because it is necessary to keep track of which set of states the automaton is in (it is not just one state, because the automaton is non-deterministic).
+                                </p>
+                                <p>
+                                    The algorithm described here is essentially equivalent to this approach, however it does not need an intermediate NFA and represents a state of a corresponding DFA as marked regular expression (represented as a tree of nodes). For many details about an alternative approach to implement regular expressions efficiently, see <a href="http://swtch.com/~rsc/regexp/">Russ Cox excellent article collection</a>.
+                                </p>
+                            </div>
+                            <div>
+                                <h2>
+                                    The Algorithm
+                                </h2>
+                                <p>
+                                    In the algorithm the regular expression is represented as a tree of nodes. The leaves of the nodes can match exactly one character (or the epsilon node, which matches the empty string). The inner nodes of the tree combine other nodes in various ways, like alternative, sequence or repetition. Every node in the tree can potentially have a mark. The meaning of the mark is that a node is marked, if that sub-expression matches the string seen so far.
+                                </p>
+                                <p>
+                                    The basic approach of the algorithm is that for every character of the input string the regular expression tree is walked and a number of the nodes in the regular expression are marked. At the end of the string, if the top-level node is marked, the string matches, otherwise it does not. At the beginning of the string, one mark gets shifted into the regular expression from the top, and then the marks that are in the regex already are shifted around for every additional character.
+                                </p>
+                                <p>
+                                    Let's start looking at some code, and an example to make this clearer. The base class of all regular expression nodes is this:
+                                </p>
+                                <div style="background:#f0f3f3">
+                                    <pre style="line-height:125%">
+<span style="color:#006699;font-weight:bold">class</span> <span style="color:#00AA88;font-weight:bold">Regex</span>(<span style="color:#336666">object</span>):
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">__init__</span>(<span style="color:#336666">self</span>, empty):
+        <span style="color:#0099FF;font-style:italic"># empty denotes whether the regular expression</span>
+        <span style="color:#0099FF;font-style:italic"># can match the empty string</span>
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>empty <span style="color:#555555">=</span> empty
+        <span style="color:#0099FF;font-style:italic"># mark that is shifted through the regex</span>
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>marked <span style="color:#555555">=</span> <span style="color:#336666">False</span>
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">reset</span>(<span style="color:#336666">self</span>):
+        <span style="color:#CC3300;font-style:italic">""" reset all marks in the regular expression """</span>
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>marked <span style="color:#555555">=</span> <span style="color:#336666">False</span>
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">shift</span>(<span style="color:#336666">self</span>, c, mark):
+        <span style="color:#CC3300;font-style:italic">""" shift the mark from left to right, matching character c."""</span>
+        <span style="color:#0099FF;font-style:italic"># _shift is implemented in the concrete classes</span>
+        marked <span style="color:#555555">=</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>_shift(c, mark)
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>marked <span style="color:#555555">=</span> marked
+        <span style="color:#006699;font-weight:bold">return</span> marked
+</pre>
+                                </div>
+                                <p>
+                                    The <tt>match</tt> function which checks whether a string matches a regex is:
+                                </p>
+                                <div style="background:#f0f3f3">
+                                    <pre style="line-height:125%">
+<span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">match</span>(re, s):
+    <span style="color:#006699;font-weight:bold">if</span> <span style="color:#000000;font-weight:bold">not</span> s:
+        <span style="color:#006699;font-weight:bold">return</span> re<span style="color:#555555">.</span>empty
+    <span style="color:#0099FF;font-style:italic"># shift a mark in from the left</span>
+    result <span style="color:#555555">=</span> re<span style="color:#555555">.</span>shift(s[<span style="color:#FF6600">0</span>], <span style="color:#336666">True</span>)
+    <span style="color:#006699;font-weight:bold">for</span> c <span style="color:#000000;font-weight:bold">in</span> s[<span style="color:#FF6600">1</span>:]:
+        <span style="color:#0099FF;font-style:italic"># shift the internal marks around</span>
+        result <span style="color:#555555">=</span> re<span style="color:#555555">.</span>shift(c, <span style="color:#336666">False</span>)
+    re<span style="color:#555555">.</span>reset()
+    <span style="color:#006699;font-weight:bold">return</span> result
+</pre>
+                                </div>
+                                <p>
+                                    The most important subclass of <tt>Regex</tt> is <tt>Char</tt>, which matches one concrete character:
+                                </p>
+                                <div style="background:#f0f3f3">
+                                    <pre style="line-height:125%">
+<span style="color:#006699;font-weight:bold">class</span> <span style="color:#00AA88;font-weight:bold">Char</span>(Regex):
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">__init__</span>(<span style="color:#336666">self</span>, c):
+        Regex<span style="color:#555555">.</span>__init__(<span style="color:#336666">self</span>, <span style="color:#336666">False</span>)
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>c <span style="color:#555555">=</span> c
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">_shift</span>(<span style="color:#336666">self</span>, c, mark):
+        <span style="color:#006699;font-weight:bold">return</span> mark <span style="color:#000000;font-weight:bold">and</span> c <span style="color:#555555">==</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>c
+</pre>
+                                </div>
+                                <p>
+                                    Shifting the mark through <tt>Char</tt> is easy: a <tt>Char</tt> instance retains a mark that is shifted in when the current character is the same as that in the instance.
+                                </p>
+                                <p>
+                                    Another easy case is that of the empty regular expression <tt>Epsilon</tt>:
+                                </p>
+                                <div style="background:#f0f3f3">
+                                    <pre style="line-height:125%">
+<span style="color:#006699;font-weight:bold">class</span> <span style="color:#00AA88;font-weight:bold">Epsilon</span>(Regex):
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">__init__</span>(<span style="color:#336666">self</span>):
+        Regex<span style="color:#555555">.</span>__init__(<span style="color:#336666">self</span>, empty<span style="color:#555555">=</span><span style="color:#336666">True</span>)
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">_shift</span>(<span style="color:#336666">self</span>, c, mark):
+        <span style="color:#006699;font-weight:bold">return</span> <span style="color:#336666">False</span>
+</pre>
+                                </div>
+                                <p>
+                                    <tt>Epsilons</tt> never get a mark, but they can match the empty string.
+                                </p>
+                                <div>
+                                    <h3>
+                                        Alternative
+                                    </h3>
+                                    <p>
+                                        Now the more interesting cases remain. First we define an abstract base class <tt>Binary</tt> for the case of composite regular expressions with two children, and then the first subclass <tt>Alternative</tt> which matches if either of two regular expressions matches the string (usual regular expressions syntax <tt>a|b</tt>).
+                                    </p>
+                                    <div style="background:#f0f3f3">
+                                        <pre style="line-height:125%">
+<span style="color:#006699;font-weight:bold">class</span> <span style="color:#00AA88;font-weight:bold">Binary</span>(Regex):
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">__init__</span>(<span style="color:#336666">self</span>, left, right, empty):
+        Regex<span style="color:#555555">.</span>__init__(<span style="color:#336666">self</span>, empty)
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>left <span style="color:#555555">=</span> left
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>right <span style="color:#555555">=</span> right
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">reset</span>(<span style="color:#336666">self</span>):
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>left<span style="color:#555555">.</span>reset()
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>right<span style="color:#555555">.</span>reset()
+        Regex<span style="color:#555555">.</span>reset(<span style="color:#336666">self</span>)
+
+<span style="color:#006699;font-weight:bold">class</span> <span style="color:#00AA88;font-weight:bold">Alternative</span>(Binary):
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">__init__</span>(<span style="color:#336666">self</span>, left, right):
+        empty <span style="color:#555555">=</span> left<span style="color:#555555">.</span>empty <span style="color:#000000;font-weight:bold">or</span> right<span style="color:#555555">.</span>empty
+        Binary<span style="color:#555555">.</span>__init__(<span style="color:#336666">self</span>, left, right, empty)
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">_shift</span>(<span style="color:#336666">self</span>, c, mark):
+        marked_left  <span style="color:#555555">=</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>left<span style="color:#555555">.</span>shift(c, mark)
+        marked_right <span style="color:#555555">=</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>right<span style="color:#555555">.</span>shift(c, mark)
+        <span style="color:#006699;font-weight:bold">return</span> marked_left <span style="color:#000000;font-weight:bold">or</span> marked_right
+</pre>
+                                    </div>
+                                    <p>
+                                        An <tt>Alternative</tt> can match the empty string, if either of its children can. Similarly, shifting a mark into an <tt>Alternative</tt> shifts it into both its children. If either of the children are marked afterwards, the <tt>Alternative</tt> is marked too.
+                                    </p>
+                                    <p>
+                                        As an example, consider the regular expression <tt>a|b|c</tt>, which would be represented by the objects <tt><span>Alternative(Alternative(Char('a'),</span> <span>Char('b')),</span> <span>Char('c'))</span></tt>. Matching the string <tt>"a"</tt> would lead to the following marks in the regular expression objects (green nodes are marked, white ones are unmarked):
+                                    </p><img alt="alternativea.gif" src="http://2.bp.blogspot.com/_zICyAWqZbLA/S_Z-iZKY-8I/AAAAAAAAAKY/ShzkzFqaQgo/s1600/alternativea.gif">
+                                    <p>
+                                        At the start of the process, no node is marked. Then the first char is matched, which adds a mark to the <tt><span>Char('a')</span></tt> node, and the mark will propagate up the two <tt>Alternative</tt> nodes.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Repetition
+                                    </h3>
+                                    <p>
+                                        The two remaining classes are slightly trickier. <tt>Repetition</tt> is used to match a regular expression any number of times (usual regular expressions syntax <tt>a*</tt>):
+                                    </p>
+                                    <div style="background:#f0f3f3">
+                                        <pre style="line-height:125%">
+<span style="color:#006699;font-weight:bold">class</span> <span style="color:#00AA88;font-weight:bold">Repetition</span>(Regex):
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">__init__</span>(<span style="color:#336666">self</span>, re):
+        Regex<span style="color:#555555">.</span>__init__(<span style="color:#336666">self</span>, <span style="color:#336666">True</span>)
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>re <span style="color:#555555">=</span> re
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">_shift</span>(<span style="color:#336666">self</span>, c, mark):
+        <span style="color:#006699;font-weight:bold">return</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>re<span style="color:#555555">.</span>shift(c, mark <span style="color:#000000;font-weight:bold">or</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>marked)
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">reset</span>(<span style="color:#336666">self</span>):
+        <span style="color:#336666">self</span><span style="color:#555555">.</span>re<span style="color:#555555">.</span>reset()
+        Regex<span style="color:#555555">.</span>reset(<span style="color:#336666">self</span>)
+</pre>
+                                    </div>
+                                    <p>
+                                        A <tt>Repetition</tt> can always match the empty string. The mark is shifted into the child, but if the <tt>Repetition</tt> is already marked, this will be shifted into the child as well, because the <tt>Repetition</tt> could match a second time.
+                                    </p>
+                                    <p>
+                                        As an example, consider the regular expression <tt>(a|b|c)*</tt> matching the string <tt>abcbac</tt>:
+                                    </p><img alt="repetition.gif" src="http://4.bp.blogspot.com/_zICyAWqZbLA/S_Z-itgZvbI/AAAAAAAAAKg/vYe5CQxPUOo/s1600/repetition.gif">
+                                    <p>
+                                        For every character, one of the alternatives matches, thus the repetition matches as well.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Sequence
+                                    </h3>
+                                    <p>
+                                        The only missing class is that for sequences of expressions, <tt>Sequence</tt> (usual regular expressions syntax <tt>ab</tt>):
+                                    </p>
+                                    <div style="background:#f0f3f3">
+                                        <pre style="line-height:125%">
+<span style="color:#006699;font-weight:bold">class</span> <span style="color:#00AA88;font-weight:bold">Sequence</span>(Binary):
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">__init__</span>(<span style="color:#336666">self</span>, left, right):
+        empty <span style="color:#555555">=</span> left<span style="color:#555555">.</span>empty <span style="color:#000000;font-weight:bold">and</span> right<span style="color:#555555">.</span>empty
+        Binary<span style="color:#555555">.</span>__init__(<span style="color:#336666">self</span>, left, right, empty)
+
+    <span style="color:#006699;font-weight:bold">def</span> <span style="color:#CC00FF">_shift</span>(<span style="color:#336666">self</span>, c, mark):
+        old_marked_left <span style="color:#555555">=</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>left<span style="color:#555555">.</span>marked
+        marked_left <span style="color:#555555">=</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>left<span style="color:#555555">.</span>shift(c, mark)
+        marked_right <span style="color:#555555">=</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>right<span style="color:#555555">.</span>shift(
+            c, old_marked_left <span style="color:#000000;font-weight:bold">or</span> (mark <span style="color:#000000;font-weight:bold">and</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>left<span style="color:#555555">.</span>empty))
+        <span style="color:#006699;font-weight:bold">return</span> (marked_left <span style="color:#000000;font-weight:bold">and</span> <span style="color:#336666">self</span><span style="color:#555555">.</span>right<span style="color:#555555">.</span>empty) <span style="color:#000000;font-weight:bold">or</span> marked_right
+</pre>
+                                    </div>
+                                    <p>
+                                        A <tt>Sequence</tt> can be empty only if both its children are empty. The mark handling is a bit delicate. If a mark is shifted in, it will be shifted to the left child regular expression. If that left child is already marked <em>before the shift</em>, that mark is shifted to the right child. If the left child can match the empty string, the right child gets the mark shifted in as well.
+                                    </p>
+                                    <p>
+                                        The whole sequence matches (i.e. is marked), if the left child is marked after the shift and if the right child can match the empty string, or if the right child is marked.
+                                    </p>
+                                    <p>
+                                        Consider the regular expression <tt>abc</tt> matching the string <tt>abcd</tt>. For the first three characters, the marks wander from left to right, when the <tt>d</tt> is reached, the matching fails.
+                                    </p><img alt="sequence.gif" src="http://1.bp.blogspot.com/_zICyAWqZbLA/S_Z-iyBRDCI/AAAAAAAAAKo/Kam1Jvk_02s/s1600/sequence.gif">
+                                </div>
+                                <div>
+                                    <h3>
+                                        More Complex Example
+                                    </h3>
+                                    <p>
+                                        As a more complex example, consider the expression <tt><span>((abc)*|(abcd))(d|e)</span></tt> matching the string <tt>abcabcabcd</tt>.
+                                    </p><img alt="complex.gif" src="http://3.bp.blogspot.com/_zICyAWqZbLA/S_Z-iy43N0I/AAAAAAAAAKw/BbRQTkidcJM/s1600/complex.gif">
+                                    <p>
+                                        Note how the two branches of the first alternative match the first <tt>abc</tt> in parallel, until it becomes clear that only the left alternative <tt>(abc)*</tt> can work.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Complexity
+                                    </h3>
+                                    <p>
+                                        The <tt>match</tt> function above loops over the entire string without going back and forth. Each iteration goes over the whole tree every time. Thus the complexity of the algorithm is <tt>O(m*n)</tt> where <tt>m</tt> is the size of the regular expression and <tt>n</tt> is the length of the string.
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <h2>
+                                    Summary &amp; Outlook
+                                </h2>
+                                <p>
+                                    So, what have we achieved now? The code shown here can match regular expressions with the desired complexity. It is also not much code. By itself, the Python code shown above is not terribly efficient. In the next post I will show how the JIT generator can be used to make the simple matcher shown above really fast.
+                                </p>
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3971202189709462152-2727904462179540436?l=morepypy.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/PyPyStatusBlog/~4/IHSTy9ZGThY" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://morepypy.blogspot.com/2010/05/efficient-and-elegant-regular.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29">http://morepypy.blogspot.com/2010/05/efficient-and-elegant-regular.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

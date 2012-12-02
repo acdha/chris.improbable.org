@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Data files in Distutils2
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 23 Jan 2011 16:00:03 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-23T11:00:03-04:00">
+                    <meta itemprop="dateModified" content="2011-01-23T11:00:03-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-23T15:00:03+00:00">Jan 23</time>
+                    <h2 itemprop="title">
+                        Data files in Distutils2
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c3a142dc0ddf7818">
+                        <blockquote>
+                            <p>
+                                I am preparing <a title="Sprint@Logilab" href="http://wiki.python.org/moin/Distutils/SprintParis">next week’s sprint at Logilab</a>, trying to isolate several interesting tasks people will be able to achieve without having to dig in the whole code base.
+                            </p>
+                            <p>
+                                One task we need to achieve in Distutils2 is a better description of the data files in a project, and in particular a way to categorize them so an OS packager knows how to make a difference between a documentation file and a configuration file. Also, we need to let the packager decide where these files need to land in the system at installation time, without breaking the developer’s code.
+                            </p>
+                            <p>
+                                So far in Python, people tend to include all files within their Python packages and access them using the <em>__file__</em> variable:
+                            </p>
+                            <pre>
+import os.path
+here = os.path.dirname(__file__)
+images = os.path.join(here, 'images_dir')
+</pre>
+                            <p>
+                                This technique has its limits:
+                            </p>
+                            <ul>
+                                <li>If you use <em>easy_install</em> to install your projects, you might end up with a zipped egg, meaning that the directory is in a zip file. So this code will not work unless you’ve installed the project with the -Z option, or you use the zipimport helper to work with your files.
+                                </li>
+                                <li>Installing data files in site-packages is not a best practice in most Linux distributions, and if the OS packager wants to move them in the “right” place, he needs to review all the code and patch it everywhere it makes an assumption on the location of the file.
+                                </li>
+                                <li>If the developer does the right thing for <em>Debuntu</em> with his data files, he’d need to do it for every other Linux distribution, but also define a specific behaviour for Mac OS X and Windows.
+                                </li>
+                            </ul>
+                            <p>
+                                Last year at Pycon we’ve worked on that topic and came up with an elegant design on the paper:
+                            </p>
+                            <ul>
+                                <li>Python will provide in the <em>sysconfig</em> module a list of default categories for data files, with a default location for each target system
+                                </li>
+                                <li>The developer will define its data files in categories in setup.cfg, and add if needed new categories
+                                </li>
+                                <li>Linux distributions will be able to change the paths for each categories via a configuration file global to Python — sysconfig.cfg
+                                </li>
+                                <li>Distutils2 will look at the paths of each categories at installation time, and install the files there.
+                                </li>
+                                <li>The developer will use a special open() API to be able to locate the file no matter on what system the code runs, or even if the code runs on a development tree.
+                                </li>
+                            </ul>
+                            <p>
+                                The draft of this feature is here: <a href="http://hg.python.org/distutils2/file/tip/docs/design/wiki.rst">http://hg.python.org/distutils2/file/tip/docs/design/wiki.rst</a> and starting to code this design for real is a perfect task for this sprint because it does not require a lot of knowledge about the Distutils2 code base.
+                            </p>
+                            <p>
+                                If you are in Paris, or available online, and want to sprint with us, make sure you register to the wiki page !
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/tarekziade.wordpress.com/1610/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/tarekziade.wordpress.com/1610/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/tarekziade.wordpress.com/1610/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/tarekziade.wordpress.com/1610/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/tarekziade.wordpress.com/1610/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/tarekziade.wordpress.com/1610/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/tarekziade.wordpress.com/1610/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/tarekziade.wordpress.com/1610/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/tarekziade.wordpress.com/1610/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/tarekziade.wordpress.com/1610/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/tarekziade.wordpress.com/1610/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/tarekziade.wordpress.com/1610/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/tarekziade.wordpress.com/1610/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/tarekziade.wordpress.com/1610/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=tarekziade.wordpress.com&amp;blog=448161&amp;post=1610&amp;subd=tarekziade&amp;ref=&amp;feed=1" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://tarekziade.wordpress.com/2011/01/23/data-files-in-distutils2/">http://tarekziade.wordpress.com/2011/01/23/data-files-in-distutils2/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

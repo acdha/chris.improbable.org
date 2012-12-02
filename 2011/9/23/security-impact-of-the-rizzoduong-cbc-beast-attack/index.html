@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Security impact of the Rizzo/Duong CBC "BEAST" attack
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 24 Sep 2011 01:57:42 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-09-23T21:57:42-04:00">
+                    <meta itemprop="dateModified" content="2011-09-23T21:57:42-04:00"><time class="date" itemprop="datePublished" datetime="2011-09-24T01:57:42+00:00">Sep 24</time>
+                    <h2 itemprop="title">
+                        Security impact of the Rizzo/Duong CBC "BEAST" attack
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/cc7cff55afceeebb">
+                        <blockquote>
+                            If you're familiar with network security and haven't been living under a rock you've probably seen the <a href="https://threatpost.com/en_us/blogs/new-attack-breaks-confidentiality-model-ssl-allows-theft-encrypted-cookies-091611">recent</a> <a href="http://www.theregister.co.uk/2011/09/19/beast_exploits_paypal_ssl/">coverage</a> of Rizzo and Duong's attack on SSL/TLS implementations. they've demoed the attack and information is starting to trickle out (the news articles above were written prior to release), we can begin evaluate the impact of this work. (See <a href="http://www.imperialviolet.org/2011/09/23/chromeandbeast.html">AGL's post</a> on this). Unfortunately, there's no paper publicly available and the live chat during the talk raised more questions than were answered. <i>[in large part due to the inadequacies of trying to ask questions over WebEx chat -- EKR 9/24]</i>
+                            <p>
+                                First, the bottom line: <b>Don't Panic</b>. Yes, this is interesting work, no SSL/TLS is not completely broken. In particular, your communications with your bank are quite likely to be fine. In particular, AGL suggests that Chrome is fine.
+                            </p>
+                            <p>
+                                <i>Background: CBC Encryption</i>
+                            </p>
+                            <p>
+                                In order to understand what's going on here, you need some background. SSL/TLS can encrypt data with two kinds of ciphers: <a href="http://en.wikipedia.org/wiki/Block_cipher">block ciphers</a> like AES and DES and <a href="http://en.wikipedia.org/wiki/Stream_cipher">stream ciphers</a> like RC4. You don't need to worry about stream ciphers for now. This attack only applies to block ciphers. The way that a block cipher works is that it's a keyed mapping from plaintext blocks (typically 128 bits) onto ciphertext blocks of the same size. So, it's like having a huge table with 2<sup>128</sup> entries showing each plaintext block <i>M</i> and it's corresponding ciphertext block <i>C</i>. Each key represents a different table. So, we represent encryption as a functin <i>C = E(Key, M)</i> meaning that we compute the encryption function on <i>Key</i> and <i>M</i> and the result is the ciphertext.
+                            </p>
+                            <p>
+                                The obvious way to use a block cipher is to break up plaintext into 128-bit blocks and encrypt each block separately (this is called <i>electronic codebook</i> (ECB) mode. It should be obvious that if you have two blocks that are the same in the plaintext they are also the same in the ciphertext and so you patterns in the plaintext get reflected in the ciphertext. This is bad. This <a href="http://en.wikipedia.org/wiki/Block_cipher_modes_of_operation">Wikipedia article</a> has a good visual comparison of just how bad it can be. In order to prevent this, other cipher modes have been developed that break up those patterns. The one used by SSL/TLS (at least prior to TLS 1.2) is called <i>cipher-block chaining</i> (CBC) mode. The way that CBC works is that when you encrypt block <i>i</i> you first XOR in the encryption of block <i>i-1</i>. More formally:
+                            </p>
+                            <p>
+                                <i>C<sub>i</sub> = E(Key, C<sub>i-1</sub> ⊕ M<sub>i</sub>)</i>
+                            </p>
+                            <p>
+                                Obviously, when you go to encrypt the first block, there is no previous block to XOR; in, so the standard practice is to generate a random <i>initialization vector</i> (IV) and use that as if it were the encryption of the previous block. The effect of all this is to break up patterns: consider the first block <i>M<sub>0</sub></i>. To encrypt it you compute:
+                            </p>
+                            <p>
+                                <i>C<sub>0</sub> = E(Key, IV ⊕ M<sub>0</sub>)</i>.
+                            </p>
+                            <p>
+                                And then to encrypt <i>M<sub>1</sub></i> we do:
+                            </p>
+                            <p>
+                                <i>C<sub>1</sub> = E(Key, C<sub>0</sub> ⊕ M<sub>1</sub>)</i>.
+                            </p>
+                            <p>
+                                Now, unless <i>C<sub>0</sub></i> happens to be the same as <i>IV</i> (which is very unlikely), then even if <i>M<sub>0</sub> = M<sub>1</sub></i> the input to the two encryption functions will be different and so <i>C<sub>0</sub> ≠ C<sub>1</sub></i>, thus breaking up the pattern.
+                            </p>
+                            <p>
+                                <i>How CBC is used in SSL/TLS</i><br>
+                                The way I've described CBC above is as if you're just encrypting a single data blob (e.g., a file) consisting of a number of blocks. However, SSL/TLS is a channel encryption protocol and so it wants to encrypt not a single file but a series of <i>records</i>. For instance, you might use a single SSL/TLS connection for a series of HTTP requests, each of which is broken up into one or more records which might be sent over the course of seconds to minutes. All the records (in each direction) are encrypted with the same traffic key.
+                            </p>
+                            <p>
+                                There are two basic ways to use CBC in this kind of environment:
+                            </p>
+                            <ul>
+                                <li>Treat each record as if it were independent; generate a new IV and encrypt the record as described above.
+                                </li>
+                                <li>Treat the records as if they were concatenated into a single large object and just continue the CBC state between records. This means that the IV for record <i>n</i> is the last block (the CBC residue) for record <i>n-1</i>.
+                                </li>
+                            </ul>
+                            <p>
+                                SSLv3 and TLS 1.0 chose the second of these options. This seems to have been a mistake, for two reasons. First (and more trivially) it makes it hard to use TLS over any kind of datagram transport (hence <a href="http://tools.ietf.org/html/rfc4347">DTLS</a>) and second, it turns out that there is a security issue.
+                            </p>
+                            <p>
+                                <i>The Original Predictable IV Issue</i><br>
+                                Back in 2004, Moeller <a href="http://www.openssl.org/~bodo/tls-cbc.txt">[*]</a> observed that it was possible to exploit this behavior under certain circumstances. (the original observation of this style of attack seems to be due to Rogaway <a href="http://www.cs.ucdavis.edu/~rogaway/papers/draft-rogaway-ipsec-comments-00.txt">[*] and then extended to SSH by Wei Dai.</a>). Imagine that you're an attacker who can convince one side of the SSL/TLS implementation to encrypt some data of your choice. This allows you to learn about other parts of the plaintext, even if you wouldn't ordinarily be allowed to see that plaintext.
+                            </p>
+                            <p>
+                                Consider the case where we have a connection between Alice and Bob. You observe a record which you know contains Alice's password in block <i>i</i>, i.e., <i>M<sub>i</sub></i> is Alice's password. Say you have a guess for Alice's password: you think it might be <i>P</i>. Now, if you know that the next record will be encrypted with IV <i>X</i>, and you can inject a chosen record, you inject:
+                            </p>
+                            <p>
+                                <i>X ⊕ C<sub>i-1</sub> ⊕ P</i>
+                            </p>
+                            <p>
+                                When this gets encrypted, <i>X</i> get XORed in, with the result that the plaintext block fed to the encryption algorithm is:
+                            </p>
+                            <p>
+                                <i>C<sub>i-1</sub> ⊕ P</i>
+                            </p>
+                            <p>
+                                If <i>P == M<sub>i</sub></i>, then the new ciphertext block will be the same as <i>C<sub>i</sub></i>, which reveals that your guess is right.
+                            </p>
+                            <p>
+                                The question then becomes how the attacker would know the next IV to be used. However, because the IV for record <i>j</i> is the CBC residue of record <i>j-1</i> all the attacker needs to do is observe the traffic on the wire and then make sure that the data they inject is encrypted as the next record, using the previous record's CBC residue as the IV.
+                            </p>
+                            <p>
+                                While troubling, this isn't that great an attack. First, the attacker needs to be able to somehow mix traffic they control with traffic they don't control and can't see, all over the same SSL/TLS connection. This isn't impossible; for instance it might happen over an SSL-VPN, but it's also not that common. Second, it only lets you guess a whole plaintext block at a time, so even if you're guessing a very low entropy value, it takes a lot of guesses to search the space.
+                            </p>
+                            <p>
+                                Still, this is a serious enough issue that the IETF felt like it was worth fixing, and the TLS Working Group duly developed TLS 1.1, which changed to the first strategy (called "explicit IV" in the standard). [Technical note: the required defense is actually slightly more complicated because you need to make the TLS-using application commit to the entire plaintext block prior to revealing the IV.] TLS 1.1 was developed in 2006, but deployment has been pretty limited (<a href="http://blog.ivanristic.com/Qualys_SSL_Labs-State_of_SSL_InfoSec_World_April_2011.pdf">[*]</a>). We don't know why for sure, but I think the general feeling in the security community is that the threat didn't seem serious enough to motivate upgrading.
+                            </p>
+                            <p>
+                                <i>The Rizzo/Duong Attack</i><br>
+                                Rizzo and Duong's paper improves on this attack in two ways:
+                            </p>
+                            <ol>
+                                <li>They have developed a more efficient attack which allows the attacker to guess a single byte at a time rather than having to guess a whole block.
+                                </li>
+                                <li>They observe that a specific use of Web technologies (cross-origin requests and in particular Web Sockets) allows the attacker to mix traffic in the fashion described above.
+                                </li>
+                            </ol>
+                            <p>
+                                <i>Shifting the Boundary</i><br>
+                                The improvement in the attack is easy to understand. Imagine that the attacker has some control about the way that data is fitted into blocks. So, consider the case where we want to guess Alice's password, which (without loss of generality) we know is 8 characters long. If the attacker can arrange for the password to be split up in between records so that the first character is in one record with otherwise predictable contents and the next 7 characters are in the next record, then the attacker only needs to guess the first character.
+                            </p>
+                            <p>
+                                For instance, if the way the username/password protocol works is that you send the string <code>user: alice password: ********</code> where <code>********</code> is the password itself. So, if the attacker can arrange that this is broken up as <code>lice password: *</code> | <code>*******.........</code>, then they can guess the first character of the password in isolation. Furthermore, if they know the first character, they can then shift the record boundary by one byte and then guess the next character. The way this attack plays out in practice is that the attacker exhaustively searches the first character, then fixes the first character, and searches the second, and so on.
+                            </p>
+                            <p>
+                                <i>Exploiting WebSockets</i><br>
+                                The previous best attacks involved VPNs, but Rizzo and Duong suggest a different vehicle. The basic idea is that the Web is an inherently multi-site environment and it's very common for JavaScript coming from Site A to talk to Site B (for instance, for mashups). To give just one example, if you embed an image on your Web page that comes from <code>www.example.com</code>, the browser makes a request to <code>www.example.com</code>. Importantly, this request includes any cookies you might have for <code>www.example.com</code>. This capability is the basis for a variety of attacks, including <a href="http://en.wikipedia.org/wiki/Csrf"><i>cross-site request forgery</i> (CSRF)</a>, and cross-origin requests (i.e., those made by scripts from site A going to site B) are strictly limited in order to limit those attacks.
+                            </p>
+                            <p>
+                                These restrictions, however, are inconvenient, and so many newer Web technologies are moving to a security model of origin-based consent. The idea here is that when a cross-origin request is made to site B from site A, the browser asks site B whether it's OK from that site, thus allowing site B to selectively allow access only to safe resources. One such technology is Web Sockets, which is designed to allow a client/server pair to start with an HTTP transaction and upgrade it to a transparent (non-HTTP channel) that allows the transmission of arbitrary messages that aren't framed as HTTP messages. The way that WebSockets works is that there is an initial HTTP handshake (including cookies) that allows the client to verify that the server is prepared to do WebSockets. The handshake looks something like this:
+                            </p>
+                            <pre>
+Client-&gt;Server:
+        GET /chat HTTP/1.1
+        Host: server.example.com
+        Upgrade: websocket
+        Connection: Upgrade
+        Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+        Origin: http://example.com
+        Cookie: 0123456789abcdef
+        Sec-WebSocket-Protocol: chat, superchat
+        Sec-WebSocket-Version: 13
+
+Server-&gt;Client:
+        HTTP/1.1 101 Switching Protocols
+        Upgrade: websocket
+        Connection: Upgrade
+        Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+        Sec-WebSocket-Protocol: chat
+</pre>
+                            <p>
+                                After the handshake, client-side JavaScript is allowed to send arbitrary data to the server, though it is wrapped in some framing data.
+                            </p>
+                            <p>
+                                It should be obvious at this point how one might use WebSockets as a vehicle for Rizzo and Duong's attack. Say the attacker wants to recover the cookie for <code>https://www.google.com/</code>. He stands up a page with any origin he controls (e.g., <code>http://www.attacker.com/</code>. This page hosts JS that initiates a WebSockets connection to <code>https://www.google.com/</code>. Because WebSockets allows cross-origin requests, he can initiate a HTTPS connection to the target server if the target server allows it (e.g., because it wants to allow mash-ups). Because the URL (<code>/chat</code> above) is provided by the attacker, he can make it arbitrarily long and therefore put the Cookie wherever he wants it with respect to the CBC block boundary. Once he has captured the encrypted block with the cookie, he can then send arbitrary new packets via WebSockets with his appropriately constructed plaintext blocks as described above. There are a few small obstacles to do with the framing, but Rizzo and Duong claim that these can be overcome and those claims seem plausible.
+                            </p>
+                            <p>
+                                <i>The Impact of Masking</i><br>
+                                That's the idea anyway. Fortunately, I've omitted one detail: what I've just described is <a href="http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76">WebSockets draft -76</a>. This version of WebSockets was shipped in some browsers and then largely disabled (for instance <a href="http://www.0xdeadbeef.com/weblog/2010/12/disabling-websockets-for-firefox-4/">here</a>) because of a <a href="http://w2spconf.com/2011/papers/websocket.pdf">vunerability</a> published by David Huang, Eric Chen, Adam Barth, Collin Jackson, and myself. The version of WebSockets which the IETF is standardizing incorporates a feature called <i>masking</i> in which the browser generates a random 32-bit mask that gets XORed with the content of the packet prior to transmission (and hence prior to SSL/TLS encryption). The impact of this change is that if an attacker wants to use WebSockets they only have a 2<sup>-32</sup> chance of being able to generate the right input to the encryption algorithm to mount the attack. Obviously, this isn't as good as random IVs (which increase the difficulty by a factor of 2<sup>128</sup> for AES), but it's a pretty significant barrier nonetheless.
+                            </p>
+                            <p>
+                                Note that I'm not saying that my co-authors and I knew about this attack or that we pushed for it as a countermeasure. Rather, we were concerned about a different class of attacks in which an attacker was able to control bits on the wire, and masking was intended to deny the attacker that kind of control. However, since similar levels of control are required in order to mount this attack, masking seems to be an effective countermeasure here as well.
+                            </p>
+                            <p>
+                                As should be clear based on the above discussion I don't think that this is an issue with newer versions of WebSockets (which means recent versions of browsers other than Safari) and of course older browsers don't implement WebSockets at all. And even if you have a browser which is vulnerable, you need to be talking to a target site which actually accepts cross-origin WebSockets requests, which as far as I know is very rare for high-value sites such as financial sites.
+                            </p>
+                            <p>
+                                <i>Exploiting Java</i><br>
+                                The demo that Duong and Rizzo showed today used Java to provide the vector for the attack. As I understood their presentation (and note I don't have <strike>their paper</strike>a copy of their paper with full details on how they're using Java but the version that is floating around says <code>URLConnection</code> <i>[-- updated 9/24]</i>) they say they don't need any heightened Java privileges. What's a little confusing here is exactly how they are getting past same-origin issues. In particular, which Java APIs they are using and whether this was expected/known Java behavior with respect to SOP or whether they had found a way around SOP was really unclear. That's important to know, in part because it dictates the right response and also because it tells us whether they've found a threat that extends past HTTPS. In particular, if their is a clear SOP violation (as for instance in <a href="http://www.exploit-db.com/exploits/15288/">this exploit</a>) then you have a serious problem regardless of any crypto magic.
+                            </p>
+                            <p>
+                                <i>Requirements for a Successful Attack</i><br>
+                                This post is really long, but the last thing I want to cover is what conditions would be required to mount a succesful attack using this type of technique. As far as I can tell, we need to have a target domain which allows cross-origin requests that:
+                            </p>
+                            <ol>
+                                <li>Contain some user secret (e.g., a cookie) in a predictable location.
+                                </li>
+                                <li>Allow scripts from the attacker's origin to tightly control additional data on the same HTTPS connection as the user secret.
+                                </li>
+                            </ol>
+                            <p>
+                                It's this mixing of data under control of the attacker and data which should be kept secret from the attacker that constitutes the threat. This is a a very natural thing to do in the Web context; mashing up data from one site with another is something that happens all the time. The Web security model is designed to protect you from that, but the lesson here (once again) is that actually getting that right is somewhat tricky.
+                            </p>
+                            <p>
+                                I'm actively trying to get more details on how this attack works, so more as I get them. At the moment, my advice would be to disable Java—that would be my advice in any case—and otherwise probably don't get too excited.
+                            </p>
+                            <p>
+                                <i>Next Up: Countermeasures other than upgrading to TLS 1.1</i>
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.educatedguesswork.org/2011/09/security_impact_of_the_rizzodu.html">http://www.educatedguesswork.org/2011/09/security_impact_of_the_rizzodu.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

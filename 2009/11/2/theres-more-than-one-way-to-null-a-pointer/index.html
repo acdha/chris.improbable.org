@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            There’s more than one way to null a pointer
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 03 Nov 2009 03:06:01 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-02T22:06:01-04:00">
+                    <meta itemprop="dateModified" content="2009-11-02T22:06:01-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-03T02:06:01+00:00">Nov 03</time>
+                    <h2 itemprop="title">
+                        There’s more than one way to null a pointer
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0f768c19ae8ac495">
+                        <blockquote>
+                            <p>
+                                I haven’t blogged in a while because I’ve been in heads-down mode working mostly on getting closures and the <strong>arguments</strong> keyword to trace in TraceMonkey and investigating topcrashes. But we’ve just solved the most common JS-engine topcrash, so I’m resurfacing with the story, and hopefully some useful tricks and analysis for anyone else working on anything like this.
+                            </p>
+                            <p>
+                                <strong>The Crash Reports.</strong> The crash in question is a crash in <strong>js_Interpret</strong>, which is a huge function with cases for every bytecode in SpiderMonkey. <strong>js_Interpret</strong> has been placing around 16-19 on the <a href="http://crash-stats.mozilla.com/query/query?product=Firefox&amp;version=Firefox%3A3.5.3&amp;date=&amp;range_value=1&amp;range_unit=weeks&amp;query_search=signature&amp;query_type=exact&amp;query=&amp;do_query=1">Firefox 3.5 topcrashes list</a>. Looking at the stack traces, I found that a certain crash point (line of code where we crash) accounted for the majority of the crashes:
+                            </p>
+                            <pre>
+0       js3250.dll      js_Interpret     js/src/jsinterp.cpp:4436
+1       js3250.dll      js_Invoke       js/src/jsinterp.cpp:1394
+2       xul.dll         nsXPCWrappedJSClass::CallMethod         js/src/xpconnect/src/xpcwrappedjsclass.cpp:1697
+3       xul.dll         nsXPCWrappedJS::CallMethod      js/src/xpconnect/src/xpcwrappedjs.cpp:569
+</pre>
+                            <p>
+                                The line of code on which the crash occurs, <a href="http://hg.mozilla.org/releases/mozilla-1.9.1/annotate/0da982f65d37/js/src/jsinterp.cpp#l4436">jsinterp.cpp:4436</a>, is for the fast path of reading a JS object property.
+                            </p>
+                            <p>
+                                There was no bug on file with steps to reproduce, or any other kinds of data that would let us directly debug the problem.
+                            </p>
+                            <p>
+                                <strong>Crash Addresses.</strong> Clicking on a few of these reports, I saw that the Windows crash address was usually 0×0, 0×4, 0×8, or 0xc. I wrote a script that verified that guess on a larger sample. That pattern told me the crash was probably due to an attempt to read from an array of word-sized elements through a null pointer. Something like this:
+                            </p>
+                            <pre>
+// a is NULL
+int x = a[i];
+</pre>
+                            <p>
+                                If <strong>i</strong> is usually in the range 0-3, then most crash addresses would be 0, 4, 8, or 12.
+                            </p>
+                            <p>
+                                If you expand all the macros on the crash line, there is in fact an array read, reading a JS object property as <code>obj-&gt;dslots[slot-5]</code>. <strong>dslots</strong> is a dynamically allocated array of 4-byte JS values that holds object properties after the first two (depending on the exact object type). If the object has few enough properties, then <strong>dslots</strong> is null.
+                            </p>
+                            <p>
+                                <strong>Minidumps.</strong> Using minidumps and disassembling code around the crash point, I was able to prove the crash was in fact caused by null dslots.
+                            </p>
+                            <p>
+                                Disassembly also showed that about 25% of the crash reports reported the wrong line of code, apparently because the compiler’s profile-guided optimization mangled the x86 code too much for the crash analyzer to handle. This confused me at first, because I had happened to start with a crash report that listed the wrong line.
+                            </p>
+                            <p>
+                                I also found a few of the local variables’ values using the minidump. The minidump doesn’t have enough information for the debugger to find those variables. I got them by reverse-engineering the x86 code, finding stores to stack locations (stores through ebp), matching them up with variables, and then reading the values out of the minidump. I only got 3 values, and they weren’t terribly informative, but they did rule out certain code paths and special cases, narrowing significantly the kinds of JS objects I needed to think about. For example, the variables showed that the crash was <strong>not</strong> related to dense arrays (array objects represented by C arrays) or DOM objects.
+                            </p>
+                            <p>
+                                At this point, I knew that the crash was because dslots was null, and I knew it wasn’t related to certain advanced features, but that’s it. In particular, dslots absolutely shouldn’t be null on that code path, because that is a code path for a property lookup that finds a property in the property cache with a slot greater than 5. Somehow, the property cache was giving us the wrong answer for the current object, but there was no indication why. One possibility is that the property cache had wrong data. Another is that something set dslots to null when it shouldn’t.
+                            </p>
+                            <p>
+                                <strong>Bits and grapes and dates and cakes.</strong> Now, if I had steps to reproduce and could debug, one of my first questions would be, “What code sets dslots to null for the object we are looking at?”
+                            </p>
+                            <p>
+                                Thinking about that, I got an idea so dumb it was clever. I knew I wanted to know the code point that set dslots to null. And I knew the only real piece of data about the crash I could get was the crash address. So, clearly, the answer is to make each code point that sets dslots to null use a different null address. Then, the crash address would give the answer. Like this:
+                            </p>
+                            <pre>
+// someplace that sets dslots to null
+obj-&gt;dslots = (void*) 256;
+// some other place that sets dslots to null
+obj-&gt;dslots = (void*) 512;
+</pre>
+                            <p>
+                                If the crash addresses come back 256, 260, 264, 268, then the first point is the one setting dslots to null. If they are 512, 516, 520, 524, then it’s the second point. Of course, it could also be a mixture.
+                            </p>
+                            <p>
+                                There are a bunch of other details that need to be handled to make this work, like changing code that tests if dslots is null, which can be found in the patches posted in <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=519363">bug 519363</a>.
+                            </p>
+                            <p>
+                                The reason this works is that the “zero page” (page with base address 0) is protected on all popular operating systems, and the null pointer is defined as address 0. Thus, in normal operation, any attempt to read through a null pointer, or an array based with a null pointer (as long as the index isn’t so large it gets to another page), will crash with a protection fault. But this means that any pointer with address less than 4096 will also crash. By using multiple null pointers, and changing tests for null to comparisons with 4096, we can send back up to 12 bits of information through the crash address. For our bug, we actually only get 9 or 10 bits, because 2 or 3 bits are taken up by the array index part of the crash address. But there were only about 6 places dslots was set to null, so we had more than enough bits.
+                            </p>
+                            <p>
+                                The first try showed that all the objects for the crash were created by the same function: <strong>js_NewObjectWithGivenProto</strong>. This immediately (well, after the 1 or 2 days between pushing a patch and having nightly test users experience the crash) ruled out some guesses–we had thought the problem might be that objects were getting GC’d too soon, but the crash addresses proved that all the crash objects were “fresh” and had never been GC’d.
+                            </p>
+                            <p>
+                                I noticed that <strong>js_NewObjectWithGivenProto</strong> had a few significantly different code paths related to object creation: (1) a path for “special” objects (like DOM objects), (2) a path for normal objects that are “similar” to their prototypes, and (3) a path for normal objects that are not “similar” to their prototypes. I tweaked the null pointer instrumentation to distinguish these paths, and found that all the crash objects went through path (2). This was very interesting, because path (2) uses special code to set the “shape” of the object, which is also key to the property cache lookup just before the crash.
+                            </p>
+                            <p>
+                                (Aside: an object’s “shape” is a number that represents its collection of properties (and the attributes of those properties). Two objects that have the same shape are required to have the same properties and the same dslots layout for those properties. See also <a href="https://developer.mozilla.org/En/SpiderMonkey/Internals/Property_cache#Shape">https://developer.mozilla.org/En/SpiderMonkey/Internals/Property_cache#Shape</a>.)
+                            </p>
+                            <p>
+                                At this point, my working hypothesis was that somehow, using that initialization path, we ended up with two objects that had the same shape but different layouts. But I had no idea how that could happen.
+                            </p>
+                            <p>
+                                <strong>Software archaeology</strong>. Next, I tired a lot of things that didn’t work. It took a long time and it was really frustrating. I also read a bunch of code and got some reasonable guesses as to how the shape problem could occur, but none could be tested through the null pointer trick, but only through more complicated methods that also required upgrades to minidump collection that hadn’t occurred yet.
+                            </p>
+                            <p>
+                                Eventually, I got a better understanding of the kinds of data I could get from <a href="http://crash-stats.mozilla.com/">the crash database</a>, and I realized I might be able to find out when this crash had started occurring for trunk nightly users. I dug through all the data and found 3 patches closely related to object shapes and prototypes that were checked in just before the crash started occurring.
+                            </p>
+                            <p>
+                                The issues with those patches are pretty technical, and some are for possibly security-sensitive bugs, so I won’t go into great detail. But we got a better guess about what was happening and where to look. I posted my findings, then started reading the patches and trying to think about what might be wrong with it and how I could test those things, but I didn’t get any particularly good ideas right away.
+                            </p>
+                            <p>
+                                <strong>Jorendorff.</strong> Then, magically, Jason Orendorff figured out the problem. He read the code around one of the patches and found a significant bug. He didn’t tell me exactly why he was reading that code, so I can’t be absolutely sure it was because I pointed at it, but I think it was. <img src="http://blog.mozilla.com/dmandelin/wp-includes/images/smilies/icon_smile.gif" alt=":-)">
+                            </p>
+                            <p>
+                                From there, he wrote a patch, which we checked in. And then waited. After 4 days passed and there were no more crashes at this crash point on trunk, I decided it was fixed. Yay!!!
+                            </p>
+                            <p>
+                                <strong>Lessons</strong>
+                            </p>
+                            <p>
+                                I think I learned a few lessons about debugging crashes in the field with only crash report data and basically none of the things you normally hope to have debugging a crash.
+                            </p>
+                            <p>
+                                One lesson is that it’s important to use all the sources of data available: crash reports, patterns in crash report attributes, minidumps, revision history, bug comments, other articles and docs, source code, and data collected using instrumentation patches. And all these have to be used together.
+                            </p>
+                            <p>
+                                A second lesson is the null pointer trick, and also the value of being able to push instrumentation patches and get back field data in 1-2 days. This would be much more powerful if we could collect additional information in the crash reports, as controlled by the programmer. (E.g., <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=510505">crash report skidmarks</a>.) I think we can actually do that now with minidumps by printing useful information to buffers allocated on the C stack, which are then part of the minidump.
+                            </p>
+                            <p>
+                                A third lesson is the value of the history. Being able to see the day on which a bug started and find the patches that went in before that day was huge. One problem we have here is that TraceMonkey generally merges to mozilla-central only every week, so if the problem was introduced in a patch first pushed to TM, there is an entire week of patches that might have caused the problem. We should consider going to a more frequent merge schedule.
+                            </p>
+                            <p>
+                                A side point is that sifting crash report data and history would be a lot easier if we had query access to the underlying crash data. For now, everything has to go through the web interface, which is limiting (e.g., you can only get back 500 crash reports of a given kind of a given day) and slow (you need to write a script that downloads a lot of crash reports, parses the data, and then run the query you actually care about, so it’s slow in both developer time and computer time).
+                            </p>
+                            <p>
+                                The final lesson, which may be obvious, is the value of getting more eyes on the problem. I got substantial advice from both Brendan and of course Jason on this. I also benefited a lot from being able to talk through the issues with Andreas, David Anderson, and Luke Wagner. I read the code that contained the bug (which was ultimately a flipped <code>if</code> condition), but I didn’t see it because I assumed that other parts of the code did the right thing so the <code>if</code> would be correct. But they didn’t, and Jason knew it or saw it.
+                            </p>
+                            <p>
+                                Debugging this kind of crash is all about trying to sort things out that make no sense with almost no data, and it requires both creativity (to think of weird failure modes and experiments to try) and perceptiveness (to see the bug once you’ve narrowed down the search). I suppose creativity and perceptiveness are related in that they are both about being able to see an especially interesting straw in a (sensory or imaginary) haystack. More unique viewers means more chances to see that funny straw.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.mozilla.com/dmandelin/2009/11/02/theres-more-than-one-way-to-null-a-pointer/">http://blog.mozilla.com/dmandelin/2009/11/02/theres-more-than-one-way-to-null-a-pointer/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

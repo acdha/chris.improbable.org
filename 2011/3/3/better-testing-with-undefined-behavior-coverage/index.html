@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Better Testing With Undefined Behavior Coverage
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 03 Mar 2011 14:32:41 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-03T09:32:41-04:00">
+                    <meta itemprop="dateModified" content="2011-03-03T09:32:41-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-03T13:32:41+00:00">Mar 03</time>
+                    <h2 itemprop="title">
+                        Better Testing With Undefined Behavior Coverage
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/05328562a4158b3c">
+                        <p class="annotation">
+                            The joy that is C: “as soon as the program executes an undefined behavior the C implementation is permitted to send email to the developer’s mother (though this hardly ever happens)”
+                        </p>
+                        <blockquote>
+                            <p>
+                                <em>[The bit puzzle results are based on data from Chad Brubaker and the saturating operation results are based on data from Peng Li. They are respectively an undergrad and a grad student in Utah's CS program.]</em>
+                            </p>
+                            <p>
+                                <a href="http://klee.llvm.org/">Klee</a> is a tool that attempts to generate a collection of test cases inducing <em>path coverage</em> on a system under test. Path coverage means that all feasible control flow paths are executed. It is a strong kind of coverage, but still <a href="http://blog.regehr.org/archives/386">misses bugs</a>. One way to improve Klee would be to add support for different kinds of coverage metrics: weaker ones like statement coverage would scale to larger programs, and stronger ones such as boundary-value coverage would find more bugs in small codes.
+                            </p>
+                            <p>
+                                A different way to improve Klee is to continue to target path coverage, but alter the definition of “path.” For example:
+                            </p>
+                            <ul>
+                                <li>When testing an x86-64 binary containing a cmov instruction, we could make sure to execute both its condition-true path and condition-false path.
+                                </li>
+                                <li>When testing the C expression <strong><tt>foo(bar(),baz())</tt></strong>, we could make sure to test evaluating foo() and bar() in both orders, instead of just letting the compiler pick one.
+                                </li>
+                            </ul>
+                            <p>
+                                This piece proposes <em>undefined behavior coverage</em>, which simply means that for any operation that has conditionally-defined behavior, the well-defined and the undefined behaviors are considered to be separate paths. For example, the C expression <tt>3/y</tt> has two paths: one where <tt>y</tt> is zero and the other where <tt>y</tt> is non-zero.
+                            </p>
+                            <p>
+                                Obviously, undefined behavior coverage only makes sense for languages such as C and C++ that admit operations with undefined behavior. An undefined behavior, as defined by the C and C++ standards, is one where the language implementation can do anything it likes. The point is to make the compiler developers’ job easier — they may simply assume that undefined behavior never happens. The tradeoff is that the burden of verification is shifted onto language users.
+                            </p>
+                            <p>
+                                Undefined behavior coverage makes sense for what I call <a href="http://blog.regehr.org/archives/213">type 2 functions</a>: those whose behavior is conditionally well-defined.
+                            </p>
+                            <h1>
+                                An Example
+                            </h1>
+                            <p>
+                                Here’s a simple C function:
+                            </p>
+                            <blockquote>
+                                <pre>
+<strong>int add_and_shift (int x, int y, int z)</strong><strong> {</strong><strong>
+  return (x+y)&lt;&lt;z;
+}
+</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                Due to C’s undefined behaviors, this function has a non-trivial precondition:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <strong>0 ≤ z &lt; sizeof(int)*CHAR_BIT-1<br>
+                                    INT_MIN ≤ x+y ≤ INT_MAX</strong>
+                                </p>
+                            </blockquote>
+                            <p>
+                                (This is for ANSI C; in C99 the precondition is stronger and quite a bit more complicated, but we won’t worry about that.) If the precondition is not satisfied, the function’s return value is unpredictable. In fact, it’s a bit worse than that: as soon as the program executes an undefined behavior the C implementation is permitted to send email to the developer’s mother (though this hardly ever happens).
+                            </p>
+                            <p>
+                                The point is that although shift_and_add() seems to admit a single path, it really has a number of additional paths corresponding to failed preconditions for its math operators. If we fail to test these paths, we can miss bugs. Since the precondition checks for math operators in C/C++ are pretty simple, we can just add them in an early phase of the compiler, and that’s exactly what Peng’s hacked version of Clang does.
+                            </p>
+                            <p>
+                                Without undefined behavior checks, LLVM code for add_and_shift() looks like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+<strong>define i32 @add_and_shift(i32 %x, i32 %y, i32 %z) nounwind readnone {
+entry:
+  %add = add i32 %y, %x
+  %shl = shl i32 %add, %z
+  ret i32 %shl
+}</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                Obviously there’s just one path, and the test case that Klee picks to exercise this path is:
+                            </p>
+                            <ul>
+                                <li>x = 0, y = 0, z = 0
+                                </li>
+                            </ul>
+                            <p>
+                                Next, we compile the same function with undefined behavior checks and run Klee again. This time we get four test cases:
+                            </p>
+                            <ul>
+                                <li>x = 0, y = 0, z = 0
+                                </li>
+                                <li>x = 0, y = 0, z = 64
+                                </li>
+                                <li>x = -2, y = INT_MIN, z = 0
+                                </li>
+                                <li>x = 2, y = 1, z = 0
+                                </li>
+                            </ul>
+                            <p>
+                                The first three tests are exactly the kind of inputs we’d hope to see after looking at the precondition. The 4th input appears to follow the same path as the first. I don’t know what’s going on — perhaps it emerges from some idiosyncrasy of the checked code or maybe Klee simply throws in an extra test case for its own reasons.
+                            </p>
+                            <p>
+                                Combining Klee with an undefined behavior checker causes Klee to generate additional test cases that — by invoking operations with undefined behavior — should shine some light into dark corners of the system under test. A potential drawback is that all the extra paths are going to cause the path explosion problem to happen sooner than it otherwise would have. However, this should not be serious since we can just run Klee on both versions of the code.
+                            </p>
+                            <p>
+                                But this is all just talk. The real question is: does this method find more bugs?
+                            </p>
+                            <h1>
+                                Bit Puzzle Results
+                            </h1>
+                            <p>
+                                The first collection of code is several years’ worth of solutions to an early assignment in Utah’s CS 4400. I <a href="http://blog.regehr.org/archives/385">already discussed these</a>, so I won’t repeat myself. For each bit puzzle, students receive a reference implementation (which they cannot simply copy since it doesn’t follow the rules for student solutions) and a simple test harness that runs their code against the reference implementation on some inputs, compares the results, and complains about any differences. For each of 10 bit puzzles we have 105 solutions written by students. The automated test suite determines that 84 of these 1050 solutions are faulty. In other words, they return incorrect output for at least one input. <a href="http://blog.regehr.org/archives/467">Differential testing with Klee</a> finds seven additional buggy functions, for a total of 91.
+                            </p>
+                            <p>
+                                When the students’ codes are augmented with checks for integer undefined behaviors, Klee finds more paths to explore. The test cases that it generates find the 91 incorrect functions that are already known plus 11 more, for a total of 102 buggy functions. Just to be perfectly clear: a buggy function is one that (after being compiled by GCC) returns the wrong output for an input in a test suite. We are not counting instances of undefined behavior as bugs, we are simply using Klee and the undefined behavior checker to generate a better test suite.
+                            </p>
+                            <p>
+                                We were able to exhaustively test some of the bit puzzles. In these cases, exhaustive testing failed to find any bugs not found by differential Klee with undefined behavior coverage.
+                            </p>
+                            <h1>
+                                Saturating Operation Results
+                            </h1>
+                            <p>
+                                The second collection of code is 336 <a href="http://blog.regehr.org/archives/390">saturating math operations</a>. In this case, the additional tests generated by Klee to satisfy undefined behavior coverage found no additional buggy functions beyond those found using differential whitebox testing. My hypothesis is that:
+                            </p>
+                            <ol>
+                                <li>The shift-related undefined behaviors in these functions always involved constant arguments, since shifts were used only to compute values like the maximum and minimum representable integer of a certain width. Since the arguments were constant, Klee had no opportunity to generate additional test cases.
+                                </li>
+                                <li>The addition and subtraction overflow undefined behaviors were compiled by GCC into modular arithmetic, despite the fact that this behavior is not guaranteed by the standard. This is a natural consequence of generating code using the x86 add and sub instructions. Modular arithmetic was the behavior that people (including me, as described in the previous post) wanted and expected. Therefore, undefined behavior coverage exposed no bugs. Modern C compilers sometimes compile math overflows in a non-modular way (for example, evaluating (x+1)&gt;x to 1), but the saturating arithmetic functions — by chance — do not use code like that.
+                                </li>
+                            </ol>
+                            <p>
+                                We were able to exhaustively test saturating operations that take chars (for 16 total bits of input) and short ints (for 32 total bits of input). In these cases, exhaustive testing failed to find any bugs not already found by differential Klee.
+                            </p>
+                            <h1>
+                                Conclusion
+                            </h1>
+                            <p>
+                                Undefined behavior coverage is a special case of a more interesting code coverage metric that I’ll describe in a subsequent post. We need to try Klee + undefined behavior coverage on some real applications and see what happens; I’m cautiously optimistic that it will be useful.
+                            </p><img src="http://feeds.feedburner.com/~r/EmbeddedInAcademia/~4/4NL9rI0O5dk" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.regehr.org/archives/388?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29">http://blog.regehr.org/archives/388?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Cost of false positives
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 24 Jul 2011 11:38:44 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-07-23T18:55:39-04:00">
+                    <meta itemprop="dateModified" content="2011-07-23T18:55:39-04:00"><time class="date" itemprop="datePublished" datetime="2011-07-23T22:55:39+00:00">Jul 23</time>
+                    <h2 itemprop="title">
+                        Cost of false positives
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/45eec3e0666d0e5c">
+                        <blockquote>
+                            <p>
+                                <a href="http://www.flickr.com/photos/mireille/5953336206/in/faves-kellan/"><img src="http://farm7.static.flickr.com/6014/5953336206_428a6250ff_z.jpg" border="0"></a>
+                            </p>
+                            <p>
+                                I see Twitter getting beaten up a lot for not deleting the spammers faster. Etsy gets beaten up for not deleting the “resellers” faster. Flickr used to get yelled at for not catching the photo stealers or porn spammers faster.
+                            </p>
+                            <p>
+                                <em>“It’s so fucking easy, they’re right over there, here, let me show them to you, what’s your problem?”</em>
+                            </p>
+                            <p>
+                                This comes from not understanding the cost benefit ratio of false positives in identifying abuse of a social site at scale.
+                            </p>
+                            <p>
+                                Imagine you’ve got a near perfect model for detecting spammers on Twitter. Say, <a href="http://stu.mp">Joe’s</a> perfectly reasonable model of <a href="https://twitter.com/#!/joestump/status/94845660163088384">“20+ tweets that matched ‘^@[\w]+ http://’”</a>. Joe is (presumably hyperbolically) claiming 99% accuracy for his model. And for the moment we’ll imagine he is right. Even at 99% accuracy, that means this algorithm is going to be incorrectly flagging roughly <strong>2 million tweets per day as spam that are actually perfectly legitimate</strong>.
+                            </p>
+                            <p>
+                                If you’ve never run a social software site (which Joe of course has, but for the folks who haven’t) let me tell you: these kinds of <strong>false positives are expensive</strong>.
+                            </p>
+                            <p>
+                                They’re really expensive. They burn your most precious resources when running a startup: good will, and time. Your support staff has to address the issues (while people are yelling at them), your engineers are in the database mucking about with columns, until they finally break down about build an unbanning tool which inevitably doesn’t scale to really massive attacks, or new interesting attack vectors, which means you’re either back monkeying with the live databases or you’ve now got a team of engineers dedicated just to building tools to remediate false positives. And now you’re burning engineer cycles, engineering motivation (cleaning up mistakes sucks), staff satisfaction AND community good will. That’s the definition of expensive.
+                            </p>
+                            <p>
+                                And this is all a TON of work.
+                            </p>
+                            <p>
+                                And while this is all going down you’ve got another part of your company dedicated to making creating new accounts AS EASY AS HUMANLY POSSIBLE. Which means when you do find and nuke a real spammer, they’re back in minutes. <strong>So now you’re waging asymmetric warfare AGAINST YOURSELF.</strong>
+                            </p>
+                            <p>
+                                Fine, fine, fine whatever. You’ll build a better model. You know, this is a social site, we’ll use social signals. People can click and say “This is spam” and then when, I don’t know, 10 people say a tweet is spam, we’ll delete it and ban that account. But you know, people are fuckwits, and people are confused, and people are unpredictable and the scope of human activity <strong>at scale</strong> is amazingly wide and vast and deep, so <strong>a simple additive, easy to explain, fundamentally fair model isn’t going to work.</strong> (protip: if you’re site is growing quickly, make sure to use variables for those threshold numbers, otherwise you might DOS yourself)
+                            </p>
+                            <p>
+                                But you’re smart, so now you’ve got a machine learning model, that’s feeding social signals into a real time engine, that’s bubbling up the top 0.01% of suspicious cases (and btw if you’ve gotten this far, you’re really really good, and you’re probably wasting your time on whatever silly sheep poking/nerd herding site you’re working on, so <a href="mailto:kellan@pobox.com">call me</a>, I’ve got something more meaningful for you to do), and in at least Twitter’s case we’re now talking about a mere 200,000 potential spam tweets to be manually reviewed daily.
+                            </p>
+                            <p>
+                                How many people do you need to review 200k spam tweets per day? How many desks do they need? Are you doing to do that in house or are you going to outsource it? And if you outsource it, how are you going to explain the cultural peculiarities of your community, because while your product might have gone global, you’re still your own funky nation of behavior, and some things that look strange (say, <a href="https://twitter.com/#!/davemcclure">retweeting every mention of your own name</a>) are actual part of your community norm.
+                            </p>
+                            <p>
+                                And if you don’t explain those peculiarities, how long do you think it is until this small army you’ve assembled to review 200k tweets a day, gets tired, makes a mistake and accidentally deletes one of your social network hub early adopter types (because the sad truth is <strong>early adopters are outliers in the data</strong>, and they look funny).
+                            </p>
+                            <p>
+                                And what do you think the operational cost of making that mistake is? (see also: <a href="http://www.google.com/search?q=fakesters"><em>fakesters</em></a>)
+                            </p>
+                            <p>
+                                Also, whats your data recovery strategy look like on a per account basis?
+                            </p>
+                            <p>
+                                There are solutions. Some of them are straightforward. Many of them aren’t. None of them are as easy as you think they are unless you’ve been there. And I’m happy to talk to you about them over a beer, but just posting them on a blog, well that would be telling other people’s secrets. And they already have a really hard job.
+                            </p>
+                            <p>
+                                A much more cogent blog post by Bruce Schneier from 2006, on <a href="http://www.schneier.com/blog/archives/2006/03/data_mining_for.html">Data Mining for Terrorists</a> really drills into this problem from a theoretical model. (where “for Terrorists” is to be taken in the “finding Terrorists” sense and not in the “for Dummies” sense) (<strong>update:</strong> via <a href="http://rc3.org/2011/07/24/screening-systems-and-the-base-rate-fallacy/">rafe</a> a good <a href="http://news.bbc.co.uk/2/hi/uk_news/magazine/8153539.stm">BBC article on base rate fallacy</a>)
+                            </p>
+                            <p>
+                                The topic has been on my mind lately, as <a href="http://laughingmeme.org/2011/06/02/sorry-we-did-something-wrong-twitter-on-suspending-my-account/">Twitter recently banned my account by accident, along with a number of other very early accounts</a>, but never acknowledged it. And at Etsy last week we had an adaptive process go rogue and ban a tiny number of early adopters, an issue we posted about <a href="http://etsystatus.com/2011/07/20/some-accounts-mistakenly-deactivated/">on our status blog</a>, and <a href="http://www.etsy.com/teams/7716/announcements/discuss/8723148/page/1/">in the forums</a>. In both cases there was a full recovery of all the account data and state.
+                            </p>
+                            <p>
+                                Photo by: <a href="http://www.superchou.com">Superchou</a>
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://laughingmeme.org/2011/07/23/cost-of-false-positives/">http://laughingmeme.org/2011/07/23/cost-of-false-positives/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

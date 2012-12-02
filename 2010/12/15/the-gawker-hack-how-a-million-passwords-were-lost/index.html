@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The Gawker hack: how a million passwords were lost
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 15 Dec 2010 10:52:19 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-15T05:52:19-04:00">
+                    <meta itemprop="dateModified" content="2010-12-15T05:52:19-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-15T09:52:19+00:00">Dec 15</time>
+                    <h2 itemprop="title">
+                        The Gawker hack: how a million passwords were lost
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/4ac5e5586af8b304">
+                        <blockquote>
+                            <p>
+                                Almost a year to the date after the landmark&nbsp;<a href="http://techcrunch.com/2009/12/14/rockyou-hack-security-myspace-facebook-passwords/">RockYou password hack</a>, we have seen another large password breach, this time of <a href="http://en.wikipedia.org/wiki/Gawker_Media">Gawker Media</a>. While an order of magnitude smaller, it’s still probably the second largest public compromise of a website’s password file, and in many ways it’s a more interesting case than RockYou. The story quickly made it to <a href="http://www.nytimes.com/2010/12/13/business/media/13gawker.html">the mainstream press</a>, but the reported details are vague and often wrong. I’ve obtained a copy of the data (which remains generally available, though Gawker is attempting to <a href="http://thepiratebay.org/torrent/6034669/Gawkmedia_source_code___database_release_(1_300_000_rows">block listing of the torrent files</a>) so I’ll try to clarify the details of the leak and Gawker’s password implementation (gleaned mostly from the readme file provided with the leaked data and from reverse engineering MySQL dumps). I’ll discuss the actual password dataset in a future post.
+                            </p>
+                            <p>
+                                <strong>Background:</strong> <a href="http://en.wikipedia.org/wiki/Gawker_Media">Gawker Media</a> manages many high-profile blogs including <a href="http://gawker.com/">Gawker</a>, <a href="http://gizmodo.com/">Gizmodo</a>, <a href="http://kotaku.com/">Kotaku</a>, <a href="http://lifehacker.com/">LifeHacker</a>, and <a href="http://deadspin.com/">Deadspin</a>. Collectively it’s a multi-million dollar blogging empire which attracts hundreds of millions of readers each month. Gawker and its founder Nick Denton are notorious for publishing lurid details of celebrities’ personal lives and leaked corporate documents that mainstream media won’t report. They also apparently have an ongoing feud with the community of 4chan users, whom Denton has publicly criticised. A group calling themselves Gnosis has taken credit for the attacks. They are organised through 4chan but clearly not a significant portion of the large 4chan community. They don’t appear to have much history outside of attacks on Gawker, and despite false reports they are not directly connected to the DDOS attacks in support of WikiLeaks last week. They are <a href="http://www.mediaite.com/online/exclusive-gawker-hacker-gnosis-explains-method-and-reasoning-behind-his-actions/">specifically motivated to damage Gawker</a> as much as possible with statements like “Fuck you gawker, hows this for ’script kids’?&nbsp;Your empire has been compromised.’ The irony of the breach has been widely noted, particularly as Gawker has <a href="http://gawker.com/5559346/apples-worst-security-breach-114000-ipad-owners-exposed">ridiculed others</a> for similar incidents.
+                            </p>
+                            <p>
+                                <strong>The initial attack:</strong> The details provided by Gnosis are sparse, but Nick Denton’s passwords were recovered for his <a href="https://www.google.com/a/gawker.com/">Google Apps-provisioned</a> @gawker email address, <a href="http://twitter.com/">Twitter</a>, and the collaboration site <a href="http://campfirenow.com/">Campfire</a> which is heavily used by Gawker staff. There are no details of the compromise, but brute force was likely involved as Denton’s password was weak enough for online brute-force to be feasible (along with the passwords of 16 other employees). All were amongst the 250,000 most common passwords from the RockYou dataset. They were used at least 10 times on RockYou, whereas over a third of passwords in that dataset were unique. Were the password stolen by a key-logger we’d expect at least one to be stronger. They may have been brute-forced online from Campfire, which doesn’t appears to implement any restrictions on password guessing (<a href="http://www.lightbluetouchpaper.org/2010/07/27/passwords-in-the-wild-part-i-the-gap-between-theory-and-implementation/">like most sites</a>), and then re-used for the email accounts. Gnosis did report eventually attracting attention from Campfire sysadmins. Gnosis also reports observing an email thread discussing surprise by Denton and his IT staff at seeing an email about Denton’s Campfire account being updated — although he apparently never actually used it — then dismissing it as a false alarm.
+                            </p>
+                            <p>
+                                <strong>Escalation:</strong> Given&nbsp;the large number of Campfire accounts, Gnosis had access to 4 GB of company chat logs archived on Campfire, which included login details shared between sysadmins for several Gawker servers. From here Gnosis was able to gain root access (they’ve indicated the servers were <a href="http://www.mediaite.com/online/exclusive-gawker-hacker-gnosis-explains-method-and-reasoning-behind-his-actions/">not up to date with patches</a>), perhaps brute-forcing the root MySQL password as well (which was far too weak to withstand an offline dictionary attack). A database table of 1.5 M users of the site was downloaded, along with all of the source code used to run Gawker’s servers. These were then released via bittorrent. Gnosis also indicated they dropped all of the tables in one database instance, though it’s not clear they managed to seriously disrupt Gawker service.
+                            </p>
+                            <p>
+                                <strong>The password data:</strong> The MySQL data released included 1,247,894 accounts (as Gnosis notes, an incomplete dump of the more than 1.5M total users). As&nbsp;499,000 of these had no password hash stored (probably accounts which only logged in via FacebookConnect), the dataset actually contains 748,490 potentially vulnerable passwords.&nbsp;Contrary to many reports, Gawker did hash the stored passwords, and even salted them. Compared to the RockYou hack, this is a major improvement; it means many user passwords aren’t trivially accessible. Unfortunately, neither salting nor hashing was done very well, as the salted hashes were produced using <em>crypt().</em> Besides being based on long-outdated DES encryption, <em>crypt()</em> has two big problems. The first is that all passwords are truncated to 8 characters due to the small DES key size (and no support is available for non-ASCII characters). Second, the salts are only 12 bits. A proper implementation would use salts twice as large as the logarithm of the number of passwords which could ever be stored, forcing the attacker to break accounts one-by-one (64 bits would be a reasonable size to support the entire population of the Earth). Thus, it’s possible to test fairly large dictionaries against the Gawker data set. Gnosis did so and claimed 300,000 cracked passwords, though their released data includes only 188,281 . DuoSecurity has reported <a href="http://www.duosecurity.com/blog/entry/brief_analysis_of_the_gawker_password_dump">400,000 cracked passwords</a> using <a href="http://www.openwall.com/john/">JtR</a>, I’m currently running my own cracking experiment by directly re-using the RockYou password file.
+                            </p>
+                            <p>
+                                <strong>The response:</strong> Gawker claims to have initially thought that only corporate email was affected which delayed any formal response(though this appears <a href="http://www.mediaite.com/online/gawker-medias-entire-commenter-database-appears-to-have-been-hacked/">embarrassingly refuted by a leaked chat</a> of Gawker employees referring to users as ‘peasants’ and downplaying the consequences of leaking users’ passwords). The company and Denton in particular now appear to be showing <a href="http://blogs.forbes.com/firewall/2010/12/14/discussing-gawkers-breach-with-founder-nick-denton/">more contrition</a>. They’ve also put up <a href="http://lifehacker.com/5712785/">an FAQ</a> apologising and promising to improve security. However, the technical response has been bungled. A red banner on top of all Gawker blogs warns users that they may want to re-set their passwords. There is no excuse for not directly forcing users to update their passwords immediately. All users should be emailed as well, since they may rarely log into Gawker but still use their compromised password elsewhere. Gawker claims to have hit technical difficulties when trying to email all users, meaning most users haven’t actually been informed. Meanwhile, two <a href="http://www.didigetgawkered.com/">external</a> <a href="http://www.slate.com/id/2277768/">sites</a> allow users to test if their account was compromised.
+                            </p>
+                            <p>
+                                <strong>Conclusions:</strong> Sadly, Gawker’s security and response were probably both better than average. Going by the results of our <a href="http://www.lightbluetouchpaper.org/2010/07/27/passwords-in-the-wild-part-i-the-gap-between-theory-and-implementation/">password implementation survey</a>, the fact that any hashing was done at all puts Gawker in the upper tier of sites. Additionally, the incident received far more attention than normal due to Gawker’s popularity and notoriety. A key lesson from the attack is that any large password collector must have a plan for responding to a compromised password file-Gawker’s technical inability to force password updates or even email their users is inexcusable. Still, these measures can’t contain the damage. The biggest missed angle on this story is that it’s not just a Gawker hack, accounts on thousands of websites can be compromised as many users use the same email/password combination everywhere. <a href="http://www.linkedin.com/">LinkedIn</a> has taken the <a href="http://news.cnet.com/8301-27080_3-20025688-245.html">unusual step</a> (similar to Twitter last year) of forcing its users contained in the Gawker leak to update their LinkedIn password. Most sites will do nothing though, and Gawker bears no liability to any of them (indeed, the accounts have already been used to <a href="http://thenextweb.com/twitter/2010/12/13/twitter-acai-berry-worm-linked-to-gawker-hack/">spam Twitter</a>). This is a clear case of the <a href="http://www.lightbluetouchpaper.org/2010/07/28/passwords-in-the-wild-part-ii-failures-in-the-market/">market failure we’ve previously described</a>, reinforcing the point that password authentication is losing viability for large, well-connected but carelessly implemented websites.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.lightbluetouchpaper.org/2010/12/15/the-gawker-hack-how-a-million-passwords-were-lost/">http://www.lightbluetouchpaper.org/2010/12/15/the-gawker-hack-how-a-million-passwords-were-lost/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

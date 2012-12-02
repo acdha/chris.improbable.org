@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The Future of Compiler Correctness
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 20 Aug 2010 21:17:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-20T17:17:00-04:00">
+                    <meta itemprop="dateModified" content="2010-08-20T17:17:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-20T21:17:00+00:00">Aug 20</time>
+                    <h2 itemprop="title">
+                        The Future of Compiler Correctness
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/cb313c25d88ab61f">
+                        <blockquote>
+                            <p>
+                                <strong>Notes:</strong>
+                            </p>
+                            <ul>
+                                <li>This piece is mainly about compilers used for safety-critical or otherwise-critical systems. The intersection of formal methods and compilers for scripting languages is the empty set.
+                                </li>
+                                <li>Readers may be interested in a companion piece <a href="http://blog.regehr.org/archives/247">The Future of Compiler Optimization</a>.
+                                </li>
+                            </ul>
+                            <p>
+                                A half-century of experience in developing compilers has not resulted in a body of widely-used techniques for creating compilers that are correct. Rather — as most embedded system developers would be happy to tell you — it is not uncommon to run across nasty bugs in compilers and related tools, even when a lot of money has been spent on them. This piece examines the situation and explores some ideas that will be helpful during the next 50 years.
+                            </p>
+                            <p>
+                                “Can we create a correct compiler?” is the wrong question to ask because clearly we can, if we choose an easy source language or a very simple style of translation. A better question is:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Can we create a trustworthy compiler that generates high-quality object code and is otherwise practical?
+                                </p>
+                            </blockquote>
+                            <p>
+                                Let’s look a little closer at the different parts of the problem.
+                            </p>
+                            <p>
+                                A <em>correct compiler</em> is one that, for every valid program in its input language, provably translates it into object code that implements the computation that the language’s semantics ascribe to that program. A <em>trustworthy compiler</em> is one that convinces us — somehow or other — that it has produced a correct translation. Creating a trustworthy compiler is easier than creating a correct one.
+                            </p>
+                            <p>
+                                A <em>compiler that produces high quality object code</em> is one that supports at least the basic optimizations: constant propagation, dead code elimination, register allocation, instruction scheduling, various peephole optimizations, etc. I’m being a bit vague about “high quality” since in some cases it means small code, in some cases fast code, but is usually a balance between these goals. The degree of speedup due to optimization is highly variable but in general we expect program speed to at least double.
+                            </p>
+                            <p>
+                                A <em>practical compiler</em> is one that:
+                            </p>
+                            <ul>
+                                <li>accepts a useful programming language
+                                </li>
+                                <li>targets at least one useful hardware architecture
+                                </li>
+                                <li>compiles at an acceptable speed
+                                </li>
+                                <li>can be extended and maintained
+                                </li>
+                                <li>integrates with other development tools: debuggers, IDEs, linkers and loaders, etc.
+                                </li>
+                                <li>produces usable error messages and warnings
+                                </li>
+                                <li>is affordable to its intended audience
+                                </li>
+                                <li>has technical support available
+                                </li>
+                            </ul>
+                            <p>
+                                People developing production-quality compilers make many concessions in the name of practicality. Of course, they wouldn’t call it “practicality” but rather something like “creating a real compiler instead of a stupid toy.”
+                            </p>
+                            <p>
+                                The “high quality object code” requirement excludes very simple compilers like <a href="http://bellard.org/tcc/">TCC</a> from the discussion. TCC is a C compiler that performs a local translation: each line of code (more or less) is independently turned into object code. This kind of compiler can be made to be relatively practical and I believe it could be made trustworthy (though TCC and other simple compilers have been quite buggy the few times I’ve run tests on them). However, I’m not ready to believe that developers — even safety-critical developers, most of the time — are willing to throw away the 2x to 5x performance improvements that are gained by permitting the compiler to look across multiple lines of code.
+                            </p>
+                            <p>
+                                Now, to the core of the issue. Today there are two paths to trustworthy, practical, and performant compilers.
+                            </p>
+                            <h1>
+                                The High Road: Verification and Translation Validation
+                            </h1>
+                            <p>
+                                Verified compilation is the gold standard. It sets a very high bar, requiring a mathematical description of the source language, a mathematical description of the target language, and a machine-checkable proof that all programs in the source language are correctly translated into object code. Translation validation is an easier but still very difficult goal where an individualized proof for each program in the source language is produced as a side effect of compilation.
+                            </p>
+                            <p>
+                                Although high-road topics have been studied by the research community for many years, only one verified compiler has ever been produced that I would call useful: <a href="http://compcert.inria.fr/">CompCert</a>, from INRIA. CompCert takes a low-level language that is similar to a subset of C and compiles it into PowerPC or ARM assembly language in a way that is provably correct. The compiler is pretty fast and the generated code is good (comparable to “gcc -O1″). CompCert applies most of the standard optimizations; function inlining is the most significant omission. As of recently (and perhaps not even in the latest released version) CompCert supports volatile-qualified variables, which are important in the embedded, safety-critical domain.
+                            </p>
+                            <p>
+                                CompCert is substantially correct (there are gaps in its modeling of machine details and its frontend still has some unproved parts). Its code quality is good. However, it misses out on some aspects of practicality. Most importantly, it is not clear that mortal developers can maintain and extend it, though <a href="http://cseweb.ucsd.edu/~lerner/papers/pldi10-xcert.html">this paper</a> represents very interesting work in that direction. CompCert is almost certainly not the place to experiment with interesting new optimizations, to experiment with code generation for new instruction set extensions, etc. For now, it is just too difficult to create verifying instances of these things.
+                            </p>
+                            <h1>
+                                The Low Road: Testing
+                            </h1>
+                            <p>
+                                Although vendors test compilers before releasing them, the kind of testing that matters most is testing through usage: does the compiler, during a multi-year development cycle, show itself to be free of crashes and to reliably produce correct object code? Of course, the important thing is not to have a correct compiler — these do not exist — but rather to have a good idea of the situations in which it is wrong. It is commonplace for large embedded projects to have a few modules that have to be compiled with optimizations turned off, to avoid crashes and wrong-code bugs. Other modules will contain code to work around bugs, such as chaining together 32-bit adds if 64-bit math is buggy. Nobody likes these workarounds, but they are considered to be an acceptable (or at least unavoidable) part of the development process.
+                            </p>
+                            <p>
+                                Is trustworthiness through usage good or bad? It’s a bit of both. It’s good because it usually works in practice. Also, it is cheap: to create a reliable system we have to do nearly continuous testing at multiple levels of granularity anyway. If we’re also testing the compiler more or less as a side effect, no big deal.
+                            </p>
+                            <p>
+                                Trustworthiness through use is bad because I think it’s fair to say that we (both in industry and academia) do not have a good understanding of its limits. It works due to a variant of the locality principle: the programs we write in the future are likely to resemble those we wrote in the past. If past programs have been translated correctly, it’s likely that future ones will also. But what does “likely” mean here? What does “look like” really mean? Can we count on these properties? In a nutshell: No. This is one of the things that keeps developers, testers, and managers up late at night. To summarize: we are creating life-critical systems using tools that demonstrably contain silent wrong code bugs. We are comfortable doing so because we test these systems heavily, because this methodology has worked in the past, and because we don’t have a better alternative.
+                            </p>
+                            <p>
+                                In a trustworthiness-through-usage world, upgrading the compiler should be a very scary thing to do. In fact, the compiler is very seldom (many people would say “never”) upgraded in the middle of a development cycle for a critical system.
+                            </p>
+                            <h1>
+                                What Good Is a Verified Compiler?
+                            </h1>
+                            <p>
+                                We can ask: If you drop a verified compiler into a typical mission-critical, security-critical, or safety-critical system development effort, what fraction of system testing effort would go away? Very little. First of all, what does verified even mean? As I mentioned earlier, a verified compiler is one that can show a mathematical correspondence between a model of the source language and a model of the target language. But is that correspondence actually meaningful and useful in terms of meeting the goals of an X-critical system? For example, is the target model complete and accurate? Or does it formalize the previous version of the instruction set and a restricted version of the source language? Is the target model specific enough to capture details like stack overflow or does it assume infinite memory? Second, as we have seen, real systems only become reliable through massive testing efforts. Most of this testing is unrelated to compiler reliability.
+                            </p>
+                            <p>
+                                The real value provided by a verified compiler is that, looking forward, it can be used as part of a verified development stack. These don’t exist, but realistic examples will appear during the next 25 years. For example, we might develop a system in a future Matlab-like high-level language. A verified Matlab-to-C compiler gives us an optimized C implementation, and then a verified C-to-ARM compiler gives us verified object code. The RTOS will be verified and so will various properties of the hardware. In principle, these proofs can all be stacked, giving us a top-to-bottom proof that the system works as advertised, based on very few residual assumptions. These assumptions would include “our proof checker is correct, “the fab implemented the chip we specified,” and very little else.
+                            </p>
+                            <p>
+                                Now we can ask: What fraction of testing effort will be eliminated by a fully verified tool stack? It’s hard to say, but I think about a 30% reduction in testing effort would be about the most anyone could possibly hope for. Even so, the savings due to a 30% reduction would be enormous.
+                            </p>
+                            <h1>
+                                Experience with a Verified Compiler
+                            </h1>
+                            <p>
+                                My group has spent the last few years finding crash and wrong-code bugs in C compilers. We do this by generating random C code, compiling it using different compilers (or different flags to the same compiler), and seeing if the computation that we specified retains the same meaning in all compiled versions. I’m making it sound easy, but generating “conforming” C codes — those whose meaning cannot be changed by a correct compiler — required several person-years (pointers are hard), and there were some other problems to solve before we could make this all work well.
+                            </p>
+                            <p>
+                                Although we love compilers, and we are on friendly terms with as many compiler development teams as possible, when we put on our testing hats, there is only one goal: break the compiler. This is how testing has to work; it is an inherently adversarial activity. From this point of view, CompCert can be viewed as an affront. It spits in the face of our tool which is designed to create maximally evil C code, and which had found silent, previously-unknown wrong code bugs in every single C compiler we have tested, including a number that are routinely used for creating safety-critical embedded systems. So what happens when our unstoppable tool meets an immovable wall of proofs? This is what we set out to determine.
+                            </p>
+                            <p>
+                                I expected that we would find some flaws in CompCert’s formalisms. My meager experience in formal specification is that getting a large specification right is heroically difficult — perhaps not much easier than getting a complicated software system right in the first place. So far, however, we have found no errors in the CompCert PowerPC specification, their C-light specification, or in their proof strategy. This is pretty amazing and my opinion of the job done by the CompCert team is astronomically high.
+                            </p>
+                            <p>
+                                Even so, we did find previously unknown wrong code bugs in CompCert. Three of these were in the unverified front end and were basically typechecker bugs. These resulted in silent generation of wrong code. The other three bugs involved emission of incorrect PPC assembly code where CompCert generated a number that was too large for some fixed-size field in the instruction encoding. These bugs were not silent: the assembler would die with an error. Why didn’t the PPC specification include constraints on the range of these fields?&nbsp; Basically the CompCert authors weren’t worried about this case because assemblers reliably catch this kind of error. The front-end bugs are more worrisome and just in the last week or so, Xavier Leroy has replaced a large chunk of unproved code in the CompCert frontend with verified code. This is very cool.
+                            </p>
+                            <p>
+                                The result from our CompCert testing that I find most interesting is that the CompCert silent wrong-code bugs are qualitatively different from the bugs we find in other optimizing compilers:
+                            </p>
+                            <ul>
+                                <li>CompCert bugs: These are in an early phase of the compiler and can be found using very simple test cases. These kinds of bugs are not often found in mature compilers (CompCert isn’t, yet). It’s strongly possible that an exhaustive test suite could be created to find all instances of this kind of bug.
+                                </li>
+                                <li>Bugs in other compilers such as LLVM, GCC, Intel CC: These are in the middle-ends and back-ends of the compilers and often require fairly large test cases (on the order of 10 lines). It is almost certainly impossible to create any fixed test suite that can find all of these kinds of bugs because the number of 10-line C programs is, for practical purposes, infinite.
+                                </li>
+                            </ul>
+                            <p>
+                                I take two lessons away from our experience with CompCert. First, formal specification and verification are not a replacement for testing; the techniques are complementary. Second, formal verification can change the tester’s job and make it easier. In the case of CompCert, verification has eliminated all of the complicated optimizer bugs. In contrast, even after a few years of effort we have not been able to ferret out all instances of this kind of bug in some traditional compilers.
+                            </p>
+                            <h1>
+                                Predictions
+                            </h1>
+                            <p>
+                                OK, this post is getting long, let’s get to the point. Here are some predictions.
+                            </p>
+                            <h2>
+                                Prediction 1: No Compiler Is Considered Trustworthy Without Extensive Random Testing
+                            </h2>
+                            <p>
+                                Our random tester finds silent wrong-code bugs in all C compilers we have tested; a total of 270 crash and wrong code bugs so far. I hope that at some point in the future, compiler developers will create, with our help, a compiler that we cannot break. But this hasn’t yet happened (though CompCert may well reach this goal soon). Moreover, there are many ways to increase the power of our tester:
+                            </p>
+                            <ul>
+                                <li>Increase the expressiveness of our program generator; there are still many C programs that we cannot even in principle generate, such as those containing unions or making interesting use of the comma operator.
+                                </li>
+                                <li>Become smarter about how we explore the space of C programs; the conventional wisdom among software testing researchers (and I suspect there is a large element of truth to it) is that plain old random testing wastes a lot of time repeatedly exploring the same part of the test space. Solutions include uniform random sampling (difficult) and bounded exhaustive testing (slow).
+                                </li>
+                                <li>Start using white-box testing techniques, which consider the structure of the compiler when generating test cases. The goal might be to generate a test suite that gives full branch coverage of a compiler.
+                                </li>
+                            </ul>
+                            <p>
+                                Basically we have gotten excellent results using perhaps the stupidest possible technique. Actually that’s not right. Rather, you might say that we have focused all our efforts on creating a random code generator that is reasonably expressive and that targets the parts of the program space where our intuition told us compiler bugs would be found. That intuition was totally correct.
+                            </p>
+                            <p>
+                                The prediction — which I do not think is even remotely radical — is that in the future the kinds of random testing I’m talking about here will be considered mandatory for any compiler that people might want to trust for X-critical systems.
+                            </p>
+                            <h2>
+                                Prediction 2: Practical Compiler Verification Work Will Converge Around a Small Number of IRs
+                            </h2>
+                            <p>
+                                Formal verification increases the effort required to create a system by at least an order of magnitude. This bar is simply too high to be tolerated by very many research groups. But consider the alternative where a high quality IR (intermediate representation) such as LLVM, or at least a stable and useful subset of it, is formalized and becomes the basis for a large fraction of verified compiler work. Now, one team can create verified x86 backend, another can create a verified PowerPC backend, and both of these efforts would be far less work than was already put into CompCert. Similarly, my guess is that some of the existing LLVM optimization passes could be extended to support translation validation without being totally redesigned. Other passes like the useful-but-dreadful <a href="http://llvm.org/svn/llvm-project/llvm/trunk/lib/Transforms/InstCombine/">instruction combiner</a> (which was the single largest C++ file in LLVM before they refactored it) will have to be scrapped and replaced.
+                            </p>
+                            <p>
+                                The result of this line of work will be a (perhaps small) subset of the LLVM passes the are proof-producing, permitting verified optimizing compilers to be constructed with far less effort than was required to do CompCert. My belief is that this kind of centralized infrastructure is critical to lowering the barriers to entry for verified compiler work.
+                            </p>
+                            <h2>
+                                Prediction 3: Testing and Verification Will Merge
+                            </h2>
+                            <p>
+                                The path to trustworthy and practical compilers will be through interesting combinations of testing and verification techniques. Here are two examples of directions that may end up being promising.
+                            </p>
+                            <h3>
+                                Example 1
+                            </h3>
+                            <p>
+                                Assume that we have three independently developed compilers for some programming language, all of which are pretty good but none of which is totally trustworthy. The classic way to exploit independent versions is n-version programming. To use it, we can run three copies of our system (each built using a different compiler) on three different processors, and then take a vote before performing any externally-visible action. This strategy also provides margin against hardware failure provided that we can make the voter highly reliable. On the downside, running three copies wastes a lot of hardware and energy and also requires the replicas to be deterministic. Determinism may actually be pretty hard to achieve in this case. First, the compilers will variously create faster or slower code, so our voter will have to have some timing tolerance. Second, if nodes are concurrent, small timing nondeterminisms will bootstrap themselves into significant behavioral differences as context switches cause significant events to be reordered. Third, programming languages like C and C++ permit compilers to make choices about significant program behaviors such as order of evaluation of arguments to a function.
+                            </p>
+                            <p>
+                                How can we do better than node-level replication? If we had a powerful equivalence checker for binaries, we could simply use it to prove that the three systems all implement the same computation and then run only one of them. However, a tool capable of proving that three diverse binary images are equivalent is unlikely to appear anytime soon. But what about proving that short sequences of instructions are equivalent? For example, proving that
+                            </p>
+                            <blockquote>
+                                <pre>
+<strong>mov $0, r1</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                and
+                            </p>
+                            <blockquote>
+                                <pre>
+<strong>xor r1, r1</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                are equivalent is trivial, assuming that we don’t care about what happens to the condition code flags. Can we scale this checker up to tens of instructions, for example using a clever SAT encoding? Probably. Hundreds or thousands? Perhaps. What could we do with a tool that can reliably prove the equivalence or inequivalence of sequences of hundreds of instructions? If every function in the system we’re verifying is small enough, it should suffice to individually perform equivalence verification of functions. For systems that contain functions that are too large, we could automatically split the source code for the too-big functions into smaller functions — there are well-known techniques for accomplishing this kind of thing — until the pieces are compiled into object code small enough that their equivalence can be verified. I’m leaving out a lot of minor pieces such as verifying the function-splitter, but overall I believe this strategy could be make to work, giving a great deal of extra trustworthiness to a collection of legacy compilers. It seems elegant that we could bootstrap a scalable and workable translation validation mechanism from a poorly-scalable equivalence checker.
+                            </p>
+                            <h3>
+                                Example 2
+                            </h3>
+                            <p>
+                                As I’ve said, having used a compiler successfully in the past does not provide a rigorous basis for believing it will work in the future.&nbsp; Nevertheless, there’s something undeniably useful about verification through usage: why should we need to prove something about all paths through the compiler when we’re going to exercise only an infinitesimally small fraction of them?
+                            </p>
+                            <p>
+                                It should be feasible to perform “just enough testing” to gain confidence that a particular source program is compiled correctly by a particular compiler configuration. To perform just enough testing, we’d again break the application under test into small pieces. For each, we’d compile it and perform some sort of intelligent white-box testing of the resulting object code. If we can test it thoroughly enough, and if we can choose a compiler configuration where optimizations are not performed across code chunks in harmful ways, maybe we can start to say something about the correctness of the translation.
+                            </p>
+                            <h2>
+                                Prediction 4: Formal Semantics Will Be Constructed Earlier
+                            </h2>
+                            <p>
+                                Most programming languages intended for safety-critical use will be developed in conjunction with a formal semantics: a machine-readable way to assign a mathematical meaning to each program in the language. Verified compilation is, of course, nonsensical without a formal semantics. A completely separate benefit is that a document like the C99 standard would have benefited enormously if its construction had had input from an experienced semanticist. Certain shady parts of the design would have had light shone upon them much earlier, and hopefully these could have been cleared up prior to finalizing the standard. The current situation is that the standard not only contains many dark corners, but also some real absurdities that compiler developers have been forced to ignore.
+                            </p><img src="http://feeds.feedburner.com/~r/EmbeddedInAcademia/~4/cgz2q_qFXtg" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.regehr.org/archives/249?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29">http://blog.regehr.org/archives/249?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

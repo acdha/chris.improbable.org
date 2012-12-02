@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Undoing Merges
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 02 Mar 2010 08:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-02T03:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-03-02T03:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-02T07:00:00+00:00">Mar 02</time>
+                    <h2 itemprop="title">
+                        Undoing Merges
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/e43a4bbbe68cd004">
+                        <blockquote>
+                            <p>
+                                I would like to start writing more here about general Git tips, tricks and upcoming features. There has actually been a lot of cool stuff that has happened since the book was first published, and a number of interesting things that I didn’t get around to covering in the book. I figure if I start blogging about the more interesting stuff, it should serve as a pretty handy guide should I ever start writing a second edition.
+                            </p>
+                            <p>
+                                For the first such post, I’m going to cover a topic that was asked about at a training I did recently. The question was about a workflow where long running branches are merged occasionally, much like the <a href="http://progit.org/book/ch5-3.html#largemerging_workflows">Large Merging</a> workflow that I describe in the book. They asked how to unmerge a branch, either permenantly or allowing you to merge it in later.
+                            </p>
+                            <p>
+                                You can actually do this a number of ways. Let’s say you have history that looks something like this:
+                            </p><img src="http://progit.org/images/unmerge1.png">
+                            <p>
+                                You have a couple of topic branches that you have developed and then integrated together by a series of merges. Now you want to revert something back in the history, say ‘C10’ in this case.
+                            </p>
+                            <p>
+                                The first way to solve the problem could be to rewind ‘master’ back to C8 and then merge the remaining two lines back in again. This requires that anyone you’re collaborating with knows how to handle rewound heads, but if that’s not an issue, this is a perfectly viable solution. This is basically how the ‘pu’ branch is handled in the Git project itself.
+                            </p>
+                            <pre>
+<code>$ git checkout master
+$ git reset --hard [sha_of_C8]
+$ git merge jk/post-checkout
+$ git merge db/push-cleanup</code>
+</pre>
+                            <p>
+                                Once you rewind and remerge, you’ll instead have a history that looks more like this:
+                            </p><img src="http://progit.org/images/unmerge2.png">
+                            <p>
+                                Now you can go back and work on that newly unmerged line and merge it again at a later point, or perhaps ignore it entirely.
+                            </p>
+                            <h2>
+                                Reverting a Merge
+                            </h2>
+                            <p>
+                                However, what if you didn’t find this out until later, or perhaps you or one of your collaborators have done work after this merge series? What if your history looks more like this:
+                            </p><img src="http://progit.org/images/unmerge3.png">
+                            <p>
+                                Now you either have to revert one of the merges, or go back, remerge and then cherry-pick the remaining changes again (C9 and C10 in this case), which is confusing and difficult, especially if there are a lot of commits after those merges.
+                            </p>
+                            <p>
+                                Well, it turns out that Git is actually pretty good at reverting an entire merge. Although you’ve probably only used the <code>git revert</code> command to revert a single commit (if you’ve used it at all), you can also use it to revert merge commits.
+                            </p>
+                            <p>
+                                All you have to do is specify the merge commit you want to revert and the parent line you want to keep. Let’s say that we want to revert the merge of the <code>jk/post-checkout</code> line. We can do so like this:
+                            </p>
+                            <pre>
+<code>$ git revert -m 1 [sha_of_C8]
+Finished one revert.
+[master 88edd6d] Revert "Merge branch 'jk/post-checkout'"
+ 1 files changed, 0 insertions(+), 2 deletions(-)</code>
+</pre>
+                            <p>
+                                That will introduce a new commit that undoes the changes introduced by merging in the branch in the first place - sort of like a reverse cherry pick of all of the commits that were unique to that branch. Pretty cool.
+                            </p><img src="http://progit.org/images/unmerge4.png">
+                            <p>
+                                However, we’re not done.
+                            </p>
+                            <h2>
+                                Reverting the Revert
+                            </h2>
+                            <p>
+                                Let’s say now that you want to re-merge that work again. If you try to merge it again, Git will see that the commits on that branch are in the history and will assume that you are mistakenly trying to merge something you already have.
+                            </p>
+                            <pre>
+<code>$ git merge jk/post-checkout
+Already up-to-date.</code>
+</pre>
+                            <p>
+                                Oops - it did nothing at all. Even more confusing is if you went back and committed on that branch and then tried to merge it in, it would only introduce the changes <em>since</em> you originally merged.
+                            </p><img src="http://progit.org/images/unmerge5.png">
+                            <p>
+                                Gah. Now that’s really a strange state and is likely to cause a bunch of conflicts or confusing errors. What you want to do instead is revert the revert of the merge:
+                            </p>
+                            <pre>
+<code>$ git revert 88edd6d
+Finished one revert.
+[master 268e243] Revert "Revert "Merge branch 'jk/post-checkout'""
+ 1 files changed, 2 insertions(+), 0 deletions(-)</code>
+</pre><img src="http://progit.org/images/unmerge6.png">
+                            <p>
+                                Cool, so now we’ve basically reintroduced everything that was in the branch that we had reverted out before. Now if we have more work on that branch in the meantime, we can just re-merge it.
+                            </p>
+                            <pre>
+<code>$ git merge jk/post-checkout
+Auto-merging test.txt
+Merge made by recursive.
+ test.txt |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)</code>
+</pre><img src="http://progit.org/images/unmerge7.png">
+                            <p>
+                                So, I hope that’s helpful. This can be particularly useful if you have a merge-heavy development process. In fact, if you work mostly in topic branches before merging for intergration purposes, you may want to use the <code>git merge --no-ff</code> option so that the first merge is not a fast forward and can be reverted out in this manner.
+                            </p>
+                            <p>
+                                Until next time.
+                            </p><img src="http://feeds.feedburner.com/~r/ProGitBook/~4/mlPTvXnOKeE" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://progit.org/2010/03/02/undoing-merges.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+ProGitBook+%28Git+Book+Blog%29">http://progit.org/2010/03/02/undoing-merges.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+ProGitBook+%28Git+Book+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

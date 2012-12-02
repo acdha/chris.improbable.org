@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Scot Hacker: Generating RSS Mashups from Django
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 20 Oct 2009 19:20:59 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-10-20T15:20:59-04:00">
+                    <meta itemprop="dateModified" content="2009-10-20T15:20:59-04:00"><time class="date" itemprop="datePublished" datetime="2009-10-20T19:20:59+00:00">Oct 20</time>
+                    <h2 itemprop="title">
+                        Scot Hacker: Generating RSS Mashups from Django
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/27395fb4bd99188d">
+                        <blockquote>
+                            <p>
+                                I recently got to work on an interesting Django side project: the <a href="http://baynewsnetwork.org/">Bay News Network</a> – a directory of Bay Area bloggers and hyperlocal news sites. The goal of the site was three-fold:
+                            </p>
+                            <ol>
+                                <li>To create a many-to-many directory of local sites that matched our editorial criteria
+                                </li>
+                                <li>To let site owners log in and edit their own listings
+                                </li>
+                                <li>To both consume and produce RSS feeds from the listed sites
+                                </li>
+                            </ol>
+                            <p>
+                                The first two were pretty standard Django approaches – develop data models and editing interfaces using Django forms and re-usable apps like <a href="http://bitbucket.org/ubernostrum/django-profiles/wiki/Home">django-profiles</a> and <a href="http://bitbucket.org/ubernostrum/django-registration/wiki/Home">django-registration</a>. The third goal turned out to be more interesting. We not only had to gather RSS feeds from more than 100 external sites several times per day, we needed to re-mix them (e.g. provide an integrated feed representing all blogs that cover Food, or all blogs that cover Oakland).
+                            </p>
+                            <p>
+                                “Consuming” RSS feeds meant we needed to integrate feeds from the external sites into our own site. At the most basic level, this was pretty straightforward using Mark Pilgrim’s excellent <a href="http://www.feedparser.org/">Universal Feed Parser</a>, which turns the real-world’s tag soup of disparate, incompatible RSS formats&nbsp; into a reliable data format you can step through in your code or templates. This worked well enough until I realized that grabbing and parsing external feeds in real-time was just not going to scale, performance-wise. Plus, we still had the RSS mashups to build, and would clearly need to be storing feed entries in our own database in order to sort them by category, etc.
+                            </p>
+                            <p>
+                                Thus began the hunt for good feed aggregation systems for Django. Most roads pointed to <a href="http://github.com/matagus/django-planet">django-planet</a>, <a href="http://www.planetplanet.org/">planet planet</a>, and <a href="http://www.feedjack.org/">FeedJack</a>, which are systems for gathering content from external sites and importing it into a single aggregated site. These were close to what I wanted, but weren’t great on the re-usability side. Since I already had&nbsp; existing models to define the sites, their owners, and their feeds, I didn’t want to rewrite all my models to work with another system’s conception of how things should be laid out. I also didn’t feel like plowing through their source code to chop out and rewrite just the bits I wanted. Eventually realized that I was looking for a few lines of code to work with my system, not a whole external system.
+                            </p>
+                            <p>
+                                The surprising solution came from the <a href="http://www.djangoproject.com/community/">Community</a> section of the official Django project web site. The Django developers keep the code that drives djangoproject.com in subversion along with the source code to Django itself. And the code that drives that section of the site is really lightweight. So I did a subversion checkout of the <a href="http://code.djangoproject.com/browser/djangoproject.com/django_website/apps/aggregator">Aggregator</a> app, and found that all I really needed from it was its <code>update_feeds.py</code> script, which itself is a wrapper around Universal Feed Parser, tweaked to talk to my own models.
+                            </p>
+                            <p>
+                                Two gotchas to be aware of:
+                            </p>
+                            <ol>
+                                <li>The app includes a bundled templatetags directory with a file called aggregator.py. But the name of the app itself is “aggregator.” I was getting strange import errors in various places before I discovered on the django-users mailing list that Django doesn’t like it when an app name matches a templatetag name. Easily fixed by renaming the templatetag.
+                                </li>
+                                <li>My first runs of <code>update_feeds.py</code> went fine, but later started erroring out with database integrity errors. The GUID field on the FeedItem model is set to <code>unique=True</code>, which prevents your database from storing any one FeedItem more than once. That’s great, but it was dishing up integrity errors for some reason. I fixed this by changing this line in <code>update_feeds.py</code>:
+                                </li>
+                            </ol>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre>
+feed.<span>feeditem_set</span>.<span>get</span><span>(</span>guid=guid<span>)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                to:
+                            </p>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre>
+FeedItem.<span>objects</span>.<span>get</span><span>(</span>guid=guid<span>)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                Once I was able to get the updater to run consistently without error, I needed to get it running via cron. The trick to running a Python script that talks to the Django ORM from a crontab is that you must supply the full Python paths in the environment to cron – it doesn’t pick them up automatically from the environment of the user that runs the cron job. This worked for me:
+                            </p>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre>
+PYTHONPATH=/home/bnn/projects:/home/bnn/projects/bnn
+DJANGO_SETTINGS_MODULE=bnn.<span>settings</span>
+<span>20</span> <span>15</span> <span>*</span> <span>*</span> <span>*</span> python /home/bnn/projects/bnn/scripts/update_feeds.<span>py</span> <span>2</span><span>&amp;</span>gt<span>;&amp;</span>amp<span>;</span><span>1</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <h3>
+                                Producing Feeds
+                            </h3>
+                            <p>
+                                With the harvesting system up and running, and all content coming into the datbase associated with blogs that were in turn categorized by “beat” and geographical area, outputting aggregated RSS feeds was a simple matter of using Django’s native syndication framework <a href="http://docs.djangoproject.com/en/dev/ref/contrib/syndication/">as documented</a>. This went into urls.py:
+                            </p>
+                            <div>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre>
+feeds = <span>{</span>
+    <span>'all'</span>: AllFeeds,
+    <span>'cat'</span>: CategoryFeeds,
+    <span>'area'</span>: BeatFeeds,
+<span>}</span>
+ 
+<span># Feeds</span>
+url<span>(</span>r<span>'^feeds/(?P.*)/$'</span>, <span>'django.contrib.syndication.views.feed'</span>, <span>{</span><span>'feed_dict'</span>: feeds<span>}</span><span>)</span>,
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                … and I created a file <code>feedgenerator.py</code> to contain the three corresponding classes and their querysets, using Holovaty’s <a href="http://docs.djangoproject.com/en/dev/ref/contrib/syndication/#a-complex-example">sample code</a> from chicagocrime.org as a starting point.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://birdhouse.org/blog/?p=3458">http://birdhouse.org/blog/?p=3458</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

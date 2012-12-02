@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Feature: The Linux graphics stack from X to Wayland
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 22 Mar 2011 13:28:17 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-22T09:28:17-04:00">
+                    <meta itemprop="dateModified" content="2011-03-22T09:28:17-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-22T13:28:17+00:00">Mar 22</time>
+                    <h2 itemprop="title">
+                        Feature: The Linux graphics stack from X to Wayland
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/8f68f1811b1d8f5c">
+                        <p class="annotation">
+                            Illustrates both the good and bad sides of Linux development
+                        </p>
+                        <blockquote>
+                            <a href="http://arstechnica.com/open-source/guides/2011/03/the-linux-graphics-stack-from-x-to-wayland.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss"><img vspace="4" hspace="4" border="0" align="right" width="230" height="129" src="http://static.arstechnica.net/assets/2011/03/terminal-x-windows-list-thumb-230x130-20380-f.jpg"></a>
+                            <p>
+                                In the early 1980s, MIT computer scientist Bob Scheifler set about laying down the principles for a new windowing system. He had decided to call it X, because it was an improvement on the W graphical system, which naturally resided on the V operating system. Little did Bob know at the time, but the X Window System that he and fellow researches would eventually create would go on to cause a revolution. It became the standard graphical interface of virtually all UNIX based operating systems, because it provided features and concepts far superior to its competition. It took only a few short years for the UNIX community to embrace the X windowing system en masse.
+                            </p>
+                            <p>
+                                In this article, we'll take a look at the development of the Linux graphics stack, from the initial X client/server system to the modern Wayland effort.
+                            </p>
+                            <p>
+                                What made X so special, of course, is legendary. X was the first graphical interface to embrace a networked, distributed solution. An X Server running on one of the time sharing machines was capable of generating the display for windows that belong to any number of local clients. X defined a network display protocol so that windows from one machine could be displayed on another, remote machine. In fact, X was always intended to be used in this network fashion, and the protocol was completely hardware-independent. X clients running on one type of UNIX could send their displays over the wire to a completely different UNIX hardware platform.
+                            </p>
+                            <p>
+                                X also abstracted the look-and-feel away from the server itself. So the X protocol defined pointing devices and window primitives, but left the appearance of the interface up to the widget toolkits, window managers, and desktop environments.
+                            </p>
+                            <p>
+                                As X development proceeded, led by Bob Scheifler and under the stewardship of MIT, more vendors became interested. Industry leaders at the time, like DEC, obtained a free license to the source code to make further improvements. Then a curious thing happened. A group of vendors asked MIT if some sort of arrangement could be made to preserve the integrity of the source. They wanted to keep X universally useful to all interested parties. MIT agreed, and soon the MIT X Consortium was formed and the full source tree was released, including the DEC improvements. This release of the X source really was an extraordinary event. The vendor community realized that X had become a valuable commodity, and it was in the best interests of all to protect it from any one company gaining control. Perhaps the opening of the X source code is the single most important event to come out of the X story, and the MIT X Consortium maintains the rights to the X source today.
+                            </p>
+                            <p>
+                                One of the senior developers recruited by the Consortium was Keith Packard, who was commissioned to re-implement the core X server in 1988. As we'll see, Packard figured prominently in the development of the Linux graphics stack.
+                            </p>
+                            <p>
+                                Although X has ruled the UNIX and Linux graphics stacks, the feature-laden and ubiquitous software eventually became a victim of its own success. As Linux took flight throughout the '90s, X began to find use in configurations where a standalone X server and client both resided on one desktop computer; it came bundled this way with pretty much all of the Linux distributions. The network transparency of X is of no use on a single desktop installation, and this once vaunted feature was adding overhead to the video drawing.
+                            </p>
+                            <p>
+                                As PC sales ballooned during this period, the sophistication of dedicated graphics hardware began to creep ahead of the capabilities of X. The development of new and improved hardware in graphics cards was and continues to be very aggressive. Before we tackle the larger question of how X will cope with getting access to video device adapters in the Linux space, have a look at the sidebar to delve deeper into the hardware.
+                            </p>
+                            <h3>
+                                The arrival of Translation Table Maps
+                            </h3>
+                            <p>
+                                Around 2004, some Linux developers had become increasingly frustrated with the slow pace of X development. They had at their disposal OpenGL, an image rendering API that was originally developed to produce 2D and 3D graphics (derived from work by the now-defunct Silicon Graphics) in 1992. But after years of attempting to get X to talk 3D to the graphics device, not a single OpenGL call could be made through the X layer.
+                            </p>
+                            <p>
+                                Then, in 2007, a bright light. Thomas Hellstrom, Eric Anholt, and Dave Airlie had developed a memory management module they called translation table maps (TTM). TTM was designed to move the memory buffers destined for graphics devices back and forth between graphic device memory and system memory. It was notable because of the wild applause of the Linux community. It provided hope that somebody—anybody—was working on the problem of providing an API to properly manage graphical applications' 3D needs. The strategy was to make the memory buffer a first class object, and allow applications to allocate and manipulate memory buffers of the graphical content. TTM would manage the buffers for all applications on the host, and provide synchronization between the GPU and the CPU. This would be accomplished with the use of a "fence." The fence was just a signal that the GPU was finished operating on a buffer, so that control of it could be sent back to the owning application.
+                            </p>
+                            <p>
+                                To be fair, TTM was an ambitious attempt to standardize how applications access the GPU; it was an overall memory manager for all video drivers in the Linux space. In short, TTM was trying to provide all of the operations that any graphics program might possibly need. The unfortunate side effect was a very large amount of code—the TTM API was huge, whereas each individual open source driver only needs a small subset of API calls. A large API means confusion for developers who have to make choices. The loudest complaint was that the TTM had some performance issues, perhaps related to the fencing mechanism, and inefficient copying of the buffer objects. TTM could be many things to many applications, but it couldn't afford to be slow.
+                            </p>
+                            <p>
+                                Reenter Keith Packard. In 2008, he announced that work was proceeding on an alternative to TTM. By now Keith was working for Intel, and together with the help of Eric Anholt he used the lessons learned from developing TTM and rewrote it. The new API was to be called GEM (Graphics Execution Manager). Most developers reading this piece can probably guess what happened next, because experienced developers know that the only thing better than getting a chance to solve a big problem by writing a significant chunk of code is doing it twice.
+                            </p>
+                            <p>
+                                GEM had many improvements over TTM, one of the more significant of which was the fact that the API was much tighter, and the troublesome fence concept was removed. Keith and Eric put the onus on the applications to lock memory buffers outside of the API. That freed up GEM to concentrate on managing the memory under control of the GPU, and to control the video device execution context. The goal was to shift the focus to managing ioctl() calls within the kernel instead of managing memory by moving buffers around. The net effect was that GEM became more of a streaming API than a memory manager.
+                            </p>
+                            <p>
+                                GEM allowed applications to share memory buffers so that the entire contents of the GPU memory space did not have be be reloaded. This is from the original release notes:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    "Gem provides simple mechanisms to manage graphics data and control execution flow within the linux [sic] operating system. Using many existing kernel subsystems, it does this with a modest amount of code."<sup><a href="http://arstechnica.com/open-source/#ftnt1" name="ftnt_ref1" id="ftnt_ref1">[1]</a></sup>
+                                </p>
+                            </blockquote>
+                            <p>
+                                The introduction of GEM in May of 2008 was a promising step forward for the Linux graphics stack. GEM did not try to be all things to all applications. For example, it left the execution of the GPU commands to be generated by the device specific driver. Because Keith and Eric were working at Intel, it was only natural for them to write GEM specific to the open-source intel driver. The hope was that GEM could be improved to the point where it could support other drivers as well, thus effectively covering the three biggest manufacturers of GPUs.
+                            </p>
+                            <p>
+                                However, non-intel device driver adoption of GEM was slow. There is some evidence to suggest that the AMD driver adopted a "GEMified TTM manager"<sup><a name="ftnt_ref2" href="http://arstechnica.com/open-source/#ftnt2" id="ftnt_ref2">[2]</a></sup>, signifying a reluctance to move the code directly into the GEM space. GEM was in danger of becoming a one-horse race.
+                            </p>
+                            <p>
+                                Both TTM and GEM try to solve the 3D acceleration problem in the Linux graphics stack by integrating directly with X to get to the device to perform GPU operations. Both attempt to bring order to the crowd of libraries like OpenGL (which depends on X), Qt (depends on X) and GTK+ (also X). The problem was that X stands between all of these libraries and the kernel, and the kernel is the way to the device driver, and the ultimately to the GPU.
+                            </p>
+                            <p>
+                                X is the oldest lady at the dance, and she insists on dancing with everyone. X has millions of lines of source, but most of it was written long ago, when there were no GPUs, and no specialized transistors to do programmable shading or rotation and translation of vertexes. The hardware had no notion of oversampling and interpolation to reduce aliasing, nor was it capable of producing extremely precise color spaces. The time has come for the old lady to take a chair.
+                            </p>
+                            <h3>
+                                Wayland: a new display manager
+                            </h3>
+                            <p>
+                                In 2008, a software engineer by the name of <a href="http://en.wikipedia.org/wiki/Kristian_H%C3%B8gsberg">Kristian Høgsberg</a> was driving in the Boston suburbs, perhaps on his way to work, or on his way home. Software engineers live in a world of deep introspection. They spend most of the day solving complex problems, breaking problems apart and reconstructing them. Often, when they are distracted, their subconscious can make the most bizarre leaps, connecting half-baked ideas and partially solved algorithms. This can happen in the oddest of places, for example, in the shower, or cooking in the kitchen, or driving in a car. As Høgsberg drove through the tiny village of Wayland, Massachusetts, an idea that had been germinating in his mind crystallized. His idea is best described in his own words:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    "The core idea is that all windows are redirected, we can do all rendering client side and pass a buffer handle to the server and the compositing manager runs in the display server. One of the goals is to get an X server running on Wayland, first in a full screen window (like Xnest), then rootless, since X just isn't going aways anytime soon."<sup><a href="http://arstechnica.com/open-source/#ftnt3" name="ftnt_ref3" id="ftnt_ref3">[3]</a></sup>
+                                </p>
+                            </blockquote>
+                            <p>
+                                His idea was to write a brand-new display manager and have it send 3D output directly to the kernel, bypassing X. One of the clients to the new display manager would be X itself. As you can see from the quote above, the new display manager would be christened "Wayland," in homage to the town where the idea occurred to him.
+                            </p>
+                            <p>
+                                An idea is an idea, nothing more. Lots of people have brilliant ideas every day, but they often disappear in the cacophony of life that we muddle through. Høgsberg had been working on the rendering libraries and probably wondering what a wonderful world it could be if only the applications could talk directly to the GPU without involving the old lady X. He resolved to write the code to make it happen. According to Keith Packard of Intel, he had a rudimentary working server in two weeks time<sup><a name="ftnt_ref4" href="http://arstechnica.com/open-source/#ftnt4" id="ftnt_ref4">[4]</a></sup>.
+                            </p>
+                            <p>
+                                A key feature of Wayland is the use of a rendering API that does not have any dependencies on X. To maintain compatibility, the X Server itself is made into a Wayland client, and all of the X rendering is fed directly into Wayland. The Wayland package, like X before it, defines a protocol only. The architecture of Wayland, with its ability to function alongside X, provides an easy migration path for existing and even future planned X clients. The X Server can run as before, servicing all of the legacy clients.
+                            </p>
+                            <p>
+                                The Wayland Display Manager, if we can call it that, leverages the GEM execution manager, evdev (input drivers) and kms (kernel mode switching) that are already in the Linux kernel. Wayland has its own compositing manager, which is in direct contrast to the X architecture, because X relies on an outside compositor to handle memory buffer changes.
+                            </p>
+                            <p>
+                                Wayland also leverages DRI2. The Wayland Compositor and Wayland clients both have a handle to a shared memory buffer of screen real estate. The client renders through DRI2 and makes use of the 3D APIs. After the buffer is updated by the client, then the Wayland Compositor will update its version of the desktop, and redraw the screen.
+                            </p>
+                            <p>
+                                Certainly the Wayland approach solves many of the problems that traditionally had been difficult for X. It is easy to get excited about the project, there is talent behind the coding, and the project has the backing of Intel and Red Hat.
+                            </p>
+                            <p>
+                                But there are a few hurdles to clear before Linux can claim to have a modern 3D graphics stack. And two of the biggest hurdles might be developing compatible open source drivers that work with the graphics cards from NVIDIA and AMD. The third big vendor, Intel, is well positioned here, because the GEM kernel module was written with the Intel driver in mind, and Wayland is already compatible.
+                            </p>
+                            <p>
+                                Who will update the open source drivers for AMD and NIVIDIA hardware? Developing open source drivers in Linux, especially for graphics adapters, has always been the developers' scourge. Usually working with incomplete hardware specifications, or none at all, the exercise invariably boils down to reverse engineering the device.
+                            </p>
+                            <p>
+                                The nouveau driver is a good example of this. First, there are statements floating around<sup><a name="ftnt_ref5" href="http://arstechnica.com/open-source/#ftnt5" id="ftnt_ref5">[5]</a></sup> made by NVIDIA developers that suggest there are "no plans to support Wayland". But work presses on in the Linux community, sometimes with the support of vendors, sometimes without. In the nouveau project, an NVIDIA driver is being actively developed by reverse engineering. A program called Renouveau (Reverse Engineering for nouveau) will perform the following sequence of events:
+                            </p>
+                            <ol>
+                                <li>Record the contents of the device MMIO registers
+                                </li>
+                                <li>Draw some graphics
+                                </li>
+                                <li>Record the new values in the registers
+                                </li>
+                            </ol>
+                            <p>
+                                Then send the differences of the two memory dumps as a text file back to a Renouveau ftp server, where the files are made available for further analysis.
+                            </p>
+                            <p>
+                                AMD fares much better than NVIDIA in this department. Over the last few years, a driver team was assembled to write open source drivers for their hardware. They also release specifications periodically so that open source development can continue in the wild. The driver name is fglx (FireGL and Radeon for X), and the Linux community can get periodic (monthly) updates from AMD.
+                            </p>
+                            <p>
+                                Wayland is a promising new development for the state of the Linux graphics stack. Recently, Ubuntu has stepped up, suggesting that they are planning to use Wayland in conjunction with their own new window manager called Unity. Intel has shown tremendous support in aiding in the development of GEM, hiring the Wayland developer to ensure their hardware drivers are up to speed with the new graphics architecture.
+                            </p>
+                            <p>
+                                The rest of the graphics world is polarized. AMD and NVIDIA are engaged in fierce competition to capture market share, and the needs of the open source community do not appear to be near the top of their to-do lists.
+                            </p>
+                            <p>
+                                The Linux community is based of collaboration and cooperation. Through collaboration and openness, it has grown tremendously over the years. The Linux graphics stack appears to be poised to make a great leap forward. Graphics hardware vendors are free to choose how much they want to contribute. It always amazes me how reluctant they are to do just that. Wouldn't any hardware vendor, especially if their product was perhaps the most capable hardware in the world, want its users to have the best experience they possibly could? By holding back information aren't they really hurting their own product line? One thing is for sure—you wouldn't call it cooperation.
+                            </p>
+                            <p>
+                                <a href="http://arstechnica.com/open-source/guides/2011/03/the-linux-graphics-stack-from-x-to-wayland.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss&amp;comments=1#comments-bar">Read the comments on this post</a>
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://arstechnica.com/open-source/guides/2011/03/the-linux-graphics-stack-from-x-to-wayland.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss">http://arstechnica.com/open-source/guides/2011/03/the-linux-graphics-stack-from-x-to-wayland.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            ZeroMQ an introduction
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 23 Jun 2010 08:50:59 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-06-23T04:50:59-04:00">
+                    <meta itemprop="dateModified" content="2010-06-23T04:50:59-04:00"><time class="date" itemprop="datePublished" datetime="2010-06-23T08:50:59+00:00">Jun 23</time>
+                    <h2 itemprop="title">
+                        ZeroMQ an introduction
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/abd8b7e2aba9faee">
+                        <blockquote>
+                            <p>
+                                <a href="http://www.zeromq.org/">ZeroMQ</a> is a messaging library, which allows you to design a complex communication system without much effort. It has been wrestling with how to effectively describe itself in the recent years. In the beginning it was introduced as ‘messaging middleware’ later they moved to ‘TCP on steroids’ and right now it is a ‘new layer on the networking stack’.
+                            </p>
+                            <p>
+                                <img title="zeromq" src="http://nichol.as/wp-content/uploads/2010/06/zeromq1-300x115.png" alt="" width="126" height="48">
+                            </p>
+                            <p>
+                                I had some trouble understanding ZeroMQ at first and really had to reset my brain. First of all, it is not a complete messaging system such as <a href="http://www.rabbitmq.com/">RabbitMQ</a> or <a href="http://activemq.apache.org/">ActiveMQ</a>. I know the guys of Linden Research <a href="http://wiki.secondlife.com/wiki/Message_Queue_Evaluation_Notes">compared them</a>, but it is apples and oranges. A full fledged messaging system gives you an out of the box experience. Unwrap it, configure it, start it up and you’re good to go once you have figured out all its complexities.
+                            </p>
+                            <p>
+                                ZeroMQ is not such a system at all; it is a simple messaging library to be used programmatically. It basically gives you a pimped socket interface allowing you to quickly build your own messaging system.
+                            </p>
+                            <h2>
+                                Float like a butterfly, sting like a bee
+                            </h2>
+                            <p>
+                                But why use ZeroMQ and not just use the low level Berkeley socket interface or a high level messaging system? I think the answer is balance. You probably want the flexibility and performance of the low level while still having the ease of implementation of the high level. However, maintaining raw sockets is difficult and cumbersome when you want to implement a scalable system. A high level system often works perfect if you use it for the situation it was designed for, but it can be difficult to change core elements of the system and its ease of use often comes with a cost in performance. This isn’t a problem that is limited to messaging systems only. We can see the previous dilemma also in web frameworks; it could very well be that this is exactly the reason why ‘Micro Frameworks’ gain in popularity.
+                            </p>
+                            <p>
+                                I believe that ZeroMQ perfectly fits this gap between the high and the low level, so what are its features?
+                            </p>
+                            <h3>
+                                Performance
+                            </h3>
+                            <p>
+                                ZeroMQ is blazing fast. It is orders of magnitude faster than most AMQP messaging systems and it can obtain this high performance because of the following techniques:
+                            </p>
+                            <ul>
+                                <li>It does not have the overhead of an over-engineered protocol such as AMQP
+                                </li>
+                                <li>It can make use of efficient transports such as <a title="Pragmatic General Multicast" href="http://en.wikipedia.org/wiki/Pragmatic_General_Multicast">reliable Multicast</a> or the<a href="http://www.zeromq.org/whitepapers:y-suite">Y-suite IPC transport</a>
+                                </li>
+                                <li>It makes use of <a href="http://www.zeromq.org/whitepapers:design-v01#toc10">intelligent message batching</a>. This allows 0MQ to efficiently utilize a TCP/IP connection by minimizing not only protocol overhead but also system calls.
+                                </li>
+                            </ul>
+                            <h3>
+                                Simplicity
+                            </h3>
+                            <p>
+                                The API is deceptively simple, and it makes sending messages really simple compared with a raw socket implementation where you have to continuously ‘feed’ the socket buffer. In ZeroMQ you can just fire off an async send call, it will queue the message in a separate thread and do all the work for you. Because of this async nature, your application does not have to waste time waiting until the message has been flushed. The async nature of 0MQ makes it a perfect companion for an event-based framework.
+                            </p>
+                            <p>
+                                ZeroMQ’s simple wire protocol fits perfectly in the current time setting where we have lots of different transport protocols. With AMQP it always felt a bit weird to use an extra protocol layer on top. 0MQ gives you complete freedom on how you encode your message, as it will just interpret it as a blob. So you can send simple <a href="http://www.json.org/">JSON</a> messages, go the binary route with for example <a href="http://bsonspec.org/">BSON</a>, <a href="http://code.google.com/p/protobuf/">Protocol Buffers</a> or <a href="http://incubator.apache.org/thrift/">Thrift</a> and all this without feeling <a href="http://nichol.as/wp-content/uploads/2010/06/guilty-puppy.jpg">guilty</a>.
+                            </p>
+                            <h3>
+                                Scalability
+                            </h3>
+                            <p>
+                                While ZeroMQ sockets look low level they provide lots of features. A single ZeroMQ socket can for example connect to multiple end points and automatically load balance messages over them. Or it can work as some sort of Fan-In, collecting messages from multiple sources through a single socket.
+                            </p>
+                            <p>
+                                ZeroMQ follows a <a href="http://www.zeromq.org/whitepapers:brokerless">brokerless design</a> so that there is no single point of failure. Combine this with its simplicity and performance and you get something that you can use to make your application distributed.
+                            </p>
+                            <h2>
+                                Implementing a messaging layer with ZeroMQ
+                            </h2>
+                            <p>
+                                In the next section I will show how to design and implement a messaging layer with ZeroMQ. For the code example I will use Brian Granger’s <a href="http://github.com/zeromq/pyzmq">PyZMQ</a>, which is the excellent Python binding to ZeroMQ.
+                            </p>
+                            <p>
+                                Implementing a ZeroMQ messaging layer is a three-step approach:
+                            </p>
+                            <ol>
+                                <li>Choose a transport
+                                </li>
+                                <li>Set up the infrastructure
+                                </li>
+                                <li>Select a messaging pattern
+                                </li>
+                            </ol>
+                            <h3>
+                                Choosing a transport
+                            </h3>
+                            <p>
+                                The first step is to choosing a transport. ZeroMQ provides 4 different transports:
+                            </p>
+                            <ol>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_inproc.html">INPROC</a></em> an In-Process communication model
+                                </li>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_ipc.html">IPC</a></em> an Inter-Process communication model
+                                </li>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_pgm.html">MULTICAST</a></em> multicast via PGM, possibly encapsulated in UDP
+                                </li>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_tcp.html">TCP</a></em> a network based transport
+                                </li>
+                            </ol>
+                            <p>
+                                The <em>TCP</em> transport is often the best choice, it is very performant and robust. However, when there is no need to cross the machine border it can be interesting to look at the <em>IPC</em> or <em>INPROC</em> protocol to lower the latency even more. The <em>MULTICAST</em> transport can be interesting in special cases. But personally, I am a bit careful with applying multicast, as it is difficult to understand how it will behave when scaling up. Think of issues such as figuring out how many multicast groups you can create with this or that hardware and how much stress it is going to put on the different switches in your network. If you want to be sure that your code runs cross platforms it is probably best to go with <em>TCP</em> as the other transports are not guaranteed to be available on the different platforms.
+                            </p>
+                            <h3>
+                                Setting up the infrastructure
+                            </h3>
+                            <p>
+                                When you have decided upon your transport you will have to think about how the different components are connected to each other. It is simply answering the question: “Who connects to whom?” You probably want the most stable part of the network to <em><a href="http://api.zeromq.org/zmq_bind.html">BIND</a></em> on a specific port and have the more dynamic parts <em><a href="http://api.zeromq.org/zmq_connect.html">CONNECT</a></em> to that. In the image below we have depicted how a server binds to a certain port and how a client connects to it.
+                            </p>
+                            <p style="text-align:center">
+                                <a href="http://nichol.as/wp-content/uploads/2010/06/cs.png"><img title="cs" src="http://nichol.as/wp-content/uploads/2010/06/cs.png" alt="" width="256" height="64"></a>
+                            </p>
+                            <p>
+                                It is possible that both ends of the networks are relatively dynamic so that it is difficult to have a single stable connection point. If this is the case, you could make use of the forwarding devices that ZeroMQ provides. These devices can bind to 2 different ports and forward messages from one end to the other. By doing so, the forwarding device can become the stable point in your network where each component can connect to. ZeroMQ provides three kinds of devices:
+                            </p>
+                            <ol>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_queue.html">QUEUE</a></em>, a forwarder for the request/response messaging pattern
+                                </li>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_forwarder.html">FORWARDER</a>,</em> a forwarder for the publish/subscribe messaging pattern
+                                </li>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_streamer.html">STREAMER</a>,</em> a forwarder for the pipelined messaging pattern
+                                </li>
+                            </ol>
+                            <p>
+                                In the image below we can see such a device being used, in this situation both the client and the server initialize a connection to the forwarder, which binds to two different ports. Using such a device will remove the need of extra application logic, as you will not need to maintain a list of connected peers.
+                            </p>
+                            <p style="text-align:center">
+                                <a href="http://nichol.as/wp-content/uploads/2010/06/cfs.png"><img title="cfs" src="http://nichol.as/wp-content/uploads/2010/06/cfs.png" alt="" width="364" height="64"></a>
+                            </p>
+                            <h3>
+                                Selecting a message pattern
+                            </h3>
+                            <p>
+                                The previous steps build the infrastructure but did not specify the message flow. The next step is to think carefully about the message pattern each component should follow. The patterns that 0MQ supports are:
+                            </p>
+                            <ol>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_socket.html#_request_reply_pattern">REQUEST/REPLY</a>,</em> bidirectional, load balanced and state based
+                                </li>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_socket.html#_publish_subscribe_pattern">PUBLISH/SUBSCRIBE</a>,</em> publish to multiple recipients at once
+                                </li>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_socket.html#_pipeline_pattern">UPSTREAM / DOWNSTREAM</a>,</em> distribute data to nodes arranged in a pipeline
+                                </li>
+                                <li>
+                                    <em><a href="http://api.zeromq.org/zmq_socket.html#_exclusive_pair_pattern">PAIR</a>,</em> communication exclusively between peers
+                                </li>
+                            </ol>
+                            <p style="text-align:left">
+                                I will explain them a bit more below.
+                            </p>
+                            <p>
+                                <br>
+                                <br>
+                            </p>
+                            <h4>
+                                Request Reply
+                            </h4>
+                            <p>
+                                <a href="http://nichol.as/wp-content/uploads/2010/06/reqrep1.png"><img title="reqrep" src="http://nichol.as/wp-content/uploads/2010/06/reqrep1.png" alt="" width="235" height="184"></a>The request reply paradigm is very common and can be found in most type of servers. For example: HTTP, POP or IMAP. This pattern has a certain state associated with it as a request has to be followed by a reply. The client uses a socket of type <em>REQ</em> as it will initiate the request by performing a .<strong>send()</strong> on the socket. The server uses a socket of type <em>REP,</em> and it will start by performing a <strong>.recv()</strong> to read the incoming request, after which it can send its reply.
+                            </p>
+                            <p>
+                                ZeroMQ greatly simplifies this pattern by allowing you to have a single socket connect to multiple end points. ZeroMQ will automatically balance requests over the different peers.
+                            </p>
+                            <p>
+                                The Python code below will create an echo server that listens on port 5000 with a <em>REP</em> socket. It will then loop an alternation of performing <strong>.recv()</strong> for incoming requests and then <strong>.send()</strong> a reply to them.
+                            </p>
+                            <pre>
+import zmq
+context = zmq.Context()
+socket = context.socket(zmq.REP)
+socket.bind("tcp://127.0.0.1:5000")
+
+while True:
+    msg = socket.recv()
+    print "Got", msg
+    socket.send(msg)
+</pre>
+                            <p>
+                                When you have multiple clients connected to this server the ZMQ socket will fair queue between all incoming requests. Now, if you want your client to be able to connect to multiple servers as well, you can take the above code, change port 5000 to 6000 and use it to run an extra server. The following client code will then be able to use both of the servers:
+                            </p>
+                            <pre>
+import zmq
+context = zmq.Context()
+socket = context.socket(zmq.REQ)
+socket.connect("tcp://127.0.0.1:5000")
+socket.connect("tcp://127.0.0.1:6000")
+
+for i in range(10):
+    msg = "msg %s" % i
+    socket.send(msg)
+    print "Sending", msg
+    msg_in = socket.recv()
+</pre>
+                            <p>
+                                The above sends 10 requests in total but since we are connected to 2 different servers, each server only has to handle 5 requests. Isn’t that great? With only a few lines of code we were able to create a distributed client/server model.
+                            </p>
+                            <p>
+                                Now, if we want to add an extra server to handle our requests we will have to adjust our code. This can be cumbersome as we need to do this for all our clients to let them know it can now balance the requests over an extra server.
+                            </p>
+                            <p>
+                                <img title="queue" src="http://nichol.as/wp-content/uploads/2010/06/queue.png" alt="" width="235" height="206">
+                            </p>
+                            <p>
+                                This is exactly where the ZeroMQ devices fit in. Instead of having the clients connect directly to multiple servers it can connect to a single forwarding device. The forwarding device will then reroute all messages to the connected servers.
+                            </p>
+                            <p>
+                                Example client output:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Sending msg 0<br>
+                                    Sending msg 1<br>
+                                    Sending msg 2<br>
+                                    Sending msg 3<br>
+                                    Sending msg 4<br>
+                                    Sending msg 5<br>
+                                    Sending msg 6<br>
+                                    Sending msg 7<br>
+                                    Sending msg 8<br>
+                                    Sending msg 9
+                                </p>
+                            </blockquote>
+                            <p>
+                                Example output server 1 at port 5000:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Got msg 0<br>
+                                    Got msg 2<br>
+                                    Got msg 4<br>
+                                    Got msg 6<br>
+                                    Got msg 8
+                                </p>
+                            </blockquote>
+                            <p>
+                                Example output server 2 at port 6000:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Got msg 1<br>
+                                    Got msg 3<br>
+                                    Got msg 5<br>
+                                    Got msg 7<br>
+                                    Got msg 9
+                                </p>
+                            </blockquote>
+                            <p>
+                                <br>
+                                <br>
+                            </p>
+                            <h4>
+                                Publish Subscribe
+                            </h4>
+                            <p>
+                                <a href="http://nichol.as/wp-content/uploads/2010/06/broadcast.png"><img title="broadcast" src="http://nichol.as/wp-content/uploads/2010/06/broadcast.png" alt="" width="233" height="180"></a>The Pub/Sub paradigm has gained lots of interest the last few years. You can think of things such as message pushing, XMPP or webhooks. In a pub/sub pattern the components are loosely coupled. This will greatly help you to scale out as there is no need to worry about the subscribers. However, this loose coupling can also lead to unexpected behavior when not fully understood. A nice metaphor for the Pub/Sub paradigm is thinking of it is a radio station. When you publish messages you send something over a certain frequency, only listeners that have subscribed to that frequency will receive the signal. But also, just as with a radio, if you tuned in to the station after the broadcast you will miss the show.
+                            </p>
+                            <p>
+                                It is good to stress that the various message patterns have no coupling with the infrastructure. It is thus possible to bind to a port and publish to the peers that connect to it. But it is also possible to do it the other way around, connect to multiple peers and broadcast to them. The first example resembles the radio metaphor (everybody can tune in), while the second one more resembles yelling at your peers through a megaphone (a selected group). In both situations your peers can decide not to listen to your messages by not subscribing to them.
+                            </p>
+                            <p>
+                                The following code shows how you could create a broadcasting server for live soccer events:
+                            </p>
+                            <pre>
+import zmq
+from random import choice
+context = zmq.Context()
+socket = context.socket(zmq.PUB)
+socket.bind("tcp://127.0.0.1:5000")
+
+countries = ['netherlands','brazil','germany','portugal']
+events = ['yellow card', 'red card', 'goal', 'corner', 'foul']
+
+while True:
+    msg = choice( countries ) +" "+ choice( events )
+    print "-&gt;",msg
+    socket.send( msg )
+</pre>
+                            <p>
+                                The server will generate an unlimited amount of events for the different countries and pushes them over a socket of type <em>PUB</em>. Below you can find some example output:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    -&gt; portugal corner<br>
+                                    -&gt; portugal yellow card<br>
+                                    -&gt; portugal goal<br>
+                                    -&gt; netherlands yellow card<br>
+                                    -&gt; germany yellow card<br>
+                                    -&gt; brazil yellow card<br>
+                                    -&gt; portugal goal<br>
+                                    -&gt; germany corner<br>
+                                    …
+                                </p>
+                            </blockquote>
+                            <p>
+                                Now if we are only interested in events concerning The Netherlands and Germany we can create a client that subscribes to those specific messages:
+                            </p>
+                            <pre>
+import zmq
+
+context = zmq.Context()
+socket = context.socket(zmq.SUB)
+socket.connect("tcp://127.0.0.1:5000")
+socket.setsockopt(zmq.SUBSCRIBE, "netherlands")
+socket.setsockopt(zmq.SUBSCRIBE, "germany")
+
+while True:
+    print  socket.recv()
+</pre>
+                            <p>
+                                The client will create a <em>SUB</em> socket, connect to our broadcast server at port 5000 and subscribe to messages starting with ‘netherlands’ or ‘germany’. The output will look something like this:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    netherlands red card<br>
+                                    netherlands goal<br>
+                                    netherlands red card<br>
+                                    germany foul<br>
+                                    netherlands yellow card<br>
+                                    germany foul<br>
+                                    netherlands goal<br>
+                                    netherlands corner<br>
+                                    germany foul<br>
+                                    netherlands corner<br>
+                                    …
+                                </p>
+                            </blockquote>
+                            <p>
+                                <br>
+                                <br>
+                            </p>
+                            <h4>
+                                Pipelining
+                            </h4>
+                            <p>
+                                <a href="http://nichol.as/wp-content/uploads/2010/06/pipeline2.png"><img title="pipeline2" src="http://nichol.as/wp-content/uploads/2010/06/pipeline2.png" alt="" width="233" height="283"></a>The pipeline pattern looks remarkably similar to the Rep/Req pattern, the difference is that instead of requiring a reply being sent to the requester the reply can be pushed down the pipe. This is a paradigm commonly seen when there is a need to process data in parallel. For example, lets say we have some sort of system that does face recognition. We have a job server that pushes the images to one of the workers, which will then process it, once finished it will then push it down the stream again towards some sort of collector.
+                            </p>
+                            <p>
+                                In the design at the left we can see that a worker will receive its message from an <em>UPSTREAM</em> socket and once they are processed sends them <em>DOWNSTREAM</em>. It routes messages from two different socket types.
+                            </p>
+                            <p>
+                                The jobserver can just keep pushing tasks <em>DOWNSTREAM</em> through a single socket but with multiple endpoints. ZeroMQ and recently also PyZMQ can send the messages in a zero-copy manner. This is great if you need to push large messages around and you don’t want to waste IO cycles.
+                            </p>
+                            <p>
+                                <br>
+                                <br>
+                            </p>
+                            <h4>
+                                Paired sockets
+                            </h4>
+                            <p>
+                                <a href="http://nichol.as/wp-content/uploads/2010/06/paired.png"><img title="paired" src="http://nichol.as/wp-content/uploads/2010/06/paired.png" alt="" width="166" height="189"></a>Paired sockets are very similar to regular sockets as the communication is bidirectional, there is no specific state stored within the socket and there can only be one connected peer. Most real life problems can be captured in one of the previously explained patterns and I want to recommend that you look at them first before applying this one as it will simplify your problem.
+                            </p>
+                            <p>
+                                The figure at the left depicts the infrastructure of a paired socket, the server listens on a certain port and a client connects to it. The red lines indicate the flow of messages, in this pattern both endpoints use a socket of type <em>PAIR</em> and as you can see the messages can flow bidirectional.
+                            </p>
+                            <p>
+                                The following code shows how to implement such a thing. We will bind to a port on one end:
+                            </p>
+                            <pre>
+import zmq
+context = zmq.Context()
+socket = context.socket(zmq.PAIR)
+socket.bind("tcp://127.0.0.1:5555")
+</pre>
+                            <p>
+                                And on the other end where we will connect to it.
+                            </p>
+                            <pre>
+import zmq
+context = zmq.Context()
+socket = context.socket(zmq.PAIR)
+socket.connect("tcp://127.0.0.1:5555")
+</pre>
+                            <p>
+                                <br>
+                            </p>
+                            <h3>
+                                ZeroMQ and the future
+                            </h3>
+                            <p>
+                                In this post I have given a short introduction to ZeroMQ, I hope that at this point you will now share my ideas about what a great little library it is. But while the library may feel small it has a grand vision of being <em>the new messaging layer</em>. And really, it is not that weird when you come to think of it. Scalability issues are mostly just communication and portability issues, ZeroMQ can solve these problems for you.
+                            </p>
+                            <p>
+                                Lets say you want to create some new sort of database because Redis, Cassandra, TokyoTyrant, Postgres, MongoDB, DabbleDB, CouchDB, HBase, etc. just don’t serve your needs that well. You create an amazing in memory tree representation for your data and have a blazing fast indexer. Now all you need is some sort of messaging layer such that different clients can talk to your server. Preferably implemented in different programming language and with clustering capabilities. You could of course create such a messaging framework all by yourself, but that is a lot of hard work.
+                            </p>
+                            <p>
+                                A simple solution is to just implement your database as a ZeroMQ server and pick a message protocol (fe JSON). As you have seen by now, implementing such functionality with ZeroMQ is really easy and on top of this you will get almost instant scalability because of the way ZeroMQ can route messages. It will also make it incredibly easy to implement different clients that will communicate with your server. Basically all you need to do is pick one of the 15 available language bindings, use the same message protocol and you’re done. Currently the following languages have a ZeroMQ binding: Ada, C, C++, Common Lisp, Erlang, Go, Haskell, Java, Lua, .NET, OOC, Perl, PHP, Python and Ruby.
+                            </p>
+                            <p>
+                                <a href="http://www.zeromq.org/">ZeroMQ</a> could very well be the new way in how we connect our components. A good example of someone who understands the possibilities of ZeroMQ is Zed Shaw as can be seen with his recent project <a href="http://mongrel2.org/index">Mongrel2</a>. You can use Mongrel2 to bridge the gap between a regular HTTP client and a ZeroMQ component. If you don’t immediately see how awesome this is you probably have never worked with websockets, comet or flash based sockets. Another way to look at the great possibilities of such an implementation is to think of Facebook’s <a href="http://www.facebook.com/notes/facebook-engineering/bigpipe-pipelining-web-pages-for-high-performance/389414033919">BigPipe</a> where each Pagelet can transparantly be generated by a different component connected with 0MQ.
+                            </p><img src="http://feeds.feedburner.com/~r/Nichol4s/~4/S2DARW0sr2o" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://nichol.as/zeromq-an-introduction?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Nichol4s+%28Nicholas+Pi%C3%ABl%29">http://nichol.as/zeromq-an-introduction?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Nichol4s+%28Nicholas+Pi%C3%ABl%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            HTML5 Visibility API &amp; Page Pre-Rendering
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 25 Jun 2011 18:04:23 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-06-25T14:04:23-04:00">
+                    <meta itemprop="dateModified" content="2011-06-25T14:04:23-04:00"><time class="date" itemprop="datePublished" datetime="2011-06-25T18:04:23+00:00">Jun 25</time>
+                    <h2 itemprop="title">
+                        HTML5 Visibility API &amp; Page Pre-Rendering
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c7b439aeb25230ac">
+                        <blockquote>
+                            <p>
+                                <img align="left" style="margin:0pt 1em 0pt 0pt" src="http://www.igvita.com/blog/posts/11/html5-logo.png">Minimizing UI latency is critical for creating a positive user experience - this is true both on the desktop and on the web. A best practice for a "native app" is to decouple the UI and control threads to avoid blocking on any long-running tasks. On the web, things are a lot trickier: our Javascript runtimes are all single-threaded, we can't just spin up an extra thread, and instead have to rely on event-driven programming models. Even worse, unless the invoked computation is local, a roundtrip to the server can easily take hundreds of milliseconds in the network overhead alone.
+                            </p>
+                            <p>
+                                Not surprisingly, over the course of the past few years we have invented dozens of new Javascript based UI frameworks: all asynchronous, all focused on trying to hide the interaction latency behind a Javascript facade. In theory, all great ideas, but in practice also with their own set of downsides: <a href="http://www.jenitennison.com/blog/node/154">how about those #!'s</a>, and we have all certainly seen and written a few <a href="http://www.w3schools.com/js/js_timing.asp">overly eager setTimeout's</a> which quickly destroy the clients CPU and battery life.
+                            </p>
+                            <p>
+                                In fact, because the browser VM is a shared resource, we have a classic <a href="http://en.wikipedia.org/wiki/Tragedy_of_the_commons">tragedy of the commons</a>: if every application plays nice, then everyone can have an optimal experience, but the incentives to do so are not clear. Problem is, until very recently we did not even have the tools to address this issue! <a href="http://www.w3.org/TR/2011/WD-page-visibility-20110602/">Page Visibility API</a> is the first HTML5 proposal that is trying to tackle this problem, and browser <a href="http://code.google.com/chrome/whitepapers/prerender.html">pre-rendering</a> is also aiming to help us hide some of the network latency in our web applications - let's take a look under the hood.
+                            </p>
+                            <h4>
+                                <strong>Browser Pre-fetching vs. Pre-rendering</strong>
+                            </h4>
+                            <p>
+                                An average page render requires fetching a dozen resources alongside the actual HTML content. If you dig into your debug console, it is not uncommon to see pages which take on the <a href="http://news.cnet.com/8301-13846_3-20072653-62/the-web-is-taking-too-long-infographic/">order of ten seconds to load</a> to completion. Thankfully, the browsers have implemented many tricks to make it seem as if the page is loading much faster - parallel downloads, highly optimized rendering engines, and a never ending battle to speed up Javascript execution. Nonetheless, usually this is still not enough to beat the "native experience".
+                            </p>
+                            <p>
+                                Well, the server can help us as well: <a href="http://www.igvita.com/2011/04/07/life-beyond-http-11-googles-spdy/">new protocols like SPDY</a> are aiming to reduce the network overhead of fetching multiple resources, and there is even talk of enabling <a href="http://www.chromium.org/spdy/spdy-whitepaper">server push</a> of related page assets. Think you can guess what the user may click on next? Firefox 3.5 enabled the <a href="https://developer.mozilla.org/en/Link_prefetching_FAQ">pre-fetching API</a> which allows us to hint to the browser what resources it may need to service a subsequent request:
+                            </p>
+                            <div style="background:white">
+                                <pre>
+&lt;!--  Specify any &amp; all resources to pre-fetch --&gt;
+&lt;link rel=<span style="color:#3366CC">"prefetch"</span> href=<span style="color:#3366CC">"/images/big.jpg"</span>&gt;
+ 
+&lt;!-- or send an HTTP header --&gt;
+Link: &lt;<span style="color:#0066FF">/images/</span>big.<span style="color:#006600">jpeg</span>&gt;; rel=prefetch
+ 
+</pre>
+                            </div>
+                            <p>
+                                Pre-fetching is a simple optimization, but it requires that we explicitly specify each and every resource - just listing the link of the next HTML page is unlikely to result in a noticeable improvement in the user experience.
+                            </p>
+                            <p>
+                                This is where the new <strong>pre-rendering</strong> proposal comes in: <strong>instead of specifying a single resource, what if the browser could fetch and render the entire next page, but hide it from you until you click on the link?</strong> As of <a href="http://code.google.com/p/chromium/issues/detail?id=83286">about a month ago</a>, pre-rendering support is in WebKit and Google is already prototyping it with "Instant Pages":
+                            </p>
+                            <p>
+                                <iframe width="600" height="371" src="http://www.youtube.com/embed/_Jn93FDx9oI" frameborder="0"></iframe>
+                            </p>
+                            <h4>
+                                <strong>Pre-rendering wins and gotchas</strong>
+                            </h4>
+                            <p>
+                                At the moment, the <a href="http://code.google.com/chrome/whitepapers/prerender.html">pre-rendering API</a> is limited: only one page can be pre-rendered across the entire VM, and only one page can be put into the pre-render queue per tab. Fetching an entire page taxes both the server and the client, hence you need be sure that you will actually need it. Google's web search team, for example, only enables pre-rendering on search results if they have very <em>high confidence</em> that you may actually click on the result.
+                            </p>
+                            <p>
+                                Additionally, since we are now pre-rendering the entire page (HTML, CSS, and JS), how does this affect all the interactive content on the page? Knowing nothing about the pre-render step, the requested page can easily pin our CPU, register a pageview and make a request to an ad server for content that the user may never actually see! To solve this problem, WebKit developers have also added the <a href="http://www.w3.org/TR/2011/WD-page-visibility-20110602/">Page Visibility API</a>:
+                            </p>
+                            <div style="background:white">
+                                <pre>
+<span style="color:#003366;font-weight:bold">function</span> handleVisibilityChange<span style="color:#66cc66">(</span><span style="color:#66cc66">)</span> <span style="color:#66cc66">{</span>
+  <span style="color:#000066;font-weight:bold">if</span> <span style="color:#66cc66">(</span>document.<span style="color:#006600">webkitHidden</span><span style="color:#66cc66">)</span> <span style="color:#66cc66">{</span>
+    pausePageJavascript<span style="color:#66cc66">(</span><span style="color:#66cc66">)</span>;
+  <span style="color:#66cc66">}</span> <span style="color:#000066;font-weight:bold">else</span> <span style="color:#66cc66">{</span>
+    startPageJavascript<span style="color:#66cc66">(</span><span style="color:#66cc66">)</span>;
+  <span style="color:#66cc66">}</span>
+<span style="color:#66cc66">}</span>
+ 
+document.<span style="color:#006600">addEventListener</span><span style="color:#66cc66">(</span><span style="color:#3366CC">"webkitvisibilitychange"</span>, handleVisibilityChange, <span style="color:#003366;font-weight:bold">false</span><span style="color:#66cc66">)</span>;
+ 
+</pre>
+                            </div>
+                            <p>
+                                The <strong><em>webkitHidden</em></strong> property tells us the state of the page to solve the original visibility problem, but the <strong><em>webkitvisibilitychange</em></strong> event has another nice side effect: it allows the client to easily detect when a tab is visible, and when it is in the background. Why does this matter? Imagine you have an application which polls the client, or the server, every 50 milliseconds for some updates. <strong>With the visibility API, you can <a href="http://code.google.com/chrome/whitepapers/pagevisibility.html">gracefully pause or degrade the timer</a> to a much longer poll when the tab is in the background.</strong>
+                            </p>
+                            <h4>
+                                <strong>Minimizing latency on the web</strong>
+                            </h4>
+                            <p>
+                                Both pre-rendering and Page Visibility API's are still in development, but it is great to see more client-side tools to enable web developers to hide the underlying network latency. With these API's, instead of relying on an async Javascript stack, your next multi-step form can be rendered on the server and pre-rendered in a WebKit browser with instant feedback on the client!
+                            </p>
+                            <p>
+                                Likewise, while browsers like Chrome are already downgrading background tabs in CPU priority, a client-side API to detect foreground tabs is a welcome addition. Let's hope that Firefox, Opera and IE jump on the bandwagon as well!
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=UjJAOZWV6fA:wt08KauNtKI:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=UjJAOZWV6fA:wt08KauNtKI:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=UjJAOZWV6fA:wt08KauNtKI:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=UjJAOZWV6fA:wt08KauNtKI:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=UjJAOZWV6fA:wt08KauNtKI:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=UjJAOZWV6fA:wt08KauNtKI:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=UjJAOZWV6fA:wt08KauNtKI:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=UjJAOZWV6fA:wt08KauNtKI:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=UjJAOZWV6fA:wt08KauNtKI:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/UjJAOZWV6fA" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2011/06/25/html5-visibility-api-page-pre-rendering/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2011/06/25/html5-visibility-api-page-pre-rendering/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            feature: Tutorial: consuming Twitter's real-time stream API in Python
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 21 Apr 2010 17:45:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-21T13:45:00-04:00">
+                    <meta itemprop="dateModified" content="2010-04-21T13:45:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-21T17:45:00+00:00">Apr 21</time>
+                    <h2 itemprop="title">
+                        feature: Tutorial: consuming Twitter's real-time stream API in Python
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ef7b4de15dbc6761">
+                        <blockquote>
+                            <a href="http://arstechnica.com/open-source/guides/2010/04/tutorial-use-twitters-new-real-time-stream-api-in-python.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss"><img vspace="4" hspace="4" border="0" align="right" width="230" height="129" src="http://static.arstechnica.com/assets/2010/04/python_twitter_bird_ars-thumb-230x130-13473-f.jpg"></a>
+                            <p>
+                                Twitter is preparing to launch several impressive new features, including a new streaming API that will give desktop client applications real-time access to the user's message timeline. The new streaming API was announced last week at Twitter's Chirp conference, where it was made available to conference attendees on-site for some preliminary experimentation. Twitter opened it up to the broader third-party developer community on Monday so that programmers can begin testing it to offer informed feedback.
+                            </p>
+                            <p>
+                                This tutorial will show you how to consume and process data from Twitter's new streaming API. The code examples, which are written in the Python programming language, demonstrate how to establish a long-lived HTTP connection with PyCurl, buffer the incoming data, and process it to perform the basic message display functions of a Twitter client application. We will also take a close look at how the new streaming API differs from the existing polling-based REST API.
+                            </p>
+                            <h3>
+                                Understanding the polling model
+                            </h3>
+                            <p>
+                                Twitter client software generally uses a polling method to communicate with the Twitter service. Applications post and retrieve Twitter messages by sending HTTP requests with certain parameters to specific Twitter URLs. Twitter's servers send back XML or JSON responses, which are then parsed and processed by the client application. This mechanism is based loosely on the concept of Representational State Transfer (REST), though it does not strictly conform with the REST paradigm. Twitter provides REST endpoints that make virtually all of its functionality accessible to third-party software.
+                            </p>
+                            <p>
+                                Most Twitter applications that display a message timeline are programmed to request message updates on a configurable interval, typically ranging from two to five minutes. This polling model fundamentally distinguishes Twitter from instant messaging because it introduces unavoidable latency between when messages are posted and when they are received. The only way to decrease the latency with Twitter's current standard API is to reduce the polling interval and request updates more frequently. That obviously puts a high load on Twitter's servers and creates scalability challenges. In order to prevent abuse, Twitter has a rate-limiting mechanism that sets a cap on the number of API requests that a single user can make per hour.
+                            </p>
+                            <p>
+                                Twitter's heavy reliance on the polling model poses a bit of a paradox. One of Twitter's greatest strengths is timeliness—the site's front page touts it as a source of "instant information" and a window into what is happening "right now" in the world. Although Twitter largely delivers on that promise by enabling news and ideas to propagate faster than is generally possible in other mediums, its reliance on the polling model prevents it from facilitating truly real-time messaging.
+                            </p>
+                            <h3>
+                                Overcoming the limitations of polling
+                            </h3>
+                            <p>
+                                Twitter's new streaming API will make it possible for third-party software to overcome the limitations of polling, giving Twitter a big boost as its emphasis continues to shift toward real-time messaging. The streaming API allows client applications to establish a persistent connection with Twitter's servers and constantly receive messages right after they are posted, obviating the need for polling on an interval. This communication model could be described as "push" messaging.
+                            </p>
+                            <p>
+                                Handling millions of simultaneous persistent connections comes with its own set of scalability challenges, so Twitter is testing the waters before it proceeds with a full-scale production roll-out. At this time, the streaming API is still experimental and is not ready to be adopted in applications that are released for general use. The streaming capacity is limited and the API is still subject to change. It is being made available with pre-beta status so that developers can begin testing the functionality.
+                            </p>
+                            <p>
+                                Twitter's documentation warns that it could change the streaming endpoint arbitrarily and without notice if it thinks it's being abused. As the testing progresses, Twitter will begin hammering out a schedule for a beta launch and a full production release. Although it's not yet ready for widespread use in client applications, this is a great time to start playing around to see how it works.
+                            </p>
+                            <h3>
+                                A look at the streaming API
+                            </h3>
+                            <p>
+                                Unlike Twitter's conventional REST API, which supports both JSON and XML, the streaming API offers only JSON output. JSON, which stands for JavaScript Object Notation, is a simple and elegant format for describing structured data. The syntax, which is based on JavaScript, is human-readable and very easy to parse. It's so simple that the entire grammar can fit <a href="http://www.flickr.com/photos/equanimity/3763158824/">on the back of a business card</a>.
+                            </p>
+                            <p>
+                                To use the streaming API, an application makes a long-lived HTTP request to the streaming endpoint. Unlike a conventional REST API request, where the connection to the server is terminated after data is received, the streaming API leaves the connection open for as long as possible and will perpetually push new data as it is available. The data is sent as blobs of JSON that describe messages and events, such as retweets and message deletion. The structure of the message data that is emitted by the streaming API matches that of the REST API, which means that application developers who are already using the JSON output format can reuse their existing message parsing code.
+                            </p>
+                            <p>
+                                There are several different techniques that are commonly used in Web programming to achieve push messaging with long-lived HTTP connections. These techniques are collectively referred to as Comet communication. It's important to understand that the Twitter streaming API is designed for true HTTP streaming and isn't intended to be used with other common Comet methods such as long-polling. In a long-polling scenario, a connection is established and held open until data is received, at which point the connection is terminated and then reestablished in anticipation of more data. When HTTP streaming is used, the connection just stays open and keeps getting data.
+                            </p>
+                            <h3>
+                                Consuming the streaming API with PyCurl
+                            </h3>
+                            <p>
+                                The easiest way to handle HTTP streaming in Python is to use PyCurl, the Python bindings for the well-known Curl network library. PyCurl allows you to provide a callback function that will be executed every time a new block of data is available. The following code is a simple demonstration of HTTP streaming with PyCurl:
+                            </p>
+                            <pre name="code">
+import pycurl, json
+
+STREAM_URL = "http://chirpstream.twitter.com/2b/user.json"
+
+USER = "segphault"
+PASS = "XXXXXXXXX"
+
+def on_receive(data):
+  print data
+
+conn = pycurl.Curl()
+conn.setopt(pycurl.USERPWD, "%s:%s" % (USER, PASS))
+conn.setopt(pycurl.URL, STREAM_URL)
+conn.setopt(pycurl.WRITEFUNCTION, on_receive)
+conn.perform()
+</pre>
+                            <p>
+                                The code example above shows how to instantiate a Curl object, set the URL, provide login credentials, and send the data to a callback function. The callback function in the example simply echoes the received data to the terminal. If you put in your own Twitter credentials and run that code in a Python script at the command line, you will see the stream of JSON data transmitted by the Twitter service.
+                            </p>
+                            <p>
+                                When the connection is idle and there is no other data to send, the streaming API will emit an empty line every 30 seconds. The empty line is a keep-alive signal that is intended to prevent client applications from timing out and dropping the connection. PyCurl doesn't require any special configuration, but other network libraries might require the user to set a custom timeout duration for idle connections. You should make sure that it is set to something that is higher than the streaming API's 30-second keep-alive interval so that the connection isn't dropped.
+                            </p>
+                            <p>
+                                Establishing the connection and receiving the data is clearly easy, but processing it is a bit more complex. The blocks that are sent to the callback function are each less than 1500 bytes. If a JSON object from Twitter exceeds the size of the block of data that is sent to the callback, then we have to do some buffering in order to ensure that we get the complete object. The JSON parser will choke if you try to pass it a partial structure.
+                            </p>
+                            <p>
+                                At the end of every complete JSON object, the Twitter streaming API outputs a carriage return, which we can use to determine if we have a full object. Every time we receive a block, we append it to a buffer string and then check to see if it has the carriage return at the end. If it does, then we can assume that the buffer string contains a complete JSON object, which can be handed off to the JSON parser and then processed. After we parse the JSON in the buffer string, we clear the buffer so that it can start collecting new data.
+                            </p>
+                            <p>
+                                According to Twitter's documentation, it's possible for a linebreak character ("\n") to appear in the strings within the JSON object. The full carriage return ("\n\r"), however, will only appear at the end of an object. It's important to keep that in mind when you are implementing a buffering system. It's also important to watch out for the keep-alive signal because it consists solely of a carriage return. When we detect a carriage return at the end of a line, we have to make sure that the buffer actually has something in it before we pass it to the JSON parser. This prevents us from accidentally trying to parse the keep-alive line.
+                            </p>
+                            <p>
+                                In the code example below, we detect the end of a JSON object by using the "<code>data.endswith("\r\n") and self.buffer.strip()</code>" conditional expression. In Python conditional expressions, empty strings evaluate to boolean False, which means that "<code>and self.buffer.strip()</code>" is equivalent to "<code>and len(self.buffer.strip()) &gt; 0</code>".
+                            </p>
+                            <pre name="code">
+import pycurl, json
+
+STREAM_URL = "http://chirpstream.twitter.com/2b/user.json"
+
+USER = "segphault"
+PASS = "XXXXXXXXX"
+
+class Client:
+  def __init__(self):
+    self.buffer = ""
+    self.conn = pycurl.Curl()
+    self.conn.setopt(pycurl.USERPWD, "%s:%s" % (USER, PASS))
+    self.conn.setopt(pycurl.URL, STREAM_URL)
+    self.conn.setopt(pycurl.WRITEFUNCTION, self.on_receive)
+    self.conn.perform()
+
+  def on_receive(self, data):
+    self.buffer += data
+    if data.endswith("\r\n") and self.buffer.strip():
+      content = json.loads(self.buffer)
+      self.buffer = ""
+      print content
+
+client = Client()
+</pre>
+                            <p>
+                                Now that we have a simple mechanism for obtaining and parsing JSON data from the streaming API, we can start looking at how to process it so that we can build useful tools. As we process the data that is returned by the API, we will use a series of conditional expressions to look for specific keys that are unique to the individual kinds of objects that are sent by the API. To detect a message, for example, we look for the "text" key. The following code example shows how to display the sender name and text of each incoming message.
+                            </p>
+                            <pre name="code">
+  def on_receive(self, data):
+    self.buffer += data
+    if data.endswith("\r\n") and self.buffer.strip():
+      content = json.loads(self.buffer)
+      self.buffer = ""
+
+      if "text" in content:
+        print u"{0[user][name]}: {0[text]}".format(content)
+</pre>
+                            <p>
+                                One of the major differences between the output of the REST API and the streaming API is that the streaming API includes replies that the user's friends are sending to people who the user doesn't follow. This can clutter up the stream quite a bit and lead to some confusion. To filter out those messages, we can look at the "in_reply_to_user_id" key of the message and determine if the recipient is one of the user's friends.
+                            </p>
+                            <p>
+                                Fortunately, when a connection is first established, the streaming API will always start by passing down a list of the Twitter IDs of the people who the user is following. We can store that list in a variable and use it to determine if a message is directed at someone who the user isn't following. You can distinguish the friend list from other kinds of data by checking to see if the "friends" key is in the JSON object. The friend list object looks like this:
+                            </p>
+                            <pre name="code">
+{"friends":[29710117,23359726,14211758,22332381,686793,14542767,14866691,32447686,5352732,17009124,33406310,19122978,26114930,17549127,990951,23335036,15304159,12032,14625444,11375732,22289742,52604183,17158868,14575846,14671896]}
+</pre>
+                            <p>
+                                When we are processing a message object, we can check to see if the value of the "in_reply_to_user_id" key is in the friends list. If it is not, then we could simply not display the message.
+                            </p>
+                            <pre name="code">
+class Client:
+  def __init__(self):
+    self.buffer = ""
+    self.friends = []
+    self.conn = pycurl.Curl()
+    self.conn.setopt(pycurl.USERPWD, "%s:%s" % (USER, PASS))
+    self.conn.setopt(pycurl.URL, STREAM_URL)
+    self.conn.setopt(pycurl.WRITEFUNCTION, self.on_receive)
+    self.conn.perform()
+
+  def on_receive(self, data):
+    self.buffer += data
+    if data.endswith("\r\n") and self.buffer.strip():
+      content = json.loads(self.buffer)
+      self.buffer = ""
+
+      if "friends" in content:
+        self.friends = content["friends"]
+
+      if "text" in content:
+        to = content["in_reply_to_user_id"]
+        if to and to not in self.friends: return
+        print u"{0[user][name]}: {0[text]}".format(content)
+</pre>
+                            <p>
+                                There is a problem with that approach, however. It also has the undesired affect of filtering out all of the replies that are directed to the actual user. The user's own ID is obviously not going to be in the friend list, which means that we need to get it separately so that we can compare "in_reply_to_user_id" against it when deciding whether to drop a message. We can also use it to determine when a message is a reply to the user.
+                            </p>
+                            <p>
+                                The streaming API doesn't provide that information, so we have to use a separate REST API call before we connect to the streaming API. We are going to use the <code>account/verify_credentials.json</code> REST method, which will also helpfully allow us to validate the user's login information. That API method returns data about the user, including the user's ID, which we can store in an instance variable for later use. It will return an error if the user's credentials are wrong.
+                            </p>
+                            <pre name="code">
+import pycurl, json, StringIO
+
+STREAM_URL = "http://chirpstream.twitter.com/2b/user.json"
+REST_URL = "http://api.twitter.com/1/"
+
+class Client:
+  def __init__(self):
+    self.friends = []
+    self.buffer = ""
+    self.userid = None
+    self.conn = pycurl.Curl()
+
+  def authenticate(self, username, password):
+    output = StringIO.StringIO()
+    self.conn.setopt(pycurl.USERPWD, "%s:%s" % (username, password))
+    self.conn.setopt(pycurl.URL, REST_URL + "account/verify_credentials.json")
+    self.conn.setopt(pycurl.WRITEFUNCTION, output.write)
+    self.conn.perform()
+
+    data = json.loads(output.getvalue())
+    if "error" in data: return False
+    self.userid = data["id"]
+    return True
+
+  def connect(self):
+    self.conn.setopt(pycurl.URL, STREAM_URL)
+    self.conn.setopt(pycurl.WRITEFUNCTION, self.on_receive)
+    self.conn.perform()
+
+  def on_receive(self, data):
+    self.buffer += data
+    if data.endswith("\r\n") and self.buffer.strip():
+      content = json.loads(self.buffer)
+      self.buffer = ""
+
+      if "friends" in content:
+        self.friends = content["friends"]
+
+      elif "text" in content:
+        to = content["in_reply_to_user_id"]
+        if to and to != self.userid and to not in self.friends: return
+        if to == self.userid: print "(REPLY)",
+        print u"{0[user][name]}: {0[text]}".format(content)
+
+client = Client()
+if client.authenticate("segphault", "XXXXXXXXX"):
+  client.connect()
+else:
+  print "Login credentials aren't valid!"
+</pre>
+                            <p>
+                                Now that we have basic support for messaging, we are going to add one more feature. The streaming API makes it easy to detect when the user gets a new follower. To detect follow event objects, look for the "event" key and check if it has the string "follow" as the value. The follow event object will contain "source" and "target" objects with the user ID of the follower and the user ID of the person being followed.
+                            </p>
+                            <pre name="code">
+{"target":{"id":17591742},"source":{"id":15878405},"event":"follow"}
+</pre>
+                            <p>
+                                If the target ID matches the ID of the user, then we know that the user got a new follower. Similarly, if the source ID matches the ID of the user, then we know that the target ID is a new friend of the user and should be added to the friends list. Unfortunately, the streaming API only gives you the ID, so you have to use a REST API call if you want to get more details about a new follower.
+                            </p>
+                            <pre name="code">
+def on_receive(self, data):
+  self.buffer += data
+  if data.endswith("\r\n") and self.buffer.strip():
+    content = json.loads(self.buffer)
+    self.buffer = ""
+
+    if "friends" in content:
+      self.friends = content["friends"]
+
+    elif "event" in content and content["event"] == "follow":
+      if content["target"]["id"] == self.userid:
+        print "New follower:", content["source"]["id"]
+      elif content["source"]["id"] == self.userid:
+        self.friends.append(content["target"]["id"])
+
+    elif "text" in content:
+      to = content["in_reply_to_user_id"]
+      if to and to != self.userid and to not in self.friends: return
+      if to == self.userid: print "(REPLY)",
+      print u"{0[user][name]}: {0[text]}".format(content)
+</pre>
+                            <h3>
+                                The future role of the REST API
+                            </h3>
+                            <p>
+                                Although the streaming API gives developers powerful real-time access to the user's message timeline, it doesn't support the full scope of Twitter's functionality. The REST API will still be used for many things, including posting messages. The REST API will also be useful for retrieving a backlog of messages when a client application starts up. The user's initial stream can be populated from the REST API before the client establishes its connection to the streaming API to get new incoming messages.
+                            </p>
+                            <p>
+                                Other important use cases for the REST timeline API include supporting mobile clients and serving as a fallback in cases where a client application can't access the streaming API. At launch, the streaming API will initially only be intended for use by desktop applications. Due to various challenges with maintaining a persistent connection on a mobile device, Twitter says that mobile application developers should continue using the REST API. That may change at some point in the future as the streaming system matures.
+                            </p>
+                            <p>
+                                One of the biggest limitations of the streaming API is that Twitter will limit it to one connection per account. If you establish a new connection for an account, the existing connection will be dropped. This could be a problem for users who run Twitter clients on multiple computers. Because only one instance of the client application will be able to maintain a streaming connection for each of the user's accounts, additional client application instances will have to use the REST fallback in order to obtain messages.
+                            </p>
+                            <h3>
+                                Conclusion
+                            </h3>
+                            <p>
+                                Although the new streaming API adds some additional complexity to the process of building Twitter clients, it offers some compelling advantages over the traditional polling model. It can be use to reduce latency and make Twitter messaging more seamless.
+                            </p>
+                            <p>
+                                <a href="http://arstechnica.com/open-source/guides/2010/04/tutorial-use-twitters-new-real-time-stream-api-in-python.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss&amp;comments=1#comments-bar">Read the comments on this post</a>
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://arstechnica.com/open-source/guides/2010/04/tutorial-use-twitters-new-real-time-stream-api-in-python.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss">http://arstechnica.com/open-source/guides/2010/04/tutorial-use-twitters-new-real-time-stream-api-in-python.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

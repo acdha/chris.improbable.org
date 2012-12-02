@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Dead Code Elimination for Beginners
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 18 Nov 2010 04:06:31 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-17T23:06:31-04:00">
+                    <meta itemprop="dateModified" content="2010-11-17T23:06:31-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-18T03:06:31+00:00">Nov 18</time>
+                    <h2 itemprop="title">
+                        Dead Code Elimination for Beginners
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/368e59b58687961a">
+                        <blockquote>
+                            <p>
+                                <a href="http://blogs.msdn.com/b/ie/archive/2010/11/17/html5-and-real-world-site-performance-seventh-ie9-platform-preview-available-for-developers.aspx">Dean Hachamovitch</a>: <i>One of the changes we made to the IE9 JavaScript Engine, codenamed Chakra, to improve performance on real world web sites involves <a href="http://en.wikipedia.org/wiki/Dead_code_elimination">dead code elimination</a>.</i>
+                            </p>
+                            <p>
+                                Yesterday, I filed a bug on a <a href="http://blog.mozilla.com/rob-sayre/2010/11/16/reporting-a-bug-on-a-fragile-analysis/">fragile analysis</a> relating to dead code elimination in IE9. Since then, the IE team has released platform preview 7, and updated the IE blog.
+                            </p>
+                            <p>
+                                Dead Code Elimination can be a valid optimization, but it’s easy for naive implementations to behave unexpectedly, or produce erroneous results.
+                            </p>
+                            <p>
+                                Regarding fragility, our investigations have shown that you can only use the operators -, +, ++, &lt;&lt;, +=, -=, and if(&lt;). For example if you change this comparison inside math-cordic:
+                            </p>
+                            <pre>
+if (TargetAngle &gt; CurrAngle) {
+</pre>
+                            <p>
+                                to
+                            </p>
+                            <pre>
+if (TargetAngle &lt;= CurrAngle) {
+</pre>
+                            <p>
+                                then IE9 will no longer eliminate the code. Curiously, the IE9 team has chosen not to eliminate more expensive operations such as multiplication or division. The set of analyzed operators do happen to be the ones that appear in the math-cordic benchmark.
+                            </p>
+                            <p>
+                                Regarding soundness, there are several issues in IE9's implementation of Dead Code Elimination. The first one I'll mention was brought to my attention by one of our engineers, Andreas Gal. On the IE Blog, Dean gives this example:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <i><br>
+                                    In the following example, the code in the loop repeatedly overwrites the same variable (what is known in computer science as a dead store), so it can be reduced to only one call.</i>
+                                </p>
+                                <pre>
+    function func(a, b) {
+        var x;
+        var i = 300;
+        while (i--) {
+            x = a + b; // dead store
+        }
+    }
+</pre>
+                            </blockquote>
+                            <p>
+                                I think what this example is trying to show is that since x is overwritten repeatedly, a JavaScript engine can execute the loop only once (and save time) since subsequent runs produce the same value for x.
+                            </p>
+                            <p>
+                                While this may be true for many static languages such as C#, this is unfortunately not generally true for JavaScript.
+                            </p>
+                            <p>
+                                The function above can be optimized when invoked as
+                            </p>
+                            <pre>
+func(1,2)
+</pre>
+                            <p>
+                                since it does not have any side effects. However, if we call func as follows the loop cannot be optimized:
+                            </p>
+                            <pre>
+func(1, { valueOf: function() { alert("Hi Dean!"); return 2; } });
+</pre>
+                            <p>
+                                Here we are passing an object as 2nd argument (b), and that object has a valueOf method which is triggered by the a + b operation in the function. True story! This degree of dynamic behavior is what makes JavaScript so hard to optimize, and traditional compiler optimizations such as Dead Code Elimination and Dead Store elimination suddenly become anything but trivial.
+                            </p>
+                            <p>
+                                IE9 Platform Preview #7 does get in fact their example on their blog wrong (<a href="http://people.mozilla.com/~sayrer/2010/dead/iedemo1.html">click to try</a>). If called with an object with a custom valueOf function, IE9 fails to trigger the custom valueOf handler.
+                            </p>
+                            <p>
+                                A sound Dead Code analysis in JavaScript is actually fairly tricky and requires global analysis of the entire program. The IE9 blog explains how local operations on array literals can be dead-code eliminated since they have no side effects. So one might think that the following call is safe to eliminate:
+                            </p>
+                            <pre>
+func(1, [1,2,3,4,5])
+</pre>
+                            <p>
+                                The 1 is a constant, and the array literal looks harmless enough. Unfortunately, if the following statement was executed early in the program, this again becomes unsound:
+                            </p>
+                            <pre>
+Object.prototype.valueOf = function() { alert("IE9 is fast!"); }
+</pre>
+                            <p>
+                                Here we overwrite the valueOf handler for all objects, including object literals, so the addition a + b triggers this valueOf implementation. IE9 again fails to properly execute the handler, and detecting this case is even harder than the first failure in IE9's analysis because they can be arbitrary amounts of code in different files that can affect this "optimization".
+                            </p>
+                            <p>
+                                The second soundness issue I'll mention was spotted by Chris Leary, another of Mozilla's JS engineers. The loop that IE9's Dead Code Elimination targets in the math-cordic benchmark operates on global variable called "Angles". We found that IE9 will still eliminate the <code>cordicsincos()</code> invocation when the definition of "Angles" is not present in the source file. In that case, a conformant implementation should throw a <code>ReferenceError</code>, since the "Angles" variable is not defined anywhere in the source. <a href="http://people.mozilla.com/~sayrer/2010/dead/iedemo2.html">Try the demo</a> of this problem, if you want. Additionally, there are a bunch of other problems with the Dead Code Elimination present in IE9 if you start using new ES5 features like getters on the Angles variable or the window object.
+                            </p>
+                            <p>
+                                The timing of my post relative to IE9 PP7's release was purely coincidental, and I'm glad all browsers are getting faster at JavaScript execution. That said, I don't think it's possible to consider IE9's implementation of Dead Code Elimination to be a serious general purpose optimization. It seems clear that it hasn't been tested on anything other than SunSpider.
+                            </p>
+                            <p>
+                                Obviously, I could be missing something, so you should get some info from the IE team during their <a href="http://windowsteamblog.com/ie/b/ie/archive/2010/11/17/meet-the-chakra-team-live-on-twitter.aspx">Twitter Q&amp;A session tomorrow morning</a>.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.mozilla.com/rob-sayre/2010/11/17/dead-code-elimination-for-beginners/">http://blog.mozilla.com/rob-sayre/2010/11/17/dead-code-elimination-for-beginners/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

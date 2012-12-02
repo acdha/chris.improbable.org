@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Anatomy of a Twitter worm ("Profile Spy")
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 04 Apr 2011 22:59:11 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-04T18:59:11-04:00">
+                    <meta itemprop="dateModified" content="2011-04-04T18:59:11-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-04T22:59:11+00:00">Apr 04</time>
+                    <h2 itemprop="title">
+                        Anatomy of a Twitter worm ("Profile Spy")
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/44eaa39613469c93">
+                        <p class="annotation">
+                            This does highlight how much of a win OAuth is: no direct compromises of the user's twitter account or other accounts using the same password.<br>
+                            <br>
+                            The scary thing is that on the web in 2011 that qualifies as a major improvement.
+                        </p>
+                        <blockquote>
+                            I woke up this morning and among the tweets I saw this:<br>
+                            <div style="clear:both;text-align:center"></div>
+                            <div style="clear:both;text-align:center"></div>
+                            <div style="clear:both;text-align:center">
+                                <a href="http://2.bp.blogspot.com/-y1gWGgM4yvs/TZn7NYVjaMI/AAAAAAAAAWA/L9Burd-xkxA/s1600/profilespy1b.png" style="margin-left:1em;margin-right:1em"><img border="0" src="http://2.bp.blogspot.com/-y1gWGgM4yvs/TZn7NYVjaMI/AAAAAAAAAWA/L9Burd-xkxA/s1600/profilespy1b.png"></a>
+                            </div><i>(Name has been pixelated to protect the guilty)</i><br>
+                            <br>
+                            This looks like a worm/scam (some news <a href="http://www.huffingtonpost.com/2011/04/04/twitter-profile-spy-worm-_n_844382.html">here</a>, so I thought I'd write up a technical explanation.<br>
+                            <a name="more" id="more"></a><br>
+                            Like most cybersecurity researchers, I like worms. So, I switched to another browser ("Iron" version of Chrome from SRware) and my honeypot account "<a href="https://twitter.com/#!/ErrataVictim">@ErrataVictim</a>". I logged in, and then followed that link.<br>
+                            <br>
+                            Clicking on the link pops up this page from Twitter:<br>
+                            <br>
+                            <div style="clear:both;text-align:center">
+                                <a href="http://3.bp.blogspot.com/-ieBUPNjJg2E/TZnCGU8DAWI/AAAAAAAAAV4/Nagd4a3NmjE/s1600/profilespy2.png" style="margin-left:1em;margin-right:1em"><img border="0" height="365" src="http://3.bp.blogspot.com/-ieBUPNjJg2E/TZnCGU8DAWI/AAAAAAAAAV4/Nagd4a3NmjE/s400/profilespy2.png" width="400"></a>
+                            </div><br>
+                            <div style="clear:both;text-align:center"></div><br>
+                            Worms usually ask for passwords, but people become suspicious giving out passwords.&nbsp;This worm uses a different strategy. It pretends to be a legitimate Twitter application, and uses the same method to ask for permissions as any other application. This is the same sort of authorization you would need to give to your Twitter application on the iPhone. This is the sort of authorization you would need to give to any third party Twitter application -- like one that told you how many people checked out your profile (which actually isn't possible -- Twitter doesn't give that info to app developers, and probably doesn't track it ).<br>
+                            <br>
+                            It's hard to give people advice what to do in this situation. You can't simply say "Never allow applications to connect to your account", because that would prevent legitimate twitter applications from having access to your account.<br>
+                            <br>
+                            The best advice I could give you is that whenever you see something of the form "this is cool check it out" -- and it asks you to install something, give a password, or grant authorization, then it's probably malware. You should always verify it with the sender (or with Google) before continuing.<br>
+                            <br>
+                            When I allow access, I get this:<br>
+                            <br>
+                            <div style="clear:both;text-align:center">
+                                <a href="http://2.bp.blogspot.com/-S6w0B6wtK0I/TZm0yIgDMjI/AAAAAAAAAVg/Rw4nS40OnTA/s1600/profilespy3.png" style="margin-left:1em;margin-right:1em"><img border="0" height="308" src="http://2.bp.blogspot.com/-S6w0B6wtK0I/TZm0yIgDMjI/AAAAAAAAAVg/Rw4nS40OnTA/s400/profilespy3.png" width="400"></a>
+                            </div><br>
+                            Going back to my victim account, I saw that it had indeed gotten "hacked". This is why the hacker created this worm/scam: he will profit from all the advertising you'll see following those links.<br>
+                            <br>
+                            There might be further malware in those links designed to compromise your machine or accounts, like clickjacking exploits. I followed the first one, and it's a typical scam that asks you to fill out endless surveys and promises you'll win a prize at the end -- but there is no end to the popups you have to go through. At least, I've never reached the end when trying to see how deep they go.<br>
+                            <div style="clear:both;text-align:center">
+                                <a href="http://2.bp.blogspot.com/-6NwplmFaGts/TZoENIB2w7I/AAAAAAAAAWE/euUTapdCFUY/s1600/profilespy7.png" style="margin-left:1em;margin-right:1em"><img border="0" height="362" src="http://2.bp.blogspot.com/-6NwplmFaGts/TZoENIB2w7I/AAAAAAAAAWE/euUTapdCFUY/s400/profilespy7.png" width="400"></a>
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                Following this link leads to the next form. Obviously, you wouldn't want to fill this out.
+                            </div>
+                            <div style="clear:both;text-align:center">
+                                <a href="http://2.bp.blogspot.com/-2uRJ0IlYsAU/TZoEoifDBiI/AAAAAAAAAWI/Tf722iHen4A/s1600/profilespy8.png" style="margin-left:1em;margin-right:1em"><img border="0" height="400" src="http://2.bp.blogspot.com/-2uRJ0IlYsAU/TZoEoifDBiI/AAAAAAAAAWI/Tf722iHen4A/s400/profilespy8.png" width="266"></a>
+                            </div><br>
+                            I continued following this for a while, and it continue to provide endless "surveys" on care insurance, medical, long distance phone, and so on. I didn't follow them too deep -- I assume there is no end to them.<br>
+                            <br>
+                            I confirmed that my account was "hacked" because immediately after this, I saw these two tweets magically appear as if I'd tweeted them:<br>
+                            <br>
+                            <div style="clear:both;text-align:center"></div>
+                            <div style="clear:both;text-align:center">
+                                <a href="http://3.bp.blogspot.com/-0Pq0z_z5How/TZm6zOWDCxI/AAAAAAAAAV0/Sln2e1qDWRc/s1600/profilespy4.png" style="margin-left:1em;margin-right:1em"><img border="0" height="320" src="http://3.bp.blogspot.com/-0Pq0z_z5How/TZm6zOWDCxI/AAAAAAAAAV0/Sln2e1qDWRc/s400/profilespy4.png" width="400"></a>
+                            </div><br>
+                            <div style="clear:both;text-align:center"></div>
+                            <div style="clear:both;text-align:center"></div><br>
+                            It is easy to recover your account if this happens to you. Go to your "Profile", then "Edit your profile", then select "Connections", &nbsp;then revoke it's access, as shown below:<br>
+                            <br>
+                            <div style="clear:both;text-align:center">
+                                <a href="http://1.bp.blogspot.com/-K04-vLpepZ0/TZm2r3ZZ-GI/AAAAAAAAAVo/H7SIVdsS81s/s1600/profilespy5.png" style="margin-left:1em;margin-right:1em"><img border="0" height="258" src="http://1.bp.blogspot.com/-K04-vLpepZ0/TZm2r3ZZ-GI/AAAAAAAAAVo/H7SIVdsS81s/s400/profilespy5.png" width="400"></a>
+                            </div><br>
+                            Then, in order to make sure that nobody else falls victim to this (or hide your guilt), remove the tweets the worm put there. Select &nbsp;"Profile" again. This shows a timeline with just your tweets. Hover over the tweet with your mouse, and you'll see a "Delete" option. Click that, and the tweet goes away:<br>
+                            <br>
+                            <div style="clear:both;text-align:center">
+                                <a href="http://1.bp.blogspot.com/-7m-zuNffbDM/TZm5XWrmuCI/AAAAAAAAAVs/YQJS1T_yaIQ/s1600/profilespy6.png" style="margin-left:1em;margin-right:1em"><img border="0" height="400" src="http://1.bp.blogspot.com/-7m-zuNffbDM/TZm5XWrmuCI/AAAAAAAAAVs/YQJS1T_yaIQ/s400/profilespy6.png" width="360"></a>
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                <br>
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                This won't completely get rid of the tweet. The default browser application, and many other applications, download and cache the tweets as they are tweeted. Thus, if somebody opens their browser and logs onto twitter, they won't see your deleted tweet. But, if somebody sees a "75 new tweets" and clicks on it, they will still see your tweet, because it's already been downloaded and cached in your browser. Therefore, even when you delete it, most of your active followers will still see it.
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                <br>
+                            </div>
+                            <hr>
+                            <h2>
+                                How does the scam work?
+                            </h2>
+                            <div style="clear:both;text-align:left">
+                                The first step is to set up an account with advertisers that you will forward people to.
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                <br>
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                The second step is to get a "burner" host. First, grab an anonymous credit card (aka. "gift card") from a store, then use it to create an account at a hosting site. In this case, the hacker chose <a href="http://www.liquidweb.com/">liquidweb</a>, which allow you to set up a cloud server in minutes.
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                <br>
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                Then write a Twitter script that will use Twitter's OAuth feature to do two things. The first is to log onto their account and send the spam message via a tweet. The second is to forward the user to the advertiser.
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                <br>
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                Third is to launch the worm by spamming the tweet. This involves creating accounts, "following" people, then sending them tweets with the link. Eventually, a popular person with a lot of followers will fall for it, and the worm will take on a life of it's own.
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                <br>
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                The ow.ly link points to "www.twitterprofilespy.info".&nbsp;I did a traceroute to that address and got this info:
+                            </div>
+                            <div style="clear:both;text-align:left"></div>
+                            <blockquote>
+                                <br>
+                                <pre>
+<small>1     1 ms     2 ms     1 ms  23.23.23.1<br>  2    23 ms    28 ms     9 ms  c-71-204-8-1.hsd1.ga.comcast.net [71.204.8.1]<br>  3    10 ms    10 ms     9 ms  xe-10-1-0-0-sur01.n4atlanta.ga.atlanta.comcast.net [68.85.68.57]<br>  4    15 ms    16 ms    18 ms  xe-6-1-3-0-ar01.D1stonemtn.ga.atlanta.comcast.net [68.85.108.250]<br>  5    67 ms   136 ms    95 ms  ae-2-0-ar01.b0atlanta.ga.atlanta.comcast.net [68.85.109.241]<br>  6    19 ms    15 ms    15 ms  pos-3-7-0-0-cr01.atlanta.ga.ibone.comcast.net [68.86.93.205]<br>  7    17 ms    16 ms    16 ms  TenGigabitethernet4-1.ar1.ATL2.gblx.net [146.82.35.121]<br>  8    48 ms    67 ms    47 ms  64.209.88.186<br>  9    50 ms    54 ms    50 ms  lw-dc2-core3-te9-1.rtr.liquidweb.com [209.59.157.224]<br> 10    52 ms    52 ms    67 ms  lw-core6.rtr.liquidweb.com [209.59.157.109]<br> 11    54 ms    55 ms    56 ms  lw-dc3-dist10-po6.rtr.liquidweb.com [69.167.128.167]<br> 12    53 ms    54 ms    52 ms  host.fookyea.com [67.227.204.5]</small>
+</pre>
+                            </blockquote><br>
+                            <div style="clear:both;text-align:left">
+                                <br>
+                            </div>
+                            <div style="clear:both;text-align:left">
+                                The whois information for "torrentprofilespy.info" and got this back:
+                            </div>
+                            <div style="clear:both;text-align:left"></div>
+                            <blockquote>
+                                <pre>
+Domain Name:TWITTERPROFILESPY.INFO<br>Created On:02-Apr-2011 04:34:09 UTC<br>Last Updated On:03-Apr-2011 15:56:34 UTC<br>Expiration Date:02-Apr-2012 04:34:09 UTC<br>Sponsoring Registrar:eNom, Inc. (R126-LRMS)<br>Status:CLIENT TRANSFER PROHIBITED<br>Status:TRANSFER PROHIBITED<br>Registrant ID:551ff52cd302f3e3<br>Registrant Name:WhoisGuard  Protected<br>Registrant Organization:WhoisGuard<br>Registrant Street1:8939 S. Sepulveda Blvd. #110 - 732<br>Registrant Street2:<br>Registrant Street3:<br>Registrant City:Westchester<br>Registrant State/Province:CA<br>Registrant Postal Code:90045<br>Registrant Country:US<br>Registrant Phone:+1.6613102107<br>Registrant Phone Ext.:<br>Registrant FAX:<br>Registrant FAX Ext.:<br>Registrant Email:683c9af5c7fe45bda8510a5327cc212a.protect@whoisguard.com
+</pre>
+                            </blockquote><br>
+                            <br>
+                            I suspect "fookyea.com" might also identify the hacker. The whois info from GoDaddy shows this:<br>
+                            <blockquote>
+                                <pre>
+Registrant:<br>Unknown Unknown<br>123 Lay Ave<br>New York, New York 10001<br>United States<br><br>Registered through: GoDaddy.com, Inc. (http://www.godaddy.com)<br>Domain Name: FOOKYEA.COM<br>Created on: 13-Feb-09<br>Expires on: 13-Feb-12<br>Last Updated on: 14-Feb-11<br><br>Administrative Contact:<br>Unknown, Unknown gamingcheats@gmail.com<br>123 Lay Ave<br>New York, New York 10001<br>United States<br>+1.2121234567<br>...<br>
+</pre>
+                            </blockquote><br>
+                            It would take more effort than I'm willing to spend, and maybe warrants, to track this down any further.<br>
+                            <br>
+                            <br>
+                            <hr>
+                            Update: Graham Cluley from Sophos also has a post almost identical to mine:&nbsp;<a href="http://nakedsecurity.sophos.com/2011/04/04/profile-spy-rogue-application-spreads-virally-on-twitter/">http://nakedsecurity.sophos.com/2011/04/04/profile-spy-rogue-application-spreads-virally-on-twitter/</a>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/37798047-6686992593731591511?l=erratasec.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://erratasec.blogspot.com/2011/04/anatomy-of-twitter-worm-profile-spy.html">http://erratasec.blogspot.com/2011/04/anatomy-of-twitter-worm-profile-spy.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

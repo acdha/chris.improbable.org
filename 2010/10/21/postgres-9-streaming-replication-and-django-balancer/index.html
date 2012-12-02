@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Postgres 9 Streaming Replication and Django-Balancer
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 21 Oct 2010 04:26:03 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-10-21T00:26:03-04:00">
+                    <meta itemprop="dateModified" content="2010-10-21T00:26:03-04:00"><time class="date" itemprop="datePublished" datetime="2010-10-21T04:26:03+00:00">Oct 21</time>
+                    <h2 itemprop="title">
+                        Postgres 9 Streaming Replication and Django-Balancer
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/24131092f556e05b">
+                        <blockquote>
+                            <p>
+                                Over the past couple of weeks I've had the opportunity to dig in to Postgres 9's streaming replication. What I found was a relatively easy way to configure a system for basic replication with very impressive speed. Postgres's streaming replication is an enhancement to the log-shipping warm standby that was available in previous versions. Instead of replaying write-ahead log (WAL) files as they become available on the slave's filesystem, the slave nodes connect directly to the master and stream the log as it generated. This results in extremely fast replication, typically under a second.
+                            </p>
+                            <p>
+                                It can't match the cascading features of Slony, but if you're looking for a simple structure with a master database feeding one or more read-only slaves then Postgres 9 is a great choice.
+                            </p>
+                            <p>
+                                Here's how I got everything working on Ubuntu 10.04.
+                            </p>
+                            <p>
+                                <strong>UPDATE:</strong> I've changed the NFS details below to squash the user and group IDs and set the anonymous access user and group to the slave server's user and group IDs. This resolves issues where the postgres use has a different ID on the slave server than the master server, so files received from master are owned by the wrong user.
+                            </p>
+                            <h2>
+                                Postgres 9
+                            </h2>
+                            <p>
+                                Postgres 9 isn't included in the Lucid repos (or Maverick, for that matter), so you'll need to use a PPA. I used Martin Pitt's.
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>sudo apt-get install python-software-properties
+<span>$ </span>sudo add-apt-repository ppa:pitti/postgresql
+<span>$ </span>sudo apt-get update
+<span>$ </span>sudo apt-get install postgresql postgresql-server-dev-9.0 postgresql-contrib-9.0
+</pre>
+                            </div>
+                            <p>
+                                If you're using GeoDjango, you'll need to re-compile the requirements from source after 9.0 is installed. Make sure to use Postgis 1.5.2, which is the first release to support Postgres 9.
+                            </p>
+                            <p>
+                                Because the default encoding is ASCII, you'll need to drop the cluster, and re-initialize it as UTF8.
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>sudo -u postgres pg_dropcluster --stop 9.0 main
+<span>$ </span>sudo -u postgres pg_createcluster --start -e UTF-8 9.0 main
+</pre>
+                            </div>
+                            <p>
+                                At this point, you can restore any database backups needed. If you'd like, you can begin accepting live queries - the base backup needed below can run while the database is still available.
+                            </p>
+                            <h2>
+                                NFS Sharing
+                            </h2>
+                            <p>
+                                I'm using log-shipping and streaming replication together, just in case something goes wrong with the direct connection. I use NFS to share a folder on the slave node and mount it on the master, so that the master can send WAL files to the slave.
+                            </p>
+                            <h3>
+                                On the Slave Server
+                            </h3>
+                            <div>
+                                <pre>
+<span>$ </span>sudo apt-get install nfs-kernel-server nfs-common portmap
+</pre>
+                            </div>
+                            <p>
+                                Note: If you're on Rackspace, you'll have trouble with nfs-kernel-server. See my post <a href="http://forrst.com/posts/Enable_NFS_on_Rackspace_Cloud_Servers-72h">here</a> for details on how to work around it.
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>sudo dpkg-reconfigure portmap
+</pre>
+                            </div>
+                            <p>
+                                Select 'no'.
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>sudo restart portmap
+<span>$ </span>sudo emacs /etc/exports
+</pre>
+                            </div>
+                            <p>
+                                Find out the user and group IDs for postgres. You'll use them in the next step.
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>id -u postgres
+104
+<span>$ </span>id -g postgres
+108
+</pre>
+                            </div>
+                            <p>
+                                Add a line like this:
+                            </p>
+                            <div>
+                                <pre>
+/path/for/backups   10.0.1.101/32(rw,async,no_subtree_check,all_squash,anonuid=104,anongid=108)
+</pre>
+                            </div>
+                            <p>
+                                Replace the CIDR notation with your own. Use a <a href="http://www.subnet-calculator.com/cidr.php">CIDR calculator</a> if needed. Replace the anonuid and anongid with the appropriate values for your server.
+                            </p>
+                            <p>
+                                Then, restart the server and export your shares. Make sure the path exists on the filesystem before doing so, and adjust the permissions as needed so that the path can be written to.
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>sudo /etc/init.d/nfs-kernel-server restart
+<span>$ </span>sudo exportfs -a
+</pre>
+                            </div>
+                            <h3>
+                                On the Master Server
+                            </h3>
+                            <div>
+                                <pre>
+<span>$ </span>sudo apt-get install nfs-common portmap
+<span>$ </span>sudo emacs /etc/fstab
+</pre>
+                            </div>
+                            <p>
+                                Add a line like this:
+                            </p>
+                            <div>
+                                <pre>
+slavehostname:/path/for/backups /path/for/mount nfs rsize=8192,wsize=8192,timeo=14,intr 0 0
+</pre>
+                            </div>
+                            <p>
+                                Then mount it:
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>sudo mount /path/for/mount
+</pre>
+                            </div>
+                            <p>
+                                Test the NFS connection by touching a new file on the primary machine, and making sure it can be seen on the standby machine.
+                            </p>
+                            <h2>
+                                Replication
+                            </h2>
+                            <h3>
+                                On the Master Server
+                            </h3>
+                            <p>
+                                Edit <em>postgresql.conf</em> to enable WAL archiving:
+                            </p>
+                            <div>
+                                <pre>
+<span>wal_level</span> <span>=</span> <span>hot_standby</span>
+
+<span>archive_mode</span> <span>=</span> <span>on</span>
+
+<span>archive_command</span> <span>=</span> <span>'cp -i %p /path/for/mount/%f &lt;/dev/null'</span>
+
+<span>max_wal_senders</span> <span>=</span> <span>1</span>
+</pre>
+                            </div>
+                            <p>
+                                Adjust <code>max_wal_senders</code> to the number of slave servers you plan on using.
+                            </p>
+                            <p>
+                                Create a superuser for streaming replication:
+                            </p>
+                            <div>
+                                <pre>
+<span>CREATE</span> <span>USER</span> <span>myuser</span> <span>WITH</span> <span>SUPERUSER</span> <span>ENCRYPTED</span> <span>PASSWORD</span> <span>'mypassword'</span><span>;</span>
+</pre>
+                            </div>
+                            <p>
+                                Modify <em>pg_hba.conf</em> to allow the replication user to connect:
+                            </p>
+                            <div>
+                                <pre>
+host    replication     myuser     10.0.1.102/32             md5
+</pre>
+                            </div>
+                            <p>
+                                You'll need to restart Postgres at this point.
+                            </p>
+                            <h3>
+                                Base Backup
+                            </h3>
+                            <p>
+                                Next, a base backup needs to be created. This must be a filesystem-level backup, not a logical backup like the <em>pg_dump</em> command creates. On the master server, run the <em>pg_start_backup</em> command:
+                            </p>
+                            <div>
+                                <pre>
+<span>SELECT</span> <span>pg_start_backup</span><span>(</span><span>'base_backup'</span><span>);</span>
+</pre>
+                            </div>
+                            <p>
+                                Then, tar and bzip the data directory:
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span><span>cd</span> /var/lib/postgresql/9.0/
+<span>$ </span>sudo tar -cjf ~/postgres-data.tar.bz2 main
+</pre>
+                            </div>
+                            <p>
+                                This will take awhile. Once it's done, run the <em>pg_stop_backup</em> command:
+                            </p>
+                            <div>
+                                <pre>
+<span>SELECT</span> <span>pg_stop_backup</span><span>();</span>
+</pre>
+                            </div>
+                            <p>
+                                Then, copy the archive to the standby server. Make sure postgresql is not running on the standby, and unzip the archive:
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span><span>cd</span> /var/lib/postgresql/9.0/
+
+<span># Make SURE you're on the standby server here</span>
+<span>$ </span>sudo rm -rf main
+<span>$ </span>sudo tar -xjf ~/postgres-data.tar.bz2
+<span>$ </span>sudo chown -R postgres:postgres main
+</pre>
+                            </div>
+                            <h3>
+                                On the Slave Server
+                            </h3>
+                            <p>
+                                Edit <em>postgresql.conf</em> to enable hot standby:
+                            </p>
+                            <div>
+                                <pre>
+<span>hot_standby</span> <span>=</span> <span>on</span>
+</pre>
+                            </div>
+                            <p>
+                                Create a <em>recovery.conf</em> in <em>/var/lib/postgresql/9.0/main/</em> similar to this::
+                            </p>
+                            <div>
+                                <pre>
+<span>standby_mode</span> <span>=</span> <span>'on'</span>
+<span>primary_conninfo</span> <span>=</span> <span>'host=10.0.1.101 port=5432 user=myuser password=mypassword'</span>
+<span>restore_command</span> <span>=</span> <span>'cp /path/for/backups/%f %p'</span>
+<span>trigger_file</span> <span>=</span> <span>'/path/for/backups/trigger_file'</span>
+<span>archive_cleanup_command</span> <span>=</span> <span>'pg_archivecleanup /path/for/backups %r'</span>
+</pre>
+                            </div>
+                            <p>
+                                The postgresql-contrib-9.0 package doesn't link pg_archivecleanup into the path. You can do so manually:
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>sudo ln -s /usr/lib/postgresql/9.0/bin/pg_archivecleanup /usr/bin/
+</pre>
+                            </div>
+                            <h2>
+                                Smoke Test
+                            </h2>
+                            <p>
+                                To make sure everything is working properly, first check and make sure wal sender and receiver processes are live on the master and slave servers. On the primary, run <code>ps -ef | grep "wal sender"</code> and make sure you see a wal sender process. On the standby run <code>ps -ef | grep "wal receiver"</code>.
+                            </p>
+                            <p>
+                                Next, create a test table on the primary:
+                            </p>
+                            <div>
+                                <pre>
+<span>CREATE</span> <span>TABLE</span> <span>test</span> <span>(</span><span>test</span> <span>varchar</span><span>(</span><span>30</span><span>));</span>
+<span>INSERT</span> <span>INTO</span> <span>test</span> <span>VALUES</span> <span>(</span><span>'Testing 1 2 3'</span><span>);</span>
+</pre>
+                            </div>
+                            <p>
+                                On the standby, query the table:
+                            </p>
+                            <div>
+                                <pre>
+<span>SELECT</span> <span>*</span> <span>FROM</span> <span>test</span><span>;</span>
+</pre>
+                            </div>
+                            <p>
+                                You should see the following output:
+                            </p>
+                            <div>
+                                <pre>
+     test      
+---------------
+ Testing 1 2 3
+(1 row)
+</pre>
+                            </div>
+                            <p>
+                                You can then delete your test table:
+                            </p>
+                            <div>
+                                <pre>
+<span>DROP</span> <span>TABLE</span> <span>test</span><span>;</span>
+</pre>
+                            </div>
+                            <h2>
+                                Load Balancing
+                            </h2>
+                            <p>
+                                For load balancing, I decided to leverage the excellent multidb capability introduced in Django 1.2. To do this, I created the <a href="http://github.com/bkonkle/django-balancer">django-balancer</a> project. It builds on the example of database routers in the Django docs, a <a href="http://eli.thegreenplace.net/2010/01/22/weighted-random-generation-in-python/">post</a> on Eli Bendersky's blog, and Jeff Balogh's <a href="http://github.com/jbalogh/django-multidb-router/">django-multidb-router</a> project.
+                            </p>
+                            <p>
+                                For my project, I decided on the WeightedMasterSlaveRouter. I want to include my master database in the read pool, but to a lesser extent than my slave database
+                            </p>
+                            <p>
+                                I borrowed master-pinning from Jeff Balogh's project for django-balancer, but I ended up not needing it in my project. In my tests, I never had an issue with the databases being out of sync. The replication was really that fast! Even in situations where a user just created an object and was being rerouted to a rendered view of that object, the replication was speedy enough to keep up and prevent a 404.
+                            </p>
+                            <h3>
+                                Installation
+                            </h3>
+                            <p>
+                                Install with pip:
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span>pip install django-balancer
+</pre>
+                            </div>
+                            <p>
+                                Then, add the desired router to your DATABASE_ROUTERS setting. Also add any settings required by that router.
+                            </p>
+                            <div>
+                                <pre>
+<span>DATABASE_ROUTERS</span> <span>=</span> <span>[</span><span>'balancer.routers.WeightedMasterSlaveRouter'</span><span>]</span>
+<span>DATABASE_POOL</span> <span>=</span> <span>{</span>
+    <span>'default'</span><span>:</span> <span>1</span><span>,</span>
+    <span>'slave1'</span><span>:</span> <span>2</span><span>,</span>
+<span>}</span>
+<span>MASTER_DATABASE</span> <span>=</span> <span>'default'</span>
+</pre>
+                            </div>
+                            <p>
+                                Make sure to configure your DATABASES setting to add the new slave database.
+                            </p>
+                            <p>
+                                And with that, you should be all set!
+                            </p>
+                            <h3>
+                                Create Your Own
+                            </h3>
+                            <p>
+                                You can also use the classes and mixins inside the django-balancer project to create your own routers. If you come up with one that you'd like to share, fork me on Github. I'd be glad to pull it into the project.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?a=yILKD5xVKhc:hdEx8WxyFR0:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?a=yILKD5xVKhc:hdEx8WxyFR0:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?i=yILKD5xVKhc:hdEx8WxyFR0:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?a=yILKD5xVKhc:hdEx8WxyFR0:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?i=yILKD5xVKhc:hdEx8WxyFR0:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?a=yILKD5xVKhc:hdEx8WxyFR0:qj6IDK7rITs"><img src="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?d=qj6IDK7rITs" border="0"></a> <a href="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?a=yILKD5xVKhc:hdEx8WxyFR0:dZlCUnDz3GY"><img src="http://feeds.feedburner.com/~ff/bkonkle-latest-posts?i=yILKD5xVKhc:hdEx8WxyFR0:dZlCUnDz3GY" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/bkonkle-latest-posts/~4/yILKD5xVKhc" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://brandonkonkle.com/blog/2010/oct/20/postgres-9-streaming-replication-and-django-balanc/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+bkonkle-latest-posts+%28Brandon+Konkle%27s+Blog+-+Latest+Posts%29">http://brandonkonkle.com/blog/2010/oct/20/postgres-9-streaming-replication-and-django-balanc/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+bkonkle-latest-posts+%28Brandon+Konkle%27s+Blog+-+Latest+Posts%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

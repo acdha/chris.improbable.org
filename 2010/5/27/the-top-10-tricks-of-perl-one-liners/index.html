@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The top 10 tricks of Perl one-liners
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 27 May 2010 15:06:52 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-27T11:06:52-04:00">
+                    <meta itemprop="dateModified" content="2010-05-27T11:06:52-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-27T15:06:52+00:00">May 27</time>
+                    <h2 itemprop="title">
+                        The top 10 tricks of Perl one-liners
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/8760f291df31826f">
+                        <blockquote>
+                            <div>
+                                <div>
+                                    <p>
+                                        I’m a recovering perl hacker. Perl used to be far and away my language of choice, but these days I’m more likely to write new code in Python, largely because far more of my friends and coworkers are comfortable with it.
+                                    </p>
+                                    <p>
+                                        I’ll never give up perl for quick one-liners on the command-line or in one-off scripts for munging text, though. Anything that lasts long enough to make it into git somewhere usually gets rewritten in Python, but nothing beats perl for interactive messing with text.
+                                    </p>
+                                    <p>
+                                        Perl, never afraid of obscure shorthands, has accrued an impressive number of features that help with this use case. I’d like to share some of my favorites that you might not have heard of.
+                                    </p>
+                                    <h2>
+                                        One-liners primer
+                                    </h2>
+                                    <p>
+                                        We’ll start with a brief refresher on the basics of perl one-liners before we begin. The core of any perl one-liner is the <code>-e</code> switch, which lets you pass a snippet of code on the command-line:<br>
+                                        <code>perl -e 'print "hi\n"'</code> prints “hi” to the console.
+                                    </p>
+                                    <p>
+                                        The second standard trick to perl one-liners are the <code>-n</code> and <code>-p</code> flags. Both of these make perl put an implicit loop around your program, running it once for each line of input, with the line in the <code>$_</code> variable. <code>-p</code> also adds an implicit <code>print</code> at the end of each iteration.
+                                    </p>
+                                    <p>
+                                        Both of these use perl’s special “ARGV” magic file handle internally. What this means is that if there are any files listed on the command-line after your <code>-e</code>, perl will loop over the contents of the files, one at a time. If there aren’t any, it will fall back to looping over standard input.
+                                    </p>
+                                    <p>
+                                        <code>perl -ne 'print if /foo/'</code> acts a lot like <code>grep foo</code>, and <code>perl -pe 's/foo/bar/'</code> replaces <code>foo</code> with <code>bar</code>
+                                    </p>
+                                    <p>
+                                        Most of the rest of these tricks assume you’re using either <code>-n</code> or <code>-p</code>, so I won’t mention it every time.
+                                    </p>
+                                    <h2>
+                                        The top 10 one-liner tricks
+                                    </h2>
+                                    <dl>
+                                        <dt>
+                                            Trick #1: <code>-l</code>
+                                        </dt>
+                                        <dd>
+                                            <p>
+                                                Smart newline processing. Normally, perl hands you entire lines, including a trailing newline. With <code>-l</code>, it will strip the trailing newline off of any lines read, and automatically add a newline to anything you <code>print</code> (including via <code>-p</code>).
+                                            </p>
+                                            <p>
+                                                Suppose I wanted to strip trailing whitespace from a file. I might naïvely try something like
+                                            </p>
+                                            <pre>
+  perl -pe 's/\s*$//'
+</pre>
+                                            <p>
+                                                The problem, however, is that the line ends with <code>"\n"</code>, which is whitespace, and so that snippet will also remove all newlines from my file! <code>-l</code> solves the problem, by pulling off the newline before handing my script the line, and then tacking a new one on afterwards:
+                                            </p>
+                                            <pre>
+  perl -lpe 's/\s*$//'
+</pre>
+                                        </dd>
+                                        <dt>
+                                            Trick #2: <code>-0</code>
+                                        </dt>
+                                        <dd>
+                                            Occasionally, it’s useful to run a script over an entire file, or over larger chunks at once. <code>-0</code> makes <code>-n</code> and <code>-p</code> feed you chunks split on <code>NULL</code> bytes instead of newlines. This is often useful for, e.g. processing the output of <a href="http://linux.die.net/man/1/find"><code>find -print0</code></a>. Furthermore, <code>perl -0777</code> makes perl not do any splitting, and pass entire files to your script in <code>$_</code>.
+                                            <pre>
+  find . -name '*~' -print0 | perl -0ne unlink
+</pre>
+                                            <p>
+                                                Could be used to delete all <code>~</code>-files in a directory tree, without having to remember how <code>xargs</code> works.
+                                            </p>
+                                        </dd>
+                                        <dt>
+                                            Trick #3: <code>-i</code>
+                                        </dt>
+                                        <dd>
+                                            <code>-i</code> tells perl to operate on files in-place. If you use <code>-n</code> or <code>-p</code> with <code>-i</code>, and you pass perl filenames on the command-line, perl will run your script on those files, and then replace their contents with the output. <code>-i</code> optionally accepts an backup suffix as argument; Perl will write backup copies of edited files to names with that suffix added.
+                                            <pre>
+  perl -i.bak -ne 'print unless /^#/' script.sh
+</pre>
+                                            <p>
+                                                Would strip all whole-line commands from <code>script.sh</code>, but leave a copy of the original in <code>script.sh.bak</code>.
+                                            </p>
+                                        </dd>
+                                        <dt>
+                                            Trick #4: The <code>..</code> operator
+                                        </dt>
+                                        <dd>
+                                            Perl’s <code>..</code> operator is a stateful operator — it remembers state between evaluations. As long as its left operand is false, it returns false; Once the left hand returns true, it starts evaluating the right-hand operand until that becomes true, at which point, on the next iteration it resets to false and starts testing the other operand again.
+                                            <p>
+                                                What does that mean in practice? It’s a range operator: It can be easily used to act on a range of lines in a file. For instance, I can extract all GPG public keys from a file using:
+                                            </p>
+                                            <pre>
+     perl -ne 'print if /-----BEGIN PGP PUBLIC KEY BLOCK-----/../-----END PGP PUBLIC KEY BLOCK-----/' FILE
+</pre>
+                                        </dd>
+                                        <dt>
+                                            Trick #5: <code>-a</code>
+                                        </dt>
+                                        <dd>
+                                            <p>
+                                                <code>-a</code> turns on autosplit mode – perl will automatically split input lines on whitespace into the <code>@F</code> array. If you ever run into any advice that accidentally escaped from 1980 telling you to use awk because it automatically splits lines into fields, this is how you use perl to do the same thing without learning another, even worse, language.
+                                            </p>
+                                            <p>
+                                                As an example, you could print a list of files along with their link counts using
+                                            </p>
+                                            <pre>
+ls -l | perl -lane 'print "$F[7] $F[1]"'
+</pre>
+                                        </dd>
+                                        <dt>
+                                            Trick #6: <code>-F</code>
+                                        </dt>
+                                        <dd>
+                                            <code>-F</code> is used in conjunction with <code>-a</code>, to choose the delimiter on which to split lines. To print every user in <code>/etc/passwd</code> (which is colon-separated with the user in the first column), we could do:
+                                            <pre>
+perl -F: -lane 'print $F[0]' /etc/passwd
+</pre>
+                                        </dd>
+                                        <dt>
+                                            Trick #7: \K
+                                        </dt>
+                                        <dd>
+                                            <code>\K</code> is undoubtedly my favorite little-known-feature of Perl regular expressions. If <code>\K</code> appears in a regex, it causes the regex matcher to drop everything before that point from the internal record of “Which string did this regex match?”. This is most useful in conjunction with <code>s///</code>, where it gives you a simple way to match a long expression, but only replace a suffix of it.
+                                            <p>
+                                                Suppose I want to replace the <code>From:</code> field in an email. We could write something like
+                                            </p>
+                                            <pre>
+perl -lape 's/(^From:).*/$1 Nelson Elhage &lt;nelhage\@ksplice.com&gt;/'
+</pre>
+                                            <p>
+                                                But having to parenthesize the right bit and include the <code>$1</code> is annoying and error-prone. We can simplify the regex by using <code>\K</code> to tell perl we won’t want to replace the start of the match:
+                                            </p>
+                                            <pre>
+perl -lape 's/^From:\K.*/ Nelson Elhage &lt;nelhage\@ksplice.com&gt;/'
+</pre>
+                                        </dd>
+                                        <dt>
+                                            Trick #8: $ENV{}
+                                        </dt>
+                                        <dd>
+                                            When you’re writing a one-liner using <code>-e</code> in the shell, you generally want to quote it with ‘, so that dollar signs inside the one-liner aren’t expanded by the shell. But that makes it annoying to use a ‘ inside your one-liner, since you can’t escape a single quote inside of single quotes, in the shell.
+                                            <p>
+                                                Let’s suppose we wanted to print the username of anyone in <code>/etc/passwd</code> whose name included an apostrophe. One option would be to use a standard shell-quoting trick to include the ‘:
+                                            </p>
+                                            <pre>
+perl -F: -lane 'print $F[0] if $F[4] =~ /'"'"'/' /etc/passwd
+</pre>
+                                            <p>
+                                                But counting apostrophes and backslashes gets old fast. A better option, in my opinion, is to use the environment to pass the regex into perl, which lets you dodge a layer of parsing entirely:
+                                            </p>
+                                            <pre>
+env re="'" perl -F: -lane 'print $F[0] if $F[4] =~ /$ENV{re}/' /etc/passwd
+</pre>
+                                            <p>
+                                                We use the <code><a href="http://linux.die.net/man/1/env">env</a></code> command to place the regex in a variable called <code>re</code>, which we can then refer to from the perl script through the <code>%ENV</code> hash. This way is slightly longer, but I find the savings in counting backslashes or quotes to be worth it, especially if you need to end up embedding strings with more than a single metacharacter.
+                                            </p>
+                                        </dd>
+                                        <dt>
+                                            Trick #9: BEGIN and END
+                                        </dt>
+                                        <dd>
+                                            <code>BEGIN { ... }</code> and <code>END { ... }</code> let you put code that gets run entirely before or after the loop over the lines.
+                                            <p>
+                                                For example, I could sum the values in the second column of a CSV file using:
+                                            </p>
+                                            <pre>
+perl -F, -lane '$t += $F[1]; END { print $t }'
+</pre>
+                                        </dd>
+                                        <dt>
+                                            Trick #10: -MRegexp::Common
+                                        </dt>
+                                        <dd>
+                                            Using <code>-M</code> on the command line tells perl to load the given module before running your code. There are thousands of modules available on <a href="http://cpan.org">CPAN</a>, numerous of them potentially useful in one-liners, but one of my favorite for one-liner use is Regexp::Common, which, as its name suggests, contains regular expressions to match numerous commonly-used pieces of data.
+                                            <p>
+                                                The full set of regexes available in Regexp::Common is available in <a href="http://search.cpan.org/~abigail/Regexp-Common-2010010201/lib/Regexp/Common.pm">its documentation</a>, but here’s an example of where I might use it:
+                                            </p>
+                                            <p>
+                                                Neither the <code>ifconfig</code> nor the <code>ip</code> tool that is supposed to replace it provide, as far as I know, an easy way of extracting information for use by scripts. The <code>ifdata</code> program provides such an interface, but isn’t installed everywhere. Using perl and Regexp::Common, however, we can do a pretty decent job of extracing an IP from <code>ip</code>‘s output:
+                                            </p>
+                                            <pre>
+ip address list eth0 | \
+  perl -MRegexp::Common -lne 'print $1 if /($RE{net}{IPv4})/'
+</pre>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                            <p>
+                                So, those are my favorite tricks, but I always love learning more. What tricks have you found or invented for messing with perl on the command-line? What’s the most egregious perl “one-liner” you’ve wielded, continuing to tack on statements well after the point where you should have dropped your code into a real script?
+                            </p>
+                            <hr>
+                            <div>
+                                <h3>
+                                    <code>perl -lne s/rebooting//i</code>
+                                </h3>
+                                <p>
+                                    Tired of babysitting your systems while you reboot to install updates? Eliminate reboots with <a href="http://www.ksplice.com/why">Ksplice Uptrack</a>, and spend that time honing your perl scripts instead!
+                                </p>
+                            </div><img src="http://feeds.feedburner.com/~r/Ksplice/~4/6TVzfDl6OB8" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.ksplice.com/2010/05/top-10-perl-one-liner-tricks/">http://blog.ksplice.com/2010/05/top-10-perl-one-liner-tricks/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

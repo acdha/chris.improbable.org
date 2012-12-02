@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Non-blocking ActiveRecord &amp; Rails
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 15 Apr 2010 20:39:41 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-15T16:39:41-04:00">
+                    <meta itemprop="dateModified" content="2010-04-15T16:39:41-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-15T20:39:41+00:00">Apr 15</time>
+                    <h2 itemprop="title">
+                        Non-blocking ActiveRecord &amp; Rails
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/cfcd29adbdcb142f">
+                        <blockquote>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/08/rails.png"> Rails and MySQL go hand in hand. ActiveRecord is perfectly capable of using a number of different databases but MySQL is by far the most popular choice for production deployments. And therein lies a dirty secret: when it comes to performance and <em>'scalability'</em> of the framework, the Ruby MySQL gem is a serious offender. The presence of the GIL means that <a href="http://www.igvita.com/2008/11/13/concurrency-is-a-myth-in-ruby/">concurrency is already somewhat of a myth in the Ruby VM</a>, but the architecture of the driver makes the problem even worse. Let's take a look under the hood.
+                            </p>
+                            <h4>
+                                <strong>Dissecting Ruby MySQL drivers</strong>
+                            </h4>
+                            <p>
+                                The native mysql gem many of us use in production was designed to expose a blocking API: you issue a SQL query, and the library blocks until the server returns a response. So far so good, but unfortunately it also introduces a nasty side effect. Because it blocks inside of the native code (inside <strong>mysql_real_query()</strong> C function), the entire Ruby VM is frozen while we wait for the response. So, if you query happens to have taken several seconds, it means that no other block, fiber, or thread will be executed by the Ruby VM. Ever wondered why your threaded Mongrel server never really flexed its threaded muscle? Well, now you know.
+                            </p>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/10/mysql-logo.png"> Fortunately, the little known <a href="http://github.com/oldmoe/mysqlplus">mysqlplus gem</a> addresses the immediate problem. Instead of using a single blocking call, it forwards the query to the server, and then starts <em>polling</em> for the response. For the curious, there are also two implementations, one in <a href="http://github.com/oldmoe/mysqlplus/blob/master/lib/mysqlplus.rb#L11">pure Ruby</a> with a select loop, and a native (C) one which uses <a href="http://github.com/oldmoe/mysqlplus/blob/master/ext/mysql.c#L1140">rb_thread_select</a>. The benefit? Well, now you can have multiple threads execute database queries without blocking the entire VM! In fact, with a little extra work, we can even get some <a href="http://www.igvita.com/2008/10/27/scaling-activerecord-with-mysqlplus/">concurrency out of ActiveRecord</a>.
+                            </p>
+                            <p>
+                                However, we could even drop threads in our quest for concurrency! Instead of making every thread poll on a socket, we could pass each of those sockets to a single event loop (EventMachine) library, and let it handle all the IO scheduling for us: <em>gem install <a href="http://github.com/igrigorik/em-mysqlplus">em-mysqlplus</a></em>. Same API, in fact, it uses mysqlplus under the covers, but now every query has a callback for true non-blocking database access. Take a look at a few examples in the slides:
+                            </p>
+                            <div style="width:600px">
+                                <iframe src="http://reader.googleusercontent.com/reader/embediframe?src=http://static.slidesharecdn.com/swf/ssplayer2.swf?doc%3Dmysql-100415123033-phpapp02%26rel%3D0%26stripped_title%3Dbeyond-gem-install-mysql-in-ruby&amp;width=600&amp;height=490" width="600" height="490"></iframe>
+                            </div>
+                            <h4>
+                                <strong>Non-blocking Rails with MySQL</strong>
+                            </h4>
+                            <p>
+                                Now we come around full circle. The downside of a true asynchronous library is that it requires callbacks, spaghetti code and a fully asynchronous stack. Thankfully, we already have <a href="http://code.macournoyer.com/thin/">Thin</a> for our async app server, and with the introduction of Fibers in Ruby 1.9, we can wrap our asynchronous driver to <a href="http://www.igvita.com/2010/03/22/untangling-evented-code-with-ruby-fibers/">behave just as if it had a blocking API</a>.
+                            </p>
+                            <p>
+                                So, we install <em>em-mysqlplus</em>, require <a href="http://github.com/igrigorik/em-synchrony">em-synchrony</a> to emulate the 'blocking api', implement an <a href="http://github.com/igrigorik/em-mysqlplus/blob/activerecord/lib/active_record/connection_adapters/em_mysqlplus_adapter.rb">activerecord adapter</a>, and we finally have a fully <a href="http://github.com/igrigorik/em-mysqlplus/blob/activerecord/spec/activerecord_spec.rb#L45">non-blocking ActiveRecord driver</a> which we can drop into our Rails app! Well, almost, a few other modifications: Rails provides a threaded <a href="http://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/ConnectionPool.html">ConnectionPool</a>, which we need to replace with a Fiber aware one, and finally, we need to disable the built in Mutex (hap tip to Mike Perham for doing all the <a href="http://www.mikeperham.com/2010/04/03/introducing-phat-an-asynchronous-rails-app/">dirty work for us</a>). Now let's give it a try:
+                            </p>
+                            <div style="background:white">
+                                <pre>
+<span style="color:#9966CC;font-weight:bold">class</span> WidgetsController &lt; ApplicationController
+  <span style="color:#9966CC;font-weight:bold">def</span> index
+    Widget.<span style="color:#9900CC">find_by_sql</span><span style="color:#006600;font-weight:bold">(</span><span style="color:#996600">"select sleep(1)"</span><span style="color:#006600;font-weight:bold">)</span>
+    render <span style="color:#ff3333;font-weight:bold">:text</span> =&gt; <span style="color:#996600">"Oh hai"</span>
+  <span style="color:#9966CC;font-weight:bold">end</span>
+<span style="color:#9966CC;font-weight:bold">end</span>
+ 
+</pre>
+                            </div>
+                            <blockquote>
+                                <p>
+                                    <strong>thin -D start</strong><br>
+                                    <strong>ab -c 5 -n 10 http://127.0.0.1/widgets/</strong>
+                                </p>
+                                <p>
+                                    Server Software: thin<br>
+                                    Server Hostname: 127.0.0.1<br>
+                                    Server Port: 3000
+                                </p>
+                                <p>
+                                    Concurrency Level: 5<br>
+                                    <strong>Time taken for tests: 2.210 seconds</strong><br>
+                                    Complete requests: 10<br>
+                                    Requests per second: 4.53 [#/sec] (mean)
+                                </p>
+                            </blockquote>
+                            <p>
+                                Our widget action simulates a blocking one-second query, we start up a <strong>single</strong> thin server, and run an ab test against it: 10 requests, with a max concurrency of 5. And as you can see, the test finishes in just slightly over 2 seconds!
+                            </p>
+                            <h4>
+                                <strong>Rails 3, Ruby 1.9 and Drizzle</strong>
+                            </h4>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/10/ruby-ror-drizzle.png">By mid summer we will see production releases of Rails 3, Ruby 1.9, and Drizzle, and that convergence is worth paying attention to. Both Rails 3 and Ruby 1.9 offer raw performance improvements across the board. In the meantime, Drizzle already provides a <a href="http://github.com/jakedouglas/libdrizzle-ruby-ffi">fully async libdrizzle driver</a> (talks to MySQL &amp; Drizzle) which we could adopt to future proof our applications. Combine all three with a fibered ActiveRecord driver, an async application server such as Thin, and we could make some serious steps forward when it comes to performance of Rails: significantly lower memory footprint and much better performance across the board.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=raYgotyiVoY:A7puq9APsNk:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=raYgotyiVoY:A7puq9APsNk:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=raYgotyiVoY:A7puq9APsNk:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=raYgotyiVoY:A7puq9APsNk:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=raYgotyiVoY:A7puq9APsNk:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=raYgotyiVoY:A7puq9APsNk:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=raYgotyiVoY:A7puq9APsNk:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=raYgotyiVoY:A7puq9APsNk:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=raYgotyiVoY:A7puq9APsNk:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/raYgotyiVoY" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2010/04/15/non-blocking-activerecord-rails/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2010/04/15/non-blocking-activerecord-rails/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

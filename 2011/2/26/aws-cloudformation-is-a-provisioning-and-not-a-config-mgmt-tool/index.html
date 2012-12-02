@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            AWS CloudFormation is a provisioning and not a config mgmt tool
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 26 Feb 2011 17:02:51 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-26T12:02:00-04:00">
+                    <meta itemprop="dateModified" content="2011-02-26T12:02:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-26T16:02:00+00:00">Feb 26</time>
+                    <h2 itemprop="title">
+                        AWS CloudFormation is a provisioning and not a config mgmt tool
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/9ecb7bd51ffab794">
+                        <blockquote>
+                            There's a lot of buzz on Twitter on how the recently announced <a href="http://aws.amazon.com/cloudformation/">AWS CloudFormation</a> service spells the death of configuration management tools such as Puppet/Chef/cfengine/bcfg2. I happen to think that the opposite is true.<br>
+                            <br>
+                            CloudFormation is a great way to <b>provision</b> what it calls a 'stack' in your EC2 infrastructure. A stack comprises several AWS resources such as EC2 instances, EBS volumes, Elastic Load Balancers, Elastic IPs, RDS databases, etc. Note that it was always possible to do this via your own homegrown tools by calling in concert the various APIs offered by these services/resources. What CloudFormation brings to the table is an easy way to describe the relationships between these resources via a JSON file which they call a template.<br>
+                            <br>
+                            Some people get tripped by the inclusion in the CloudFormation <a href="http://aws.amazon.com/code/AWS-CloudFormation/3233063344774450">sample templates</a> of applications such as WordPress, Joomla or Redmine -- they think that CloudFormation deals with application deployments and configuration management. If you look closely at one of these sample templates, let's say the Joomla one, you'll see that what happens is simply that a pre-baked AMI containing the Joomla installation is used when launching the EC2 instances included in the CloudFormation stack. Also, the UserData mechanism is used to pass certain values to the instance. They do add a nice feature here where you can reference attributes defined in other parts of the stack template, such as DB endpoint address in this example:<br>
+                            <br>
+                            <pre>
+"UserData": {<br>          "Fn::Base64": {<br>            "Fn::Join": [<br>              ":",<br>              [<br>                {<br>                  "Ref": "JoomlaDBName"<br>                },<br>                {<br>                  "Ref": "JoomlaDBUser"<br>                },<br>                {<br>                  "Ref": "JoomlaDBPwd"<br>                },<br>                {<br>                  "Ref": "JoomlaDBPort"<br>                },<br>                {<br>                  "Fn::GetAtt": [<br>                    "JoomlaDB",<br>                    "Endpoint.Address"<br>                  ]<br>                },<br>                {<br>                  "Ref": "WebServerPort"<br>                },<br>                {<br>                  "Fn::GetAtt": [<br>                    "ElasticLoadBalancer",<br>                    "DNSName"<br>                  ]<br>                }<br>              ]<br>            ]<br>          }<br>        },<br>
+</pre><br>
+                            However, all this was also possible before CloudFormation. You were always able to bake your own AMI containing your own application, and use the UserData mechanism to run whatever you want at instance creation time. Nothing new here. This is <b>NOT</b> configuration management. This will <b>NOT</b> replace the need for a solid deployment and configuration management tool. Why? Because rolling your own AMI results in an opaque 'black box' deployment. You need to document and version your per-baked AMIs carefully, then develop a mechanism for associating an AMI ID with a list of packages installed on that AMI. If you think about it, you actually end up writing an asset management tool. Then if you need to deploy a new version of the application, you either bake a new AMI (painful), or you reach for a real deployment/config mgmt tool to do it.<br>
+                            <br>
+                            The alternative, which I espouse, is to start with a bare-bone AMI (I use the <a href="https://help.ubuntu.com/community/EC2StartersGuide">official Ubuntu AMIs</a> provided by Canonical) and employ the UserData mechanism to bootstrap the installation of a configuration management client such as chef-client or the Puppet client. The newly created instance then 'phones home' to your central configuration management server (Chef server or Puppetmaster for example) and finds out how to configure itself. The beauty of this approach is that the config mgmt server keeps track of the customizations made on the client. No need for you to document that separately -- just use the search functions provided by the config mgmt tool to find out which packages and applications have been installed on the client.<br>
+                            <br>
+                            The barebone AMI + config mgmt mechanism does result in EC2 instances taking longer to get fully configured initially (as opposed to the pre-baked AMI technique), but the flexibility and control you gain over those instances is well worth it.<br>
+                            <br>
+                            One other argument, that I almost don't need to make, is that the pre-baked AMI technique is very specific to EC2. You will have to reinvent the wheel if you want to deploy your infrastructure to a different cloud provider, or inside your private cloud or datacenter.<br>
+                            <br>
+                            So.....do continue to hone your skills at learning how to fully utilize a good configuration management tool. It will serve you well, both in EC2 and in other environments.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/9238405-1507439160357609627?l=agiletesting.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://agiletesting.blogspot.com/2011/02/aws-cloudformation-is-provisioning-and.html">http://agiletesting.blogspot.com/2011/02/aws-cloudformation-is-provisioning-and.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

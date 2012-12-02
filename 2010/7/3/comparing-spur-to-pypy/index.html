@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Comparing SPUR to PyPy
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 04 Jul 2010 08:00:02 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-07-03T09:48:00-04:00">
+                    <meta itemprop="dateModified" content="2010-07-03T09:48:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-07-03T13:48:00+00:00">Jul 03</time>
+                    <h2 itemprop="title">
+                        Comparing SPUR to PyPy
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/028e952ff99cc5ae">
+                        <blockquote>
+                            <p>
+                                Recently, I've become aware of the <a href="http://research.microsoft.com/en-us/projects/spur/">SPUR project</a> of Microsoft Research and read some of their papers (the tech report "SPUR: A Trace-Based JIT Compiler for CIL" is very cool). I found the project to be very interesting and since their approach is in many ways related to what PyPy is doing, I now want to compare and contrast the two projects.
+                            </p>
+                            <div>
+                                <h2>
+                                    A Tracing JIT for .NET
+                                </h2>
+                                <p>
+                                    SPUR consist of two parts: On the one hand it is a VM for CIL, the bytecode of the .NET VM. This VM uses a tracing JIT compiler to compile the programs it is running to machine code. As opposed to most existing VMs that have a tracing JIT it does not use an interpreter at all. Instead it contains various variants of a JIT compiler that produce different versions of each method. Those are:
+                                </p>
+                                <ul>
+                                    <li>a <em>profiling JIT</em> which produces code that does lightweight profiling when running the compiled method
+                                    </li>
+                                    <li>a <em>tracing JIT</em> which produces code that produces a trace when running the compiled method
+                                    </li>
+                                    <li>a <em>transfer-tail JIT</em> which is used to produce code which is run to get from a failing guard back to the normal profiling version of a method
+                                    </li>
+                                    <li>an <em>optimizing JIT</em> that actually optimizes traces and turns them into machine code
+                                    </li>
+                                </ul>
+                                <div>
+                                    <h3>
+                                        Optimizations Done by the Optimizing JIT
+                                    </h3>
+                                    <p>
+                                        SPUR's optimizing JIT does a number of powerful optimizations on the traces before it turns them into machine code. Among them are usual compiler optimizations such as register allocation, common subexpression elimination, loop invariant code motion, etc.
+                                    </p>
+                                    <p>
+                                        It also performs some optimizations that are specific to the tracing context and are thus not commonly found in "normal" compilers:
+                                    </p>
+                                    <ul>
+                                        <li>
+                                            <em>guard implication</em>: if a guard is implied by an earlier guard, it is removed
+                                        </li>
+                                        <li>
+                                            <em>guard strengthening</em>: if there is a sequence of guards that become stronger and stronger (i.e. each guard implies the previous one), the first guard in the sequence is replaced by the last one, and all others are removed. This can greatly reduce the number of guards and is generally safe. It can shift a guard failure to an earlier point in the trace, but the failure would have occurred at some point in the trace anyway.
+                                        </li>
+                                        <li>
+                                            <em>load/store optimizations</em>: this is an optimization for memory reads/writes. If several loads from the same memory location occur without writes in between, all but the first one are removed. Similarly, if a write to a memory location is performed, this write is delayed as much as possible. If there is a write to the same location soon afterwards, the first write can be removed.
+                                        </li>
+                                        <li>
+                                            <em>escape analysis</em>: for allocations that occur in a loop, the optimizer checks whether the resulting object escapes the loop. If not, the allocation is moved before the loop, so that only one object needs to be allocated, instead of one every loop iteration.
+                                        </li>
+                                        <li>
+                                            <em>user-controlled loop unrolling</em>: not exactly an optimization, but an interesting feature anyway. It is possible to annotate a CIL method with a special decorator <tt>[TraceUnfold]</tt> and then the tracing JIT will fully unroll the loops it contains. This can be useful for loops than are known to run a small and fixed number of iterations for each call-site.
+                                        </li>
+                                        <li>
+                                            <em>user controlled tracing</em>: The user can also control tracing up to a point. Methods can be annotated with <tt>[NativeCall]</tt> to tell the tracer to never trace their execution. Instead they appear as a direct call in the trace.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <h2>
+                                    A JavaScript Implementation
+                                </h2>
+                                <p>
+                                    In addition to the tracing JIT I just described, SPUR also contains a JavaScript implementation for .NET. The approach of this implementation is to translate JavaScript to CIL bytecode, doing some amount of type inference to detect variables that have fixed types. All operations where no precise type could be determined are implemented with calls to a JavaScript runtime system, which does the necessary type dispatching. The JavaScript runtime is implemented in C#.
+                                </p>
+                                <p>
+                                    The JavaScript implementation and the CLI VM with a tracing JIT sound quite unrelated at first, but together they amplify each other. The tracing JIT traces the JavaScript functions that have been translated to CLI bytecode. Since the JavaScript runtime is in C#, it exists as CLI bytecode too. Thus it can be inlined into the JavaScript functions by the tracer. This is highly beneficial, since it exposes the runtime type dispatching of the JavaScript operations to the optimizations of the tracing JIT. Particularly the common expression elimination helps the JavaScript code. If a series of operations is performed on the same object, the operations will all do the same type checks. All but the type checks of the first operation can be removed by the optimizer.
+                                </p>
+                                <div>
+                                    <h3>
+                                        Performance Results
+                                    </h3>
+                                    <p>
+                                        The speed results of the combined JavaScript implementation and tracing JIT are quite impressive. It beats TraceMonkey for most benchmarks in SunSpider (apart from some string-heavy benchmarks that are quite slow) and can compete with V8 in many of them. However, all this is steady-state performance and it seems SPUR's compile time is rather bad currently.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3>
+                                        Further Possibilities
+                                    </h3>
+                                    <p>
+                                        A further (so far still hypothetical) advantage of SPUR is that the approach can optimize cases where execution crosses the border of two different systems. If somebody wrote an HTML layout engine and a DOM in C# to get a web browser and integrated it with the JavaScript implementation described above, the tracing JIT could optimize DOM manipulations performed by JavaScript code as well as callbacks from the browser into JavaScript code.
+                                    </p>
+                                    <p>
+                                        Of course the approach SPUR takes to implement JavaScript is completely generalizable. It should be possible to implement other dynamic languages in the same way as JavaScript using SPUR. One would have to write a runtime system for the language in C#, as well as a compiler from the language into CIL bytecode. Given these two elements, SPUR's tracing JIT compiler would probably do a reasonable job at optimizing this other language (of course in practise, the language implementation would need some tweaking and annotations to make it really fast).
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <h2>
+                                    Comparison With PyPy
+                                </h2>
+                                <p>
+                                    The goals of PyPy and SPUR are very similar. Both projects want to implement dynamic languages in an efficient way by using a tracing JIT. Both apply the tracing JIT "one level down", i.e. the runtime system of the dynamic language is visible to the tracing JIT. This is the crucial point of the approach of both projects. Since the runtime system of the dynamic language is visible to the tracing JIT, the JIT can optimize programs in that dynamic language. It does not itself need to know about the semantics of the dynamic language. This makes the tracing JIT usable for a variety of dynamic languages. It also means that the two halves can be implemented and debugged independently.
+                                </p>
+                                <p>
+                                    In SPUR, C# (or another language that is compilable to CIL) plays the role of RPython, and CIL is equivalent to the intermediate format that PyPy's translation toolchain uses. Both formats operate on a similar abstraction level, they are quite close to C, but still have support for the object system of their respective language and are garbage-collected.
+                                </p>
+                                <p>
+                                    SPUR supports only a JavaScript implementation so far, which could maybe change in the future. Thus JavaScript in SPUR corresponds to Python in PyPy, which was the first dynamic language implemented in PyPy (and is also the reason for PyPy's existence).
+                                </p>
+                                <p>
+                                    There are obviously also differences between the two projects, although many of them are only skin-deep. The largest difference is the reliance of SPUR on compilers on all levels. PyPy takes the opposite approach of using interpreters almost everywhere. The parts of PyPy that correspond to SPUR's compilers are (I will use the Python implementation of PyPy as an example):
+                                </p>
+                                <ul>
+                                    <li>the <em>JavaScript-to-CIL compiler</em> corresponds to the Python interpreter of PyPy
+                                    </li>
+                                    <li>the <em>profiling JIT</em> corresponds to a part of PyPy's translation toolchain which adds some profiling support in the process of turning RPython code into C code,
+                                    </li>
+                                    <li>the <em>tracing JIT</em> corresponds to a special interpreter in the PyPy JIT which executes an RPython program and produces a trace of the execution
+                                    </li>
+                                    <li>the <em>transfer-tail JIT</em> corresponds to PyPy's <a href="http://morepypy.blogspot.com/2010/06/blackhole-interpreter.html">blackhole interpreter</a>, also called fallback interpreter
+                                    </li>
+                                    <li>the <em>optimizing JIT</em> corresponds to the optimizers and backends of PyPy's JIT
+                                    </li>
+                                </ul>
+                                <div>
+                                    <h3>
+                                        PyPy's Optimizations
+                                    </h3>
+                                    <p>
+                                        Comparing the optimizations that the two projects perform, the biggest difference is that PyPy does "trace stitching" instead of fully supporting trace trees. The difference between the two concerns what happens when a new trace gets added to an existing loop. The new trace starts from a guard in the existing loop that was observed to fail often. Trace stitching means that the loop is just patched with a jump to the new trace. SPUR instead recompiles the whole trace tree, which gives the optimizers more opportunities, but also makes compilation a lot slower. Another difference is that PyPy does not perform loop-invariant code motion yet.
+                                    </p>
+                                    <p>
+                                        Many of the remaining optimizations are very similar. PyPy supports guard implication as well as guard strengthening. It has some load/store optimizations, but PyPy's alias analysis is quite rudimentary. On the other hand, PyPy's escape analysis is very powerful. PyPy also has support for the annotations that SPUR supports, using some decorators in the <tt>pypy.rlib.jit</tt> module. User-controlled loop unrolling is performed using the <tt>unroll_safe</tt> decorator, tracing of a function can be disabled with the <tt>dont_look_inside</tt> decorator.
+                                    </p>
+                                    <p>
+                                        PyPy has a few more annotations that were not mentioned in the SPUR tech report. Most importantly, it is possible to declare a function as pure, using the <tt>purefunction</tt> decorator. PyPy's optimizers will remove calls to a function decorated that way if the arguments to the call are all constant. In addition it is possible to declare instances of classes to be immutable, which means that field accesses on constant instances can be folded away. Furthermore there is the promote hint, which is spelled <tt>x = hint(x, promote=True)</tt>. This will produce a guard in the trace, to turn <tt>x</tt> into a constant after the guard.
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <h2>
+                                    Summary
+                                </h2>
+                                <p>
+                                    Given the similarity between the projects' goals, it is perhaps not so surprising to see that PyPy and SPUR have co-evolved and reached many similar design decisions. It is still very good to see another project that does many things in the same way as PyPy.
+                                </p>
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3971202189709462152-8835011873209414462?l=morepypy.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/PyPyStatusBlog/~4/-SN1UYdZeqM" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://morepypy.blogspot.com/2010/07/comparing-spur-to-pypy.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29">http://morepypy.blogspot.com/2010/07/comparing-spur-to-pypy.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

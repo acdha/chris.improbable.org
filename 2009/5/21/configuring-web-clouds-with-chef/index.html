@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Configuring Web Clouds with Chef
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 21 May 2009 19:30:07 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-05-21T15:30:07-04:00">
+                    <meta itemprop="dateModified" content="2009-05-21T15:30:07-04:00"><time class="date" itemprop="datePublished" datetime="2009-05-21T19:30:07+00:00">May 21</time>
+                    <h2 itemprop="title">
+                        Configuring Web Clouds with Chef
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7f852be4afaf94a7">
+                        <blockquote>
+                            <p>
+                                <a href="http://code.fotonauts.com/blog/2009/05/introducing-casserole.html" title="Casserole"><img src="http://www.arachna.com/images/casserole-icon-small-725869.png" style="float:right;margin:5px 5px 5px 5px" border="0" width="128" height="128"></a> I'm not generally passionate about network and system operations, I prefer to focus my attention and creativity on system and software architectures. However, infrastructure provisioning, application deployment, monitoring and maintenance are facts of life for online services. When those basic functions aren't functioning well, then I get passionate about them. When service continuity is impacted and operations staff are overworked, it really bothers me; it tells me that I or other developers I'm working with are doing a poor job of delivering resilient software. I've had many conversations with folks who've accepted as a given that development teams and operations teams have friction between them; some even suggest that they <em>should</em>. After all, so goes that line of thinking, the developers are graded on how rapidly they implement features and fix bugs whereas the operators are graded on service availability and performance. Well, you can sell that all you want but I won't buy it.
+                            </p>
+                            <p>
+                                In my view, developers need to deliver software that can be operated smoothly and operators need to provide feedback on how smoothly the software is operating; dev and ops must collaborate. I accept as a given that developers
+                            </p>
+                            <ul>
+                                <li>Use source control
+                                </li>
+                                <li>Write unit tests (after the fact or before/during <a href="http://en.wikipedia.org/wiki/Test-driven_development">TDD</a> style)
+                                </li>
+                                <li>Write functional and integration tests
+                                </li>
+                                <li>Maintain a build system for running test harnesses and packaging code
+                                </li>
+                                <li>Document internal architecture and operating interfaces
+                                </li>
+                                <li>Plan for change with respect to scale charactistics and functionality
+                                </li>
+                            </ul>Conversely, I accept as a given that operators
+                            <ul>
+                                <li>Use configuration management
+                                </li>
+                                <li>Automate infrastructure provisioning, code deployment and rollback
+                                </li>
+                                <li>Monitor infrastructure and application metrics
+                                </li>
+                            </ul>I don't want to oversimplify, there's more to the obligations that dev and ops have to each other in order to collaborate effectively. What I've noticed though is that a lot of operators might be skilled with configuring specific server infrastructure or performing OS analysis but configuration management and automation requires using really good tools that they lack. I've seen situations where the available tools are perceived as too complicated and so tools are developed that usually consist of a lot of specialized shell scripts (or perhaps it's just plain old NIH). <a href="http://www.cfengine.org/">Cfengine</a> is a good start but the reports I have is that it's difficult to work with and, if you're not very careful, may automatically manage to <em>mis</em>configure your systems. <a href="http://reductivelabs.com/products/puppet/">Puppet</a> was developed to be a more powerful system for configuration management but the feedback I've seen on it is adding new functionality is hard; it has its own configuration language and when you want to extend it you have to deal with a lot of complicated mechanisms. <a href="http://wiki.opscode.com/display/chef/Home">Chef</a> was developed to answer that frustration; by making the configuration language a <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">DSL</a> on top of an already widely used scripting language (ruby), the chef code base provides an easier way to extend it and the chef codebase itself is reportedly an order of magnitude smaller and simpler than puppet's (cavaet: I generally distrust <a href="http://en.wikipedia.org/wiki/Source_lines_of_code">SLoC</a> metrics but just sayin').
+                            <p>
+                                So I've been giving Chef a test-drive for this infrastructure-on-EC2 management project that's been cooking. The system implemented the following use cases:
+                            </p>
+                            <ol>
+                                <li>Launch web app servers on EC2 with Apache, <a href="http://www.modrails.com/">Passenger</a>, RoR (+other gems) and overlay a set of rails apps out of git
+                                </li>
+                                <li>Launch a pair of reverse proxies (with ha-proxy) in front of the app servers - and reconfigure them when the set of app servers is expanded or contracted
+                                </li>
+                                <li>Configure the proxy for failover with <a href="http://www.linux-ha.org/HeartbeatProgram">heartbeat</a>
+                                </li>
+                                <li>Add new rails apps to the set of app servers
+                                </li>
+                                <li>Updating/rolling back rails apps
+                                </li>
+                            </ol>The system is enabled through a combination of the EC2 API (via <a href="http://rubyforge.org/projects/rightaws/">RightAWS</a>) and Chef's REST API as well as using <a href="http://github.com/ezmobius/chef-deploy/tree/master">chef-deploy</a> (think: Capistrano run by a system provisioning agent) to augment Chef's functionality. So far, it seems to be working great!
+                            <p>
+                                There's a lot of energy in the Chef community (check out <a href="http://code.fotonauts.com/blog/2009/05/introducing-casserole.html">Casserole</a>), combined with monitoring, log management and cloud technologies, I think there's a lot of IT streamlining ahead. Perhaps the old days of labor and communication intensive operations will give way to a new era of autonomic computing. I'll post further about some of the mechanics of working with ruby, rails, chef, EC2, chef-deploy and other tools in the weeks ahead (particularly now that EC2 has native <a href="http://developer.amazonwebservices.com/connect/ann.jspa?annID=446">load balancing, monitoring and auto-scaling</a> capabilities). I'll also talk a bit about this stuff at a <a href="http://en.oreilly.com/velocity2009/public/cfp/66">Velocity BoF</a>. If you're thinking about attending Velocity, O'Reilly is offering <a href="http://en.oreilly.com/velocity2009">30% off to the first 30 people to register today with the code vel09d30</a> <strong>today</strong> (no I'm not getting any kinduva kickback from O'Reilly). And you can catch <a href="http://en.oreilly.com/velocity2009/public/schedule/detail/8324">Infrastructure in the Cloud Era</a> with <em>Adam Jacob (Opscode), Ezra Zygmuntowicz (EngineYard)</em> to learn more about Chef and cloud management.
+                            </p>
+                            <p>
+                                <a href="http://technorati.com/tag/chef" rel="tag">chef</a> &nbsp; <a href="http://technorati.com/tag/puppet" rel="tag">puppet</a> &nbsp; <a href="http://technorati.com/tag/cfengine" rel="tag">cfengine</a> &nbsp; <a href="http://technorati.com/tag/ec2" rel="tag">ec2</a> &nbsp; <a href="http://technorati.com/tag/aws" rel="tag">aws</a> &nbsp; <a href="http://technorati.com/tag/ruby" rel="tag">ruby</a> &nbsp; <a href="http://technorati.com/tag/cloud+computing" rel="tag">cloud computing</a> &nbsp; <a href="http://technorati.com/tag/velocity" rel="tag">velocity</a> &nbsp;
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://arachna.com/roller/spidaman/entry/configuring_web_clouds_with_chef">http://arachna.com/roller/spidaman/entry/configuring_web_clouds_with_chef</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

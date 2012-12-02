@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            New ES5 strict mode requirement: function statements not at top level of a program or function are prohibited
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 24 Jan 2011 17:01:43 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-24T12:01:43-04:00">
+                    <meta itemprop="dateModified" content="2011-01-24T12:01:43-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-24T16:01:43+00:00">Jan 24</time>
+                    <h2 itemprop="title">
+                        New ES5 strict mode requirement: function statements not at top level of a program or function are prohibited
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/51069c49fd93b06b">
+                        <blockquote>
+                            <h2>
+                                Function statements in ECMAScript
+                            </h2>
+                            <p>
+                                What’s the effect of this program according to ECMAScript?
+                            </p>
+                            <pre>
+function foo() { }
+</pre>
+                            <p>
+                                If you said that it defines a function as a property of the global object, congratulations! You’ve mastered a basic part of JavaScript syntax.
+                            </p>
+                            <p>
+                                Let’s go a little trickier: what is the effect of the function defined in this program according to ECMAScript?
+                            </p>
+                            <pre>
+function foo()
+{
+  return g;
+  function g() { }
+}
+</pre>
+                            <p>
+                                This function, when called, defines a local variable <code>g</code> whose value is the specified function. Then it returns that function as the value of that variable. If you knew this as well, give yourself a gold star.
+                            </p>
+                            <p>
+                                Now let’s try something even harder: what’s the effect of these programs?
+                            </p>
+                            <pre>
+if (true)
+  function bar() { }
+</pre>
+                            <pre>
+function g() { }
+function foo()
+{
+  if (true)
+    function g() { }
+  return g;
+}
+</pre>
+                            <h2>
+                                Shenanigans!
+                            </h2>
+                            <p>
+                                Trick question! They fail to run due to syntax errors.
+                            </p>
+                            <p>
+                                ECMAScript permits function statements in exactly two places: directly within the list of statements that make up a program, and directly within the list of statements that make up the contents of a function body. These are the first two examples. (A function statement also looks like an expression, but if it appears in expression context it’s a function expression, not a function statement.) Engines which permit a function statement anywhere else — as the child of a block statement enclosed by curly braces, as the child of a loop or condition, as the child of a <code>with</code>, or as the child of a <code>case</code> or <code>default</code> in a <code>switch</code> statement — do so by extending <abbr title="ECMAScript 5th edition">ES5</abbr>.
+                            </p>
+                            <p>
+                                Spec requirements aside, what are the semantics of extensionland function statements?
+                            </p>
+                            <h2>
+                                Now you’re just messing with me
+                            </h2>
+                            <p>
+                                <em>Which</em> semantics?
+                            </p>
+                            <p>
+                                Browsers all implement extensionland function statements differently, with different semantics. Use them just so and they’ll work the same way across browsers. Use them in any way where the function statement conditionally executes, or where you start capturing the binding for the function in different locations, and you’ll find any semblance of cross-browser compatibility disappears. <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=385264#c2">This example by Rich Dougherty</a>, used with permission, demonstrates some of the incompatibilities (and I wonder whether function statements in <code>with</code> might present more):
+                            </p>
+                            <pre>
+var result = [];
+result.push(f());
+function f() { return 1; }
+result.push(f());
+if (1)
+{
+  result.push(f());
+  function f() { return 2; }
+  result.push(f());
+}
+result.push(f());
+function y()
+{
+  result.push(g());
+  function g() { return 3; }
+  result.push(g());
+  if (1)
+  {
+    result.push(g());
+    function g() { return 4; }
+    result.push(g());
+  }
+  result.push(g());
+}
+y();
+print(result);
+</pre>
+                            <p>
+                                Results in different browsers vary a fair bit, although there’s a little more consensus on behavior now than at the time this example was originally written:
+                            </p>
+                            <table>
+                                <tr>
+                                    <th>
+                                        Browser
+                                    </th>
+                                    <th>
+                                        Output
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Firefox 1.5 and 2
+                                    </td>
+                                    <td>
+                                        1,1,1,2,2,3,3,3,3,3
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Firefox 4
+                                    </td>
+                                    <td>
+                                        1,1,1,2,2,3,3,3,4,4
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Opera
+                                    </td>
+                                    <td>
+                                        2,2,2,2,2,4,4,4,4,4
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Internet Explorer 7
+                                    </td>
+                                    <td>
+                                        2,2,2,2,2,4,4,4,4,4
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Safari 3
+                                    </td>
+                                    <td>
+                                        1,1,2,2,2,3,3,4,4,4
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Safari 4
+                                    </td>
+                                    <td>
+                                        2,2,2,2,2,4,4,4,4,4
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Chrome
+                                    </td>
+                                    <td>
+                                        2,2,2,2,2,4,4,4,4,4
+                                    </td>
+                                </tr>
+                            </table>
+                            <h2>
+                                Why not specify semantics?
+                            </h2>
+                            <p>
+                                Blindly specifying some particular behavior won’t work. Many sites these days (and different browser-specific implementations of those sites) rely on engine-specific behavior with user-agent-conditioned code. Changing browser behavior breaks that pretty hard. Specification will break any browsers not already implementing it at time of specification.
+                            </p>
+                            <h2>
+                                A way forward
+                            </h2>
+                            <p>
+                                The next version of ECMAScript would like to specify semantics for this case — quite possibly semantics not implemented by any browser. How to do it, if implementations irreconcilably disagree? The solution comes in two parts. First, “<abbr title="ECMAScript 6th edition">ES6</abbr>” will require affirmative opt-in to enable new syntax and semantics, including for currently-nonstandard function statements. Second, in anticipation of that change, the ECMA committee recommends that non-standard function statements be forbidden in strict mode code, to open up a future path down which ES6 can walk.
+                            </p>
+                            <p>
+                                To permit ES6 to standardize semantics, the ECMA committee <a href="http://wiki.ecmascript.org/doku.php?id=conventions:no_non_standard_strict_decls">recommends forbidding non-standard function statements in strict mode code</a>. Thus these examples are syntax errors:
+                            </p>
+                            <pre>
+"use strict";
+{
+  function foo() { }
+}
+</pre>
+                            <pre>
+"use strict";
+if (true)
+  function bar() { }
+</pre>
+                            <pre>
+"use strict";
+with (obj)
+  function foo() { }
+</pre>
+                            <pre>
+"use strict";
+for (;;)
+  function foo() { }
+</pre>
+                            <pre>
+"use strict";
+switch (v)
+{
+  case 10:
+    function bar() { }
+  default:
+    function baz() { }
+}
+</pre>
+                            <p>
+                                Both Firefox and WebKit now implement this restriction, and other engines will follow as they too implement strict mode.
+                            </p>
+                            <h2>
+                                Conclusion
+                            </h2>
+                            <p>
+                                In order for future versions of ECMAScript to be able to define semantics for extensionland functions, strict mode “clears the deck” and forbids them entirely. Instead, assign functions to variables, a la <code>var f = function() { };</code>. Semantics for this are completely defined and compatibly implemented across browsers.
+                            </p>
+                            <p>
+                                You can experiment with a version of Firefox with these changes by downloading a <a href="http://nightly.mozilla.org/">nightly build</a>. (Don’t forget to <a href="http://support.mozilla.com/en-US/kb/Managing+profiles">use the profile manager</a> if you want to keep the settings you use with your primary Firefox installation pristine.)
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://whereswalden.com/2011/01/24/new-es5-strict-mode-requirement-function-statements-not-at-top-level-of-a-program-or-function-are-prohibited/">http://whereswalden.com/2011/01/24/new-es5-strict-mode-requirement-function-statements-not-at-top-level-of-a-program-or-function-are-prohibited/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

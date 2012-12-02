@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            PDF file loader to extract and analyse shellcode
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 08 Feb 2010 09:30:31 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-06T04:58:07-04:00">
+                    <meta itemprop="dateModified" content="2010-01-06T04:58:07-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-06T08:58:07+00:00">Jan 06</time>
+                    <h2 itemprop="title">
+                        PDF file loader to extract and analyse shellcode
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/199be4bf78f42802">
+                        <blockquote>
+                            One of the new features in <a href="http://www.hex-rays.com/idapro/56/index.htm">IDA Pro 5.6</a> is the possibility to write file loaders using scripts such as IDC or Python.<br>
+                            To illustrate this new feature, we are going to explain how to write a file loader using IDC and then we will write a file loader (in Python) that can extract shell code from malicious PDF files.<br>
+                            <img src="http://hexblog.com/ida_pro/pix/pdf_loader.gif" width="497" height="462">
+                            <h2>
+                                Writing a loader script for BIOS images
+                            </h2>Before writing file loaders we need to understand the file format in question. For demonstration purposes we chose to write a loader for BIOS image files statisfying these conditions:
+                            <ul>
+                                <li>Should be no more than 64kb in size
+                                </li>
+                                <li>Contain the far jump instruction at 0xFFF0
+                                </li>
+                                <li>Contain a date string at 0xFFF5
+                                </li>
+                            </ul><br>
+                            Each file loader should define at least the two functions: accept_file() and load_file(). The former decides whether the file format is supported and the latter loads the previously accepted file and populates the database.
+                            <blockquote style="background-color:lightblue">
+                                // Verify the input file format // li - loader_input_t object. it is positioned at the file start // n - invocation number. if the loader can handle only one format, // it should return failure on n != 0 // Returns: if the input file is not recognized // return 0 // else // return object with 2 attributes: // format: description of the file format // options:1 or ACCEPT_FIRST. it is ok not to set this attribute. static accept_file(li, n) { if ( n ) return 0; // this loader supports only one format // we support max 64K images if ( li.size() &gt; 0x10000 ) return 0; li.seek(-16, SEEK_END); if ( li.getc() != 0xEA ) // jmp? return 0; li.seek(-2, SEEK_END); // reasonable computer type? if ( (li.getc() &amp; 0xF0) != 0xF0 ) return 0; auto buf; li.seek(-11, SEEK_END); li.read(&amp;buf, 9); // 06/03/08 if ( buf[2] != "/" || buf[5] != "/" || buf[8] != "\x00" ) return 0; // accept the file return "BIOS Image"; // description of the file format }
+                            </blockquote>The accept_file() will be called many times by IDA kernel starting with <i>n</i>=0, n=1, n=2, ... until it returns zero. This allows you to handle multiple formats present in the same input file.<br>
+                            For example, PE files can be loaded as MS-DOS MZ EXE files or as PE files. The PE file loader plugin does something like this:
+                            <blockquote style="background-color:lightblue">
+                                if (n == 0) return "MZ executable"; else if (n == 1) { // check if it is a PE file // .... return "PE executable"; } else return 0;
+                            </blockquote>
+                            <p>
+                                The <i>li</i> parameter is an instance of <i>loader_input_t</i> described in idc.idc (for IDC) and idaapi.py (for IDAPython). This class allows you to seek and read from the input file.
+                            </p>
+                            <p>
+                                The load_file() will receive a <i>loader_input_t</i> instance, the format name previously returned by the accept_file() and the loading flags in <i>neflags</i>. This flag can be tested against the NEF_MAN constant to detect whether the user checked the "Manual Load" option while loading the new file.<br>
+                                These are the main responsibilities of load_file():
+                            </p>
+                            <ul>
+                                <li>Set the processor corresponding to the input file
+                                </li>
+                                <li>Create segments
+                                </li>
+                                <li>Add entry points
+                                </li>
+                                <li>Add fixups
+                                </li>
+                                <li>Create import/export segments
+                                </li>
+                                <li>etc...
+                                </li>
+                            </ul>
+                            <blockquote style="background-color:lightblue">
+                                // Load the file into the database // li - loader_input_t object. it is positioned at the file start // neflags - combination of NEF_... bits describing how to load the file // probably NEF_MAN is the most interesting flag that can // be used to select manual loading // format - description of the file format // Returns: 1 - means success, 0 - failure static load_file(li, neflags, format) { auto base = 0xF000; auto start = base &lt;&lt; 4; auto size = li.size(); SetProcessorType("metapc", SETPROC_ALL); // copy bytes to the database loadfile(li, 0, base&lt;&lt;4, size); // create a segment AddSeg(start, start+size, base, 0, saRelPara, scPub); // set the entry registers SetLongPrm(INF_START_IP, size-16); SetLongPrm(INF_START_CS, base); return 1; }
+                            </blockquote>
+                            <p>
+                                This script (bios_image.idc) is installed with IDA Pro 5.6 in the loaders directory.
+                            </p>Now that we know how to write a simple file loader using a scripting language, let us write a real life file loader that assists us in extracting shellcode from malicious PDF files.<br>
+                            <h2>
+                                PDF shellcode extractor
+                            </h2>
+                            <p>
+                                The purpose of this article is not to explain how PDF exploits work, however we will explain the general idea as we write the file loader. If you need more information please check <a href="http://blog.didierstevens.com">Didier Steven's</a> site and this blog <a href="http://blog.didierstevens.com/2008/10/20/analyzing-a-malicious-pdf-file/">entry</a>, also check <a href="http://www.avertlabs.com/research/blog/index.php/2009/10/13/latest-pdf-zero-day-leads-to-exploit-egg-hunt/">Jon Paterson and Dennis Elser</a> blog entry showing how they extracted the shellcode manually and loaded it into IDA for analysis.
+                            </p>
+                            <p>
+                                In this section we are going to write a very basic shellcode extractor that handles a couple of simple cases.
+                            </p>The first case is when the PDF document contains an embedded JavaScript: <img src="http://hexblog.com/ida_pro/pix/pdf_expl1.gif" width="567" height="485"><br>
+                            And the second case when an object refers to another object containing the compressed script:<br>
+                            <img src="http://hexblog.com/ida_pro/pix/pdf_expl2.gif" width="652" height="331"><br>
+                            Object 31 refers to object 32 (compressed with DEFLATE algorithm) and contains the actual script that exploits a given vulnerability in the PDF reader.<br>
+                            After taking everything between stream/endstream inside object 32 and passing it to gzip.decompress() we get:<br>
+                            <img src="http://hexblog.com/ida_pro/pix/pdf_expl2_js.gif" width="512" height="474"><br>
+                            In both cases the shellcode is passed to the unescape() and we can use that as a very basic mechanism to extract the shellcode.<br>
+                            Before writing the code let us summarize what we need to do:
+                            <ol>
+                                <li>Find potential JavaScript:
+                                    <ul>
+                                        <li>Scan the PDF document for objects that reference compressed JS streams:
+                                            <ol>
+                                                <li>Find the referencing object
+                                                </li>
+                                                <li>Find the referred object
+                                                </li>
+                                                <li>Take the stream and decompress it
+                                                </li>
+                                            </ol>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            <ul>
+                                <li>Or scan the PDF document for objects that contains embedded JS and take the JS as-is
+                                </li>
+                            </ul>
+                            <ul>
+                                <li>Find all calls to unescape() and extract its parameters. These parameters could be potential shellcode
+                                </li>
+                                <li>Decode the unescape parameter into a byte string
+                                </li>
+                                <li>Create a segment and load the shellcode into the segment
+                                </li>
+                                <li style="list-style: none; display: inline">
+                                    <h2>
+                                        Extracting JS scripts from the PDF
+                                    </h2>To look for embedded JS scripts we call <b>find_embedded_js()</b> that employs a regular expression:
+                                    <blockquote style="background-color:lightblue">
+                                        def find_embedded_js(str): js = re.finditer('<b>\/S\s*\/JavaScript\s*\/JS \((.+?)&gt;&gt;</b>', str, re.MULTILINE | re.DOTALL)
+                                    </blockquote>
+                                    <p>
+                                        Once we have a match we remember it without further processing.
+                                    </p>To look for compressed JavaScript objects we first call <b>find_js_ref_streams()</b> that also employs a regular expression to locate all objects that refer to another JavaScript object:
+                                    <blockquote style="background-color:lightblue">
+                                        def find_js_ref_streams(str): js_ref_streams = re.finditer('<b>\/S\s*\/JavaScript\/JS (\d+) (\d+) R</b>', str)
+                                    </blockquote>We then use the <b>find_obj()</b> to find the body of the refered object (that contains the compressed JavaScript):
+                                    <blockquote style="background-color:lightblue">
+                                        def find_obj(str, id, ver): stream = re.search('%d %d obj(.*?)endobj' % (id, ver), str, re.MULTILINE | re.DOTALL) if not stream: return None return str[stream.start(1):stream.end(1)]
+                                    </blockquote>And finally we call <b>decompress_stream()</b> to decompress the referred stream:
+                                    <blockquote style="background-color:lightblue">
+                                        def decompress_stream(str): if str.find('Filter[/FlateDecode]') == -1: return None m = re.search('stream\s*(.+?)\s*endstream', str, re.DOTALL | re.MULTILINE) if not m: return None # Decompress and return return zlib.decompress(m.group(1))
+                                    </blockquote>
+                                    <h2>
+                                        Extracting potential shellcode in the JS scripts
+                                    </h2>Since this article is for demonstration purposes only, we will assume that the shellcode is always enclosed in the unescape() call. For this we simply convert back the %uXXYY or %XX format strings back to the corresponding byte characters:
+                                    <blockquote style="background-color:lightblue">
+                                        def extract_shellcode(lines): p = 0 shellcode = [] # accumulate shellcode while True: p = lines.find('unescape("', p) if p == -1: break e = lines.find(')', p) if e == -1: break expr = lines[p+9:e] data = [] for i in xrange(0, len(expr)): if expr[i:i+2] == "%u": i += 2 data.extend([chr(int(expr[i+2:i+4], 16)), chr(int(expr[i:i+2], 16))]) i += 4 elif expr[i] == "%": i += 1 data.append(int(expr[i:i+2], 16)) i += 2 # advance the match pos p += 8 shellcode.append("".join(data)) # That's it return shellcode
+                                    </blockquote>Now we can glue all those helper functions to create one function that returns the shellcode:
+                                    <blockquote style="background-color:lightblue">
+                                        def extract_pdf_shellcode(buf): ret = [] # find all JS stream references r = find_js_ref_streams(buf) for id, ver in r: # extract the JS stream object obj = find_obj(buf, id, ver) # decode the stream stream = decompress_stream(obj) # extract shell code scs = extract_shellcode(stream) i = 0 for sc in scs: i += 1 ret.append([id, ver, i, sc]) # find all embedded JS r = find_embedded_js(buf) if r: ret.extend(r) return ret
+                                    </blockquote>
+                                    <h2>
+                                        Writing the file loader
+                                    </h2>Now that we have all the needed functions to open a PDF and extract all shellcode, let us write a file loader so that we can use IDA to open a malicious PDF file. First we start with the accept_file():
+                                    <blockquote style="background-color:lightblue">
+                                        def accept_file(li, n): # we support only one format per file if n &gt; 0: return 0 li.seek(0) if li.read(5) != '%PDF-': return 0 buf = read_whole_file(li) r = extract_pdf_shellcode(buf) if not r: return 0 return 'PDF with shellcode'
+                                    </blockquote>
+                                    <p>
+                                        As you can see, there is nothing special about this function: (1) check PDF file signature (2) check if we found at least one shellcode
+                                    </p>And the load_file() will populate all the extracted shellcode into the database:
+                                    <blockquote style="background-color:lightblue">
+                                        def load_file(li, neflags, format): # Select the PC processor module idaapi.set_processor_type("metapc", SETPROC_ALL|SETPROC_FATAL) buf = read_whole_file(li) r = extract_pdf_shellcode(buf) if not r: return 0 # Load all shellcode into different segments start = 0x10000 seg = idaapi.segment_t() for id, ver, n, sc in r: size = len(sc) end = start + size # Create the segment seg.startEA = start seg.endEA = end seg.bitness = 1 # 32-bit idaapi.add_segm_ex(seg, "obj_%d_%d_%d" % (id, ver, n), "CODE", 0) # Copy the bytes idaapi.mem2base(sc, start, end) # Mark for analysis AutoMark(start, AU_CODE) # Compute next loading address start = ((end / 0x1000) + 1) * 0x1000 # Select the bochs debugger LoadDebugger("bochs", 0) return 1
+                                    </blockquote>
+                                    <h2>
+                                        Testing the script
+                                    </h2>Let us copy the PDF loader <a href="http://hexblog.com/ida_pro/files/pdf-ldr.py">script</a> to IDA / loaders directory and open a malicious PDF file: <img src="http://hexblog.com/ida_pro/pix/pdf_loader2.gif" width="389" height="461"><br>
+                                    After the file is loaded we can directly see the shellcode:<br>
+                                    <img src="http://hexblog.com/ida_pro/pix/pdf_sc2.gif" width="464" height="254"><br>
+                                    And for the other malware sample, after we load it with IDA: <img src="http://hexblog.com/ida_pro/pix/pdf_sc1.gif" width="548" height="439"><br>
+                                    We notice that it contains a decoder that decodes the rest of the shellcode: <img src="http://hexblog.com/ida_pro/pix/pdf_sc2_enc.gif" width="612" height="210"><br>
+                                    To uncover the code we can use the <a href="http://hexblog.com/2008/11/bochs_plugin_goes_alpha.html">Bochs debugger</a> in the IDB operation mode by selecting the range of code we want to emulate and pressing F9:<br>
+                                    <img src="http://hexblog.com/ida_pro/pix/pdf_sc2_bochs.gif" width="385" height="466"><br>
+                                    After the decoding is finished we can take a memory snapshot to save the decoded shellcode.<br>
+                                    <img src="http://hexblog.com/ida_pro/pix/pdf_sc2_dec.gif" width="714" height="358">
+                                    <p>
+                                        Please download the code from <a href="http://hexblog.com/ida_pro/files/pdf-ldr.py">here</a>
+                                    </p>Special thanks to <a href="http://blog.didierstevens.com/">Didier Stevens</a> for his <a href="http://blog.didierstevens.com/programs/pdf-tools/">free PDF tools</a> and for providing some samples.
+                                </li>
+                            </ul>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://hexblog.com/2010/01/pdf_file_loader_to_extract_and_1.html">http://hexblog.com/2010/01/pdf_file_loader_to_extract_and_1.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

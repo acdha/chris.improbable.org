@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            MySQL Query Latency with the DTrace pid Provider
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 14 Mar 2011 19:15:39 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-14T15:15:39-04:00">
+                    <meta itemprop="dateModified" content="2011-03-14T15:15:39-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-14T19:15:39+00:00">Mar 14</time>
+                    <h2 itemprop="title">
+                        MySQL Query Latency with the DTrace pid Provider
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c64f952b3e0e5148">
+                        <blockquote>
+                            <p>
+                                In 2007 I wrote some <a href="http://en.wikipedia.org/wiki/DTrace">DTrace</a> MySQL onliners and scripts, including <a href="http://www.solarisinternals.com/wiki/index.php/DTrace_Topics_Databases">mysql_pid_etime.d</a>, which used the DTrace <a href="http://dtrace.org/blogs/brendan/2011/02/19/dtrace-pid-provider-links/">pid provider</a>. <a href="http://hell.jedicoder.net/">Derek Crudgington</a> (now a fellow <a href="http://www.joyeur.com">Joyeur</a>) took this a little further and compiled a <a href="http://hell.jedicoder.net/?p=115">MySQL DTrace Kit</a> containing several pid provider-based scripts, which also traced slow query writes. I never went much further with the pid provider since a better way was in development: the USDT-based DTrace <a href="http://dev.mysql.com/doc/refman/5.5/en/dba-dtrace-mysqld-ref.html">mysql provider</a>. This was much easier to use and has a stable (or more stable) interface. I included some mysql provider one-liners and scripts in the <a href="http://dtrace.org/blogs/brendan/2011/02/23/dtrace-book-sample-chapter-file-systems/">DTrace book</a>.
+                            </p>
+                            <p>
+                                Since joining <a href="http://www.joyent.com">Joyent</a>, I’m getting to see MySQL in many interesting test and production scenarios. Some of these are running MySQL versions that don’t have the stable <i>mysql provider</i> available, and so I’m back to writing MySQL DTrace scripts using the <i>pid provider</i>. I’ll share some of these here, now that I’ve discussed the <a href="http://dtrace.org/blogs/brendan/2011/02/19/dtrace-pid-provider-links/">pid provider risks</a>. In summary: these aren’t supported, will likely break on different mysqld versions, and should only be considered if the stable mysql provider is not available.
+                            </p>
+                            <h2>
+                                Query Latency
+                            </h2>
+                            <p>
+                                Many environments monitor query latency via the slow query log, which by default is logging queries greater than one second. To get a better handle on query performance, you can look at the distribution of all queries – not just those greater than one second. The tool below, mysqld_pid_latency.d, does this using DTrace and the pid provider. I’ve been using this as the first tool to reach for when analyzing MySQL performance issues: no matter what other tools are telling you (eg, disks are busy), this shows the effect on MySQL latency right now – and whether there is a latency problem to begin with.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Instead of the slow query log, DTrace can pull out nanosecond query latency as a distribution plot – anytime.
+                                </p>
+                            </blockquote>
+                            <p>
+                                For regular users of DTrace, this script output and the script itself may be self-explanatory. I’ll explain what’s going on here in detail anyway. First, some sample output:
+                            </p>
+                            <pre>
+# <b>./mysqld_pid_latency.d -p 15489</b>
+Tracing mysqld... Hit Ctrl-C for report.
+^C
+MySQL queries: 22033; query latency (ns):
+
+           value  ------------- Distribution ------------- count
+            1024 |                                         0
+            2048 |                                         77
+            4096 |@                                        349
+            8192 |                                         125
+           16384 |@                                        504
+           32768 |@                                        504
+           65536 |@@@@                                     2043
+          131072 |@@@@@@@@@@@@@@@@@@@@                     10921
+          262144 |@@@@@@@@@                                4795
+          524288 |@@@                                      1591
+         1048576 |@                                        550
+         2097152 |                                         204
+         4194304 |                                         90
+         8388608 |                                         250
+        16777216 |                                         19
+        33554432 |                                         5
+        67108864 |                                         4
+       134217728 |                                         1
+       268435456 |                                         1
+       536870912 |                                         0
+</pre>
+                            <p>
+                                The script prints the total number of queries traced (22033), and shows a distribution of query latency. The left column is the query time in nanoseconds, the right shows the number of queries at that latency, and the middle column is an ASCII representation of the distribution. The left column is a power of 2 scale, where the value means “at least”. So, the most queries (count == 10921) fell into the “at least” 131,072 nanosecond range, which is between 131,072 and 262,143 nanoseconds. Expressing this in other units: this is between 131 and 262 microseconds (us), or 0.13 and 0.26 milliseconds (ms).
+                            </p>
+                            <p>
+                                This distribution shows that most queries are fairly fast (0.13 – 0.26 ms), which means they are probably operating out of DRAM cache.
+                            </p>
+                            <p>
+                                Here is another distribution to consider:
+                            </p>
+                            <pre>
+# <b>./mysqld_pid_latency.d -p 726</b>
+Tracing mysqld... Hit Ctrl-C for report.
+^C
+MySQL queries: 21848; query latency (ns):
+
+           value  ------------- Distribution ------------- count
+            1024 |                                         0
+            2048 |                                         56
+            4096 |@                                        393
+            8192 |                                         91
+           16384 |@                                        450
+           32768 |@                                        318
+           65536 |@@@                                      1571
+          131072 |@@@@@@@@@@@@@@@                          8396
+          262144 |@@@@@@@@                                 4386
+          524288 |@@@@                                     2102
+         1048576 |@@                                       1329
+         2097152 |@                                        763
+         4194304 |@                                        366
+         8388608 |@@@                                      1426
+        16777216 |                                         154
+        33554432 |                                         25
+        67108864 |                                         20
+       134217728 |                                         1
+       268435456 |                                         1
+       536870912 |                                         0
+</pre>
+                            <p>
+                                This distribution has another feature, showing a small spike in query latency between 8 and 16 ms. I’d guess that this is caused by queries that are not entirerly cached, and are waiting on I/O from disk.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    DRAM and disk I/O are visible as spikes in the latency distribution plot.
+                                </p>
+                            </blockquote>
+                            <p>
+                                The DTrace script used for the above examples, mysqld_pid_latency.d, is:
+                            </p>
+                            <pre>
+     1  #!/usr/sbin/dtrace -s
+     2  /*
+     3   * mysqld_pid_latency.d         Print mysqld query latency distribution.
+     4   *
+     5   * USAGE: ./mysqld_pid_latency.d -p mysqld_PID
+     6   *
+     7   * TESTED: these pid-provider probes may only work on some mysqld versions.
+     8   *      5.0.51a: ok
+     9   *
+    10   * 27-Feb-2011  brendan.gregg@joyent.com
+    11   */
+    12
+    13  #pragma D option quiet
+    14
+    15  dtrace:::BEGIN
+    16  {
+    17          printf("Tracing mysqld... Hit Ctrl-C for report.\n");
+    18  }
+    19
+    20  pid$target::*dispatch_command*:entry
+    21  {
+    22          self-&gt;start = timestamp;
+    23  }
+    24
+    25  pid$target::*dispatch_command*:return
+    26  /self-&gt;start/
+    27  {
+    28          @time = quantize(timestamp - self-&gt;start);
+    29          @num = count();
+    30          self-&gt;start = 0;
+    31  }
+    32
+    33  dtrace:::END
+    34  {
+    35          printa("MySQL queries: %@d; query latency (ns):", @num);
+    36          printa(@time);
+    37  }
+</pre>
+                            <p>
+                                The script itself is pretty simple. It traces the time in the dispatch_command() function as a quantize() aggregation, and counts queries. The probe uses wildcards around “dispatch_command” since the probe function name is the full C++ signature:
+                            </p>
+                            <pre>
+# <b>dtrace -ln 'pid$target::*dispatch_command*:entry' -p 726</b>
+   ID   PROVIDER            MODULE                          FUNCTION NAME
+99744     pid726            mysqld _Z16dispatch_command19enum_server_commandP3THDPcj entry
+</pre>
+                            <p>
+                                And it can be easier to use wildcards than to write the full signature (bearing in mind the usual risk with wildcards matching too much).
+                            </p>
+                            <p>
+                                If you are learning DTrace, a more detailed description may be useful here: the entry (start) to this function is traced on line 20, which then collects a high resolution timestamp (nanoseconds) on line 22 and saves it in a thread-local variable “self-&gt;start”. Thread-local means this variable is associatied with that thread, and other threads performing queries have their own thread-local variables for timing. This variable is then retrieved on the return (end) of the function and the elapsed time (delta) between them is calculated on line 28. This delta time is passed to quantize(), a DTrace aggregating function for collecting and reporting data as power-of-2 distributions. The aggregation itself is called “@time”, and another is populated called “@num” to count the number of queries. They are printed at the end of the DTrace program in the dtrace:::END probe, with printa() (print aggregation) statements.
+                            </p>
+                            <p>
+                                As seen by the earlier examples, it can be executed with a “-p PID” argument, which passes the process ID to the script as the “$target” macro variable. This is necessary for the pid provider (but not the mysql provider).
+                            </p>
+                            <p>
+                                Some subtleties: line 26 checks that the self-&gt;start variable has been populated, otherwise DTrace could begin tracing after the dispatch_command() entry and before the return, and end up with a ridiculous delta time on line 28. Also, I’m assuming dispatch_command() is not recursive (it isn’t on the MySQL versions I’ve seen); if it were, a single self-&gt;start variable would be overwritten by the deeper calls.
+                            </p>
+                            <p>
+                                This is a common use of DTrace, and I often hammer out these programs as one-liners if I don’t have scripts handy. Eg:
+                            </p>
+                            <pre>
+# <b>dtrace -n 'pid$target::*dispatch_command*:entry { self-&gt;s = timestamp; }
+    pid$target::*dispatch_command*:return /self-&gt;s/ {
+    @["ns"] = quantize(timestamp - self-&gt;s); self-&gt;s = 0; }'</b>
+</pre>
+                            <p>
+                                It’s a long one-liner, but it does the job.
+                            </p>
+                            <h2>
+                                Slow Query Time Breakdown
+                            </h2>
+                            <p>
+                                After identifying slow queries using the previous tool, my next question is – what is the problem? what are the queries? and why? where is the time spent?
+                            </p>
+                            <p>
+                                The mysqld_pid_slow.d script answers this at a high level, making it a good next step before digging deeper. It takes a time in milliseconds as an argument, and prints queries that were slower than that time. It also shows the total time for the query, and the total component of that time that was spent <i>on-CPU</i>.
+                            </p>
+                            <p>
+                                Here is some redacted sample output (private data replaced by “xxx”):
+                            </p>
+                            <pre>
+# <b>./mysqld_pid_slow.d -p 726 100</b>
+Tracing... Min query time: 100000000 ns.
+
+ TIME(ms) CPU(ms)  QUERY
+ 111      4        SELECT xxx.* FROM xxx xxx WHERE xxx.xxx=xxx AND xxx.xxx=xxx AND xxx.xxx=xxx AND xxx.xxx=xxx ORDER BY xxx.xxx ASC LIMIT 1\0
+ 283      0        UPDATE xxx SET xxx=xxx, xxx = xxx,xxx = xxx WHERE xxx=xxx AND xxx = xxx AND xxx = xxx\0
+ 155      0        UPDATE xxx SET xxx=2 WHERE xxx=xxx AND xxx=xxx AND xxx &lt;= xxx\0
+ 172      0        UPDATE xxx SET xxx=xxx WHERE xxx=xxx AND xxx=xxx\0
+ 173      6        SELECT count(*) xxx FROM xxx WHERE xxx =xxx AND xxx=xxx AND xxx=xxx\0
+ 176      0        UPDATE xxx SET xxx=xxx WHERE xxx=xxx AND xxx=xxx\0
+ 178      177      SELECT xxx, xxx, xxx, xxx, xxx, xxx, xxx, xxx, xxx, xxx, xxx, xxx, xxx FROM xxx WHERE xxx LIKE xxx AND xxx=xxx ORDER BY xxx DESC LIMIT 10 OFFSET 0\0
+[...]
+</pre>
+                            <p>
+                                The arguments to the script were "-p 726", to attach to the mysqld process with PID 726, and "100" to trace queries longer than 100 milliseconds. Several were traced in the output above.
+                            </p>
+                            <p>
+                                The first six queries took between 111 and 283 milliseconds to complete ("TIME(ms)" column), while the on-CPU time was between 0 (rounding) and 6 milliseconds ("CPU(ms)" column). This means that the bulk of the latency is not spent in MySQL processing the query, but rather waiting while off-CPU for some other event. This other event is usually I/O, such as disk or network I/O, but can be other types too (locks, conditional variables, sleeps).
+                            </p>
+                            <p>
+                                The last query shows 178 ms of query time, and 177 ms on-CPU. It's an example of a slow query due to the query itself. It's selecting many fields and performing an order-by.
+                            </p>
+                            <p>
+                                The mysqld_pid_slow.d script is:
+                            </p>
+                            <pre>
+     1  #!/usr/sbin/dtrace -s
+     2  /*
+     3   * mysqld_pid_slow.d    Trace queries slower than specified ms.
+     4   *
+     5   * USAGE: ./mysqld_pid_slow.d -p mysqld_PID min_ms
+     6   *
+     7   * TESTED: these pid-provider probes may only work on some mysqld versions.
+     8   *      5.0.51a: ok
+     9   *
+    10   * 27-Feb-2011  brendan.gregg@joyent.com
+    11   */
+    12
+    13  #pragma D option quiet
+    14  #pragma D option defaultargs
+    15  #pragma D option switchrate=10hz
+    16
+    17  dtrace:::BEGIN
+    18  /$1 == 0/
+    19  {
+    20          printf("USAGE: %s -p PID min_ms\n\n", $$0);
+    21          printf("\teg: %s -p 12345 100\n", $$0);
+    22          exit(1);
+    23  }
+    24
+    25  dtrace:::BEGIN
+    26  {
+    27          min_ns = $1 * 1000000;
+    28          printf("Tracing... Min query time: %d ns.\n\n", min_ns);
+    29          printf(" %-8s %-8s %s\n", "TIME(ms)", "CPU(ms)", "QUERY");
+    30  }
+    31
+    32  pid$target::*dispatch_command*:entry
+    33  {
+    34          self-&gt;query = copyinstr(arg2);
+    35          self-&gt;start = timestamp;
+    36          self-&gt;vstart = vtimestamp;
+    37  }
+    38
+    39  pid$target::*dispatch_command*:return
+    40  /self-&gt;start &amp;&amp; (timestamp - self-&gt;start) &gt; min_ns/
+    41  {
+    42          this-&gt;time = (timestamp - self-&gt;start) / 1000000;
+    43          this-&gt;vtime = (vtimestamp - self-&gt;vstart) / 1000000;
+    44          printf(" %-8d %-8d %S\n", this-&gt;time, this-&gt;vtime, self-&gt;query);
+    45  }
+    46
+    47  pid$target::*dispatch_command*:return
+    48  {
+    49          self-&gt;query = 0;
+    50          self-&gt;start = 0;
+    51          self-&gt;vstart = 0;
+    52  }
+</pre>
+                            <p>
+                                This is similar to the other script, but printing the time deltas with printf() instead of summarizing them as an aggregation. The DTrace vtimestamp built-in was used to calculate on-CPU time (this timestamp variable only increments when the current thread is on-CPU). A copyinstr() is used on line 34 to pull in the query string from the user-land mysqld to the kernel where DTrace is running.
+                            </p>
+                            <h2>
+                                Experience
+                            </h2>
+                            <p>
+                                These tools are great, but they are just a starting point. I typically spend a few minutes running and examining mysqld_pid_latency.d, and then a minute on mysqld_pid_slow.d. After that, I know if there is a problem, and whether to turn to on-CPU analysis or off-CPU analysis.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    in practise I'll spend less than 5 minutes on these tools before moving onto more DTrace.
+                                </p>
+                            </blockquote>
+                            <h2>
+                                Adding a dimension
+                            </h2>
+                            <p>
+                                While I'm discussing mysqld_pid_latency.d, it's worth showing that this data can do even more than was shown above. I had run mysqld_pid_latency.d for about ten seconds and hit Ctrl-C, producing:
+                            </p>
+                            <pre>
+# <b>./mysqld_pid_latency.d -p 15489</b>
+Tracing mysqld... Hit Ctrl-C for report.
+^C
+MySQL queries: 22033; query latency (ns):
+
+           value  ------------- Distribution ------------- count
+            1024 |                                         0
+            2048 |                                         77
+            4096 |@                                        349
+            8192 |                                         125
+           16384 |@                                        504
+           32768 |@                                        504
+           65536 |@@@@                                     2043
+          131072 |@@@@@@@@@@@@@@@@@@@@                     10921
+          262144 |@@@@@@@@@                                4795
+          524288 |@@@                                      1591
+         1048576 |@                                        550
+         2097152 |                                         204
+         4194304 |                                         90
+         8388608 |                                         250
+        16777216 |                                         19
+        33554432 |                                         5
+        67108864 |                                         4
+       134217728 |                                         1
+       268435456 |                                         1
+       536870912 |                                         0
+</pre>
+                            <p>
+                                Which is great, but I can't see if the distribution was changing over time - second by second. Imagine I ran this for 60 seconds, or 10 minutes; there could be gradual variation over time that I'm missing out on.
+                            </p>
+                            <p>
+                                I can (and have) modified the mysqld_pid_latency.d script to print the output every second, but the amount of text output becomes so much that it's difficult to comprehend properly in a text based terminal, where only one or two seconds worth fits on the screen at once.
+                            </p>
+                            <p>
+                                We are addressing this with <a href="http://dtrace.org/blogs/dap/2011/03/01/welcome-to-cloud-analytics/">Cloud Analytics</a> at Joyent, where we are taking these latency distributions and displaying them as <a href="http://dtrace.org/blogs/brendan/2011/01/24/cloud-analytics-first-video/">heat maps</a>. Here is an example of the MySQL query heat map I've been testing (development software, tested on production load):
+                            </p>
+                            <p>
+                                <a href="http://dtrace.org/blogs/brendan/files/2011/03/ca_mysql0_01.png"><img src="http://dtrace.org/blogs/brendan/files/2011/03/ca_mysql0_01.png" width="600" border="0"></a>
+                            </p>
+                            <p>
+                                Time is the x-axis, latency is the y-axis, and the number of queries (z-axis) is represented by color saturation. This heat map deserves a lot of explanation, which I'll get to in a later post. I've included it here to show that the query latency distribution can change second by second: the start of this heat map shows low latency, which rises and falls over time. This would be much less clear at the command line, as printing output second by second would be many dozens of pages to read through for the same information. Increasing the time interval so that there is fewer pages of output may hide important details - such as the multiple levels of latency that can be seen in this heat map.
+                            </p>
+                            <h2>
+                                Conclusion
+                            </h2>
+                            <p>
+                                I introduced some pid provider-based DTrace tools to get a quick handle on MySQL query performance, for when DTrace is available but the mysql provider is not. This is just the start - there's a lot more we can do.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dtrace.org/blogs/brendan/2011/03/14/mysql-query-latency-with-the-dtrace-pid-provider/">http://dtrace.org/blogs/brendan/2011/03/14/mysql-query-latency-with-the-dtrace-pid-provider/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

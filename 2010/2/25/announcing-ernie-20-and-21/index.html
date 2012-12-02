@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Announcing Ernie 2.0 and 2.1
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 25 Feb 2010 19:38:24 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-02-25T14:28:31-04:00">
+                    <meta itemprop="dateModified" content="2010-02-25T14:28:31-04:00"><time class="date" itemprop="datePublished" datetime="2010-02-25T18:28:31+00:00">Feb 25</time>
+                    <h2 itemprop="title">
+                        Announcing Ernie 2.0 and 2.1
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/0f8295b602728e80">
+                        <blockquote>
+                            <p>
+                                Over the past few months I've been working on a major new version of <a href="http://github.com/mojombo/ernie">Ernie</a>, the RPC server I wrote to power GitHub's sharded file server architecture. As a reminder, Ernie is an Erlang/Ruby hybrid <a href="http://bert-rpc.org">BERT-RPC</a> server (packaged as a Rubygem) that let's you expose Ruby modules as an RPC service. It spawns, manages, and load balances between a set of Ruby processes that allow access to the Git repositories.
+                            </p>
+                            <p>
+                                Over the past four months Ernie has proven to be extremely stable and reliable. Each of our five file servers is handling an average of 50 req/sec (4.3 million req/day), bursting up to 200 req/sec, and transferring over 11GB of data per day (just to the web frontend and jobs; this number does not reflect pushes/pulls/clones/etc.).
+                            </p>
+                            <p>
+                                Last week I released Ernie 2.0 and upgraded all of our file servers to use it. Last night I released and upgraded everything to 2.1. Here's a breakdown of what's new in Ernie 2.0/2.1 and how we're using these new features to give you an even better GitHub experience.
+                            </p>
+                            <h3>
+                                Native Modules
+                            </h3>
+                            <p>
+                                The biggest new feature in Ernie 2.0 is the ability to define handlers in pure Erlang (instead of just Ruby). These are known as native handlers. Native handlers execute within the Erlang server's VM and therefor do not have concurrency limits like the Ruby handlers. In addition, the roundtrip to an external process is eliminated, boosting overall performance for those functions. About half of the RPC calls that are issued to Ernie are very simple file existence checks. By implementing these actions in pure Erlang, we've reduced the amount of work being done by the Ruby processes and freed them up for other tasks, all of which means our maximum concurrency has increased significantly.
+                            </p>
+                            <h3>
+                                Language Agnosticism
+                            </h3>
+                            <p>
+                                Ernie no longer assumes that your handlers are written in Ruby. You can now use any language to implement your handlers as long as they speak the external handler protocol. Non-Erlang handlers are called external handlers. Currently only Ruby support is included in the distribution but I'll be adding other languages as the need arises or as contributions come in.
+                            </p>
+                            <h3>
+                                Shadowing
+                            </h3>
+                            <p>
+                                As time goes by, we will be converting more and more Ruby to Erlang to take advantage of the native handlers that Ernie 2.x supports. To make this task as simple as possible, Ernie supports a concept called shadowing. If you define an external handler and a native handler of the same name, Ernie will check the native handler for an exported function of the requested name and use it if it exists. If it does not, it will fall back to the external handler. This feature makes it incredibly simple to migrate functions one at a time to pure Erlang without having to change a single line of client code!
+                            </p>
+                            <h3>
+                                Predicate Shadowing
+                            </h3>
+                            <p>
+                                In addition to basic shadowing, you can choose whether to run the native or external version of a specific function based on the arguments. This is called predicate shadowing and is accomplished by returning a boolean from a complementary native function named <code>myfun_pred</code> where <code>myfun</code> is the name of your function. We use this to selectively implement parts of the proxied Grit in pure Erlang.
+                            </p>
+                            <h3>
+                                Connection Priority Queue
+                            </h3>
+                            <p>
+                                Requests can now be classified as either high or low priority. Ernie will immediately process any connections marked as high priority. Low priority connections will only be processed if there are no high priority connections pending. We will be using this feature to keep low priority jobs from saturating the file servers with requests that are not time critical, thereby keeping the servers responsive to website requests. While this specific treatment of the high/low queue is rather rudimentary, I plan to include more advanced strategies in a later release. This is really just the groundwork.
+                            </p>
+                            <h3>
+                                Access Logging
+                            </h3>
+                            <p>
+                                Ernie 2.1 introduces a proper access log to make it simple to track what your Ernies are up to. The log file contains the message type (access or error), the time of the initial connection, the number of seconds between connection and when the request is selected for processing, the number of seconds the request took to process, the lengths of the high and low priority queues, the type of handler (native or external), the priority of the request (high or low), and the first 150 bytes of the request.
+                            </p>
+                            <h3>
+                                The Future
+                            </h3>
+                            <p>
+                                BERT and BERT-RPC along with our Ruby and Erlang client/server implementations have made it possible for us to build a high performance, sharded file system architecture for a vanishingly small amount of money. We currently have five terabytes of active storage exposed via BERT-RPC and are adding a new file server pair every few months. In the long run, I intend to make Ernie the most robust and flexible RPC server available while preserving the simplicity of writing handler code in the language of your choice. <a href="http://github.com/mojombo/ernie">Keep an eye on the project</a>, there are plenty more improvements to come!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://github.com/blog/606-announcing-ernie-2-0-and-2-1">http://github.com/blog/606-announcing-ernie-2-0-and-2-1</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

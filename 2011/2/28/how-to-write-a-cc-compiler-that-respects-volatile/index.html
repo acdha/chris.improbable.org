@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How to Write a C/C++ Compiler That Respects Volatile
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 28 Feb 2011 22:22:23 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-28T17:22:23-04:00">
+                    <meta itemprop="dateModified" content="2011-02-28T17:22:23-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-28T21:22:23+00:00">Feb 28</time>
+                    <h2 itemprop="title">
+                        How to Write a C/C++ Compiler That Respects Volatile
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/25e37fcbc073f9d8">
+                        <blockquote>
+                            <p>
+                                The volatile type qualifier in C/C++ means roughly that accesses to the qualified object happen on the actual machine as they do in the abstract machine. I’ve <a href="http://blog.regehr.org/archives/28">written about volatile pretty extensively</a>, so won’t repeat myself.
+                            </p>
+                            <p>
+                                An interesting problem with volatile is that in practice, compilers fail to respect it: they add, remove, and reorder accesses in ways that break the rules. This happens because the rules for translating accesses to volatile-qualified objects are very different from the rules for accessing regular C variables: the compiler has nearly complete freedom to add, remove, and reorder non-volatile variable accesses so long as this doesn’t change the program’s externally observable behavior. Thus, many optimization passes require special cases like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+<strong>if (!var-&gt;is_volatile()) transform_code();</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                The problem is that every optimization developer must add these extra safety checks every time — any omission is likely to break the properties that volatile is intended to preserve.
+                            </p>
+                            <p>
+                                A few years ago <a href="http://www.cs.utah.edu/~regehr/papers/emsoft08-preprint.pdf">Eric Eide and I observed</a> that the rules for accessing volatile objects are very similar to the rules for manipulating function calls. In other words, when the compiler lacks any special knowledge about a called function, it must not add, remove, or reorder function calls. This lead to the idea that if compiler writers would simply model volatile accesses as function calls, all of those special cases in the optimization passes would go away. We tested this idea by writing a source-to-source transformer for C code that turned accesses to volatiles into calls to automatically generated helper functions. In other words, if x is defined as “volatile int x;” then this code:
+                            </p>
+                            <blockquote>
+                                <pre>
+<strong>y=x;</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                becomes:
+                            </p>
+                            <blockquote>
+                                <pre>
+<strong>y=__volatile_read_int(&amp;x);</strong>
+</pre>
+                            </blockquote>
+                            <p>
+                                Our idea mostly worked. What I mean is that many, but not all, problems in miscompilation of accesses to volatiles went away after transforming programs. Our hypothesis was that when wrapper functions didn’t work, it was always because the compiler was performing a regular miscompilation (i.e., generating the wrong code in a way that has nothing to do with volatile). But we couldn’t back this up since we lacked a correct compiler and we also didn’t have time to manually inspect thousands of failed test cases.
+                            </p>
+                            <p>
+                                So far this is all old news, but there has been a very nice new development in volatile-land. As of recently, <a href="http://compcert.inria.fr/">CompCert</a> implements a proved volatile semantics like this:
+                            </p>
+                            <ol>
+                                <li>Accesses to volatile-qualified objects are turned into function calls in the frontend.
+                                </li>
+                                <li>The target-independent optimization passes totally ignore these function calls.
+                                </li>
+                                <li>In the backend, the function calls are turned into inline code that performs the accesses.
+                                </li>
+                            </ol>
+                            <p>
+                                This is basically the strategy that Eric and I came up with, but with a nice improvement: much of the overhead associated with actual function calls is avoided due to the late inline substitution. The overhead of function calls — particularly in terms of code size — would be significant for small embedded applications that consist mainly of accesses to device registers. Some overhead will likely remain due to the calling convention and because CompCert must pessimistically assume that a helper function has updated any global variables that happen to be cached in registers. Hopefully the CompCert folks will quantify the overheads of various alternatives in a paper sometime.
+                            </p>
+                            <p>
+                                We looked for volatile bugs in CompCert and found a few: they were in, for example, the unproved frontend code that expands C-level struct assignments into Clight. After Xavier fixed these bugs (I think there were two of this ilk) we can no longer find volatile bugs in CompCert. Now we finally come to the point of this post:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Out of the dozen-odd compilers we have tested, there is only one — CompCert — that reliably respects C’s volatile qualifier.
+                                </p>
+                            </blockquote>
+                            <p>
+                                This is an impressive result.
+                            </p>
+                            <p>
+                                <strong>Update from March 1 2011:</strong>
+                            </p>
+                            <p>
+                                My description of CompCert is a bit out of date. Xavier Leroy explains:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    One little correction, though: the handling of volatiles you describe is that of CompCert 1.7.
+                                </p>
+                                <p>
+                                    In the latest release CompCert 1.8, I improved the generated code by, in essence, inlining the _volatile_read and _volatile_write functions after optimizations are done, but before register allocation. (In reality, it’s done a bit differently, through a notion of “inlinable builtin functions” of which the volatile operations is an instance.)
+                                </p>
+                                <p>
+                                    This way, the generated code isn’t constrained by the calling conventions: the compiler knows that the caller-save registers are not destroyed by the _volatile_* functions, and that these “functions” can take their arguments in any register, not just those dictated by the calling conventions.
+                                </p>
+                            </blockquote>
+                            <p>
+                                This sounds like exactly the right solution: not only does it give us correct code and optimization passes that are free of volatile-related clutter, but the performance and size of the generated code should be very good.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.regehr.org/archives/478">http://blog.regehr.org/archives/478</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Minor leak, major headache
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 22 Oct 2010 01:35:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-10-21T19:28:00-04:00">
+                    <meta itemprop="dateModified" content="2010-10-21T19:28:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-10-21T23:28:00+00:00">Oct 21</time>
+                    <h2 itemprop="title">
+                        Minor leak, major headache
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/6aab2f0ed730d2cf">
+                        <blockquote>
+                            I find this bug interesting, because at first it looks like a relatively minor cross-origin leak. But with a bit of investigation, it has major consequence.<br>
+                            <br>
+                            The bug is specific to Internet Explorer, and still seems unfixed (in stable versions) at the time of writing. I told Microsoft about it back in 2008. Therefore this disclosure is <b>not an 0-day</b>, but more like a 600-day.<br>
+                            <br>
+                            The bug is pretty simple: IE supports a <code>window.onerror</code> callback which fires whenever a Javascript parse or runtime error occurs. Trouble is, it fires even if <code>www.evil.com</code> registers its own <code>window.onerror</code> handler and then uses <code>&lt;script src="http://www.bank.com/"&gt;</code>. We'll demonstrate the consequence of this later.<br>
+                            <br>
+                            The bug has a very interesting history, which is worth briefly outlining here:<br>
+                            <ul>
+                                <li>2006: Possible original discovery of theft of sensitive data aspect, credit <b>Filipe Almeida</b>.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>Dec 2006: Jeremiah Grossman demonstrates login determination by profiling cross-origin error messages: <a href="http://jeremiahgrossman.blogspot.com/2006/12/i-know-if-youre-logged-in-anywhere.html">http://jeremiahgrossman.blogspot.com/2006/12/i-know-if-youre-logged-in-anywhere.html</a>.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>Unknown, 2007?: Firefox fixes the issue.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>Dec 2008: I discover that a redirect bypasses the Firefox protection: <a href="http://scarybeastsecurity.blogspot.com/2008/12/firefox-cross-domain-text-theft.html">http://scarybeastsecurity.blogspot.com/2008/12/firefox-cross-domain-text-theft.html</a>. It is fixed pretty quickly.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>Dec 2008: <b>Michal Zalewski</b> notes that my Firefox demo works verbatim in IE. Microsoft informed.
+                                </li>
+                                <li style="list-style: none">
+                                    <br>
+                                </li>
+                                <li>Oct 2010: full disclosure of Internet Explorer variant.
+                                </li>
+                            </ul>So why is this a serious bug? Well, Javascript error messages are usually pretty terse but in at least one case, cross-origin content is echoed back to the attacker: variable names. e.g. <code>'blah' is not defined</code>.<br>
+                            <br>
+                            So if the cross-origin text looks like a Javascript variable reference, then the attacker has a very useful leak!<br>
+                            <br>
+                            Here is a proof-of-concept against Google Reader, which works by stealing cross-origin content which happens to be an anti-XSRF token:<br>
+                            <br>
+                            <a href="http://scary.beasts.org/misc/reader.html">http://scary.beasts.org/misc/reader.html</a><br>
+                            <br>
+                            As it happens, the Reader product deployed a change which detects the vulnerable User-Agent string (Internet Explorer) and uses a workaround. So the PoC is neutered. This is a shame because the PoC used to force your friend to subscribe to a goat-farming feed against their will. For now, you'll have to locate an alternate attack vector for this vulnerability -- do let me know what you find via a comment.<br>
+                            <br>
+                            It's worth closing with some notes that this area is ripe for further research. There are a varied number of text structures which can be stolen (iteratively if necessary) with this trick:<br>
+                            <ul>
+                                <li>a,b,c -- i.e. the CSV syntax
+                                </li>
+                                <li>The b in a:b
+                                </li>
+                                <li>a.b.c
+                                </li>
+                                <li>The b in {a:b}
+                                </li>
+                                <li>Expression constructs such as a/b/c
+                                </li>
+                                <li>Constructs like the above, if wrapped in () or [] etc.
+                                </li>
+                            </ul>To experiment with what Javscript error message you might see with a given piece of cross-origin text, you can use:<br>
+                            <br>
+                            <a href="http://scary.beasts.org/misc/onerr.html">http://scary.beasts.org/misc/onerr.html</a><br>
+                            <br>
+                            (Only works in browsers with window.onerror, such as IE).<br>
+                            <br>
+                            Please leave a comment if you have more constructs which can be stolen; or more examples of sites where stuff can be stolen from.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3024470480937744884-7071783210108235740?l=scarybeastsecurity.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://scarybeastsecurity.blogspot.com/2010/10/minor-leak-major-headache.html">http://scarybeastsecurity.blogspot.com/2010/10/minor-leak-major-headache.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

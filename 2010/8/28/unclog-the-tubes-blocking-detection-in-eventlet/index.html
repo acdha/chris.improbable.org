@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Unclog the tubes; blocking detection in Eventlet
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 28 Aug 2010 22:12:07 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-28T18:12:07-04:00">
+                    <meta itemprop="dateModified" content="2010-08-28T18:12:07-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-28T22:12:07+00:00">Aug 28</time>
+                    <h2 itemprop="title">
+                        Unclog the tubes; blocking detection in Eventlet
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/9c612203ed75a15f">
+                        <blockquote>
+                            <p>
+                                Colleagues of mine are all very familiar with my admiration of <a href="http://eventlet.net">Eventlet</a>, a Python concurrency library, built on top of <a href="http://pypi.python.org/pypi/greenlet">greenlet</a>, that provides lightweight "greenthreads" that naturally yield around I/O points. For me, the biggest draw of Eventlet besides its maturity, is how well it integrates with standard Python code. Any code that uses the built-in <code>socket</code> module can be "monkey-patched" (i.e. modified at runtime) to use the "green" version of the socket module which allows Eventlet to turn regular ol' Python into code with asynchronous I/O.
+                            </p>
+                            <p>
+                                The problem with using libraries like Eventlet, is that some Python code just <strong>blocks</strong>, meaning that code will hit an I/O point and <em>not</em> yield but instead block the entire process until that network operation completes.
+                            </p>
+                            <p>
+                                In practical terms, imagine you have a web crawler that uses 10 "green threads", each crawling a different site. The first greenthread (GT1) will send an HTTP request to the first site, then it will yield to GT2 and so on. If each HTTP request blocks for 100ms, that means when crawling the 10 sites, you're going to block the whole process, preventing anything from running, for a whole second. Doesn't sound too terrible, but imagine you've got 1000 greenthreads, instead of everything smoothly yielding from one thread to another the process will lock up very often resulting in painful slowdowns.
+                            </p>
+                            <p>
+                                Starting with Eventlet 0.9.10 "blocking detection" code has been incorporated into Eventlet to make it far easier for developers to find these portions of code that can block the entire process.
+                            </p>
+                            <div>
+                                <ol>
+                                    <li style="font-family:monospace;font-weight:normal">
+                                        <div style="font-family:monospace;font-weight:normal;font-style:normal">
+                                            <span style="color:#ff7700;font-weight:bold">import</span> eventlet.<span style="color:black">debug</span>
+                                        </div>
+                                    </li>
+                                    <li style="font-family:monospace;font-weight:normal">
+                                        <div style="font-family:monospace;font-weight:normal;font-style:normal">
+                                            eventlet.<span style="color:black">debug</span>.<span style="color:black">hub_blocking_detection</span><span style="color:black">(</span><span style="color:#008000">True</span><span style="color:black">)</span>
+                                        </div>
+                                    </li>
+                                </ol>
+                            </div>
+                            <p>
+                                While using the blocking detection is fairly simple, its implementation is a bit "magical" in that it's not entirely obvious how it works. The detector is built around signals, inside of Eventlet a signal handler is set up prior to firing some code and then after said code has executed, if a certain time-threshhold has passed, an alarm is raised dumping a stack trace to the console. I'm not entirely convinced I'm explaining this appropriately so here's some pseudo-code:
+                            </p>
+                            <div>
+                                <ol>
+                                    <li style="font-family:monospace;font-weight:normal">
+                                        <div style="font-family:monospace;font-weight:normal;font-style:normal">
+                                            <span style="color:#ff7700;font-weight:bold">def</span> runloop<span style="color:black">(</span><span style="color:black">)</span>:
+                                        </div>
+                                    </li>
+                                    <li style="font-family:monospace;font-weight:normal">
+                                        <div style="font-family:monospace;font-weight:normal;font-style:normal">
+                                            <span style="color:#ff7700;font-weight:bold">while</span> <span style="color:#008000">True</span>:
+                                        </div>
+                                    </li>
+                                    <li style="font-family:monospace;font-weight:normal">
+                                        <div style="font-family:monospace;font-weight:normal;font-style:normal">
+                                            <span style="color:#dc143c">signal</span>.<span style="color:black">alarm</span><span style="color:black">(</span>handler, <span style="color:#ff4500">1</span><span style="color:black">)</span>
+                                        </div>
+                                    </li>
+                                    <li style="font-family:monospace;font-weight:normal">
+                                        <div style="font-family:monospace;font-weight:normal;font-style:normal">
+                                            execute_next_block<span style="color:black">(</span><span style="color:black">)</span>
+                                        </div>
+                                    </li>
+                                    <li style="font-family:monospace;font-weight:normal">
+                                        <div style="font-family:monospace;font-weight:normal;font-style:normal">
+                                            <span style="color:#ff7700;font-weight:bold">if</span> <span style="color:black">(</span><span style="color:#dc143c">time</span>.<span style="color:#dc143c">time</span><span style="color:black">(</span><span style="color:black">)</span> - start<span style="color:black">)</span> <span style="color:#66cc66">&lt;</span> resolution:
+                                        </div>
+                                    </li>
+                                    <li style="font-family:monospace;font-weight:normal">
+                                        <div style="font-family:monospace;font-weight:normal;font-style:normal">
+                                            clear_signal<span style="color:black">(</span><span style="color:black">)</span> <span style="color:#808080;font-style:italic"># Clear the signal if we're less than a second, otherwise it will alarm</span>
+                                        </div>
+                                    </li>
+                                </ol>
+                            </div>
+                            <p>
+                                The blocking detection is a bit crude and can raise false positives if you have bits of code that churn the CPU for longer than a second but it has been instrumental in incorporating <strong>non-blocking DNS</strong> support into Eventlet, which was also introduced in 0.9.10 (ported over from Slide's <a href="http://github.com/slideinc/gogreen">gogreen</a> package).
+                            </p>
+                            <p>
+                                If you are using Eventlet, I highly recommend running your code periodically with blocking detection enabled, it is an invaluable tool for determining whether you're running as fast and as asynchronous as possible. In my case, it has been the difference between web services that are fast in development but slow under heavy stress, and web services that are fast <strong>always</strong> regardless of load.
+                            </p><img src="http://feeds.feedburner.com/~r/UnethicalBlogger/~4/BSUjjujBOAc" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://unethicalblogger.com/posts/2010/08/unclog_tubes_blocking_detection_eventlet/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+UnethicalBlogger+%28unethical+blogger%29">http://unethicalblogger.com/posts/2010/08/unclog_tubes_blocking_detection_eventlet/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+UnethicalBlogger+%28unethical+blogger%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Feature: Compromising Twitter's OAuth security system
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 02 Sep 2010 15:25:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-09-02T11:25:00-04:00">
+                    <meta itemprop="dateModified" content="2010-09-02T11:25:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-09-02T15:25:00+00:00">Sep 02</time>
+                    <h2 itemprop="title">
+                        Feature: Compromising Twitter's OAuth security system
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/b18cc696c80804ff">
+                        <blockquote>
+                            <a href="http://arstechnica.com/security/guides/2010/09/twitter-a-case-study-on-how-to-do-oauth-wrong.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss"><img vspace="4" hspace="4" border="0" align="right" width="230" height="129" src="http://static.arstechnica.net/assets/2010/09/feat-oauth-list-thumb-230x130-16131-f.jpg"></a>
+                            <p>
+                                Twitter officially disabled Basic authentication this week, the final step in the company's transition to mandatory OAuth authentication. Sadly, Twitter's extremely poor implementation of the OAuth standard offers a textbook example of how to do it wrong. This article will explore some of the problems with Twitter's OAuth implementation and some potential pitfalls inherent to the standard. I will also show you how I managed to compromise the secret OAuth key in Twitter's very own official client application for Android.
+                            </p>
+                            <p>
+                                OAuth is an emerging authentication standard that is being adopted by a growing number of social networking services. It defines a key exchange mechanism that allows users to grant a third-party application access to their account without having to provide that application with their credentials. It also allows users to selectively revoke an application's access to their account.
+                            </p>
+                            <p>
+                                Some of the more technical aspects of this article will be easier to understand if you have a basic familiarity with the standard and the problems that it is trying to solve. We published a <a href="http://arstechnica.com/open-source/guides/2010/01/oauth-and-oauth-wrap-defeating-the-password-anti-pattern.ars">primer</a> earlier this year that you can refer to if you are looking for additional background information.
+                            </p>
+                            <p>
+                                The OAuth standard has many significant weaknesses and limitations. A number of major Web companies are collaborating through the IETF to devise an update that will fix some of the problems, but it's still largely a work in progress. The current version of the standard—OAuth 1.0a—is an inelegant hack that lacks maturity and fails to provide clear guidance on many critical issues that are essential to building a robust authentication system.
+                            </p>
+                            <p>
+                                Website operators who adopt the current version of the standard have to tread carefully and concoct their own solutions to fill in the gaps in the specification. As a result, there is not much consistency between implementations. Facebook, Twitter, and Google all have different variants of the standard that have to be handled differently by third-party applications. Twitter's approach is, by far, the worst.
+                            </p>
+                            <h3>
+                                Not so secret consumer key
+                            </h3>
+                            <div style="float:right">
+                                <img src="http://static.arstechnica.com/usb_keys_ars.jpg">
+                            </div>
+                            <p>
+                                Applications that communicate with OAuth-enabled services can use a set of keys—called the consumer key and consumer secret—to uniquely identify themselves to the service. This allows the OAuth-enabled service to tell the user what third-party application is gaining access to their account during the authorization process. This works relatively well for server-to-server authentication, but there is obviously no way for a desktop or mobile application that is distributed to end users to guarantee the secrecy of its consumer secret key.
+                            </p>
+                            <p>
+                                If the key is embedded in the application itself, it's possible for an unauthorized third party to extract it through disassembly or other similar means. It will then be possible for the unauthorized third party to build software that masquerades as the compromised application when it accesses the service.
+                            </p>
+                            <p>
+                                It's not quite as bad as it sounds, but the problem is how Twitter is using the key. It's very important to understand that a compromised consumer secret key doesn't jeopardize the security of the users of the application. The key can't be used to gain access to the accounts of other users, because accessing an individual account requires an access token that individual instances of the client application obtain automatically on behalf of the user during the authorization process.
+                            </p>
+                            <p>
+                                The function of the consumer secret is really just to let the remote OAuth-enabled Web service know who is making the request—kind of like a user agent string. In the context of a desktop or mobile client application, it's basically superfluous and shouldn't be trusted in any capacity.
+                            </p>
+                            <p>
+                                Against all reason, Twitter requires every single application—including desktop and mobile software—to supply a consumer key and a consumer secret. To make matters worse, Twitter intends to systematically invalidate compromised keys. This means that when somebody extracts the key from a popular desktop Twitter client and publishes it on the Internet, Twitter will revoke access to the service for that client application. All of the users who rely on the compromised program will be locked out and will have to use other client software or the Twitter website in order to access the service.
+                            </p>
+                            <p>
+                                To restore access after a key is exposed and invalidated, the developer of the compromised application will have to register a new key, embed the key in a new version of the program, deploy the new version to end users, and get the users to go through the authorization process again. This is going to be especially challenging for developers who rely on distribution channels like the iPhone application store, which have a lengthy review process. They could find themselves in a situation where their users are locked out for weeks when a key is compromised.
+                            </p>
+                            <p>
+                                When this happens, the users will simply get authentication errors and will have no way of knowing the cause. They will likely switch to a different client application rather than waiting for the developer of their preferred client software to issue an update with a new key. It's obvious that this could be enormously problematic for client application developers—the risk alone could potentially deter developers from wanting to write software that works with Twitter.
+                            </p>
+                            <p>
+                                When some concerned third-party developers brought this issue to Twitter's attention, the company refused to change course and <a href="http://groups.google.com/group/twitter-development-talk/msg/965d471cb39fac6d">responded</a> by saying that they expect developers to take a "best-effort security" approach to protecting the integrity of their keys. Twitter acknowledges that it will always be possible for a determined attacker to extract the consumer secret from a desktop or mobile client application, but the company believes that such attacks will largely be deterred if developers take basic steps to obscure and obfuscate their keys in their source code.
+                            </p>
+                            <p>
+                                The issue here is that Twitter wants to use the keys as an abuse control mechanism to centrally disconnect spammers and other unwanted users of the service, but OAuth was simply not designed to be used for that purpose. The idea is that centrally disabling a spammer's consumer secret key will lock out all of the spammer's user accounts, theoretically simplifying spam control for Twitter. It's unlikely that this naive strategy will work in practice, however.
+                            </p>
+                            <p>
+                                Any spammer with a hex editor can trivially compromise the keys of popular applications and use those keys to evade Twitter's abuse controls. By using the consumer key and consumer secret key from a popular third-party Twitter application, a spammer can make it harder for Twitter to lock out all of his spam accounts at once without also locking out a large number of legitimate users of the compromised application. Even if individual spammers aren't sophisticated enough to know how to extract the keys, they can easily buy consumer secret keys from people who know how to get them out of mainstream Twitter clients.
+                            </p>
+                            <p>
+                                There are a lot of other scenarios where "best-effort security" and a little bit of obfuscation aren't going to be a sufficient deterrent. For example, the developer of a popular commercial third-party Twitter client might compromise and anonymously publish the consumer secret key of a competing application so that they can get it temporarily disabled. In addition to those kinds of obvious business incentives, mischief makers might compromise keys just for the lulz.
+                            </p>
+                            <p>
+                                I repeatedly attempted to make Twitter aware of the problems with its OAuth implementation, but the company largely ignored my concerns. When I opened a support ticket, it was promptly closed and I was directed back to the developer mailing list, where I received no response from Twitter after writing several posts outlining my concerns. My attempts at responsible disclosure were unsuccessful.
+                            </p>
+                            <h3>
+                                Compromising Twitter's client for Android
+                            </h3>
+                            <div style="float:right">
+                                <img src="http://static.arstechnica.com/09-01-2010/twit_droid.png">
+                            </div>
+                            <p>
+                                In order to evaluate the viability of Twitter's "best-effort security" strategy, I decided to see how difficult it would be to obtain the OAuth consumer secret key from Twitter's own official client application for Android. As I expected, it was trivially easy. I used the Astro application on Android to back up the Twitter application to an SD card and then copied it from the SD card to my computer.
+                            </p>
+                            <p>
+                                The next step was to extract the contents of the Twitter APK package and attempt to figure out which one contained the relevant value. After briefly poking around the contents of the package, I settled on the <code>classes.dex</code> file as the most likely place. I used the <code>strings</code> command at the command line to extract all of the contiguous textual strings from the binary dex file. I used the <code>grep</code> command to filter the output and identify strings of sufficient length. After glancing over the list of potential candidates that I had extracted from the dex file, I was quickly able to find the OAuth consumer key and consumer secret:
+                            </p>
+                            <pre>
+Consumer key: 3nVuSoBZnx6U4vXXXXXX
+Consumer secret: Bcs59EFbbsdF6Sl9Ng71smgStWEGwXXKSjYvPXXXXXX
+</pre>
+                            <p>
+                                These keys are particularly significant because Twitter has configured them to enable access to <a href="http://dev.twitter.com/pages/xauth">special APIs</a> which aren't generally available yet that can be used to exchange login credentials for an access token—an OAuth flow that is intended for mobile applications but could also be used to bulk-authenticate accounts. As a courtesy to Twitter, I have replaced the last six characters of each key with the letter X so that spammers can't simply copy and paste it out of this article. My decision to not disclose the entire keys is not going to help Twitter much, however, because practically anybody with basic knowledge of command line tools, Android development, and OAuth will be able to access the keys handily. If this is the extent of Twitter's "best-effort" security, we should all be appalled.
+                            </p>
+                            <p>
+                                After I obtained the keys, I was able to put them in my own client application and use them to authenticate my user account and post a message. The keys come from version 1.0.3 of the official Twitter client for Android, which was published in the Android Market this week. It's very likely that the administrators at Twitter will respond to this article by invalidating the key that I've partially published above and issuing an updated version of the program with a new key. One can only hope that they will at least try to take steps to obscure the key better next time.
+                            </p>
+                            <h3>
+                                Referring to the standard
+                            </h3>
+                            <p>
+                                Twitter's approach to OAuth is obviously misguided, but it gets even crazier when you compare the company's implementation against the actual standard. The OAuth specification itself describes the secret key security issue and says explicitly that implementors should not do what Twitter is trying to do:
+                            </p>
+                            <p>
+                                "In many applications, the Consumer application will be under the control of potentially untrusted parties. For example, if the Consumer is a freely available desktop application, an attacker may be able to download a copy for analysis. In such cases, attackers will be able to recover the Consumer Secret used to authenticate the Consumer to the Service Provider. Accordingly, Service Providers should not use the Consumer Secret alone to verify the identity of the Consumer."
+                            </p>
+                            <p>
+                                Part of the problem is that the specification doesn't provide much guidance about what implementors should do instead, which has forced them to improvise. Facebook and Google Buzz have both come up with reasonable solutions and offer desktop-appropriate OAuth authentication flows that do not require a secret key or require the end user to go through a complicated copy/paste process.
+                            </p>
+                            <p>
+                                Google's relatively pragmatic solution is to allow client applications to supply a bogus placeholder instead of the actual consumer secret key. In every API call where a consumer key and consumer secret are required, the developer simply uses the text string "anonymous" as a stand-in. Google Buzz supports an <code>xoauth_displayname</code> parameter that the application can optionally supply to identify itself, but this is used solely to advertise the program in the user's messages.
+                            </p>
+                            <p>
+                                Facebook, which has a clean OAuth implementation based on the OAuth 2.0 specification draft, goes a step further than Google and simply allows desktop applications to omit the consumer secret entirely. Getting an application up and running on Facebook tends to be much easier than on many other OAuth-enabled services.
+                            </p>
+                            <p>
+                                As Google and Facebook have demonstrated, there are obviously reasonable solutions to the key secrecy issue. Twitter continues to stubbornly ignore those solutions despite the serious problems with its own approach.
+                            </p>
+                            <h3>
+                                Twitter's OAuth implementation and open source clients
+                            </h3>
+                            <p>
+                                Requiring third-party developers to embed a consumer secret key in the source code of their Twitter client applications potentially puts free and open source (FOSS) client software at greater risk of key exposure than closed-source client software. The key would be visible as plain text in the source code, where anybody could find it and use it for their own purposes. Indeed, one can already easily find dozens of OAuth consumer secret keys by using Google's code search engine.
+                            </p>
+                            <p>
+                                Twitter felt that allowing FOSS Twitter clients to use OAuth posed an unacceptable risk. The company warned that it would invalidate any OAuth keys that it found published in the source code of FOSS client applications. This was deeply troubling to the developers who maintain such software, including me. I am the developer behind Gwibber, a GPL-licensed microblogging client that is used in Ubuntu and other Linux distributions.
+                            </p>
+                            <p>
+                                Twitter initially said that the only real solution for FOSS Twitter client developers is to have each individual end user register their own application key to copy and paste into the program. The process of registering Twitter application keys is somewhat unintuitive because it is intended for application developers. It's simply not reasonable to expect regular end users to walk through those steps. Several prominent FOSS Twitter developers objected to Twitter's position on this issue, including <a href="http://arstechnica.com/open-source/news/2010/07/overbite-project-brings-gopher-protocol-to-android.ars">TTYter developer Cameron Kaiser</a> and <a href="http://arstechnica.com/open-source/news/2009/06/spazzing-out-with-webos-app-developer-ed-finkler.ars">Spaz developer Ed Finkler</a>.
+                            </p>
+                            <p>
+                                In response to the concerns raised by the FOSS community, Twitter committed to implementing an alternate OAuth authentication mechanism specifically for FOSS applications. The alternate authentication flow would allow users to register a sub-key that they could paste into the application. It would still involve an extra copy-and-paste step, but it would offer a simpler user interface than the standard key registration system.
+                            </p>
+                            <p>
+                                It was really a bad idea, one that only became necessary in the first place because of Twitter's misguided requirement that desktop applications use secret keys. Despite promising to have it ready for FOSS client applications, Twitter still has not completed this system. It made it available experimentally to a small handful of developers, but it's not production-ready or intended for widespread use.
+                            </p>
+                            <p>
+                                By turning off Basic authentication without offering a suitable alternative for FOSS clients, Twitter effectively made it impossible for FOSS client applications to continue functioning normally. This is especially troubling for Linux users, because Adobe AIR (which is used by virtually all cross-platform closed-source Twitter clients) does not always work well on the Linux platform.
+                            </p>
+                            <p>
+                                Linux users aren't the only ones negatively affected, however. Twitter clients that are developed as browser add-ons are written in JavaScript and are necessarily distributed with their source code available as plain text. This includes some extremely popular Twitter clients, such as ChromedBird.
+                            </p>
+                            <p>
+                                Most FOSS client developers have simply chosen to embed their keys in their source code with the hope that Twitter won't notice. I was about to give up on Gwibber, but Canonical intervened on my behalf (special thanks to Ken VanDine) and negotiated a compromise with Twitter that will allow Gwibber to continue using the service.
+                            </p>
+                            <p>
+                                Despite <a href="http://twitter.com/about/opensource">claiming to love open source</a> and using an awful lot of it on the backend, Twitter doesn't seem to care very much at all about FOSS Twitter clients or their users and developers. Finkler <a href="http://twitter.com/funkatron/status/22769692980">expressed frustration</a> yesterday about the ongoing absence of the FOSS OAuth system that Twitter had promised.
+                            </p>
+                            <p>
+                                It's unclear when or if Twitter will change its OAuth implementation to make it less hostile to FOSS clients. If Twitter does the right thing and eliminates the requirement for desktop applications to use secret keys, it would effectively resolve the problem for FOSS clients.
+                            </p>
+                            <h3>
+                                Bugs and other technical problems
+                            </h3>
+                            <div style="float:right">
+                                <img src="http://static.arstechnica.com/2010/09/02/cockroach_invasion_ars.jpg">
+                            </div>
+                            <p>
+                                Aside from handling the consumer secret issue&nbsp;poorly, Twitter's OAuth implementation has a number of bugs, defects, and inconsistencies that pose challenges for users and developers.
+                            </p>
+                            <p>
+                                Third-party developers are finding that it is maddeningly difficult to debug client-side support for Twitter's OAuth implementation because Twitter tends to spit out very generic 401 errors for practically every kind of authentication failure. It doesn't provide enough specific feedback to make it possible for the developer to easily troubleshoot or isolate the cause when authentication is unsuccessful.
+                            </p>
+                            <p>
+                                This is especially frustrating in situations where authentication is failing because of a bug or defect in Twitter's implementation. For example, authentication will sometimes fail if the system clock on the end user's computer is running slightly fast. This issue has to do with the timestamp that is embedded in the requests, but it's not entirely obvious what causes it to occur.
+                            </p>
+                            <p>
+                                On the matter of timestamps, the specification itself only says that each API request must have a higher timestamp value than the previous request—a requirement that could obviously wreak havoc if the user ever changed their system clock while using the software, but wouldn't necessarily cause the clock-skew authentication failure that is commonly experienced. Developers can't see exactly how this stuff works on Twitter's side, and it's not adequately documented, so they are left to guess.
+                            </p>
+                            <p>
+                                Another similar problem is that Twitter's authentication servers will report an authentication failure in cases where the service is simply overburdened and doesn't have sufficient capacity to address the request. Twitter has <a href="http://code.google.com/p/twitter-api/issues/detail?id=1705&amp;q=oauth&amp;colspec=ID%20Stars%20Type%20Status%20Priority%20Summary%20Opened%20Modified%20Component">acknowledged this problem</a> and wants to find a solution, but isn't sure how to fix it and don't know when a fix will be made available.
+                            </p>
+                            <h3>
+                                Authorization issues
+                            </h3>
+                            <p>
+                                So far, this article has largely focused on the technical deficiencies of Twitter's own OAuth implementation. For the rest of the article, we will be looking primarily at broader OAuth issues that also affect many other implementations. We will still be discussing OAuth in the context of Twitter, but it's important to keep in mind that the following issues are widespread and aren't necessarily specific to Twitter's implementation.
+                            </p>
+                            <p>
+                                The manner in which OAuth relies on page redirection to facilitate the authentication process poses some unusual challenges that are difficult to address. One issue that has been raised is that the user remains logged in on Twitter (and might not even realize it) when he or she goes through the legitimate redirect-based authorization process that is initiated by a third-party website. This could be a problem if the user is using a computer at a public location, such as a school computer lab.
+                            </p>
+                            <p>
+                                Say, for example, that a user logs into an online game and then authorizes that game to access their Twitter account. When they are done playing, they will likely log out of the game so that the next person to use the computer won't mess with their game account, but they might not realize that they need to log out of Twitter too due to their use of the OAuth authentication process that they performed during the session.
+                            </p>
+                            <p>
+                                It's not clear exactly what the right behavior should be, but it's arguable that Twitter should log the user out after handing authentication to the third-party service in cases where the user wasn't already logged into Twitter before initiating the authentication request.
+                            </p>
+                            <p>
+                                Another somewhat related issue is that the "Deny" button on the authorization page is really just a cancel button. If you are prompted to authorize an application that you have already authorized and you click the Deny button, Twitter will not revoke the application's existing authorization to access your account. Again, this is a situation where it's not really obvious what behavior the user should expect.
+                            </p>
+                            <p>
+                                The word "Deny" has a very specific meaning that is somewhat misleading in the way that it is used on the page. I think that implementors should either change the denial button to use the word "Cancel" or make it revoke existing access in cases where it exists. Perhaps the user should be prompted. As previously stated, this is not a Twitter-specific issue—the same problem exists on Google's authorization page, too.
+                            </p>
+                            <h3>
+                                Phishing risks
+                            </h3>
+                            <div style="float:right">
+                                <img src="http://static.arstechnica.com/09-01-2010/phishing_key_ars.jpg">
+                            </div>
+                            <p>
+                                Twitter doesn't have any kind of vetting process or validation procedure to ensure that consumer key registrants are who they claim to be. For example, there is absolutely nothing to stop me from registering a Twitter OAuth application key claiming that my company is Apple and my product is Mac OS X. When a malicious person registers a key that pretends to be a legitimate product, the company that makes that product has to go through a lengthy arbitration process with Twitter's administrators and demonstrate that they own the trademark in order to get the falsely registered key invalidated.
+                            </p>
+                            <p>
+                                This problem is not unique to Twitter, but Twitter exacerbates the risk of phishing by failing to use appropriate language on its authentication page. When Twitter presents users with the option of granting access to an application, it warns the user to only allow the authorization to proceed if they trust the party requesting access, but they don't warn the user that the initiator of the request and recipient of account access could, in fact, be somebody other than the entity stated on the authorization page.
+                            </p>
+                            <p>
+                                Arguably, Twitter will be able to partially mitigate the risks of such attacks by finding and invalidating fraudulently registered keys. One of the advantages of OAuth is that the malicious application will have its access to user accounts revoked when the key is invalidated. A more serious problem is when phishing attacks are perpetrated with a compromised key that came from a legitimate third-party application.
+                            </p>
+                            <p>
+                                OAuth supports a callback parameter that allows the party initiating the authorization request to specify where the user's access token (the token used to access a user's account) should be sent when the authorization process is completed. A malicious individual with a compromised consumer key could request authorization in a manner that appears to be on behalf of a legitimate application, but could have the key sent to their own server so that they can control the user's account.
+                            </p>
+                            <p>
+                                The user would see a normal Twitter authorization page on the official Twitter website with the name of a legitimate and safe application, but they would unknowingly be granting access to the malicious third-party that initiated the authorization request. This is especially dangerous because all of the things that users have been trained to look for to spot phishing—like the URL and the SSL certificate—will appear exactly as they should, giving the user a false sense of security.
+                            </p>
+                            <p>
+                                Twitter has taken some reasonable steps to limit the risk of such an attack. Specifically, Twitter has blocked keys that are registered for the desktop from using the callback parameter. Any consumer key that is registered on Twitter for a desktop application key will only be able to use the so-called out-of-band (OOB) authorization method, which doesn't rely on redirection. This is one of the few things about Twitter's approach to OAuth that actually makes good sense. Unfortunately, it doesn't protect against such a phishing attack in circumstances where a key that has redirection enabled is compromised.
+                            </p>
+                            <p>
+                                The consumer secret key for a Web application is stored on the servers of the company that operates the application, so it is unlikely to be compromised. The problem is that there are a lot of mobile applications that rely on the redirection method and configure their Twitter consumer keys to function in Web mode. This is because a very common practice for mobile applications is to use the redirection authorization method in conjunction with a custom URL handler that is registered with the platform.
+                            </p>
+                            <p>
+                                The URL handler trick makes it possible for the Twitter website to hand the user's access token directly back to the application when authentication is complete. In cases where that approach is used, the application's key necessarily has to be configured as a Web key, even though it is used in a desktop application. If that key is compromised, it is susceptible to the previously described phishing attack. (It's also worth noting that there is a risk of some malicious application overriding the URL handler settings to make itself the recipient of the access token.)
+                            </p>
+                            <p>
+                                Ideally, OAuth implementors should require application developers to supply the callback address when they configure their key and should not allow that setting to be overridden by the client application in a request parameter. Twitter has a field in the key configuration that allows the developers to specify a default, but they still allow client applications to use the dangerous callback override parameter.
+                            </p>
+                            <h3>
+                                Security is hard, let's go shopping!
+                            </h3>
+                            <p>
+                                Individual implementations aside, the general concept behind OAuth's redirection-based authorization process materially increases the risk of phishing. The people behind the standard are fully aware of that fact, but they don't believe that the issue should necessarily be addressed by the standard itself.
+                            </p>
+                            <p>
+                                They have argued for quite some time that end users should simply be more careful and implementors should come up with best practices on their own. This is because the purpose of the OAuth standard was to mitigate the password antipattern, not to holistically solve every security problem.
+                            </p>
+                            <p>
+                                "OAuth cannot help careless users, and phishing is all about not paying attention to what you do. There has been some interesting discussion about phishing on the OAuth group and the bottom line is, it is far beyond the scope of the protocol," OAuth contributor Eran Hammer-Lahav <a href="http://hueniverse.com/2007/09/would-you-like-some-quechup-with-your-phish-chips/">wrote</a> in 2007.
+                            </p>
+                            <p>
+                                Unfortunately, there are advocates of OAuth who are less honest than Hammer-Lahav about the standard's scope and limitations. Some proponents of the standard misrepresent its maturity and suitability for adoption while downplaying its weaknesses and risks.
+                            </p>
+                            <p>
+                                When people try to raise concerns about the problems, OAuth advocates tend to argue that developers who don't like OAuth are simply lazy or don't care about security. Some of the people behind the OAuth standard try really hard to convince end users that they should expect OAuth support everywhere, even in contexts where it doesn't really work or make sense. Their attitude is that developers should man up and learn to live in the brave new OAuth-enhanced world where solving the password antipattern takes priority over every other security issue.
+                            </p>
+                            <p>
+                                To be clear, I don't think that OAuth is a failure or a dead end. I just don't think that it should be treated as an authentication panacea to the detriment of other important security considerations. What it comes down to is that OAuth 1.0a is a horrible solution to a very difficult problem. It works acceptably well for server-to-server authentication, but there are far too many unresolved issues in the current specification for it to be used as-is on a widespread basis for desktop applications. It's simply not mature enough yet.
+                            </p>
+                            <p>
+                                Even in the context of server-to-server authentication, OAuth should be viewed as a necessary evil rather than a good idea. It should be approached with extreme trepidation and the high level of caution that is warranted by such a convoluted and incomplete standard. Careless adoption can lead to serious problems, like the issues caused by Twitter's extremely poor implementation.
+                            </p>
+                            <p>
+                                As I have written in the past, I think that OAuth 2.0—the next version of the standard—will address many of the problems and will make it safer and more suitable for adoption. The current IETF version of the 2.0 draft still requires a lot of work, however. It still doesn't really provide guidance on how to handle consumer secret keys for desktop applications, for example. In light of the heavy involvement in the draft process by Facebook's David Recordon, I'm really hopeful that the official standard will adopt Facebook's sane and reasonable approach to that problem.
+                            </p>
+                            <p>
+                                Although I think that OAuth is salvageable and may eventually live up to the hype, my opinion of Twitter is less positive. The service seriously botched its OAuth implementation and demonstrated, yet again, that it lacks the engineering competence that is needed to reliably operate its service. Twitter should review the OAuth standard and take a close look at how Google and Facebook are using OAuth for guidance about the proper approach.
+                            </p>
+                            <p>
+                                <a href="http://arstechnica.com/security/guides/2010/09/twitter-a-case-study-on-how-to-do-oauth-wrong.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss&amp;comments=1#comments-bar">Read the comments on this post</a>
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://arstechnica.com/security/guides/2010/09/twitter-a-case-study-on-how-to-do-oauth-wrong.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss">http://arstechnica.com/security/guides/2010/09/twitter-a-case-study-on-how-to-do-oauth-wrong.ars?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=rss</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            An Inside Look at the GIL Removal Patch of Lore
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 17 Aug 2011 03:09:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-08-12T18:19:00-04:00">
+                    <meta itemprop="dateModified" content="2011-08-12T18:19:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-08-12T22:19:00+00:00">Aug 12</time>
+                    <h2 itemprop="title">
+                        An Inside Look at the GIL Removal Patch of Lore
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/530cde0b16e94aab">
+                        <blockquote>
+                            <p>
+                                As most Python programmers know, people love to hate the Global Interpreter Lock (GIL). Why can't it simply be removed? What's the problem? However, if you've been around the Python community long enough, you might also know that the GIL was already removed once before--specifically, by Greg Stein who created a patch against Python 1.4 in 1996. In fact, here's a link:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://www.python.org/ftp/python/contrib-09-Dec-1999/System/threading.tar.gz">http://www.python.org/ftp/python/contrib-09-Dec-1999/System/threading.tar.gz</a>
+                                </li>
+                            </ul>
+                            <p>
+                                This patch often gets mentioned in discussions regarding the GIL--especially as justification for keeping the GIL. For example, see the <a href="http://docs.python.org/faq/library#can-t-we-get-rid-of-the-global-interpreter-lock">Python FAQ</a>, the forum post <a href="http://www.artima.com/forums/flat.jsp?forum=106&amp;thread=214235&amp;start=0&amp;msRange=15">It Isn't Easy to Remove the GIL</a> or this mailing discussion on <a href="http://mail.python.org/pipermail/python-dev/2001-August/017099.html">Free Threading</a>. These discussions usually point out that the patch made the performance of single-threaded applications much worse--so much so that the patch couldn't be adopted. However, beyond that, technical details about the patch are somewhat sketchy.
+                            </p>
+                            <p>
+                                Despite using Python since early 1996, I will freely admit that I never really knew the details of Greg's GIL removal patch. For the most part, I just vaguely knew that someone had attempted to remove the GIL, that it apparently killed the performance of single-threaded apps, and that it subsequently faded into oblivion. However, given my recent interest in making the GIL better, I thought it might be a fun challenge to turn on the time machine, see if I could actually find the patch, and compile a version of GIL-less Python in order to take a peek under the covers.
+                            </p>
+                            <p>
+                                So, in this post, I'll do just that and try to offer some commentary on some of the more interesting and subtle aspects of the patch--in particular, aspects of it that seem especially tricky or problematic. Given the increased interest in concurrency, the GIL, and other matters, I hope that this information might be of some use to others, or at the very least, help explain why Python still has a GIL. Plus, as the saying goes, those who don't study the past are doomed to repeat it. So, let's jump in.
+                            </p>
+                            <h3>
+                                Python 1.4
+                            </h3>
+                            <p>
+                                In order to play with the patch, you must first download and build Python-1.4. You can find it on <a href="http://www.python.org/download/releases/src/">python.org</a> if you look long enough. After some bit of Makefile twiddling, I was able to build it and try a few things out on a Linux system.
+                            </p>
+                            <p>
+                                Using Python-1.4 is a big reminder of how much Python has changed. It has none of the nice features you're used to to using now (list comprehensions, sets, string methods, <tt>sum()</tt>, <tt>enumerate()</tt>, etc.). In playing with it, I realize that about half of everything I type results in some kind of error. I digress.
+                            </p>
+                            <p>
+                                Thread support in Python-1.4 is equally minimal. The <a href="http://docs.python.org/library/threading.html"><tt>threading.py</tt></a> module that most people know doesn't yet exist. Instead, there is just the lower-level <a href="http://docs.python.org/library/thread.html"><tt>thread</tt></a> module which simply lets you launch a thread, allocate a mutex lock, and not much else. Here's a small sample:
+                            </p>
+                            <blockquote>
+                                <pre>
+import thread
+import time
+
+def countdown(n):
+    while n &gt; 0:
+          print "T-minus", n
+          n = n - 1
+          time.sleep(1)
+
+thread.start_new_thread(countdown,(10,))
+</pre>
+                            </blockquote>
+                            <p>
+                                Under the covers though, the implementation is remarkably similar to modern Python. Each thread consists of a C function that runs the specified Python callable and there is a GIL that guards access to some critical global interpreter state.
+                            </p>
+                            <h3>
+                                A Reentrant Interpreter?
+                            </h3>
+                            <p>
+                                If you read the <tt>threading.README</tt> file included in the patch, you will find this description:
+                            </p>
+                            <blockquote>
+                                <em>These patches enable Python to be "free threaded" or, in other words, fully reentrant across multiple threads. This is particularly important when Python is embedded within a C program.</em>
+                            </blockquote>
+                            <p>
+                                The stated goal of making Python "fully reentrant" is important so let's discuss.
+                            </p>
+                            <p>
+                                All Python code gets compiled down to an intermediate "machine langauge" before it executes. For example, consider a simple function like this:
+                            </p>
+                            <blockquote>
+                                <pre>
+def countdown(n):
+    while n &gt; 0:
+         print "T-minus", n
+         n -= 1
+         time.sleep(1)
+    print "Blastoff!"
+</pre>
+                            </blockquote>
+                            <p>
+                                You can view the underlying low-level instructions using the <a href="http://dabeaz.blogspot.com/">dis</a> module.
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>import dis</b>
+&gt;&gt;&gt; <b>dis.dis(countdown)</b>
+  2           0 SETUP_LOOP              48 (to 51)
+        &gt;&gt;    3 LOAD_FAST                0 (n)
+              6 LOAD_CONST               1 (0)
+              9 COMPARE_OP               4 (&gt;)
+             12 POP_JUMP_IF_FALSE       50
+
+  3          15 LOAD_CONST               2 ('T-minus')
+             18 PRINT_ITEM          
+             19 LOAD_FAST                0 (n)
+             22 PRINT_ITEM          
+             23 PRINT_NEWLINE       
+
+  4          24 LOAD_FAST                0 (n)
+             27 LOAD_CONST               3 (1)
+             30 INPLACE_SUBTRACT    
+             31 STORE_FAST               0 (n)
+
+  5          34 LOAD_GLOBAL              0 (time)
+             37 LOAD_ATTR                1 (sleep)
+             40 LOAD_CONST               3 (1)
+             43 CALL_FUNCTION            1
+             46 POP_TOP             
+             47 JUMP_ABSOLUTE            3
+        &gt;&gt;   50 POP_BLOCK           
+
+  6     &gt;&gt;   51 LOAD_CONST               4 ('Blastoff!')
+             54 PRINT_ITEM          
+             55 PRINT_NEWLINE       
+             56 LOAD_CONST               0 (None)
+             59 RETURN_VALUE        
+&gt;&gt;&gt;
+</pre>
+                            </blockquote>
+                            <p>
+                                Now, here's the critical bit--as a general rule, most low-level interpreter instructions tend to execute atomically. That is, while executing an instruction, the GIL is held, and no preemption is possible until completion.
+                            </p>
+                            <p>
+                                For a large majority of interpreter instructions, the lack of preemption is rarely a concern because they execute almost immediately. However, every now and then, a program may execute a long-running operation. Typically this happens if an operation is performed on a huge amount of data or if Python calls out to long-running C code that doesn't release the GIL.
+                            </p>
+                            <p>
+                                Here is a simple example you can try to see it. Launch the above countdown function in its own thread like this (using the legacy thread module).
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>import thread</b>
+&gt;&gt;&gt; <b>thread.start_new_thread(countdown,(20,))</b>
+T-minus 20
+T-minus 19
+...
+&gt;&gt;&gt;
+</pre>
+                            </blockquote>
+                            <p>
+                                Now, while that is running, do this:
+                            </p>
+                            <blockquote>
+                                <pre>
+&gt;&gt;&gt; <b>max(xrange(1000000000))</b>
+</pre>
+                            </blockquote>
+                            <p>
+                                If you do this, everything should just grind to a halt. You will see no output from the countdown thread at all and Ctrl-C will be frozen. In a nutshell, this is the issue with preemption (or lack thereof). Due to the GIL, it's possible for one thread to temporarily block the progress of all other threads on the system.
+                            </p>
+                            <p>
+                                The lack of preemption together with the GIL presents certain challenges when Python is embedded into a multithreaded C program. In such applications, the Python interpreter might be used for high-level scripting, but also for things such as event handling and callbacks. For example, maybe you have some C thread that's part of a game or visualization package that's calling into the Python interpreter to trigger event-handler methods in real time. In such code, control flow might pass from Python, to C, back to Python, and so forth.
+                            </p>
+                            <p>
+                                Needless to say, it's possible that in such an environment, you might have a collection of C or C++ threads that compete for use of the Python interpreter and are forced to synchronize on the GIL. This means that the interpreter might become a bottleneck of the whole system. If, somehow, you could get rid of the GIL, then any thread would be allowed to use the interpreter without worrying about other threads. For example, a C++ program triggering a Python event callback, wouldn't have to concern itself with other Python threads---the callback would simply run without being blocked. This is what you get by making the interpreter fully reentrant.
+                            </p>
+                            <p>
+                                It is in this context of embedding that the GIL removal patch should probably be viewed. At the time it was created, significantly more Python users were involved with integrating Python with C/C++ applications. In my own area of scientific computing, people were using Python to build interactive data visualization tools which often involved heavy amounts of CPU computation. I knew others who were tring to use Python for internal scripting of commercial PC video games. For all of these groups, removal of the GIL (if possible) was viewed as desirable because doing so would simplify programming and improve the user-experience (better responsiveness of the GUI, fewer stalls, etc.). If you've ever been sitting there staring at the spinning beachball on your Mac wishing it would just go away, well, then you get the general idea.
+                            </p>
+                            <h3>
+                                Exploring the Patch
+                            </h3>
+                            <p>
+                                If you download the free-threading patch, you will find that it is a relatively small set of files that replace and add functionality to Python-1.4. Here is a complete list of the modified files included in the patch:
+                            </p>
+                            <blockquote>
+                                <pre>
+./Include:
+listobject.h    pymutex.h       sysmodule.h
+object.h        pypooledlock.h  threadstate.h
+
+./Modules:
+signalmodule.c  threadmodule.c
+
+./Objects:
+complexobject.c intobject.c     longobject.c    stringobject.c
+frameobject.c   listobject.c    mappingobject.c tupleobject.c
+
+./Python:
+Makefile.in     importdl.c      pythonrun.c     traceback.c
+ceval.c         pymutex.c       sysmodule.c
+errors.c        pypooledlock.c  threadstate.c
+</pre>
+                            </blockquote>
+                            <p>
+                                As you can see, it's certainly not a rewrite of the entire interpreter. In fact, if you run a diff across the Python-1.4 source and the patch, you'll find that the changes amount to about 1000 lines of code (in contrast, the complete source code to Python-1.4 is about 82000 lines as measured by 'wc').
+                            </p>
+                            <p>
+                                I won't go into the details of applying or compiling the patch except to say that detailed instructions are included in the README should you want to build it yourself.
+                            </p>
+                            <h3>
+                                Initial Impressions
+                            </h3>
+                            <p>
+                                With the patch applied, I tried to do a few rough performance tests (note: I ran these under Ubuntu 8.10 on a dual-core VMWare Fusion instance running on my Mac). First, let's just write a simple spin-loop and see what happens:
+                            </p>
+                            <blockquote>
+                                <pre>
+import time
+def countdown(n):
+   while n &gt; 0:
+          n = n - 1
+
+start = time.time()
+countdown(10000000)
+end = time.time()
+print end-start
+</pre>
+                            </blockquote>
+                            <p>
+                                Using the original version of Python-1.4 (with the GIL), this code runs in about 1.9 seconds. Using the patched GIL-less version, it runs in about 12.7 seconds. That's about 6.7 times slower. Yow!
+                            </p>
+                            <p>
+                                Just to further confirm that finding, I ran the included <tt>Tools/scripts/pystone.py</tt> benchmark (modified to run slightly longer in order to get more accurate timings). First, with the GIL:
+                            </p>
+                            <blockquote>
+                                <pre>
+$ python1.4g Tools/scripts/pystone.py
+Pystone(1.0) time for 100000 passes = 3.09
+This machine benchmarks at 32362.5 pystones/second
+</pre>
+                            </blockquote>
+                            <p>
+                                Now, without the GIL:
+                            </p>
+                            <blockquote>
+                                <pre>
+$ python1.4ng Tools/scripts/pystone.py
+Pystone(1.0) time for 100000 passes = 12.73
+This machine benchmarks at 7855.46 pystones/second
+</pre>
+                            </blockquote>
+                            <p>
+                                Here, the GIL-less Python is only about 4 times slower. Now, I'm just slightly more impressed.
+                            </p>
+                            <p>
+                                To test threads, I wrote a small sample that subdivided the work across two worker threads is an embarrassingly parallel manner (note: this code is a little wonky due to the fact that Python-1.4 doesn't implement thread joining--meaning that you have to do it yourself with the included binary-semaphore lock).
+                            </p>
+                            <blockquote>
+                                <pre>
+import thread
+import time
+import sys
+sys.setcheckinterval(1000)
+
+def countdown(n,lck):
+    while n &gt; 0:
+         n = n - 1
+    lck.release()     # Signal termination
+
+lck_1 = thread.allocate_lock()
+lck_2 = thread.allocate_lock()
+lck_1.acquire()
+lck_2.acquire()
+start = time.time()
+thread.start_new_thread(countdown,(5000000,lck_1))
+thread.start_new_thread(countdown,(5000000,lck_2))
+lck_1.acquire()      # Wait for termination
+lck_2.acquire()
+end = time.time()
+print end-start
+</pre>
+                            </blockquote>
+                            <p>
+                                If you run this code with the GIL, the execution time is about 2.5 seconds or approximately 1.3 times slower than the single-threaded version (1.9 seconds). Using the GIL-less Python, the execution time is 18.5 seconds or approximately 1.45 times slower than the single-threaded version (12.7 seconds). Just to emphasize, the GIL-less Python running with two-threads is running more than 7 times slower than the version with a GIL.
+                            </p>
+                            <p>
+                                Ah, but what about preemption you ask? If you return to the example above in the section about reentrancy, you will find that removing the GIL, does indeed, allow free threading and long-running calculations to be preempted. Success!
+                            </p>
+                            <p>
+                                Needless to say, there might be a few reasons why the patch quietly disappeared.
+                            </p>
+                            <h3>
+                                Under the Covers
+                            </h3>
+                            <p>
+                                Okay, the performance is terrible, but what is actually going on inside? Are there any lessons to be learned? A look at the source code and related documentation reveals all.
+                            </p>
+                            <h3>
+                                Capturing Thread State
+                            </h3>
+                            <p>
+                                For free-threading to work, each thread has to isolate its interpreter state and not rely on C global variables. The threading patch does this by defining a new data structure such as the following:
+                            </p>
+                            <blockquote>
+                                <pre>
+/* Include/threadstate.h */
+
+typedef struct PyThreadState_s
+{
+    PyFrameObject *             current_frame;          /* ceval.c */
+    int                         recursion_depth;        /* ceval.c */
+    int                         interp_ticker;          /* ceval.c */
+    int                         tracing;                /* ceval.c */
+
+    PyObject *                  sys_profilefunc;        /* sysmodule.c */
+    PyObject *                  sys_tracefunc;          /* sysmodule.c */
+    int                         sys_checkinterval;      /* sysmodule.c */
+
+    PyObject *                  last_exception;         /* errors.c */
+    PyObject *                  last_exc_val;           /* errors.c */
+    PyObject *                  last_traceback;         /* traceback.c */
+
+    PyObject *                  sort_comparefunc;       /* listobject.c */
+
+    char                        work_buf[120];          /* &lt;anywhere&gt; */
+    int                         c_error;                /* complexobject.c */
+} PyThreadState;
+</pre>
+                            </blockquote>
+                            <p>
+                                Essentially, all global variables in the interpreter have been picked up and moved into a per-thread data structure. Some of these values are obvious candidates such as exception information, tracing, and profiling hooks. Other parts are semi-random. For example, there is storage for the compare callback function used by list sorting and a global error handling variable (c_error) used to propagate errors across internal functions in the implementation of complex numbers.
+                            </p>
+                            <p>
+                                To manage multiple threads, the interpreter builds a linked-list of all active threads. This linked list contains the thread-identifier along with the corresponding <tt>PyThreadState</tt> structure. For example:
+                            </p>
+                            <blockquote>
+                                <pre>
+/* Python/threadstate.c */
+...
+
+typedef struct PyThreadStateLL_s
+{
+    long                        thread_id;
+    struct PyThreadStateLL_s *  next;
+    PyThreadState               state;
+} PyThreadStateLL;
+</pre>
+                            </blockquote>
+                            <p>
+                                Whenever a thread wants to get its per-state state information, it simply calls a function <tt>PyThreadState_Get()</tt>. This function scans the linked-list searching for the caller's thread-identifier. When found, the matching thread state structure is moved to the front of the linked list and the value returned. Here is a short example of code that illustrates an example use with the relevant bits highlighted:
+                            </p>
+                            <blockquote>
+                                <pre>
+/* Objects/listobject.c */
+...
+static int
+cmp(v, w)
+        const ANY *v, *w;
+{
+        object *t, *res;
+        long i;
+<font color="#0000FF">  PyThreadState *pts = PyThreadState_Get();</font>
+
+
+        if (err_occurred())
+                return 0;
+
+        if (<font color="#0000FF">pts-&gt;sort_comparefunc</font> == NULL)
+                return cmpobject(* (object **) v, * (object **) w);
+
+        /* Call the user-supplied comparison function */
+        t = mkvalue("(OO)", * (object **) v, * (object **) w);
+        if (t == NULL)
+                return 0;
+        res = call_object(<font color="#0000FF">pts-&gt;sort_comparefunc</font>, t);
+        DECREF(t);
+        ...
+}
+</pre>
+                            </blockquote>
+                            <p>
+                                Bits and pieces of the thread state code live on in Python3.2 today. In particular, per-thread state is captured in a data similar structure and there are functions for obtaining the state. In fact, there is even a function called <tt>PyThreadState_Get()</tt>.
+                            </p>
+                            <h3>
+                                Fine-Grained Locking of Reference Counting
+                            </h3>
+                            <p>
+                                Memory management of Python objects relies on reference counting. In the C API, there are macros for manipulating reference counts:
+                            </p>
+                            <blockquote>
+                                <pre>
+/* Include/objects.h */
+...
+#define Py_INCREF(op) (_Py_RefTotal++, (op)-&gt;ob_refcnt++)
+#define Py_DECREF(op) \
+        if (--_Py_RefTotal, --(op)-&gt;ob_refcnt != 0) \
+                ; \
+        else \
+                _Py_Dealloc(op)
+...
+</pre>
+                            </blockquote>
+                            <p>
+                                These macros, along with their NULL-pointer safe variants <tt>Py_XINCREF</tt> and <tt>Py_XDECREF</tt> are used throughout the Python source. A quick search of the Python-1.4 source reveals about 250 uses.
+                            </p>
+                            <p>
+                                With free-threading, reference counting operations lose their thread-safety. Thus, the patch introduces a global reference-counting mutex lock along with atomic operations for updating the count. On Unix, locking is implemented using a standard <tt>pthread_mutex_t</tt> lock (wrapped inside a <tt>PyMutex</tt> structure) and the following functions:
+                            </p>
+                            <blockquote>
+                                <pre>
+/* Python/pymutex.c */
+...
+PyMutex * _Py_RefMutex;
+...
+int _Py_SafeIncr(pint)
+    int *pint;
+{
+    int result;
+
+    PyMutex_Lock(_Py_RefMutex);
+    result = ++*pint;
+    PyMutex_Unlock(_Py_RefMutex);
+    return result;
+}
+
+int _Py_SafeDecr(pint)
+    int *pint;
+{
+    int result;
+
+    PyMutex_Lock(_Py_RefMutex);
+    result = --*pint;
+    PyMutex_Unlock(_Py_RefMutex);
+    return result;
+}
+</pre>
+                            </blockquote>
+                            <p>
+                                The <tt>Py_INCREF</tt> and <tt>Py_DECREF</tt> macros are then redefined to use these thread-safe functions.
+                            </p>
+                            <p>
+                                On Windows, fine-grained locking is achieved by redefining <tt>Py_INCREF</tt> and <tt>Py_DECREF</tt> to use <tt>InterlockedIncrement</tt> and <tt>InterlockedDecrement</tt> calls (see <a href="http://msdn.microsoft.com/en-us/library/ms684122(v=vs.85).aspx">Interlocked Variable Access</a> [MSDN]).
+                            </p>
+                            <p>
+                                On Unix, it must be emphasized that simple reference count manipulation has been replaced by no fewer than three function calls, plus the overhead of the actual locking. It's far more expensive.
+                            </p>
+                            <p>
+                                As a performance experiment, I decided to comment out the <tt>PyMutex_Lock</tt> and <tt>PyMutex_Unlock</tt> calls and run the interpreter in an unsafe mode. With this change, the performance of my single-threaded 'spin-loop' dropped from 12.7 seconds to about 3.9 seconds. The threaded version dropped from 18.5 seconds to about 4 seconds. [ Note: corrected due to an unnoticed build-error when trying this experiment initially ].
+                            </p>
+                            <p>
+                                Clearly fine-grained locking of reference counts is the major culprit behind the poor performance, but even if you take away the locking, the reference counting performance is still very sensitive to any kind of extra overhead (e.g., function call, etc.). In this case, the performance is still about twice as slow as Python with the GIL.
+                            </p>
+                            <h3>
+                                Locking of Mutable Builtins
+                            </h3>
+                            <p>
+                                Mutable builtins such as lists and dicts need their own locking to synchronize modifications. Thus, these objects grow an extra lock attribute per instance. For example:
+                            </p>
+                            <blockquote>
+                                <pre>
+/* Include/listobject.h */
+...
+typedef struct {
+        PyObject_VAR_HEAD
+<font color="#0000FF">  Py_DECLARE_POOLED_LOCK</font>
+        PyObject **ob_item;
+} PyListObject;
+...
+</pre>
+                            </blockquote>
+                            <p>
+                                Virtually all underlying methods (append, insert, setitem, getitem, repr, etc.) then use the per-instance lock under the covers.
+                            </p>
+                            <p>
+                                A interesting aspect of the implementation is the way that locks are allocated. Instead of allocating a dedicated mutex lock for each list or dictionary, the interpreter simply keeps a small pool of available locks. When a list or dict first needs to be locked, a lock is taken from the pool and used as long as it is needed (until the instance is no longer being manipulated by any threads). At this point, the lock is simply released back to the pool.
+                            </p>
+                            <p>
+                                This scheme greatly reduces the number of needed locks. Generally speaking, the number of locks is about the same as the number of active threads. Deeply nested data structures (e.g., lists of lists of lists) may also increase the number of locks needed if certain recursive operations are invoked. For example, printing a deeply nested data structure might cause a lock to be allocated for each level of nesting.
+                            </p>
+                            <p>
+                                Locking of mutable containers does not involve anything more sophisticated than a mutex lock. For example, no attempt has been made to utilize reader-writer locks.
+                            </p>
+                            <h3>
+                                Locking of Various Internal Operations
+                            </h3>
+                            <p>
+                                In various places thoughout the interpreter, there are low-level book-keeping operations, often related to memory management and optimization. Their implementation often relies upon the use of unsafe C static variables.
+                            </p>
+                            <p>
+                                For this, the patch defines a mutex lock dedicated generally to executing critical sections along with a pair of C macros for locking.
+                            </p>
+                            <blockquote>
+                                <pre>
+/* Include/pymutex.h */
+...
+#define Py_CRIT_LOCK()          PyMutex_Lock(_Py_CritMutex)
+#define Py_CRIT_UNLOCK()        PyMutex_Unlock(_Py_CritMutex)
+...
+</pre>
+                            </blockquote>
+                            <p>
+                                As an example of use, consider the <tt>int</tt> object. Due to the fact that integers are used so frequently, the underlying C code uses a custom memory allocator and other tricks to avoid excessive calls to C's <tt>malloc</tt> and <tt>free</tt> functions. Here is an example of the kind of thing you see in the patch (changes highlighted):
+                            </p>
+                            <blockquote>
+                                <pre>
+/* Objects/intobject.c */
+
+...
+static intobject *<font color="#0000FF">volatile</font> free_list = NULL;
+...
+object *
+newintobject(ival)
+        long ival;
+{
+     ...
+<font color="#0000FF">  Py_CRIT_LOCK();</font>
+        if (free_list == NULL) {
+                if ((free_list = fill_free_list()) == NULL) {
+<font color="#0000FF">                  Py_CRIT_UNLOCK();</font>
+                        return err_nomem();
+                }
+        }
+        v = free_list;
+        free_list = *(intobject **)free_list;
+<font color="#0000FF">  Py_CRIT_UNLOCK();</font>
+    ...
+}
+</pre>
+                            </blockquote>
+                            <p>
+                                A quick analysis of the patch shows that there are about 20 such critical sections that have to be protected. This includes low-level code in the implementation of ints, tuples, dicts as well as code generally related to the runtime of the interpreter (e.g., module imports, signal handling, sys module, etc.).
+                            </p>
+                            <p>
+                                Although all of these sections share the same lock, the associated overhead appears to be negligible compared to that of reference counting.
+                            </p>
+                            <h3>
+                                Other Tricky Bits
+                            </h3>
+                            <p>
+                                Although the patch addresses some fundamental issues needed to make free-threading work, it is only a small start. In particular, no effort has been made to verify the thread-safety of any standard library modules. This includes a large body of C code that would have be audited in detail to identify and fix potential race conditions.
+                            </p>
+                            <p>
+                                Certain parts of the Python implementation also remain problematic. For example, certain low-level C API functions such as <tt>PyList_GetItem()</tt> and <tt>PyDict_GetItem()</tt> return borrowed references (e.g, objects without an increased reference count). Although it seems remote, there is a possibility that such functions could return a reference to an object that then gets destroyed by another thread.
+                            </p>
+                            <h3>
+                                Final Words
+                            </h3>
+                            <p>
+                                Looking at the patch has been an interesting trip through history, but is there anything to learn from it? This is by no means an exhaustive list, but a few thoughts come to mind:
+                            </p>
+                            <ul>
+                                <li>Reference counting is a really lousy memory-management technique for free-threading. This was already widely known, but the performance numbers put a more concrete figure on it. This will definitely be the most challenging issue for anyone attempting a GIL removal patch.
+                                </li>
+                                <li>For mutable types, you need per-instance locking. However, through clever lock management, you can probably do it with a relatively small number of locks (proportional to the number of threads) as opposed to actually putting a dedicated lock on every instance. The performance impact of such locking warrants further study--especially given the heavy use of dictionaries throughout the interpreter.
+                                </li>
+                                <li>Various internal parts of the interpreter will need locking, but such locking doesn't appear to have as much of an impact as one might expect (at least I wasn't able to measure a huge performance hit due to it).
+                                </li>
+                                <li>Python 3 already includes a few critical pieces needed to make free-threading work. In particular, there are data structures that capture per-thread state and functions for obtaining that state. Because of that, if you were to eliminate the GIL, most of the effort would tend to focus on locking as opposed to isolating state.
+                                </li>
+                                <li>Even though you might be able to patch the interpreter with a small amount of code, verifying the thread safety of all standard library modules (both Python and C code) will probably be a daunting (and possibly never-ending) endeavor.
+                                </li>
+                                <li>Despite removing the GIL, I was unable to produce any performance experiment that showed a noticeable improvement on multiple cores. Really, the only benefit (ignoring the horrible performance) seen in pure Python code, was having preemptible instructions.
+                                </li>
+                            </ul>
+                            <p>
+                                That's about it for now. I hope you found this trip through time interesting. In a future installment, I'll explore the problem of pushing locked reference counting as far as it can possibly go. As a preview, a simple patch involving less than a dozen lines of code makes the whole GIL-less Python run more than twice as fast. However, can it go even faster? Stay tuned.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/36456651-4731544515209926406?l=dabeaz.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dabeaz.blogspot.com/2011/08/inside-look-at-gil-removal-patch-of.html">http://dabeaz.blogspot.com/2011/08/inside-look-at-gil-removal-patch-of.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

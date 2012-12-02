@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Django site test coverage
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta name="description" content="A custom Django test runner with support for coverage.py and graceful handling for app selection and various testing gotchas">
+        <meta http-equiv="last-modified" content="Fri, 29 Jan 2010 00:32:38 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-28T10:14:57.467304-04:00">
+                    <meta itemprop="dateModified" content="2010-01-28T19:32:38-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-28T23:32:38+00:00">Jan 28</time>
+                    <h2 itemprop="title">
+                        Django site test coverage
+                    </h2>
+                </header>
+                <p class="summary">
+                    A custom Django test runner with support for coverage.py and graceful handling for app selection and various testing gotchas
+                </p>
+                <div class="body" itemprop="articleBody">
+                    <p>
+                        At work we're using <a href="https://hudson.dev.java.net/">Hudson</a>&nbsp;for continuous integration on our Django projects. Every time someone checks a commit in to SVN, hudson runs our entire test suite in a virtualenv and reports failures as well as generating various test reports.<br>
+                        <br>
+                        Overall it's been a win but there are some rough edges:
+                    </p>
+                    <ol>
+                        <li>The Django test runner's environment is enough different from the normal one that it can break various things we use: the dynamic model extension&nbsp;<a href="http://github.com/matthiask/feincms">FeinCMS</a>&nbsp;performs can break if the test runner initializes apps in a different order (some quality test debugging time), <a href="http://south.aeracode.org">South</a> database migrations, and some of the built-in caching middleware (see <a href="http://code.djangoproject.com/ticket/5176">#5176</a>).
+                        </li>
+                        <li>We don't want to test every application installed - just our site and the other code which we developed.&nbsp;One convenience you'll want to customize in the code below is the logic which&nbsp;<a href="http://gist.github.com/288810#L89" style="color: blue !important; text-decoration: underline !important; cursor: text !important;">includes apps with a common prefix</a>&nbsp;along with the site's app if you didn't specify the apps on the command-line. We also include&nbsp;<a href="http://github.com/pydanny/django-social-bookmarking" style="color: blue !important; text-decoration: underline !important; cursor: text !important;">a</a>&nbsp;<a href="http://github.com/kcunning/django-glossary" style="color: blue !important; text-decoration: underline !important; cursor: text !important;">couple</a>&nbsp;of opensource apps which are maintained by people on our team since there's a very clear path for error reporting failures: shouting across the room.
+                        </li>
+                        <li>We want to use Ned Batchelder's awesome <a href="http://nedbatchelder.com/code/coverage/">coverage.py</a>. Unfortunately, we can't load it in the stock test runner because things like our models have already been processed by the time <a href="http://docs.djangoproject.com/en/dev/howto/custom-management-commands/" style="font-size: 12px;">a management command</a> runs and we'd like those to be included in our test reports.
+                        </li>
+                    </ol>
+                    <p>
+                        The solution was to write a custom test runner which works like the standard Django command but customizes the environment:&nbsp;<a href="http://gist.github.com/288810">http://gist.github.com/288810</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

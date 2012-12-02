@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            On GitHub and how I came to write the fastest Python JSON module in town
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 04 Dec 2009 09:30:09 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-12-04T04:30:09-04:00">
+                    <meta itemprop="dateModified" content="2009-12-04T04:30:09-04:00"><time class="date" itemprop="datePublished" datetime="2009-12-04T08:30:09+00:00">Dec 04</time>
+                    <h2 itemprop="title">
+                        On GitHub and how I came to write the fastest Python JSON module in town
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/78382e7dbe58a57b">
+                        <blockquote>
+                            <p>
+                                Perhaps the title is a bit too much ego stroking, yes, I did write the fastest Python module for decoding JSON strings and encoding Python objects to JSON. I didn't however write the parser behind the scenes.
+                            </p>
+                            <p>
+                                Over the summer I discovered "<a href="http://lloyd.github.com/yajl/">Yet Another JSON Library</a>" on <a href="http://www.crunchbase.com/company/github">GitHub</a>, written by <a href="http://twitter.com/lloydhilaiel">Lloyd Hilaiel</a>, jonesing for a Saturday afternoon project I started the "<a href="http://search.twitter.com/search?q=py-yajl">py-yajl</a>" project to see if I could implement a Python C module atop Lloyd's marvelous parsing library. After tinkering with the project for a while I got a working prototype building (learning how to define custom types in Python along the way) and let the project stagnate as my weekend ended and the workweek resumed.
+                            </p>
+                            <p>
+                                A little over a week ago "<a href="http://github.com/autodata">autodata</a>", another GitHub user, sent me a "Pull Request" with some minor changes to make py-yajl build cleaner on amd64; my interest in the project was suddenly reignited, amazing what a little interest can do for motivation. Over the 10 days following autodata's pull request I discovered that a former colleague of mine and fellow GitHub user "<a href="http://twitter.com/teepark">teepark</a>" had forked the project as well, working on Python 3 support. Going from zero to <strong>two</strong> people interested in the project, I quickly converted the code from a stagnant, borderline embarrassing, dump of C code into a leak-free, swift JSON library for Python. Not one to miss out on the fun, I pinged Lloyd who quickly became as enamored with making py-yajl the best Python JSON module available, he forked the project and almost immediately sent a number of pull requests my way with further optimizations to py-yajl such as:
+                            </p>
+                            <ul>
+                                <li>Swapping out the use of Python lists to a custom pointer stack for maintaining internal state
+                                </li>
+                                <li>Accelerating parsing and handling of Number objects
+                                </li>
+                                <li>Pruning a few memory leaks here and there
+                                </li>
+                            </ul>
+                            <p>
+                                Thanks to <a href="http://twitter.com/mikeal">mikeal</a>'s <a href="http://www.mikealrogers.com/archives/695">JSON post</a> and <a href="http://gist.github.com/239887">jsonperf.py</a> script, Lloyd and I could both see how py-yajl was stacking up against <a href="http://pypi.python.org/pypi/python-cjson">cjson</a>, jsonlib, <a href="http://code.google.com/p/jsonlib2/">jsonlib2</a> and <a href="http://code.google.com/p/simplejson/">simplejson</a>; things got competitive. Below are the most recent <code>jsonperf.py</code> results with py-yajl v0.1.1:
+                            </p>
+                            <pre>
+<code>json.loads:         6470.22037ms
+simplejson.loads:   202.21063ms  
+yajl.loads:         145.32621ms
+cjson.decode:       102.44788ms
+
+json.dumps:         2309.15286ms
+cjson.encode:       276.49586ms   
+simplejson.dumps:   201.59785ms
+yajl.dumps:         161.00153ms
+</code>
+</pre>
+                            <p>
+                                Over the coming days or weeks (as time permits) I'm planning on adding JSON stream parsing support, i.e. parsing a stream of data as it's coming in off a socket or file object, as well as a few other miscellaneous tasks.
+                            </p>
+                            <p>
+                                Given the nature of GitHub's social coding dynamic, py-yajl got off the ground as a project but Yajl itself gained an IRC channel (#yajl on Freenode) and a mailing list (yajl@librelist.com). To date I have over 20 unique repositories on GitHub (i.e. authored by me) but the experience around Yajl has been the most exciting and finally proved the "social coding" concept beneficial to me.
+                            </p><img src="http://feeds.feedburner.com/~r/UnethicalBlogger/~4/O7c1JquAQfA" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://unethicalblogger.com/posts/2009/12/github_and_how_i_came_write_fastest_python_json_module_town/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+UnethicalBlogger+%28unethical+blogger%29">http://unethicalblogger.com/posts/2009/12/github_and_how_i_came_write_fastest_python_json_module_town/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+UnethicalBlogger+%28unethical+blogger%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

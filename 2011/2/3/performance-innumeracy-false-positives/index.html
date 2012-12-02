@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Performance Innumeracy &amp; False Positives
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 03 Feb 2011 18:49:41 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-03T13:49:41-04:00">
+                    <meta itemprop="dateModified" content="2011-02-03T13:49:41-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-03T17:49:41+00:00">Feb 03</time>
+                    <h2 itemprop="title">
+                        Performance Innumeracy &amp; False Positives
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/74c4d24c8e812405">
+                        <blockquote>
+                            <p>
+                                <em>tl;dr version: the web is waaaay too slow, and every time you write something off as “just taking a couple of milliseconds”, you’re part of the problem. Good engineering is about tradeoffs, and all engineering requires environmental assumptions — even feature testing. In any case, there are good, reliable ways to use UA detection to speed up feature tests in the common case, which I’ll show, and to which the generic arguments about UA <b>vs.</b> feature testing simply don’t apply. We can and should go faster. <b>Update:</b> <a href="http://www.nczonline.net/blog/2011/02/08/on-ua-sniffing-browser-detection-and-alexs-post/">Nicholas Zackas explains it all, clearly, in measured form. Huzzah!</a></em>
+                            </p>
+                            <h2>
+                                Performance Innumeracy
+                            </h2>
+                            <p>
+                                I want to dive into concrete strategies for low-to-no false positive UA matching for use in caching feature detection results, but first I feel I need to walk back to some basics since I’ve clearly lost some people along the way. Here are some numbers every developer (of any type) should know, borrowed from <a href="http://norvig.com/21-days.html">Peter Norvig’s indispensable “Teach Yourself To Program In Ten Years”</a>:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Approximate timing for various operations on a typical PC:<br>
+                                </p>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            execute typical instruction
+                                        </td>
+                                        <td align="right">
+                                            1/1,000,000,000 sec = 1 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            fetch from L1 cache memory
+                                        </td>
+                                        <td align="right">
+                                            0.5 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            branch misprediction
+                                        </td>
+                                        <td align="right">
+                                            5 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            fetch from L2 cache memory
+                                        </td>
+                                        <td align="right">
+                                            7 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            Mutex lock/unlock
+                                        </td>
+                                        <td align="right">
+                                            25 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            fetch from main memory
+                                        </td>
+                                        <td align="right">
+                                            100 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            send 2K bytes over 1Gbps network
+                                        </td>
+                                        <td align="right">
+                                            20,000 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            read 1MB sequentially from memory
+                                        </td>
+                                        <td align="right">
+                                            250,000 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            fetch from new disk location (seek)
+                                        </td>
+                                        <td align="right">
+                                            8,000,000 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            read 1MB sequentially from disk
+                                        </td>
+                                        <td align="right">
+                                            20,000,000 nanosec
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            send packet US to Europe and back
+                                        </td>
+                                        <td align="right">
+                                            150 milliseconds = 150,000,000 nanosec
+                                        </td>
+                                    </tr>
+                                </table>
+                            </blockquote>
+                            <p>
+                                That data’s a bit old — 8ms is optimistic for a HD seek these days, and SSD changes things — but the orders of magnitude are relevant. For mobile, we also need to know:
+                            </p>
+                            <table>
+                                <tr>
+                                    <td>
+                                        fetch from flash storage
+                                    </td>
+                                    <td align="right">
+                                        1,300,000 nanosec
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        60hz time slice
+                                    </td>
+                                    <td align="right">
+                                        16,000,000 nanosec
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        send packet outside of a (US) mobile carrier network and back
+                                    </td>
+                                    <td align="right">
+                                        80-800 milliseconds = 80,000,000 – 800,000,000 nanosec
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                The 60hz number is particularly important. To build UI that feels not just fast, but instantly responsive, we need to be yielding control back to our primary event loop in <em>less than 16ms</em>, all the time, every time. Otherwise the UI will drop frames and the act of clicking, tapping, and otherwise interacting with the app will seem “laggy” or “janky”. Framing this another way, anything your webapp blocks on for more than 16ms is the enemy of solid, responsive UI.
+                            </p>
+                            <p>
+                                Why am I blithering on and on about this? Because some folks continue to mis-prioritize the impact of latency and performance on user satisfaction. Google (my employer, who does not endorse this blog or my private statements in any way) has <a href="http://code.google.com/speed/files/delayexp.pdf">shown that seemingly minor increases in latency directly impact user engagement</a> and that <a href="http://glinden.blogspot.com/2006/11/marissa-mayer-at-web-20.html">major increases in latency (&gt; 500ms) can reduce traffic and revenue <em>significantly</em></a>. Latency then, along with responsiveness (do you drop below 60hz?), is a key metric for measuring the quality of an web experience. It’s no accident that Google employs <a href="http://stevesouders.com/">Steve Souders</a> to help evangelize the cause of improving performance on the web, and has gone so far as to build products like Chrome &amp; V8 who have as a core goal to the web faster. A faster web is a better web. Full stop.
+                            </p>
+                            <p>
+                                That’s why I get so deeply frustrated when we get <a href="http://farukat.es/journal/2011/02/499-lest-we-forget-or-how-i-learned-whats-so-bad-about-browser-sniffing">straw-man based, data-challenged advocacy</a> from the maintainers of <a href="http://www.modernizr.com/">important bits of infrastructure</a>:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    This stuff is far from easy to understand; even just the basics of feature detection versus browser detection are quite confusing to some people. That’s why we make libraries for this stuff (and, use browser inference instead of UA sniffing). These are the kind of efforts that we need, to help move the web forward as a platform; what we don’t need is more encouragement for UA sniffing as a general technique, only to save a couple of milliseconds. Because I can assure you that the Web never quite suffered, technologically, from taking a fraction of a second longer to load.
+                                </p>
+                            </blockquote>
+                            <p>
+                                What bollocks. Not only did I not encourage UA sniffing “as a general technique”, latency does in fact hurt sites and users — all the time, every day. And we’re potentially not talking about “a couple of milliseconds” here. Remember, in the context of mobile devices, the CPUs we’re on are single-core and clocked in the 500mhz-1ghz range, which directly impacts the performance of single-threaded tasks like layout and JavaScript execution — which by the way happen <em>in the same thread</em>. In my last post I said:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    …if you’re a library author or maintainer, please please please consider the costs of feature tests, particularly the sort that mangle DOM and or read-back computed layout values
+                                </p>
+                            </blockquote>
+                            <p>
+                                Why? Because many of these tests inadvertently force layout and style re-calculation. See for instance <a href="https://github.com/phiggins42/has.js/blob/master/detect/events.js#L14">this snippet from <code>has.js</code></a>:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#000066;font-weight:bold">if</span><span style="color:#009900">(</span>has.<span style="color:#660066">isHostType</span><span style="color:#009900">(</span>input<span style="color:#339933">,</span> <span style="color:#3366CC">"click"</span><span style="color:#009900">)</span><span style="color:#009900">)</span><span style="color:#009900">{</span>
+  input.<span style="color:#660066">type</span> <span style="color:#339933">=</span> <span style="color:#3366CC">"checkbox"</span><span style="color:#339933">;</span>
+  input.<span style="color:#660066">style</span>.<span style="color:#660066">display</span> <span style="color:#339933">=</span> <span style="color:#3366CC">"none"</span><span style="color:#339933">;</span>
+  input.<span style="color:#660066">onclick</span> <span style="color:#339933">=</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span>e<span style="color:#009900">)</span><span style="color:#009900">{</span>
+    <span style="color:#006600;font-style:italic">// ...</span>
+  <span style="color:#009900">}</span><span style="color:#339933">;</span>
+  <span style="color:#000066;font-weight:bold">try</span><span style="color:#009900">{</span>
+    de.<span style="color:#660066">insertBefore</span><span style="color:#009900">(</span>input<span style="color:#339933">,</span> de.<span style="color:#660066">firstChild</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+    input.<span style="color:#660066">click</span><span style="color:#009900">(</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+    de.<span style="color:#660066">removeChild</span><span style="color:#009900">(</span>input<span style="color:#009900">)</span><span style="color:#339933">;</span>
+  <span style="color:#009900">}</span><span style="color:#000066;font-weight:bold">catch</span><span style="color:#009900">(</span>e<span style="color:#009900">)</span><span style="color:#009900">{</span><span style="color:#009900">}</span>
+  <span style="color:#006600;font-style:italic">// ...</span>
+<span style="color:#009900">}</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                Everything looks good. The element is <code>display: none;</code> so it shouldn’t be generating render boxes when inserted into the DOM. Should be cheap, right? Well, lets see what happens in WebKit. Debugging into a simple test page with equivalent code shows that part of the call stack looks like:
+                            </p>
+                            <pre>
+#0      0x0266267f in WebCore::Document::recalcStyle at Document.cpp:1575
+#1      0x02662643 in WebCore::Document::updateStyleIfNeeded at Document.cpp:1652
+#2      0x026a89fd in WebCore::MouseRelatedEvent::receivedTarget at MouseRelatedEvent.cpp:152
+#3      0x0269df03 in WebCore::Event::setTarget at Event.cpp:282
+#4      0x026af889 in WebCore::Node::dispatchEvent at Node.cpp:2604
+#5      0x026adbcb in WebCore::Node::dispatchMouseEvent at Node.cpp:2885
+#6      0x026ae231 in WebCore::Node::dispatchSimulatedMouseEvent at Node.cpp:2816
+#7      0x026ae3f1 in WebCore::Node::dispatchSimulatedClick at Node.cpp:2837
+#8      0x02055bb5 in WebCore::HTMLElement::click at HTMLElement.cpp:767
+#9      0x022587e6 in WebCore::HTMLInputElementInternal::clickCallback at V8HTMLInputElement.cpp:707
+...
+</pre>
+                            <p>
+                                <code>Document::recalcStyle()</code> can be <em>very</em> expensive, and unlike painting, it blocks input and other execution. And the cost is at page loading is likely to be much higher than other times as there will be significantly more new styles streamed in from the network to satisfy for each element in the document when this is called. This isn’t a full layout, but it’s most of the price of one. Now, you can argue that this is a WebKit bug and I’ll agree — synthetic clicks should probably skip this — but I’m just using this as an illustration to show that what browsers are doing on your behalf isn’t always obvious. Once this bug is fixed, this test may indeed be nearly free, but it’s not today. Not by a long shot.
+                            </p>
+                            <p>
+                                Many layouts in very deep and “dirty” DOMs can take ten milliseconds or more, and if you’re doing it from script, you’re causing the system to do lots of work which it’s probably going to need to throw away later when the rest of your markup and styles show up. Your average, dinky test harness page likely under-counts the cost of these tests, so when someone tells me “oh, it’s only 30ms”, not only do my eyes bug out at the double-your-execution-budget-for-anything number, but also the knowledge that in the real world, it’s probably a LOT worse. Just imagine this happening in a deep DOM on a low-end ARM-powered device where memory pressure and a single core are conspiring against you.
+                            </p>
+                            <h2>
+                                False Positives
+                            </h2>
+                            <p>
+                                My last post concerned how you can build a cache to eliminate many of these problems <b>if and only if you build UA tests that don’t have false positives</b>. Some commenters can’t seem to grasp the subtlety that I’m <em>not</em> advocating for the same sort of lazy substring matching that has deservedly gotten such a bad rap.
+                            </p>
+                            <p>
+                                So how would we build less naive UA tests that can have feature tests behind them as fallbacks? Lets look at some representative UA strings and see if we can’t construct some tests for them that give us sub-version flexibility but won’t pass on things that aren’t <em>actually</em> the browsers in question:
+                            </p>
+                            <p>
+                                IE 6.0, Windows:
+                            </p>
+                            <pre>
+Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)
+</pre>
+                            <p>
+                                FF 3.6, Windows:
+                            </p>
+                            <pre>
+Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.2.13) Firefox/3.6.13
+</pre>
+                            <p>
+                                Chrome 8.0, Linux:
+                            </p>
+                            <pre>
+Mozilla/5.0 (X11; U; Linux x86_64; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Ubuntu/10.10 Chromium/8.0.552.237 Chrome/8.0.552.237 Safari/534.10
+</pre>
+                            <p>
+                                Safari 5.0, Windows:
+                            </p>
+                            <pre>
+Mozilla/5.0 (Windows; U; Windows NT 6.1; sv-SE) AppleWebKit/533.19.4 (KHTML, like Gecko) Version/5.0.3 Safari/533.19.4
+</pre>
+                            <p>
+                                Some features start to jump out at us. The “platform” clauses — that bit in the parens after the first chunk — contains a lot of important data and a lot of junk. But the important stuff always comes first. We’ll need to allow but ignore the junk. Next, stuff after platform clauses is good, has defined order, and can be used to tightly form a match for browsers like Safari and Chrome. With this in mind, we can create some regexes that don’t allow much in the way of variance but do allow sub-minor version to match so we don’t have to update these every month or two:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+IE60 <span style="color:#339933">=</span> <span style="color:#009966;font-style:italic">/^Mozilla\/4\.0 \(compatible; MSIE 6\.0; Windows NT \d\.\d(.*)\)$/</span><span style="color:#339933">;</span>
+FF36 <span style="color:#339933">=</span> <span style="color:#009966;font-style:italic">/^Mozilla\/5\.0 \(Windows; U;(.*)rv\:1\.9\.2.(\d{1,2})\)( Gecko\/(\d{8}))? Firefox\/3\.6(\.\d{1,2})?( \(.+\))?$/</span><span style="color:#339933">;</span>
+CR80 <span style="color:#339933">=</span> <span style="color:#009966;font-style:italic">/^Mozilla\/5\.0 \((Windows|Macintosh|X11); U;.+\) AppleWebKit\/534\.10 \(KHTML\, like Gecko\) (.+)Chrome\/8\.0\.(\d{3})\.(\d{1,3}) Safari\/534\.10$/</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                These look pretty wordy, and they are, because they’re designed NOT to let through things that we don’t really understand. This isn’t just substring matching on the word “WebKit” or “Chrome”, this is a tight fit against the structure of the entire string. If it doesn’t fit, we don’t match, and our cache doesn’t get pre-populated. Instead, we do feature detection. Remember, false positives here are the enemy, so we’re using “^” and “$” matches to ensure that the string has the right structure all the way through, not just at some random point in the middle, which UA’s that parade around as other browsers tend to do.
+                            </p>
+                            <p>
+                                Here’s some sample code that incorporates the approach:
+                            </p>
+                            <div>
+                                <div>
+                                    <pre style="font-family:monospace">
+<span style="color:#009900">(</span><span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span>global<span style="color:#009900">)</span><span style="color:#009900">{</span>
+ 
+    <span style="color:#006600;font-style:italic">// The map of available tests</span>
+    <span style="color:#003366;font-weight:bold">var</span> featureTests <span style="color:#339933">=</span> <span style="color:#009900">{</span>
+        <span style="color:#3366CC">"audio"</span><span style="color:#339933">:</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+            <span style="color:#003366;font-weight:bold">var</span> audio <span style="color:#339933">=</span> document.<span style="color:#660066">createElement</span><span style="color:#009900">(</span><span style="color:#3366CC">"audio"</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+            <span style="color:#000066;font-weight:bold">return</span> audio <span style="color:#339933">&amp;&amp;</span> audio.<span style="color:#660066">canPlayType</span><span style="color:#339933">;</span>
+        <span style="color:#009900">}</span><span style="color:#339933">,</span>
+        <span style="color:#3366CC">"audio-ogg"</span><span style="color:#339933">:</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#009900">{</span> <span style="color:#009966;font-style:italic">/*...*/</span> <span style="color:#009900">}</span>
+        <span style="color:#006600;font-style:italic">// ...</span>
+    <span style="color:#009900">}</span><span style="color:#339933">;</span>
+ 
+    <span style="color:#006600;font-style:italic">// A read-through cache for test results.</span>
+    <span style="color:#003366;font-weight:bold">var</span> testCache <span style="color:#339933">=</span> <span style="color:#009900">{</span><span style="color:#009900">}</span><span style="color:#339933">;</span>
+ 
+    <span style="color:#006600;font-style:italic">// An (exported) function to run/cache tests</span>
+    global.<span style="color:#660066">ft</span> <span style="color:#339933">=</span> <span style="color:#003366;font-weight:bold">function</span><span style="color:#009900">(</span><span style="color:#000066">name</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+        <span style="color:#000066;font-weight:bold">return</span> testCache<span style="color:#009900">[</span><span style="color:#000066">name</span><span style="color:#009900">]</span> <span style="color:#339933">=</span> <span style="color:#009900">(</span><span style="color:#000066;font-weight:bold">typeof</span> testCache<span style="color:#009900">[</span><span style="color:#000066">name</span><span style="color:#009900">]</span> <span style="color:#339933">==</span> <span style="color:#3366CC">"undefined"</span><span style="color:#009900">)</span> <span style="color:#339933">?</span>
+                                    featureTests<span style="color:#009900">[</span><span style="color:#000066">name</span><span style="color:#009900">]</span><span style="color:#009900">(</span><span style="color:#009900">)</span> <span style="color:#339933">:</span>
+                                    testCache<span style="color:#009900">[</span><span style="color:#000066">name</span><span style="color:#009900">]</span><span style="color:#339933">;</span>
+    <span style="color:#009900">}</span><span style="color:#339933">;</span>
+ 
+    <span style="color:#006600;font-style:italic">// Tests for 90+% of current browser usage</span>
+ 
+    <span style="color:#003366;font-weight:bold">var</span> ua <span style="color:#339933">=</span> <span style="color:#009900">(</span>global.<span style="color:#660066">navigator</span><span style="color:#009900">)</span> <span style="color:#339933">?</span> global.<span style="color:#660066">navigator</span>.<span style="color:#660066">userAgent</span> <span style="color:#339933">:</span> <span style="color:#3366CC">""</span><span style="color:#339933">;</span>
+ 
+    <span style="color:#006600;font-style:italic">// IE 6.0/WinXP:</span>
+    <span style="color:#003366;font-weight:bold">var</span> IE60 <span style="color:#339933">=</span> <span style="color:#009966;font-style:italic">/^Mozilla\/4\.0 \(compatible; MSIE 6\.0; Windows NT \d\.\d(.*)\)$/</span><span style="color:#339933">;</span>
+    <span style="color:#000066;font-weight:bold">if</span> <span style="color:#009900">(</span>ua.<span style="color:#660066">search</span><span style="color:#009900">(</span>IE60<span style="color:#009900">)</span> <span style="color:#339933">==</span> <span style="color:#CC0000">0</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+        testCache <span style="color:#339933">=</span> <span style="color:#009900">{</span> <span style="color:#3366CC">"audio"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span> <span style="color:#3366CC">"audio-ogg"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span> <span style="color:#009966;font-style:italic">/* ... */</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+    <span style="color:#009900">}</span>
+ 
+    <span style="color:#006600;font-style:italic">// IE 7.0</span>
+    <span style="color:#006600;font-style:italic">// ...</span>
+    <span style="color:#006600;font-style:italic">// IE 8.0</span>
+    <span style="color:#006600;font-style:italic">// ...</span>
+ 
+    <span style="color:#006600;font-style:italic">// IE 9.0 (updated with fix from John-David Dalton)</span>
+    <span style="color:#003366;font-weight:bold">var</span> IE90 <span style="color:#339933">=</span> <span style="color:#009966;font-style:italic">/^Mozilla\/5\.0 \(compatible; MSIE 9\.0; Windows NT \d\.\d(.*)\)$/</span><span style="color:#339933">;</span>
+    <span style="color:#000066;font-weight:bold">if</span> <span style="color:#009900">(</span>ua.<span style="color:#660066">search</span><span style="color:#009900">(</span>IE90<span style="color:#009900">)</span> <span style="color:#339933">==</span> <span style="color:#CC0000">0</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+        testCache <span style="color:#339933">=</span> <span style="color:#009900">{</span> <span style="color:#3366CC">"audio"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span> <span style="color:#3366CC">"audio-ogg"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span> <span style="color:#009966;font-style:italic">/* ... */</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+    <span style="color:#009900">}</span>
+ 
+    <span style="color:#006600;font-style:italic">// Firefox 3.6/Windows</span>
+    <span style="color:#003366;font-weight:bold">var</span> FF36 <span style="color:#339933">=</span> <span style="color:#009966;font-style:italic">/^Mozilla\/5\.0 \(Windows; U;(.*)rv\:1\.9\.2.(\d{1,2})\)( Gecko\/(\d{8}))? Firefox\/3\.6(\.\d{1,2})?( \(.+\))?$/</span><span style="color:#339933">;</span>
+    <span style="color:#000066;font-weight:bold">if</span> <span style="color:#009900">(</span>ua.<span style="color:#660066">search</span><span style="color:#009900">(</span>FF36<span style="color:#009900">)</span> <span style="color:#339933">==</span> <span style="color:#CC0000">0</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+        testCache <span style="color:#339933">=</span> <span style="color:#009900">{</span> <span style="color:#3366CC">"audio"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span> <span style="color:#3366CC">"audio-ogg"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span> <span style="color:#009966;font-style:italic">/* ... */</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+    <span style="color:#009900">}</span>
+ 
+    <span style="color:#006600;font-style:italic">// Chrome 8.0</span>
+    <span style="color:#003366;font-weight:bold">var</span> CR80 <span style="color:#339933">=</span> <span style="color:#009966;font-style:italic">/^Mozilla\/5\.0 \((Windows|Macintosh|X11); U;.+\) AppleWebKit\/534\.10 \(KHTML\, like Gecko\) (.+)Chrome\/8\.0\.(\d{3})\.(\d{1,3}) Safari\/534\.10$/</span><span style="color:#339933">;</span>
+    <span style="color:#000066;font-weight:bold">if</span> <span style="color:#009900">(</span>ua.<span style="color:#660066">search</span><span style="color:#009900">(</span>FF36<span style="color:#009900">)</span> <span style="color:#339933">==</span> <span style="color:#CC0000">0</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+        testCache <span style="color:#339933">=</span> <span style="color:#009900">{</span> <span style="color:#3366CC">"audio"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span> <span style="color:#3366CC">"audio-ogg"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span> <span style="color:#009966;font-style:italic">/* ... */</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+    <span style="color:#009900">}</span>
+ 
+    <span style="color:#006600;font-style:italic">// Safari 5.0 (mobile)</span>
+    <span style="color:#003366;font-weight:bold">var</span> S5MO <span style="color:#339933">=</span> <span style="color:#009966;font-style:italic">/^Mozilla\/5\.0 \(iPhone; U; CPU iPhone OS \w+ like Mac OS X; .+\) AppleWebKit\/(\d{3,})\.(\d+)\.(\d+) \(KHTML\, like Gecko\) Version\/5\.0(\.\d{1,})? Mobile\/(\w+) Safari\/(\d{3,})\.(\d+)\.(\d+)$/</span><span style="color:#339933">;</span>
+    <span style="color:#000066;font-weight:bold">if</span> <span style="color:#009900">(</span>ua.<span style="color:#660066">search</span><span style="color:#009900">(</span>FF36<span style="color:#009900">)</span> <span style="color:#339933">==</span> <span style="color:#CC0000">0</span><span style="color:#009900">)</span> <span style="color:#009900">{</span>
+        testCache <span style="color:#339933">=</span> <span style="color:#009900">{</span> <span style="color:#3366CC">"audio"</span><span style="color:#339933">:</span> <span style="color:#CC0000">1</span><span style="color:#339933">,</span> <span style="color:#3366CC">"audio-ogg"</span><span style="color:#339933">:</span> <span style="color:#CC0000">0</span> <span style="color:#009966;font-style:italic">/* ... */</span> <span style="color:#009900">}</span><span style="color:#339933">;</span>
+    <span style="color:#009900">}</span>
+ 
+    <span style="color:#006600;font-style:italic">// ...</span>
+ 
+<span style="color:#009900">}</span><span style="color:#009900">)</span><span style="color:#009900">(</span><span style="color:#000066;font-weight:bold">this</span><span style="color:#009900">)</span><span style="color:#339933">;</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>
+                                New versions of browsers won’t match these tests, so we won’t break libraries in the face of new UAs — assuming the feature tests also don’t break, which is a big if in many cases — and we can go faster for the majority of users. Win.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://infrequently.org/2011/02/on-performance-innumeracy-false-positives/">http://infrequently.org/2011/02/on-performance-innumeracy-false-positives/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

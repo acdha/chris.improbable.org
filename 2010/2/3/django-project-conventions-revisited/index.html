@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Django Project Conventions, Revisited
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 03 Feb 2010 08:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-02-03T03:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-02-03T03:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-02-03T07:00:00+00:00">Feb 03</time>
+                    <h2 itemprop="title">
+                        Django Project Conventions, Revisited
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/bfe68109ee1af465">
+                        <blockquote>
+                            <h1>
+                                Django Project Conventions, Revisited
+                            </h1>
+                            <p>
+                                A year and two blogs ago, I wrote about the way I prefer to organize my Django projects and deployments. Since then, I’ve refined my approach, taking into account the experience I’ve accrued, and the changing nature of Django itself. In this blog post, I’ll share with you what I’ve found to be incredibly valuable techniques.
+                            </p>
+                            <h2>
+                                Filesystem Layout
+                            </h2>
+                            <p>
+                                The first step is to divide the Django <em>deployment</em> into two halves: a <strong>site root</strong> and a <strong>project root</strong>. The site root consists of a <a href="http://pypi.python.org/pypi/virtualenv">virtualenv</a> at the top level, and sub-directories for SQLite databases, temporary files, and several other files. A short description of each sub-directory is given below:
+                            </p>
+                            <div>
+                                <pre>
+SITE_ROOT/
+|-- bin/      # Part of the virtualenv
+|-- cache/    # A filesystem-based cache
+|-- db/       # Store SQLite files in here (during development)
+|-- include/  # Part of the virtualenv
+|-- lib/      # Part of the virtualenv
+|-- log/      # Log files
+|-- pid/      # PID files
+|-- share/    # Part of the virtualenv
+|-- sock/     # UNIX socket files
+|-- tmp/      # Temporary files
+`-- uploads/  # Site uploads
+</pre>
+                            </div>
+                            <p>
+                                Obviously each of these components is optional, and will vary based on the requirements of the application. This listing represents the most you will usually ever need.
+                            </p>
+                            <p>
+                                The <strong>site root</strong> functions as a container for a specific deployment. All the files it contains are those that will vary from deployment to deployment, and most importantly will change <em>during the running of the site</em>—log files, user uploads, filesystem-based caches and PID files all fall into this category. For this reason, the site root <strong>is not</strong> checked into version control.
+                            </p>
+                            <p>
+                                Conversely, the <strong>project root</strong> contains those files which remain immutable while the site is running. This means code, static media and configuration files. As a result, this directory <strong>is</strong> checked into version control. You should also make the project root a sub-directory of the site root; this will keep everything in one place. The project directory will look like this:
+                            </p>
+                            <div>
+                                <pre>
+PROJECT_ROOT/
+|-- apps/         # Site-specific Django apps
+|-- etc/          # A symlink to an `etcs/` sub-directory
+|-- etcs/         # Assorted plain-text configuration files
+|-- libs/         # Site-specific Python libs
+|-- media/        # Static site media (images, stylesheets, JavaScript)
+|-- settings/     # Settings directory
+|-- templates/    # Site-wide Django templates
+|-- .hgignore     # VCS ignore file (can be .gitignore, .cvsignore, etc)
+|-- README        # Instructions/assistance for other developers/admins
+|-- REQUIREMENTS  # pip dependencies file
+|-- __init__.py   # Makes the project root a Python package
+`-- urls.py       # Root URLconf
+</pre>
+                            </div>
+                            <p>
+                                There are a few key things to notice:
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        The <code>apps/</code> directory contains individual Django apps that are specific to this project. Anything generic should be specified in the <code>REQUIREMENTS</code> file.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        The <code>libs/</code> directory contains individual Python libraries—again, only those specific to this project. If a particular library deals with only one app, it should go into that app; <code>libs/</code> is for the general-purpose tools that don’t fit inside a single app, but aren’t generic enough to be a separate requirement or dependency.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        The <code>etcs/</code> directory should contain a sub-directory for each deployment—so you might have <code>etcs/development/</code>, <code>etcs/staging/</code> and <code>etcs/production/</code>. <code>etc/</code> is a symlink to one of these, and should be ignored by the VCS. These plain-text configuration directories might contain web server configs (<code>lighttpd.conf</code>, <code>nginx.conf</code>), <a href="http://supervisord.org">Supervisor</a> configs (<code>supervisord.conf</code>), and so on.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <code>REQUIREMENTS</code> should be a <a href="http://pip.openplans.org/requirement-format.html">pip requirements file</a>.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        No <code>manage.py</code> file. It turns out you can just use <code>django-admin.py</code> from within the project root (although I use <a href="http://bitbucket.org/zacharyvoase/django-boss/"><code>django-boss</code></a>). As an added bonus, these will both actually <em>listen</em> to the <code>DJANGO_SETTINGS_MODULE</code> environment variable, which is really important, as you’ll see in a bit.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        More on <code>settings/</code> in just a hot second.
+                                    </p>
+                                </li>
+                            </ul>
+                            <h2>
+                                Settings
+                            </h2>
+                            <p>
+                                Managing settings across various deployments has been something of a standing problem in Django for a while now. It’s not one that can be fixed by a change to Django itself—in fact, Django is incredibly flexible when it comes to specifying settings, which has given developers room to experiment with a range of solutions. I think I’ve found one which works pretty well.
+                            </p>
+                            <p>
+                                Begin by breaking your settings into two groups: <strong>common</strong> settings, and <strong>deployment-specific</strong> settings. Common settings are defined in a <code>settings.common</code> sub-module, and may include:
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        Defaults for settings like <code>DEBUG</code>, <code>ADMINS</code>, <code>MANAGERS</code> and <code>CACHE_MIDDLEWARE_SECONDS</code>. If not subsequently overridden, the values specified here will be used, so they should provide sensible defaults.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        App installation and setup: <code>INSTALLED_APPS</code>, <code>MIDDLEWARE_CLASSES</code>, <code>ROOT_URLCONF</code> and <code>TEMPLATE_CONTEXT_PROCESSORS</code> all fall under this category.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        A basic logging setup. It’s good to define, but not install, several handlers—these can optionally be added to the root logger in the deployment-specific configuration. For example, in my common settings, I always do:
+                                    </p>
+                                    <div>
+                                        <pre>
+<span>import</span> <span>logging</span>
+
+<span>LOG_DATE_FORMAT</span> <span>=</span> <span>'</span><span>%d</span><span> %b %Y %H:%M:%S'</span>
+<span>LOG_FORMATTER</span> <span>=</span> <span>logging</span><span>.</span><span>Formatter</span><span>(</span>
+    <span>u'</span><span>%(asctime)s</span><span> | </span><span>%(levelname)-7s</span><span> | </span><span>%(name)s</span><span> | </span><span>%(message)s</span><span>'</span><span>,</span>
+    <span>datefmt</span><span>=</span><span>LOG_DATE_FORMAT</span><span>)</span>
+
+<span>CONSOLE_HANDLER</span> <span>=</span> <span>logging</span><span>.</span><span>StreamHandler</span><span>()</span> <span># defaults to stderr</span>
+<span>CONSOLE_HANDLER</span><span>.</span><span>setFormatter</span><span>(</span><span>LOG_FORMATTER</span><span>)</span>
+<span>CONSOLE_HANDLER</span><span>.</span><span>setLevel</span><span>(</span><span>logging</span><span>.</span><span>DEBUG</span><span>)</span>
+</pre>
+                                    </div>
+                                    <p>
+                                        In my development settings, I add <code>CONSOLE_HANDLER</code> to <code>logging.root</code>; in production, however, I use a file handler.
+                                    </p>
+                                </li>
+                            </ul><ins>Daniel Bruce kindly <a href="http://blog.zacharyvoase.com/#comment-38135625">pointed out</a> that if you’re using i18n in your project, you need to set <code>LOCALE_PATHS = (PROJECT_ROOT / 'locale',)</code> (a tuple).<br>
+                            This is because Django’s translation machinery uses <code>settings_mod.__file__</code> to find translations by default, and so is incompatible with package-based settings modules.</ins>
+                            <p>
+                                Deployment-specific settings, in another <code>settings.DEPLOYMENT_NAME</code> sub-module, could consist of:
+                            </p>
+                            <ul>
+                                <li>
+                                    <code>DEBUG</code> and <code>TEMPLATE_DEBUG</code>
+                                </li>
+                                <li>
+                                    <code>DATABASE_*</code>
+                                </li>
+                                <li>
+                                    <code>CACHE_BACKEND</code>
+                                </li>
+                                <li>
+                                    <code>EMAIL_HOST</code> and <code>EMAIL_PORT</code>
+                                </li>
+                                <li>
+                                    <code>TIME_ZONE</code>
+                                </li>
+                                <li>
+                                    <code>SITE_ID</code>
+                                </li>
+                                <li>The global logging level (via <code>logging.root.setLevel()</code>).
+                                </li>
+                            </ul>
+                            <p>
+                                After you’ve sorted out your settings, the <code>settings/</code> directory should look something like this:
+                            </p>
+                            <div>
+                                <pre>
+settings/
+|-- __init__.py     # Empty; makes this a Python package
+|-- common.py       # All the common settings are defined here
+|-- development.py  # Settings for development
+|-- production.py   # Settings for production
+`-- staging.py      # Settings for staging
+</pre>
+                            </div>
+                            <p>
+                                To get these settings working, you just need to put the following at the top of each deployment-specific settings file:
+                            </p>
+                            <div>
+                                <pre>
+<span>from</span> <span>common</span> <span>import</span> <span>*</span>
+</pre>
+                            </div>
+                            <p>
+                                You’ll also need to set the <code>DJANGO_SETTINGS_MODULE</code> environment variable. From the <code>PROJECT_ROOT</code>:
+                            </p>
+                            <div>
+                                <pre>
+<span>$ </span><span>export </span><span>DJANGO_SETTINGS_MODULE</span><span>=</span>settings.development <span># Mutatis mutandem</span>
+<span>$ </span><span>echo</span> <span>"!!"</span> &gt;&gt; ../bin/activate
+</pre>
+                            </div>
+                            <p>
+                                The last line will append the previous command to <code>SITE_ROOT/bin/activate</code>, so that every time you activate the virtualenv you’ll set the necessary variables.
+                            </p>
+                            <h3>
+                                Dealing With <code>apps/</code> and <code>libs/</code>
+                            </h3>
+                            <p>
+                                In order to be able to import stuff from the <code>apps/</code> and <code>libs/</code> directories, you’ll need to add them to the module search path. Fortunately, this couldn’t be simpler: you’ll need to have the following in <code>settings/common.py</code>:
+                            </p>
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>sys</span>
+<span>from</span> <span>path</span> <span>import</span> <span>path</span>
+
+<span>PROJECT_ROOT</span> <span>=</span> <span>path</span><span>(</span><span>__file__</span><span>)</span><span>.</span><span>abspath</span><span>()</span><span>.</span><span>dirname</span><span>()</span><span>.</span><span>dirname</span><span>()</span>
+<span>SITE_ROOT</span> <span>=</span> <span>PROJECT_ROOT</span><span>.</span><span>dirname</span><span>()</span>
+
+<span>sys</span><span>.</span><span>path</span><span>.</span><span>append</span><span>(</span><span>SITE_ROOT</span><span>)</span>
+<span>sys</span><span>.</span><span>path</span><span>.</span><span>append</span><span>(</span><span>PROJECT_ROOT</span> <span>/</span> <span>'apps'</span><span>)</span>
+<span>sys</span><span>.</span><span>path</span><span>.</span><span>append</span><span>(</span><span>PROJECT_ROOT</span> <span>/</span> <span>'libs'</span><span>)</span>
+</pre>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                This code must be executed before Django attempts to import any of the installed apps or libraries. This is the reason why I recommend putting it in <code>settings/common.py</code>. See below for more information on <code>path.path</code>.
+                            </p>
+                            <h3>
+                                The Invaluable <code>path</code>
+                            </h3>
+                            <p>
+                                Jason Orendorff’s <a href="http://pypi.python.org/pypi/path.py"><code>path</code> module</a> is so helpful in building your settings files. Whether you’re dynamically computing settings like <code>MEDIA_ROOT</code>, or just dealing with files and directories in general, this module makes things infinitely cleaner and easier; you can do away with massively nested calls like <code>os.path.join(os.path.dirname(os.path.abspath(...)))</code>. I’ve been using it for ages; I even <a href="http://blog.zacharyvoase.com/2009-09-11-easy-path-manipulation-in-python">blogged about it</a> several months ago.
+                            </p>
+                            <p>
+                                Now, a simple <code>easy_install</code> won’t work due to Jason’s website being down. However, you can manually fetch it by putting the following line in <code>REQUIREMENTS</code>:
+                            </p>
+                            <div>
+                                <pre>
+http://pypi.python.org/packages/source/p/path.py/path-2.2.zip
+</pre>
+                            </div>
+                            <p>
+                                It will, however, raise a deprecation warning when you import it. Just use the following trick to avoid that when you import it the first time (usually at the top of <code>settings/common.py</code>):
+                            </p>
+                            <div>
+                                <pre>
+<span>import</span> <span>warnings</span><span>;</span> <span>warnings</span><span>.</span><span>simplefilter</span><span>(</span><span>"ignore"</span><span>)</span>
+<span>from</span> <span>path</span> <span>import</span> <span>path</span>
+</pre>
+                            </div>
+                            <p>
+                                You can then reap the rewards like so:
+                            </p>
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <pre>
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+</pre>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <pre>
+<span>## Directories</span>
+<span># Call `dirname()` twice because we’re at `PROJECT_ROOT/settings/xxx.py`</span>
+<span>PROJECT_ROOT</span> <span>=</span> <span>path</span><span>(</span><span>__file__</span><span>)</span><span>.</span><span>abspath</span><span>()</span><span>.</span><span>dirname</span><span>()</span><span>.</span><span>dirname</span><span>()</span>
+<span>SITE_ROOT</span> <span>=</span> <span>PROJECT_ROOT</span><span>.</span><span>dirname</span><span>()</span>
+<span>MEDIA_ROOT</span> <span>=</span> <span>PROJECT_ROOT</span> <span>/</span> <span>'media'</span>
+
+<span>## Logging</span>
+<span>FILE_HANDLER</span> <span>=</span> <span>logging</span><span>.</span><span>FileHandler</span><span>(</span><span>SITE_ROOT</span> <span>/</span> <span>'log'</span> <span>/</span> <span>'django.log'</span><span>)</span>
+
+<span>## Database Setup</span>
+<span>DATABASE_ENGINE</span> <span>=</span> <span>'sqlite3'</span>
+<span>DATABASE_NAME</span> <span>=</span> <span>SITE_ROOT</span> <span>/</span> <span>'db'</span> <span>/</span> <span>'development.sqlite3'</span>
+</pre>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p>
+                                <code>path.path</code> is a subclass of the built-in <code>unicode</code>, so it can be used anywhere a string or unicode object would work.
+                            </p>
+                            <h2>
+                                Running Stuff
+                            </h2>
+                            <p>
+                                This is the one big aspect I’m not settled on. I’ve run Django under Apache and <code>mod_wsgi</code>; I’ve also used <a href="http://www.lighttpd.net/">lighttpd</a> talking to Django via <a href="http://supervisord.org/manual/current/configuration.html#fcgi-programx">FastCGI over a multiplexed UNIX socket, managed by Supervisor</a>. I’m eager to give <a href="http://nginx.org/">nginx</a> a whirl, too.
+                            </p>
+                            <p>
+                                I do know that <a href="http://supervisord.org">Supervisor</a> was a really awesome find. It’s essentially a tool which allows you to manage long-running processes and groups of processes, with a powerful Python extension mechanism, an XML-RPC API, and a command-line client for controlling processes. Configurations are written in a very basic INI-style syntax (actually, using Python’s <a href="http://docs.python.org/library/configparser.html"><code>ConfigParser</code></a>), so they’re a lot easier to set up than an <a href="http://en.wikipedia.org/wiki/Init"><code>init.d</code> file</a>. I’d definitely recommend it if you want to be able to stop, start and monitor your server with ease.
+                            </p>
+                            <p>
+                                Another fantasy of mine is to run Django completely under an asynchronous server. Recent technologies like <a href="http://www.tornadoweb.org/">Tornado</a>, <a href="http://eventlet.net/">eventlet</a> and <a href="http://www.gevent.org/">gevent</a>, as well as (not so recently) <a href="http://twistedmatrix.com/trac/">Twisted</a>, have proven that using asynchronous networking can result in tremendous performance boosts. Unfortunately, since most database client libraries remain incompatible with async-I/O, that makes running Django asynchronously very difficult indeed. It would require either:
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        Writing a new database engine backend around a pure-Python DB client library, such as <a href="https://launchpad.net/myconnpy">MySQL Connector/Python</a>; or
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        Uninstalling all apps which use the Django ORM, and building a completely new suite of replacement apps which leverage async-I/O.
+                                    </p>
+                                </li>
+                            </ul>
+                            <p>
+                                Neither of these seems very palatable right now, so for now I’ll stick with some simple reverse-proxy-based load-balancing across a few processes, and hope the box stays up. Besides, if I ever need to use async-I/O for performance reasons, I probably won’t be using Django to handle requests.
+                            </p>
+                            <h2>
+                                Wrap-up
+                            </h2>
+                            <p>
+                                When you’ve finally finished setting up your project, it should look something like the following:
+                            </p>
+                            <div>
+                                <pre>
+SITE_ROOT
+|-- PROJECT_ROOT/
+|   |-- apps/
+|   |-- etc/
+|   |-- etcs/
+|   |-- libs/
+|   |-- media/
+|   |-- settings/
+|   |   |-- __init__.py
+|   |   |-- common.py
+|   |   |-- development.py
+|   |   |-- production.py
+|   |   `-- staging.py
+|   |-- templates/
+|   |-- README
+|   |-- REQUIREMENTS
+|   |-- __init__.py
+|   `-- urls.py
+|-- bin/
+|-- db/
+|-- include/
+|-- lib/
+|-- pid/
+|-- share/
+|-- sock/
+|-- tmp/
+`-- uploads/
+</pre>
+                            </div>
+                            <p>
+                                That’s pretty much it for now. As always, comments, suggestions and criticisms are appreciated.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.zacharyvoase.com/2010-02-03-django-project-conventions-revisited">http://blog.zacharyvoase.com/2010-02-03-django-project-conventions-revisited</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

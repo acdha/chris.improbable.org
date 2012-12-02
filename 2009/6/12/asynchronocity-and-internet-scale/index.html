@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Asynchronocity and Internet Scale
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 12 Jun 2009 23:45:48 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-06-12T17:09:00-04:00">
+                    <meta itemprop="dateModified" content="2009-06-12T17:09:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-06-12T21:09:00+00:00">Jun 12</time>
+                    <h2 itemprop="title">
+                        Asynchronocity and Internet Scale
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/92d22276eef834eb">
+                        <blockquote>
+                            Schools teach you the wrong way to write network code. They teach you the "<b>synchronous</b>" method. You send a request, wait for a response, then process the response. This doesn't scale to large programs that must interacts with thousands of peers at gigabit speeds. These types of programs require "<b>asynchronous</b>" coding.<br>
+                            <br>
+                            <br>
+                            The problem is that while you are waiting for a response, you can't do anything else useful. You can't simultaneously interact with a second system, for example. Normally, this isn't a problem because computers respond so quickly that you don't notice the wait. You can also hide it by using multiple threads, but if you had 10 threads, then 10 slow systems will noticeably slow your code.<br>
+                            <br>
+                            Asynchronous coding solves this problem by never waiting. It sits in a loop processing events, either incoming packets, or timeout events.<br>
+                            <br>
+                            Let's use a TCP connection as an example. As everyone knows, the client sends a SYN packet to the server, the server responds with a SYN-ACK, then the client sends an ACK. This SYN-SYNACK-ACK is known as the "three-way-handshake".<br>
+                            <br>
+                            In synchronous code, you send a SYN, then stop and wait for a SYN-ACK. When you get a response packet, you first test it to make sure it conforms to the SYN-ACK you were expecting, otherwise you handle some sort of error.<br>
+                            <br>
+                            In asynchronous code, the receive thread sits in an "event dispatch loop". It processes incoming packets. If an incoming SYN-ACK is received, it looks it up in a connection table to see if anybody has sent a SYN packet. If so, it dispatches the SYN-ACK as appropriate.<br>
+                            <br>
+                            Imagine you are writing a port scanner, like nmap. One way you could write this is to launch many threads, where each one sends out a SYN packet, then stops and waits for the SYN-ACK. This could could generate <b>thousands of packets per second</b>.<br>
+                            <br>
+                            Or, you could write your mapping program with two threads: one that does nothing but sends out SYN packets, and a second thread that receives SYN-ACKs in response. This code could generate a <b>million packets per second</b>.<br>
+                            <br>
+                            Recently, a hacker released a TCP DoS tool called NKiller2. The tool uses asynchronous network code. It can appear confusing to people accustomed to synchronous programming. A synchronous coder might expect it to launch many threads, where each thread sends out a SYN and waits for responses for that one connection. This would be too slow - it would probably DoS itself creating too man threads before it was able to DoS the victim.<br>
+                            <br>
+                            Instead, NKiller2 is written asynchronously. It runs two threads, one thread that spews out SYN packets, and another thread that responds to incoming packets. This may not be obvious, because both steps are part of the same thread of execution. The code has an event dispatch loop that looks like the following:<br>
+                            <tt><br>
+                            while () {<br>
+                            . . .…<br>
+                            send_syn_probe(Target, Sniffer);<br>
+                            . . .<br>
+                            state = check_replies(Target, Sniffer, &amp;reply);<br>
+                            switch (state)<br>
+                            {<br>
+                            case S_SYNACK:<br>
+                            send_probe(reply, Target, S_SYNACK);<br>
+                            }<br>
+                            }<br></tt><br>
+                            If you are used to synchronous programming, you might assume that the "send_syn_probe()" and "check_replies()" function are related, that it first sends a SYN then checks for a reply to that SYN. That's NOT what's going on.<br>
+                            <br>
+                            Instead it's really running two threads, one that sits in a loop sending SYNs, and another that sits in a loop processing replies. The code just combines both into the same loop. You could put the "send_syn_probe()" function at the bottom of the loop, AFTER the "check_replies()", and the code would behave the same.<br>
+                            <br>
+                            Or, you could create two versions of this program. Create one that sends SYNs, but has the "check_replies()" commented out. Create a second program with "send_syn_probe()" commented out, but which only receives replies. Now run them both at the same time, and you'll get identical results as the original program.<br>
+                            <br>
+                            This code also uses the technique of being completely "stateless". One way to write this code would be for it to create a small connection record. However, since it is creating millions of connections, it would need a large table in memory to track what each connection is doing. Instead, it's much simpler. It will reply to a SYN-ACK packet regardless if it sent a matching SYN packet.<br>
+                            <br>
+                            That would be one (of many) easy ways to see if somebody is running this tool against you. Whenever you suspect somebody is DoSing you, send them a SYN-ACK packet out of the blue. If it's a normal, stateful system that tracks SYNs it sent, then the suspected attacker will respond with some sort of error. If it is stateless, Internet scale attacker, they will respond with a data packet.<br>
+                            <br>
+                            <br>
+                            Internet scale programming like this is all around us. When the Internet worms were ravaging the Internet, a common technique was to set up "tarpits". A tarpit would accept an incoming TCP connection, but never respond. The worm on the other end would stop and wait for a response. Since the tarpit would never respond, the worm would wait forever, stopping its spread. Some worms would launch a hundred threads, each thread would eventually find a tarpit and be halted. (Note: I first tried this with the Morris Worm, it effectively slowed it down, but it would eventually timeout connections and move on - the first worm was written better than most following worms).<br>
+                            <br>
+                            Another example of this is Internet-wide scanning. Kaminksy used this approach for scanning for DNS servers: have one thread spew out DNS packets, and a second thread receive them. I used the same technique for scanning for SNMP vulnerabilities. I wrote it for the military to scan Class A networks (with 16-million addresses), but it would scale to the entire Internet. My SNMP scanner was also stateless: it would accept any SNMP response regardless if it actually sent the system a request. This was actually pretty interesting seeing how many SNMP responses didn't match correctly with a request I sent (such as multi-homed hosts).<br>
+                            <br>
+                            It works the other way around, too. IronPort used this approach to receiving large amounts of e-mail. They called the operating system they built around this idea "<a href="http://www.ironport.com/products/ironport_asyncos_operating_system.html">AsyncOS</a>". (They also use this for sending spam).<br>
+                            <br>
+                            Asynchronicity is why BlackICE/Proventia IPS is faster than application gateways. Fundamentally, they do the same thing: process application layer data and block it. However, BlackICE does this asynchronously, with a single thread. Application-layer gateways tend to be written synchronously, with a limited amount of threads waiting for data.<br>
+                            <br>
+                            Conclusion<br>
+                            <br>
+                            They teach you synchronous coding in school because it's easy to understand. However, in order to write software to "Internet scale", you have to learn how to write asynchronous code. This applies to worms, DoS tools, port scanners, firewalls, IPS, e-mail gateways, and so on.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/37798047-5608997710540234097?l=erratasec.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://erratasec.blogspot.com/2009/06/asynchronocity-and-internet-scale.html">http://erratasec.blogspot.com/2009/06/asynchronocity-and-internet-scale.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

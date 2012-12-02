@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Digging Deeper with htracr
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 08 Dec 2010 01:37:26 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-26T10:23:34-04:00">
+                    <meta itemprop="dateModified" content="2010-11-26T10:23:34-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-26T14:23:34+00:00">Nov 26</time>
+                    <h2 itemprop="title">
+                        Digging Deeper with htracr
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7e0273b637579307">
+                        <blockquote>
+                            <p>
+                                There’s a lot of current activity on the binding between HTTP and TCP; from pipelining to SPDY, the frontier of Web performance lives between these layers.
+                            </p>
+                            <p>
+                                To get more visibility in exactly what’s happening down there, I decided to throw together a little tool to show how HTTP uses TCP: <a href="https://github.com/mnot/htracr/">htracr</a>.
+                            </p>
+                            <p>
+                                In a nutshell, It’s a packet sniffer written in JavaScript, thanks to <a href="https://github.com/mranney/node_pcap/">node_pcap</a>, and it uses <a href="http://raphaeljs.com/">RaphaelJS</a> to visualise what’s going on. It’s still very young (lots of bugs to fix, lots of features to add), but I thought I’d share some early observations that it’s made possible.
+                            </p>
+                            <h3>
+                                Twiddling the Initial Congestion Window
+                            </h3>
+                            <p>
+                                The guys over at Google have been <a href="http://code.google.com/speed/articles/tcp_initcwnd_paper.pdf">banging the drum for increasing the Initial Congestion Window</a> (initcwnd) in TCP, so that slow start isn’t so… slow. Their recommended value is 10*MSS, so I decided to give that a try and see what happened.
+                            </p>
+                            <p>
+                                This is a full fetch of the background image on mnot.net’s home page, from Australia to Texas:
+                            </p>
+                            <p>
+                                <img src="http://www.mnot.net/blog/initcwin_0.jpg" height="265" width="550" border="1" hspace="4" vspace="4" alt="Initcwin 0">
+                            </p>
+                            <p>
+                                As you can see, it takes almost 1.5 seconds to transfer about 120K, which translates to about six round trips (given that my RTT is about 250ms). Note that this isn’t slow because I don’t have good bandwidth here (it’s about 15Mbits); it’s because TCP slow start is starting conservative, and this request is fairly early in the connection.
+                            </p>
+                            <p>
+                                Now, if we tune the initcwnd to 10*MSS on the server side, we see something different:
+                            </p>
+                            <p>
+                                <img src="http://www.mnot.net/blog/initcwin_10.jpg" height="285" width="550" border="1" hspace="4" vspace="4" alt="Initcwin 10">
+                            </p>
+                            <p>
+                                Same 90 packets, same content, but less than a second, or roughly four round trips. Nice.
+                            </p>
+                            <p>
+                                There are, of course, all kinds of caveats around this. I haven’t changed the client initcwnd, so this only helps responses. Furthermore, I’m just starting to collect data about TCP error rates (need to write a CloudKick plugin) to see what effects this has, especially for mobile and poorly connected clients.
+                            </p>
+                            <p>
+                                All of that said, it’s pretty cool to be able to see the effects so concretely.
+                            </p>
+                            <p>
+                                BTW, one of the TODOs for htracr is to gather these metrics automatically and show better TCP-layer statistics.
+                            </p>
+                            <h3>
+                                Looking for Pipelining
+                            </h3>
+                            <p>
+                                One of the main reasons I threw htracr together was to have a look at how HTTP pipelining happens “in the wild,” so that we can <a href="https://datatracker.ietf.org/doc/draft-nottingham-http-pipeline/">make it better</a>. I’m still working through some bugs, and need to find an effective way to visualise the relationships between requests and responses, but even so, we’re still able to see a few interesting things.
+                            </p>
+                            <p>
+                                Opera is well-known for being the only browser that has pipelining turned on by default. However, from what I’ve seen so far, it’s so conservative about it, it might as well not:
+                            </p>
+                            <p>
+                                <img src="http://www.mnot.net/blog/opera_pipeline.jpg" height="257" width="550" border="1" hspace="4" vspace="4" alt="Opera Pipeline">
+                            </p>
+                            <p>
+                                This is a load of nytimes.com in Opera 10.63; if you look at the second connection (grey bar) down, you’ll see that the last two requests are pipelined. The many others on the page aren’t, however.
+                            </p>
+                            <p>
+                                Firefox 3.6 is a bit better, when you turn pipelining on:
+                            </p>
+                            <p>
+                                <img src="http://www.mnot.net/blog/ff36_pipeline.jpg" height="224" width="550" border="1" hspace="4" vspace="4" alt="Ff36 Pipeline">
+                            </p>
+                            <p>
+                                Here, you can see a few different requests are pipelined (the brighter red dots denote nearly simulataneous messages). Things with Firefox should get even more interesting when <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=603503">Patrick’s patches</a> land, of course.
+                            </p>
+                            <h3>
+                                These Requests Need to Go on a Diet
+                            </h3>
+                            <p>
+                                New York Times, front page load:
+                            </p>
+                            <p>
+                                <img src="http://www.mnot.net/blog/nyt.jpg" height="378" width="550" border="1" hspace="4" vspace="4" alt="Nyt" title="nyt.png">
+                            </p>
+                            <p>
+                                The only thing I’ll add here is that these are mild compared to some bloated requests you’ll see out there.
+                            </p>
+                            <h3>
+                                Pushy Servers
+                            </h3>
+                            <p>
+                                Another interesting thing to observe is when servers send TCP PSHs, because that usually indicates when the application write()s something.
+                            </p>
+                            <p>
+                                A pathological case is Google News:
+                            </p>
+                            <p>
+                                <img src="http://www.mnot.net/blog/gnews.jpg" height="245" width="550" border="1" hspace="4" vspace="4" alt="Gnews">
+                            </p>
+                            <p>
+                                At first, it looks like they’re starting with a large cwin, but if you examine all of those green PSH packets at the start, you’ll find they’re very small, with payloads like 3, 6, and 10 bytes. This is gzipped data (it’s the gnews home page), and since the first byte isn’t seen until more than ten times the RTT, I don’t think they’re doing this for performance reasons; either it’s an artefact of their gzip implementation, or they’re doing an experiment (in typical Google style).
+                            </p>
+                            <p>
+                                That’s all for now; I’m going to keep on refining htracr, trying to surface more information. Patches / github pulls welcome.
+                            </p>
+                            <p>
+                                P.S. Node.JS rocks.
+                            </p>
+                            <p>
+                                <strong>UPDATE</strong>: htracr is now packaged with <a href="http://npmjs.org/">npm</a>, so installing it should be a snap now.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.mnot.net/blog/2010/11/27/htracr">http://www.mnot.net/blog/2010/11/27/htracr</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

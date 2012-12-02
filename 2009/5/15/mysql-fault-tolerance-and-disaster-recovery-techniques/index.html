@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            MySQL fault-tolerance and disaster recovery techniques
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 15 May 2009 20:53:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-05-15T16:17:00-04:00">
+                    <meta itemprop="dateModified" content="2009-05-15T16:17:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-05-15T20:17:00+00:00">May 15</time>
+                    <h2 itemprop="title">
+                        MySQL fault-tolerance and disaster recovery techniques
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c7b2ef79b8332c8f">
+                        <blockquote>
+                            Any non-trivial MySQL installation needs to be protected against failures, and especially so in a 'cloud' environment, where <a href="http://agiletesting.blogspot.com/2009/04/experiences-deploying-large-scale.html">failure should be expected</a>. I've had bad experiences with MySQL clustering (I tenderly refer to it as MySQL clusterf**k), so I'm going to talk about MySQL replication in this post.<br>
+                            <br>
+                            The most common fault-tolerance scenario in a MySQL environment is to have a master database server and a pool of load-balanced slave database servers. Hopefully your application is configurable so it can write to the master DB and read from the slave DB pool. If it is not, you can still use this technique (with some limitations) by going through MySQL Proxy, as detailed in another <a href="http://agiletesting.blogspot.com/2009/04/mysql-load-balancing-and-read-write.html">blog post</a> of mine.<br>
+                            <br>
+                            There is plenty of documentation available on <a href="http://dev.mysql.com/doc/refman/5.1/en/replication.html">setting up MySQL replication</a>. I will jot down here some notes on things I find myself doing over and over again, in a condensed format that hopefully will benefit others too.<br>
+                            <br>
+                            Step 0 is to enable binary logging on the master database. That's all you need to do for a MySQL DB server to be able to function as a master. To achieve this, you can add lines like these in /etc/my.cnf and restart mysqld:<br>
+                            <pre>
+ 
+</pre>
+                            <pre>
+server-id = 1log-bin = /var/lib/mysql/mysql-bin
+</pre><br>
+                            One other option you might want to set up is the binlog format. For recent MySQL versions, the default is STATEMENT. For some types of updates to the master, I found it is better to specify ROW as the binlog format (for an explanation of the differences between the 2 types, and for more info that you ever wanted about binary logging, see the <a href="http://dev.mysql.com/doc/refman/5.1/en/binary-log.html">official documentation</a>):<br>
+                            <pre>
+binlog_format = ROW
+</pre>You also need to create a MySQL user on the master DB and grant it REPLICATION SLAVE rights. You can use a statement like this:<br>
+                            <pre>
+GRANT REPLICATION SLAVE ON *.* TO 'replicant'@'IP_of_slave_DB' IDENTIFIED BY 'somepassword';
+</pre><br>
+                            <br>
+                            <b>Setting up a MySQL slave when you can lock tables on the master</b><br>
+                            <br>
+                            This is the recommended way of setting up a MySQL slave DB machine. It requires locking the tables for writes on the master DB, which is something you may or may not afford to do. Here are the steps you need to go through:<br>
+                            <br>
+                            1) Connect to the master DB server and issue this command:<br>
+                            <br>
+                            <pre>
+FLUSH TABLES WITH READ LOCK;
+</pre><br>
+                            2) Note the binlog file name and position on the master by running this command:<br>
+                            <pre>
+<br>SHOW MASTER STATUS;<br>| File| Position | Binlog_Do_DB | Binlog_Ignore_DB<br>| mysql-bin.000004 | 87547369 || |<br>1 row in set (0.01 sec)
+</pre><br>
+                            <br>
+                            3) Leave the current mysql session open so that the tables are still locked on the master, and in a different session take a database dump of the mysql database and of the application database on the master. You can use a command line such as:<br>
+                            <br>
+                            <br>
+                            <pre>
+mysqldump -u root -p$MY_ROOT_PW --database mysql \<br>--lock-all-tables | /bin/gzip &gt; mysql.sql.gz
+</pre>
+                            <pre>
+<br>
+</pre>
+                            <pre>
+mysqldump -u root -p$MY_ROOT_PW --database $MYDB \<br>--lock-all-tables | /bin/gzip &gt; $MYDB.sql.gz
+</pre><br>
+                            4) Once the dump is done (a process which on a very large database can take hours), go ahead and unlock the tables in the first MySQL session:<br>
+                            <br>
+                            <pre>
+UNLOCK TABLES;
+</pre><br>
+                            5) Now you're ready to set up a MySQL slave database. It's a good idea to set up binary logging on all your slaves, so that if your master DB fails, any slave can be promoted to a master. If you do turn binary logging on, do <b>NOT</b> also enable log-slave-updates (because if you do, and if you promote a slave to a master, then the other slaves might receive some updates twice -- complete explanation available <a href="http://dev.mysql.com/doc/refman/5.1/en/replication-solutions-switch.html">here</a>).<br>
+                            <br>
+                            The DB machine you want to set up as a slave should have lines similar to these in its /etc/my.cnf file (server-id needs to be different from the master ID and any other slave IDs that talk to the same master):<br>
+                            <br>
+                            <pre>
+server-id = 2<br>log-bin = /var/lib/mysql/mysql-binbinlog_format = ROW
+</pre>6) On the machine you want to set up as a slave, load the mysql dumps of the mysql DB and of your application database (the ones you took in step 3). Note that you may need to create the application database before you can load the application DB dump into it.<br>
+                            <br>
+                            7) On the slave, fire up a mysql prompt and use the 'CHANGE MASTER TO' command to specify the master DB, the binglog file and the binlog position (you need to use the values from step 2):<br>
+                            <br>
+                            <pre>
+STOP SLAVE;<br>RESET SLAVE;<br>CHANGE MASTER TO <br>MASTER_HOST='master_database_server_name', <br>MASTER_USER='replicant', <br>MASTER_PASSWORD='somepassword', <br>MASTER_LOG_FILE='mysql-bin.000004', <br>MASTER_LOG_POS=87547369;<br>START SLAVE;
+</pre><br>
+                            8) Run the 'SHOW SLAVE STATUS \G' command on the newly created slave DB and make sure that the values for both Slave_IO_Running and Slave_SQL_Running show as YES, and that Seconds_Behind_Master is 0 (it can take a while initially for this value to converge to 0, but it should do so). Here is an example of the output of this command:<br>
+                            <pre>
+<br>*************************** 1. row ***************************<br>Slave_IO_State: Waiting for master to send event<br>Master_Host: my_master_host<br>Master_User: replicant<br>Master_Port: 3306<br>Connect_Retry: 60<br>Master_Log_File: mysql-bin.000004<br>Read_Master_Log_Pos: 157767054<br>Relay_Log_File: crt-relay-bin.000012<br>Relay_Log_Pos: 112340434<br>Relay_Master_Log_File: mysql-bin.000004<br>Slave_IO_Running: Yes<br>Slave_SQL_Running: Yes<br>Replicate_Do_DB:<br>Replicate_Ignore_DB:<br>Replicate_Do_Table:<br>Replicate_Ignore_Table:<br>Replicate_Wild_Do_Table:<br>Replicate_Wild_Ignore_Table: MYDB.tmp\_%<br>Last_Errno: 0<br>Last_Error:<br>Skip_Counter: 0<br>Exec_Master_Log_Pos: 112340289<br>Relay_Log_Space: 112340630<br>Until_Condition: None<br>Until_Log_File:<br>Until_Log_Pos: 0<br>Master_SSL_Allowed: Yes<br>Master_SSL_CA_File: /etc/pki/tls/cert.pem<br>Master_SSL_CA_Path:<br>Master_SSL_Cert:<br>Master_SSL_Cipher:<br>Master_SSL_Key:<br>Seconds_Behind_Master: 0<br>Master_SSL_Verify_Server_Cert: No<br>Last_IO_Errno: 0<br>Last_IO_Error:<br>Last_SQL_Errno: 0<br>Last_SQL_Error:<br>1 row in set (0.00 sec)
+</pre><br>
+                            Note that I am explicitly excluding from replication tables that start with tmp, which in my case are temporary tables created by certain operations on the master DB which are not needed on the slaves. To do this, I added this line to /etc/my.cnf on the slaves (all replication filtering is done at the slave level):<br>
+                            <pre>
+replicate-wild-ignore-table = MYDB.tmp\_%
+</pre><br>
+                            <b>Promoting a slave database to master</b><br>
+                            <br>
+                            Let's say disaster strikes and your master DB goes down. At this point, if you have replication set up as above, you can easily turn one of the slave DB machines into a slave, and reconfigure the other slaves to have this newly promoted machine as their master. The official documentation for this scenario is <a href="http://dev.mysql.com/doc/refman/5.1/en/replication-solutions-switch.html">here</a> and it's very good. Let's slave you have master M01 and slaves S01, S02 and S03. Master 01 dies. You want to promote slave S01 to master, and set up S02 and S03 to replicate from S01.<br>
+                            <br>
+                            On S01, run these commands at the MySQL prompt:<br>
+                            <pre>
+STOP SLAVE;<br>RESET MASTER;<br>CHANGE MASTER TO MASTER_HOST='';<br>
+</pre>On S02 and S03, run these commands at the MySQL prompt:<br>
+                            <pre>
+STOP SLAVE;<br>RESET SLAVE;<br>CHANGE MASTER TO MASTER_HOST='S01';<br>START SLAVE;
+</pre><br>
+                            Now if you run 'SHOW SLAVE STATUS\G' on the slaves, you should see no errors, and you should also see the master DB hostname shown as 'S01' instead of 'M01'.<br>
+                            <br>
+                            While we're on the subject of switching the master DB, it can happen that the slave DBs will get some udpates from the newly promoted master that will conflict with their current view of the database. For example, they can receive from the master a duplicate insert, or a delete on a row that doesn't exist in their database. In these cases, to bring the slave to a sane state, you can issue commands like this one, where N is 1 or 2 (see full explanation <a href="http://dev.mysql.com/doc/refman/5.1/en/replication-problems.html">here</a>):<br>
+                            <br>
+                            <pre>
+STOP SLAVE;<br>SET GLOBAL SQL_SLAVE_SKIP_COUNTER = N;<br>START SLAVE;
+</pre><br>
+                            You can try running the skip command repeatedly until the slave goes back to a successful replication state.<br>
+                            <br>
+                            <b>Setting up a slave database from a hot backup of the master</b><br>
+                            <br>
+                            Let's say you have your master database up and running, and you want to set up a new slave without locking the tables for writes on the master. In this case, you can use a product such as <a href="http://www.innodb.com/products/hot-backup/">InnoDB Hot Backup</a>, which is very much worth its $500/year/host price. What's more, they provide a 30-day free evaluation binary tied to the host name of your DB machine, which is nice if you need something in a critical situation, or if you want to test it before committing to pay.<br>
+                            <br>
+                            Here's a procedure for setting up a new slave DB from a hot backup on the master. The InnoDB Hot Backup <a href="http://www.innodb.com/doc/hot_backup/manual.html">documentation</a> is very good, and what follows is a subset I used from that documentation.<br>
+                            <br>
+                            1) On the master, create two mini configuration files which are tiny subsets of my.cnf. Call one for example my.cnf.source and the other one my.cnf.destination. The source file needs to contain lines similar to these referring to the location of your live MySQL installation:<br>
+                            <br>
+                            <pre>
+# cat /etc/my.cnf.source<br>[mysqld]<br>datadir = /var/lib/mysql/<br>innodb_data_home_dir = /var/lib/mysql/<br>innodb_data_file_path = ibdata1:10M:autoextend<br>innodb_log_group_home_dir = /var/lib/mysql/<br>set-variable = innodb_log_files_in_group=2<br>set-variable = innodb_log_file_size=512M
+</pre>The destination file needs to contain similar lines, but pointing to a directory where the backup files will be created (that directory needs to be empty). For example:<br>
+                            <br>
+                            <pre>
+# cat /etc/my.cnf.destination<br>[mysqld]<br>datadir = /var/hot-backups<br>innodb_data_home_dir = /var/hot-backups<br>innodb_data_file_path = ibdata1:10M:autoextend<br>innodb_log_group_home_dir = /var/hot-backups<br>set-variable = innodb_log_files_in_group=2<br>set-variable = innodb_log_file_size=512M
+</pre><br>
+                            2) On the master, run the ibbackup binary and point it to the 2 configuration files:<br>
+                            <br>
+                            <pre>
+# /path/to/ibbackup /etc/my.cnf.source /etc/my.cnf.destination 
+</pre>
+                            <pre>
+ 
+</pre>This step can be quite lengthy, depending on the size of your database, but note that you don't need to lock any tables on the master during this time. Upon the completion of this step, you should see an InnoDB data file (its name is the one you specified in the innodb_data_file_path variable in the config files), and an InnoDB transaction log called ibbackup_logfile. Note that this is not identical to the InnoDB logs on the master. To create those logs, you need to go to the next step.<br>
+                            <br>
+                            3) On the master, apply the transaction logs created by the hot backup process by running this command:<br>
+                            <br>
+                            <pre>
+# /path/to/ibbackup --apply-log /etc/my.cnf.destination
+</pre><br>
+                            When this is done (again it can take a while), you should see N log files called ib_logfile1, ib_logfile2, ..., ib_logfileN in the destination directory -- where N is the value of the variable innodb_log_files_in_group that you set in the configuration file.<br>
+                            <br>
+                            4) On the master, do a tar.gz of all directories in the MySQL datadir which contain MyISAM tables, or .frm tables from InnoDB tables (the main one being of course the mysql directory, containing the MyISAM tables for the mysql database -- assuming of course you've kept the default of MyISAM for the mysql DB).<br>
+                            <br>
+                            5) Now you're ready to transfer the data file created in step 2, the log files created in step 3, and the archives created in step 4 to a new machine running MySQL, which you intend to set up as a slave DB. Simply scp the files over. On the target machine, stop mysql, move /var/lib/mysql (or wherever your datadir is) to /var/lib/mysql.bak, create a brand new /var/lib/mysql directory and drop all the files you transferred into that directory (un-tar-ing the tar.gz files appropriately). Also run 'chmod -R mysql.mysql /var/lib/mysql'. Finally, make sure the my.cnf file on the slave has binlog enabled (in case you ever need to promote this slave to a master).<br>
+                            <br>
+                            6) Restart the mysqld process on the target machine, and make note of the binlog file and position, which are captured in the mysql log file. You should see a line similar to this:<br>
+                            <pre>
+InnoDB: Last MySQL binlog file position 0 6199825, file name /var/lib/mysql/mysql-bin.000008
+</pre>Now go to the mysql prompt on the target machine and run:<br>
+                            <br>
+                            <pre>
+STOP SLAVE;<br>RESET SLAVE;<br>CHANGE MASTER TO <br>MASTER_HOST='master_database_server_name', <br>MASTER_USER='replicant', <br>MASTER_PASSWORD='somepassword', <br>MASTER_LOG_FILE='mysql-bin.000008', <br>MASTER_LOG_POS=6199825;<br>START SLAVE;
+</pre><br>
+                            At this point, 'SHOW SLAVE STATUS\G' should show no errors, and the new slave should be replicating correctly from the master DB server. It may take a while for the slave to catch up, depending on when you took the hot backup on the master.<br>
+                            <br>
+                            Before I finish this post, one word of advice when it comes to mounting EBS volumes in EC2: do not mount /var by itself on an EBS, because if for some reason the EBS becomes unavailable or fails, you won't be able to ssh back into your instance. Why is that? Because sshd (at least in CentOS) needs /var/empty to be available for <a href="http://www.citi.umich.edu/u/provos/ssh/privsep.html">privilege separation</a> purposes.<br>
+                            <br>
+                            If you want to take advantage of an EBS on an EC2 instance functioning as a MySQL database server, it's better to either mount /var/lib/mysql on an EBS, or specify a non-default data directory for MySQL, which you then mount from an EBS.<br>
+                            <br>
+                            <span style="font-weight:bold">UPDATE</span>: <span style="font-weight:bold">EC2 backup strategies</span><br>
+                            <br>
+                            An anonymous comment reminded me that I need to also discuss backups. Doh. In an EC2 environment, it's very easy to backup up a whole EBS by means of a snapshot.<br>
+                            <br>
+                            Of course, if you do a snapshot with no other backups, the database files will be 'live', but I managed in one case to<br>
+                            1) detach an EBS containing /var/lib/mysql from an instance that was failing, and<br>
+                            2) attach the EBS to another instance and mount it in /var/lib/mysql<br>
+                            <br>
+                            I then restarted mysqld on the new instance and everything worked as expected. This is NOT the recommended strategy however. What is recommended is to do a database dump (either a hot backup if you can afford it, or a simple mysqldump) to an EBS, and snapshot the EBS periodically.<br>
+                            <br>
+                            Alternatively, you can use various S3 utilities to capture the backups directly to S3. The EBS snapshot solution is better IMO because you can quickly recreate an EBS volume from a snapshot, then mount it to either the original instance, or to a new instance.<br>
+                            <br>
+                            However, EBS volumes DO sometimes fail, so another thing to think about is to run your EC2 instances (especially your slave DBs) in different availability zones. We had an issue with 2 of our database servers failing at the same time in zone US-East-1a due to EBS issues, and the thing that saved us is that we had slaves in other availability zones that weren't affected.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/9238405-3826193725581799164?l=agiletesting.blogspot.com">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://agiletesting.blogspot.com/2009/05/mysql-fault-tolerance-and-disaster.html">http://agiletesting.blogspot.com/2009/05/mysql-fault-tolerance-and-disaster.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

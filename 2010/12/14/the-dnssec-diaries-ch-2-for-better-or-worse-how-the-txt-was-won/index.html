@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The DNSSEC Diaries, Ch. 2: For Better or Worse, How The TXT Was Won
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 20 Dec 2010 22:42:38 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-14T12:12:27-04:00">
+                    <meta itemprop="dateModified" content="2010-12-14T12:12:27-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-14T16:12:27+00:00">Dec 14</time>
+                    <h2 itemprop="title">
+                        The DNSSEC Diaries, Ch. 2: For Better or Worse, How The TXT Was Won
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/4e2a88cd4b0d0f10">
+                        <blockquote>
+                            <p>
+                                So, I think it’s fairly elegant and straightforward to put a key into DNS like so:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    www.hospital-link.org IN TXT “v=key1 ha=sha1 h=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15″
+                                </p>
+                            </blockquote>
+                            <p>
+                                On connecting to www.hospital-link.org over TLS, a certificate will be delivered.&nbsp; Traditionally, this certificate would be interrogated to make sure it was signed by a trusted certificate authority.&nbsp; In the new model:
+                            </p>
+                            <ul>
+                                <li>If DNSSEC says the above TXT record chains to the (one) DNS root, and
+                                </li>
+                                <li>The subtype of the TXT record is key1, and
+                                </li>
+                                <li>The SHA-1 hash of the delivered certificate is precisely f1d2d2f924e986ac86fdf7b36c94bcdf32beec15, and
+                                </li>
+                                <li>TLS is happy with the public key in the certificate
+                                </li>
+                            </ul>
+                            <p>
+                                …then the connection is considered authenticated, whether or not a CA ultimately signed the certificate.&nbsp; That’s it.&nbsp; Move on with life.&nbsp; Cheap.
+                            </p>
+                            <p>
+                                Can it really be this easy?&nbsp; I’ll be honest, some people aren’t the biggest fans of this design.&nbsp; Implementers like it.&nbsp; Ops guys like it.&nbsp; I like it.
+                            </p>
+                            <p>
+                                Some old school DNS people do not like it.&nbsp; They don’t want to see everything shoved under a single record type (TXT or otherwise), and they don’t like the idea of a seemingly unstructured textual field containing anything important.&nbsp; <a title="RFC 5507" href="http://www.rfc-archive.org/getrfc.php?rfc=5507&amp;tag=Design-Choices-When-Expanding-the-DNS">Heck, they even wrote an Informational RFC on the subject.</a> The core arguments in this doc:
+                            </p>
+                            <blockquote>
+                                <ul>
+                                    <li>No semantics to prevent collision with other use
+                                    </li>
+                                    <li>Space considerations in the DNS message
+                                    </li>
+                                </ul>
+                            </blockquote>
+                            <p>
+                                It’s really not a great RFC, but these aren’t meaningless concerns.&nbsp; However, the heart of engineering is understanding not just why systems succeed, but why they fail.&nbsp; Lets talk about why, despite the above, I’m convinced public keys in DNS should be encoded as TXT records.
+                            </p>
+                            <p>
+                                The primary reason is that the story of TXT is the story of real world systems trying non-TXT, and, well, <em>running away screaming.</em> In the last ten years, four major projects have all gone TXT:
+                            </p>
+                            <ol>
+                                <li>SPF (Sender Policy Framework)
+                                </li>
+                                <li>DKIM (DomainKeys)
+                                </li>
+                                <li>GPG’s PKA (PGP Key Retrieval)
+                                </li>
+                                <li>FreeSWAN’s IPSec (X-IPSec-Server)
+                                </li>
+                            </ol>
+                            <p>
+                                They have company.&nbsp; From a sample of DNS traces, looking at the count of unique types per unique name:
+                            </p>
+                            <pre>
+0.40       143453512       A
+0.31    110097927       NS
+0.13    48033288        CNAME
+0.07    23989120        MX
+0.04    12841932        RRSIG
+0.02    8314220 PTR
+<strong>0.02    7665020 TXT</strong>
+0.01    2575267 NSEC
+0.00    1557321 NSEC3
+0.00    563675  SRV
+0.00    276820  AAAA
+0.00    53855   NULL
+0.00    44411   SPF
+0.00    24308   DS
+0.00    3190    DNSKEY
+0.00    1498    RP
+0.00    1216    HINFO
+0.00    1118    DLV
+0.00    687     DNAME
+0.00    557     LOC
+0.00    545     514
+0.00    491     NAPTR
+</pre>
+                            <p>
+                                Excluding DNSSEC, which is its own universe, and AAAA, which is a trivial blob of bits (a 128 bit IPv6 address), TXT is about three orders of magnitude more popular than all RR types invented in the last ten years <em>combined</em>.&nbsp; Data encoded in TXT is almost as popular as <em>Reverse DNS!</em>
+                            </p>
+                            <p>
+                                And it’s not like projects didn’t have the opportunity to use custom RRTYPEs.
+                            </p>
+                            <p>
+                                Consider:&nbsp; For half of these packages (GPG and FreeSWAN), RFC’s existed to store their data already, but (and this is important) either the developers found the RFCs too difficult to implement, or users found the code too tricky to deploy.&nbsp; In FreeS/WAN’s case, this was so true that:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    As of FreeS/WAN 2.01, OE uses DNS TXT resource records (RRs) only (rather than TXT with KEY). This change causes a<a href="http://jargon.watson-net.com/jargon.asp?w=flag+day"></a><a title="Flag Day" href="http://www.freeswan.org/freeswan_trees/CURRENT-TREE/doc/quickstart.html">“flag day”</a>.
+                                </p>
+                            </blockquote>
+                            <p>
+                                Wow.&nbsp; That is fairly tremendous.&nbsp; Flag days — the complete shift of a system from a broken design to a hopefully better one — are rare to the point of being almost unheard of in networking design.&nbsp; They are enormously painful, and only executed when the developer believes their product is absolutely doomed to failure otherwise.
+                            </p>
+                            <p>
+                                There’s a lot of talk about how custom RR’s aren’t <em>that</em> bad.&nbsp; Talk is cheap.&nbsp; Evidence that a design choice forced a flag day is rare, precious, and foreboding.
+                            </p>
+                            <p>
+                                The reality — the real precedent, far larger than the world of DNS or even security — is that <em>for operational and developmental reasons, developers have abandoned binary formats.</em> XML, and even its lighter cousin JSON, are not the smallest possible way to encode a message the world has ever known.&nbsp; It is possible to save more space.
+                            </p>
+                            <p>
+                                Sorry, X.509.&nbsp; We’ve abandoned ASN.1, even if bit for bit it’s more space efficient.&nbsp; We abandoned it for a <em>reason</em>.&nbsp; The programming community is simply done with the sort of bit-fiddly constructs that were popular in the 90′s, and that most DNS RR’s are constructed from, even if they are easy to parse in C.
+                            </p>
+                            <p>
+                                Binary parsers (outside of media formats) are dead.&nbsp; Frankly, as the number one source of exploitable crashes in most software, I’m not going to miss them.&nbsp; Heck, we’re not even using TCP ports anymore — we have port 80, and we subtype the heck out of it at the URL layer (much as TXT is subtyped with v=key1).
+                            </p>
+                            <p>
+                                It doesn’t help that, most of the time, DNS knows what fields it’s going to have to store, and identifies them positionally.&nbsp; Contrast this with the coming reality of storing keys in DNS, where over time, we’re absolutely going to be adding more flags and bits.&nbsp; That binary format will not be pretty.
+                            </p>
+                            <p>
+                                Now, I have no interest in putting XML or even JSON into DNS (though the latter wouldn’t be the worst thing ever).&nbsp; But what we’ve seen is reasonable consensus regarding what should go into TXT records:
+                            </p>
+                            <ul>
+                                <li>SPF:&nbsp; “v=spf1 a -all”
+                                </li>
+                                <li>DKIM: “v=DKIM1;p=MIGfMA0G … cQ2QIDAQAB”
+                                </li>
+                                <li>GPG: “v=pka1;fpr=[#1];uri=[#2]“
+                                </li>
+                                <li>FreeS/WAN: “X-IPsec-Server(10)=192.1.1.5 AQMM…3s1Q==”
+                                </li>
+                            </ul>
+                            <p>
+                                Identical?&nbsp; No.&nbsp; But straight key value pairs, and only one protocol that doesn’t begin with a magic cookie?&nbsp; That’s doable.&nbsp; That’s easy.
+                            </p>
+                            <p>
+                                That’s cheap to deploy.&nbsp; And cheap to deploy <em>matters</em>.
+                            </p>
+                            <p>
+                                Now, here’s an interesting question:
+                            </p>
+                            <p>
+                                “Why not use a custom RRTYPE, but fill it with key value pairs, or even JSON?&nbsp; Why overload TXT?”
+                            </p>
+                            <p>
+                                It’s a reasonable question.&nbsp; The biggest source of content expansion comes from the fact that now irrelevant records need to be sent, if there are multiple applications sitting on TXT.&nbsp; Why not have multiple TXTs?
+                            </p>
+                            <p>
+                                Perhaps, in the future, we could move in this direction.&nbsp; Nowhere does it say that the same record can’t show up with multiple types.&nbsp; (SPF tried this, without much success though.)&nbsp; But, today, a big part of what makes non-TXT expensive to deploy is that name servers traditionally needed to be rebuilt to support a new record type.&nbsp; After all, the server wasn’t just hosting records, it was compiling them into a binary format.
+                            </p>
+                            <p>
+                                (Those who are IT administrators, but not DNS administrators, are all facepalming).
+                            </p>
+                            <p>
+                                Eventually, RFC 3267 was built to get around this, allowing zone files to contain blobs like this:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    sshfp&nbsp; TYPE44&nbsp; \# 22 01 01 c691e90714a1629d167de8e5ee0021f12a7eaa1e
+                                </p>
+                            </blockquote>
+                            <p>
+                                To be gentle, zone files filled with hex and length fields, requiring record compilers to update, aren’t exactly operation’s idea of a good, debuggable time.&nbsp; This is <em>expensive</em>.
+                            </p>
+                            <p>
+                                Of course, a lot of people aren’t directly editing zone files anymore.&nbsp; They’re operating through web interfaces.&nbsp; Through these interfaces, either you’re putting in a resource type the server knows of, you’re putting text into a TXT record, or…you’re putting in nothing.
+                            </p>
+                            <p>
+                                It’s possible to demand that web interfaces around the Internet be updated to support your new record type.&nbsp; But there is no more expensive ask than that which demands a UI shift.&nbsp; A hundred backends can be altered for each frontend that needs to be poked at.&nbsp; The backends support TXT.&nbsp; They don’t support anything else, and that fact isn’t going to change anytime soon.
+                            </p>
+                            <p>
+                                And then there are the firewalls — the same firewalls which, like it or not, have made HTTP on 80/tcp the Universal Tunneling Protocol.&nbsp; Quoting the above RFC 5507 (which observes the following, and then just seems to shrug):
+                            </p>
+                            <blockquote>
+                                <p>
+                                    …Firewalls have dropped queries or responses with Resource Record Types that are unknown to the firewall.&nbsp; This is, for example, one of the reasons the ENUM standard reuses the NAPTR Resource Record, a decision that today might have gone to creating a new Resource Record Type instead.
+                                </p>
+                            </blockquote>
+                            <p>
+                                <em>There’s a reason</em> all those packages abandoned non-TXT.&nbsp; Whatever downsides there are to using TXT, and I do admit there are some, those who have chosen an architecturally pure custom RRTYPE have failed, while those who’ve “temporarily” went TXT have prospered.
+                            </p>
+                            <p>
+                                Next up, lets talk about the challenges of <a title="The DNSSEC Diaries, Ch. 3:&nbsp;Contradictions" href="http://dankaminsky.com/2010/12/18/the-dnssec-diaries-ch-3-contradictions/">putting bootstrap content into the DNS itself.</a>
+                            </p>
+                            <div style="width:1px;height:1px;overflow:hidden">
+                                <pre style="margin:0">
+"v=pka1;fpr=[#1];uri=[#2]"
+</pre>
+                            </div><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/dakami1.wordpress.com/1739/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/dakami1.wordpress.com/1739/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/dakami1.wordpress.com/1739/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/dakami1.wordpress.com/1739/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gofacebook/dakami1.wordpress.com/1739/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/facebook/dakami1.wordpress.com/1739/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gotwitter/dakami1.wordpress.com/1739/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/twitter/dakami1.wordpress.com/1739/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/dakami1.wordpress.com/1739/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/dakami1.wordpress.com/1739/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/dakami1.wordpress.com/1739/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/dakami1.wordpress.com/1739/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/dakami1.wordpress.com/1739/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/dakami1.wordpress.com/1739/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=dankaminsky.com&amp;blog=18023203&amp;post=1739&amp;subd=dakami1&amp;ref=&amp;feed=1" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dankaminsky.com/2010/12/14/dnssec-ch2/">http://dankaminsky.com/2010/12/14/dnssec-ch2/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Class Based Views and Dry Ravioli
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 20 Nov 2010 04:29:53 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-19T23:29:53-04:00">
+                    <meta itemprop="dateModified" content="2010-11-19T23:29:53-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-20T03:29:53+00:00">Nov 20</time>
+                    <h2 itemprop="title">
+                        Class Based Views and Dry Ravioli
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/91583f2c87b268bd">
+                        <blockquote>
+                            <p>
+                                <a href="http://www.djangoproject.com/">Django's</a> new <a href="http://docs.djangoproject.com/en/dev/topics/class-based-views/">class based views</a> are very cool. I am starting to clean up an existing project using them, and lots of existing views are turning into declarative code. But it makes me worried about the ravioli effect.
+                            </p>
+                            <p>
+                                Take my feedback form as an example. It is a simple view, and typical of code in my project — a couple of calls to some standard utilities. One of the them, <code>standard_extra_context</code>, adds some standard context variables depending on what it passed in (like <code>title</code>, <code>description</code> etc.) which are used in the HTML metadata and in the page itself. Another, <code>json_validation_request</code> allows a form view to be re-used for AJAX validation. The form declaration and view look like this:
+                            </p>
+                            <pre>
+<code>class FeedbackForm(CciwFormMixin, forms.Form):
+    email = forms.EmailField(label="Email address", max_length=320)
+    name = forms.CharField(label="Name", max_length=200, required=False)
+    message = forms.CharField(label="Message", widget=forms.Textarea)
+
+def feedback(request):
+    c = standard_extra_context(title=u"Contact us")
+
+    if request.method == 'POST':
+        form = FeedbackForm(request.POST)
+
+        json = utils.json_validation_request(request, form)
+        if json: return json
+
+        if form.is_valid():
+            send_feedback(form.cleaned_data['email'],
+                          form.cleaned_data['name'],
+                          form.cleaned_data['message'])
+            c['message'] = u"Thank you, your message has been sent."
+    else:
+        form = FeedbackForm()
+
+    c['form'] = form
+    return shortcuts.render_to_response('cciw/feedback.html',
+                context_instance=template.RequestContext(request, c))
+</code>
+</pre>
+                            <p>
+                                It does one bad thing, namely it doesn't redirect on success, but apart from that it is fine. But there is this annoying boilerplate of flow control. So, very quickly, after creating some standard mixins and base classes that are equivalent to my standard utilities, I now have the following (which now does the redirect-on-success):
+                            </p>
+                            <pre>
+<code>class FeedbackForm(CciwFormMixin, forms.Form):
+    email = forms.EmailField(label="Email address", max_length=320)
+    name = forms.CharField(label="Name", max_length=200, required=False)
+    message = forms.CharField(label="Message", widget=forms.Textarea)
+
+class FeedbackBase(DefaultMetaData):
+    metadata_title = u"Contact us"
+
+class FeedbackFormView(FeedbackBase, AjaxyFormView):
+    form_class = FeedbackForm
+    template_name = 'cciw/feedback.html'
+
+    def get_success_url(self):
+        return reverse('cciwmain.misc.feedback_done')
+
+    def form_valid(self, form):
+        send_feedback(form.cleaned_data['email'],
+                      form.cleaned_data['name'],
+                      form.cleaned_data['message'])
+        return super(FeedbackFormView, self).form_valid(form)
+
+class FeedbackDone(FeedbackBase, TemplateView):
+    template_name = 'cciw/feedback_done.html'
+
+feedback = FeedbackFormView.as_view()
+feedback_done = FeedbackDone.as_view()
+</code>
+</pre>
+                            <p>
+                                (<code>DefaultMetaData</code> is a <code>TemplateResponseMixin</code> subclass that replaces standard_extra_context, <code>FeedbackBase</code> defines common attributes for <code>FeedbackFormView</code> and <code>FeedbackDone</code>. <code>AjaxyFormView</code> is a FormView subclass and replaces <code>utils.json_validation_request</code>. The last two lines are simply there for the sake of not adding imports to my urls.py).
+                            </p>
+                            <p>
+                                Now, this is a big improvement in one way. All standard flow control has been removed, so it is very <a href="http://c2.com/cgi/wiki?DontRepeatYourself">DRY</a> in that sense, and the details shown are the details which are relevant to the one task of handling a feedback form. The way to read this view is as declarative code, similar to how you read models and forms:
+                            </p>
+                            <p>
+                                <code>FeedbackFormView</code>:
+                            </p>
+                            <ul>
+                                <li>is a feedback view
+                                    <ul>
+                                        <li>so it has the title 'Contact us'
+                                            <ul>
+                                                <li>and other default metadata
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>is a form processing view (which has been ajaxified)
+                                </li>
+                                <li>has <code>FeedbackForm</code> as the form
+                                </li>
+                                <li>has <code>"cciw/feedback.html"</code> as the template.
+                                </li>
+                                <li>has the 'success url' equal to the 'feedback_done' URL.
+                                </li>
+                                <li>
+                                    <em>does</em> the following with a valid form:
+                                    <ul>
+                                        <li>sends a feedback message.
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <p>
+                                Only the last of these is really imperative, and this is quite a nice way to think about a chunk of code.
+                            </p>
+                            <p>
+                                However, suppose we have a maintenance programmer who needs, let's say, to make the template display a certain message on the basis of a certain URL parameter.
+                            </p>
+                            <p>
+                                In the first case, it is pretty obvious what to do — a couple of lines inserted before the <code>render_to_response</code> call will work fine, with a corresponding change to the template.
+                            </p>
+                            <p>
+                                In the second, it is also fairly easy to do — you would just have to define an appropriate <code>get_context_data()</code> method. But to find that out, you've got a fairly intimidating stack of mixins and base classes to investigate. In fact, it's more like a tree not a stack (though I think I may already have some diamond inheritance in there by accident).
+                            </p>
+                            <p>
+                                This is classic <a href="http://c2.com/cgi/wiki?RavioliCode">ravioli code</a>. As one person on that c2 page says, “this style maximizes maintainability by old hands at the expense of comprehensibility by newcomer”.
+                            </p>
+                            <p>
+                                Put it this way: suppose you want to go from the current version to the previous version, in a precise and controlled way. You could trace through all the functions that would be called, starting with `as_view()` and working through till you collected all the code paths that were being used, but it would take you a lot longer than the forward transformation just took me. And this is exactly the transformation you might need to do if, for example, you needed to make a fundamental change to the flow control while keeping most of the code intact. It is faster to start from scratch with the declarative reading above — but that will only work if the view really is declarative, and there are no sneaky surprises in the base classes, and even then it may take some digging.
+                            </p>
+                            <p>
+                                So, what am I saying? Don't do this? I guess I'm just saying “be aware of this trade-off”. As <a href="http://jjinux.blogspot.com/2010/11/software-engineering-coping-when-you.html">Shannon Behrens recently blogged</a>, there are times when fixing DRY violations are not worth it.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://lukeplant.me.uk/blog/posts/class-based-views-and-dry-ravioli/">http://lukeplant.me.uk/blog/posts/class-based-views-and-dry-ravioli/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

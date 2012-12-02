@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How Mozilla finds crash bugs
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 21 Jul 2009 00:36:01 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-07-20T20:36:01-04:00">
+                    <meta itemprop="dateModified" content="2009-07-20T20:36:01-04:00"><time class="date" itemprop="datePublished" datetime="2009-07-21T00:36:01+00:00">Jul 21</time>
+                    <h2 itemprop="title">
+                        How Mozilla finds crash bugs
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7b3fbaea5b7b0d4f">
+                        <blockquote>
+                            <p>
+                                This Tuesday (2009-07-21), I’m organizing a crash bug triage day where anyone interested can help us classify the swamp of open crash bugs. Join us in <a href="javascript:void(0);">#bugday on irc.mozilla.org</a> if you’d like to help.
+                            </p>
+                            <h3>
+                                Crashes and security
+                            </h3>
+                            <p>
+                                Some Firefox crash bugs are severe security bugs. A crash bug is likely to be exploitable if it can be triggered by a web page <em>and</em> the bug is a <a href="http://www.squarefree.com/2006/11/01/memory-safety-bugs-in-c-code/">memory safety bug</a> such as calling a virtual method on a dangling pointer.
+                            </p>
+                            <p>
+                                Although only a fraction of our crashes are exploitable, two thirds of our <a href="https://wiki.mozilla.org/Security_Severity_Ratings">most severe security bugs</a> are crashes. We’re striving to improve how we find and fix crash bugs, since the better we can find and fix the bugs, the more stable and secure Firefox will be.
+                            </p>
+                            <h3>
+                                Bug reports
+                            </h3>
+                            <p>
+                                When a user reports a bug, a loose team of volunteers tries to reproduce the bug, improve the bug report, and inform the correct developers about the bug.
+                            </p>
+                            <p>
+                                The history of <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=503286">bug 503286</a> demonstrates the variety of skills involved in fixing crash bugs. Soon after zbyte filed the bug, Ria Klaassen reproduced the bug on her machine, captured a stack trace, and determined when the bug had been introduced. Volunteers Lucas and Natch reduced the web page to a <a href="javascript:void(0);">simple testcase</a> that demonstrated the bug. Using this information, JavaScript engine developers Andreas Gal and Blake Kaplan had little trouble creating a patch. All of this happened within 14 hours of the bug being reported.
+                            </p>
+                            <p>
+                                Our current bug triage process is not perfect, and sometimes leaves valid bugs unprocessed. During this Tuesday’s crash bug triage day, we will experiment with a <a href="https://developer.mozilla.org/En/Triaging_crash_bugs">new triage workflow</a> that should be both more efficient and more effective. If you’d like to help clear the crash bug backlog, please join us in <a href="javascript:void(0);">#bugday</a> this Tuesday (2009-07-21).
+                            </p>
+                            <p>
+                                Reporting bugs requires substantial effort from users, and requires both <a href="http://www.squarefree.com/2009/07/18/language-barriers-and-bugs/">English-language</a> and technical skills, so we prefer not to rely exclusively on user-reported bugs. Luckily, crashes are easier to detect automatically than most other types of bugs, so we can find many of them using other methods.
+                            </p>
+                            <h3>
+                                Crash reports
+                            </h3>
+                            <p>
+                                Whenever Firefox crashes, <a href="http://www.squarefree.com/blogimages/crashreportdialog.png">a dialog appears</a> that allows users to submit information about the crash to Mozilla. Although the average Firefox user only sends 1.5 crash reports per year, this information is valuable in aggregate.
+                            </p>
+                            <p>
+                                Currently, our main use for these crash reports is to <a href="http://crash-stats.mozilla.com/">identify the most common crashes</a>. If a crash is common but has not been reported in Bugzilla, we can look at the comments that come with some crash reports to get an idea of what triggers the crash.
+                            </p>
+                            <p>
+                                Fixing common crashes is enough to make Firefox stable for most users, but even a rare crash could be a security hole, so we need to do more. To address this issue, Mozilla is creating a “crash reproduction farm” of computers that will <a href="https://wiki.mozilla.org/QA/TDAI/Crash_URL_Analysis">automatically load URLs that come with crash reports</a>. This will let us identify and fix most crashes that result from simply loading a web page.
+                            </p>
+                            <h3>
+                                Fuzz testing
+                            </h3>
+                            <p>
+                                <a href="http://en.wikipedia.org/wiki/Fuzz_testing">Fuzz testing</a> is the art of creating random input for software in order to find bugs. We do <a href="http://www.squarefree.com/categories/fuzzing/">extensive fuzz testing</a> of our most complex components, such as the JavaScript engine. Fuzz testing finds two thirds of the exploitable crashes we fix, including many that are too obscure for normal web sites to trigger.
+                            </p>
+                            <h3>
+                                Fixing crash bugs
+                            </h3>
+                            <p>
+                                For developers who are familiar with the relevant code, crashes are often easier to <a href="https://developer.mozilla.org/En/Debugging">debug</a> and <a href="https://developer.mozilla.org/En/developer_Guide">fix</a> than they are to find. To identify the developers familiar with the code, you can click the source code links in crash reports and see who last touched each line of code.
+                            </p>
+                            <p>
+                                Jesse Ruderman<br>
+                                Security bug hunter
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.mozilla.com/security/2009/07/20/how-mozilla-finds-crash-bugs/">http://blog.mozilla.com/security/2009/07/20/how-mozilla-finds-crash-bugs/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

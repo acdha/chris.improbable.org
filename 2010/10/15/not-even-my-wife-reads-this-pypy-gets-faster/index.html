@@ -1,0 +1,2698 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Not Even My Wife Reads This :: PyPy gets faster
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 15 Oct 2010 14:10:16 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-10-15T10:10:16-04:00">
+                    <meta itemprop="dateModified" content="2010-10-15T10:10:16-04:00"><time class="date" itemprop="datePublished" datetime="2010-10-15T14:10:16+00:00">Oct 15</time>
+                    <h2 itemprop="title">
+                        Not Even My Wife Reads This :: PyPy gets faster
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/04bf9b7f0898a6e6">
+                        <blockquote>
+                            <h2>
+                                PyPy gets faster
+                            </h2>
+                            <div>
+                                <p>
+                                    In <a href="http://www.ripton.net/blog/?p=51">a previous post</a>, I mentioned that PyPy was the fastest Python implementation for most of my Project Euler programs, but that it was very slow for a few of them.
+                                </p>
+                                <p>
+                                    This is no longer the case. The jit-generator branch was merged a few days ago, fixing a weakness with code that uses generators. And now PyPy is clearly the fastest Python implementation for this code, with both the most wins and the lowest overall time. Psyco is still pretty close. Both are a bit more than twice as fast as CPython.
+                                </p>
+                                <p>
+                                    I compared PyPy trunk, Unladen Swallow trunk, Jython 2.5.1+, CPython 2.6.6 with Psyco, and CPython 2.7.
+                                </p>
+                                <p>
+                                    PyPy is very strong across the board. Its worst result is on euler94, a Sudoku solver that heavily uses sets and copy.deepcopy.
+                                </p>
+                                <p>
+                                    Psyco still does very well, but it doesn't work on Python 2.7 yet and still doesn't work on amd64, so it feels more and more like a dead end.
+                                </p>
+                                <p>
+                                    Unladen Swallow hasn't had a commit since August. I suspect it's just resting, not dead, but it's falling behind PyPy in performance. Version 2.8 of LLVM has been released, but Unladen still requires version 2.7.
+                                </p>
+                                <p>
+                                    CPython is the baseline. I used 2.7, the latest Python 2. (Some of my Euler programs work in Python 3; some don't.)
+                                </p>
+                                <p>
+                                    Jython is by far the slowest. Its large startup overhead hurts on the easy problems, and the mature HotSpot JIT isn't enough for it to catch up on the harder ones. Jython does have the advantage of being free-threaded, but since this code was originally written for CPython it rarely uses multiple threads and so doesn't really benefit.
+                                </p>
+                                <p>
+                                    Here are the numbers.
+                                </p>
+                                <table>
+                                    <tbody>
+                                        <tr>
+                                            <th>
+                                                script
+                                            </th>
+                                            <th>
+                                                PyPy
+                                            </th>
+                                            <th>
+                                                Unladen
+                                            </th>
+                                            <th>
+                                                Jython
+                                            </th>
+                                            <th>
+                                                Psyco
+                                            </th>
+                                            <th>
+                                                CPython
+                                            </th>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler1.py
+                                            </td>
+                                            <td align="right">
+                                                0.01
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                3.65
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.02
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler2.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.94
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler3.py
+                                            </td>
+                                            <td align="right">
+                                                0.23
+                                            </td>
+                                            <td align="right">
+                                                0.91
+                                            </td>
+                                            <td align="right">
+                                                6.40
+                                            </td>
+                                            <td align="right">
+                                                0.51
+                                            </td>
+                                            <td align="right">
+                                                0.40
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler4.py
+                                            </td>
+                                            <td align="right">
+                                                0.31
+                                            </td>
+                                            <td align="right">
+                                                0.84
+                                            </td>
+                                            <td align="right">
+                                                6.49
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                            <td align="right">
+                                                0.42
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler5.py
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                5.38
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler6.py
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                5.50
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler7.py
+                                            </td>
+                                            <td align="right">
+                                                0.33
+                                            </td>
+                                            <td align="right">
+                                                0.52
+                                            </td>
+                                            <td align="right">
+                                                7.29
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.73
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler8.py
+                                            </td>
+                                            <td align="right">
+                                                0.13
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                4.77
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler9.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                            <td align="right">
+                                                6.67
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler10.py
+                                            </td>
+                                            <td align="right">
+                                                2.34
+                                            </td>
+                                            <td align="right">
+                                                6.02
+                                            </td>
+                                            <td align="right">
+                                                11.81
+                                            </td>
+                                            <td align="right">
+                                                1.93
+                                            </td>
+                                            <td align="right">
+                                                12.02
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler11.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                4.28
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler13.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.36
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler14.py
+                                            </td>
+                                            <td align="right">
+                                                3.88
+                                            </td>
+                                            <td align="right">
+                                                2.76
+                                            </td>
+                                            <td align="right">
+                                                8.46
+                                            </td>
+                                            <td align="right">
+                                                1.96
+                                            </td>
+                                            <td align="right">
+                                                3.07
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler15.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                4.00
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler16.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                3.58
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.13
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler18.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.45
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler19.py
+                                            </td>
+                                            <td align="right">
+                                                0.13
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                3.06
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler20.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                2.45
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler21.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                4.16
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler22.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.95
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler23.py
+                                            </td>
+                                            <td align="right">
+                                                3.84
+                                            </td>
+                                            <td align="right">
+                                                21.33
+                                            </td>
+                                            <td align="right">
+                                                15.36
+                                            </td>
+                                            <td align="right">
+                                                4.45
+                                            </td>
+                                            <td align="right">
+                                                12.03
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler24.py
+                                            </td>
+                                            <td align="right">
+                                                5.97
+                                            </td>
+                                            <td align="right">
+                                                5.66
+                                            </td>
+                                            <td align="right">
+                                                31.25
+                                            </td>
+                                            <td align="right">
+                                                6.97
+                                            </td>
+                                            <td align="right">
+                                                5.46
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler25.py
+                                            </td>
+                                            <td align="right">
+                                                0.71
+                                            </td>
+                                            <td align="right">
+                                                0.91
+                                            </td>
+                                            <td align="right">
+                                                3.44
+                                            </td>
+                                            <td align="right">
+                                                0.91
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler26.py
+                                            </td>
+                                            <td align="right">
+                                                9.59
+                                            </td>
+                                            <td align="right">
+                                                10.84
+                                            </td>
+                                            <td align="right">
+                                                20.61
+                                            </td>
+                                            <td align="right">
+                                                9.74
+                                            </td>
+                                            <td align="right">
+                                                3.54
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler27.py
+                                            </td>
+                                            <td align="right">
+                                                1.33
+                                            </td>
+                                            <td align="right">
+                                                7.08
+                                            </td>
+                                            <td align="right">
+                                                12.35
+                                            </td>
+                                            <td align="right">
+                                                1.32
+                                            </td>
+                                            <td align="right">
+                                                11.33
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler28.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                4.37
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler29.py
+                                            </td>
+                                            <td align="right">
+                                                0.22
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                6.49
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.22
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler30.py
+                                            </td>
+                                            <td align="right">
+                                                3.95
+                                            </td>
+                                            <td align="right">
+                                                4.45
+                                            </td>
+                                            <td align="right">
+                                                10.72
+                                            </td>
+                                            <td align="right">
+                                                5.37
+                                            </td>
+                                            <td align="right">
+                                                4.26
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler32.py
+                                            </td>
+                                            <td align="right">
+                                                2.83
+                                            </td>
+                                            <td align="right">
+                                                3.54
+                                            </td>
+                                            <td align="right">
+                                                9.20
+                                            </td>
+                                            <td align="right">
+                                                4.95
+                                            </td>
+                                            <td align="right">
+                                                3.34
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler33.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                5.26
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler34.py
+                                            </td>
+                                            <td align="right">
+                                                4.35
+                                            </td>
+                                            <td align="right">
+                                                12.33
+                                            </td>
+                                            <td align="right">
+                                                13.86
+                                            </td>
+                                            <td align="right">
+                                                12.67
+                                            </td>
+                                            <td align="right">
+                                                16.08
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler35.py
+                                            </td>
+                                            <td align="right">
+                                                5.59
+                                            </td>
+                                            <td align="right">
+                                                18.19
+                                            </td>
+                                            <td align="right">
+                                                30.04
+                                            </td>
+                                            <td align="right">
+                                                6.47
+                                            </td>
+                                            <td align="right">
+                                                25.47
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler36.py
+                                            </td>
+                                            <td align="right">
+                                                1.83
+                                            </td>
+                                            <td align="right">
+                                                3.24
+                                            </td>
+                                            <td align="right">
+                                                7.39
+                                            </td>
+                                            <td align="right">
+                                                2.93
+                                            </td>
+                                            <td align="right">
+                                                2.44
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler37.py
+                                            </td>
+                                            <td align="right">
+                                                10.92
+                                            </td>
+                                            <td align="right">
+                                                12.44
+                                            </td>
+                                            <td align="right">
+                                                39.17
+                                            </td>
+                                            <td align="right">
+                                                14.57
+                                            </td>
+                                            <td align="right">
+                                                17.50
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler38.py
+                                            </td>
+                                            <td align="right">
+                                                2.24
+                                            </td>
+                                            <td align="right">
+                                                1.31
+                                            </td>
+                                            <td align="right">
+                                                9.91
+                                            </td>
+                                            <td align="right">
+                                                2.14
+                                            </td>
+                                            <td align="right">
+                                                2.34
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler39.py
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                0.42
+                                            </td>
+                                            <td align="right">
+                                                5.79
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler40.py
+                                            </td>
+                                            <td align="right">
+                                                1.12
+                                            </td>
+                                            <td align="right">
+                                                1.63
+                                            </td>
+                                            <td align="right">
+                                                7.30
+                                            </td>
+                                            <td align="right">
+                                                0.42
+                                            </td>
+                                            <td align="right">
+                                                1.13
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler41.py
+                                            </td>
+                                            <td align="right">
+                                                4.25
+                                            </td>
+                                            <td align="right">
+                                                3.94
+                                            </td>
+                                            <td align="right">
+                                                20.63
+                                            </td>
+                                            <td align="right">
+                                                5.46
+                                            </td>
+                                            <td align="right">
+                                                4.76
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler42.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                4.98
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler44.py
+                                            </td>
+                                            <td align="right">
+                                                0.91
+                                            </td>
+                                            <td align="right">
+                                                9.41
+                                            </td>
+                                            <td align="right">
+                                                7.48
+                                            </td>
+                                            <td align="right">
+                                                1.02
+                                            </td>
+                                            <td align="right">
+                                                3.75
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler45.py
+                                            </td>
+                                            <td align="right">
+                                                8.01
+                                            </td>
+                                            <td align="right">
+                                                2.73
+                                            </td>
+                                            <td align="right">
+                                                12.06
+                                            </td>
+                                            <td align="right">
+                                                2.73
+                                            </td>
+                                            <td align="right">
+                                                2.12
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler46.py
+                                            </td>
+                                            <td align="right">
+                                                0.52
+                                            </td>
+                                            <td align="right">
+                                                1.13
+                                            </td>
+                                            <td align="right">
+                                                6.98
+                                            </td>
+                                            <td align="right">
+                                                0.31
+                                            </td>
+                                            <td align="right">
+                                                1.14
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler47.py
+                                            </td>
+                                            <td align="right">
+                                                1.44
+                                            </td>
+                                            <td align="right">
+                                                2.44
+                                            </td>
+                                            <td align="right">
+                                                8.03
+                                            </td>
+                                            <td align="right">
+                                                0.73
+                                            </td>
+                                            <td align="right">
+                                                3.65
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler48.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                5.49
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler49.py
+                                            </td>
+                                            <td align="right">
+                                                0.62
+                                            </td>
+                                            <td align="right">
+                                                1.74
+                                            </td>
+                                            <td align="right">
+                                                6.72
+                                            </td>
+                                            <td align="right">
+                                                0.82
+                                            </td>
+                                            <td align="right">
+                                                1.02
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler50.py
+                                            </td>
+                                            <td align="right">
+                                                2.23
+                                            </td>
+                                            <td align="right">
+                                                52.50
+                                            </td>
+                                            <td align="right">
+                                                58.27
+                                            </td>
+                                            <td align="right">
+                                                6.11
+                                            </td>
+                                            <td align="right">
+                                                56.61
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler52.py
+                                            </td>
+                                            <td align="right">
+                                                0.61
+                                            </td>
+                                            <td align="right">
+                                                0.81
+                                            </td>
+                                            <td align="right">
+                                                5.36
+                                            </td>
+                                            <td align="right">
+                                                0.82
+                                            </td>
+                                            <td align="right">
+                                                0.71
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler53.py
+                                            </td>
+                                            <td align="right">
+                                                0.22
+                                            </td>
+                                            <td align="right">
+                                                0.42
+                                            </td>
+                                            <td align="right">
+                                                5.98
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                0.42
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler54.py
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                            <td align="right">
+                                                7.59
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler55.py
+                                            </td>
+                                            <td align="right">
+                                                0.82
+                                            </td>
+                                            <td align="right">
+                                                0.73
+                                            </td>
+                                            <td align="right">
+                                                6.39
+                                            </td>
+                                            <td align="right">
+                                                0.52
+                                            </td>
+                                            <td align="right">
+                                                0.73
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler56.py
+                                            </td>
+                                            <td align="right">
+                                                0.92
+                                            </td>
+                                            <td align="right">
+                                                1.22
+                                            </td>
+                                            <td align="right">
+                                                5.98
+                                            </td>
+                                            <td align="right">
+                                                1.03
+                                            </td>
+                                            <td align="right">
+                                                1.43
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler57.py
+                                            </td>
+                                            <td align="right">
+                                                0.52
+                                            </td>
+                                            <td align="right">
+                                                0.72
+                                            </td>
+                                            <td align="right">
+                                                6.09
+                                            </td>
+                                            <td align="right">
+                                                0.53
+                                            </td>
+                                            <td align="right">
+                                                0.82
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler58.py
+                                            </td>
+                                            <td align="right">
+                                                6.67
+                                            </td>
+                                            <td align="right">
+                                                34.19
+                                            </td>
+                                            <td align="right">
+                                                44.30
+                                            </td>
+                                            <td align="right">
+                                                7.60
+                                            </td>
+                                            <td align="right">
+                                                53.89
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler59.py
+                                            </td>
+                                            <td align="right">
+                                                11.42
+                                            </td>
+                                            <td align="right">
+                                                8.19
+                                            </td>
+                                            <td align="right">
+                                                17.06
+                                            </td>
+                                            <td align="right">
+                                                12.81
+                                            </td>
+                                            <td align="right">
+                                                14.35
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler61.py
+                                            </td>
+                                            <td align="right">
+                                                0.31
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                5.38
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler62.py
+                                            </td>
+                                            <td align="right">
+                                                0.42
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                            <td align="right">
+                                                6.49
+                                            </td>
+                                            <td align="right">
+                                                0.53
+                                            </td>
+                                            <td align="right">
+                                                0.22
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler63.py
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                6.89
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler65.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.85
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler66.py
+                                            </td>
+                                            <td align="right">
+                                                1.92
+                                            </td>
+                                            <td align="right">
+                                                7.68
+                                            </td>
+                                            <td align="right">
+                                                23.86
+                                            </td>
+                                            <td align="right">
+                                                7.18
+                                            </td>
+                                            <td align="right">
+                                                12.33
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler67.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                4.77
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler68.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                4.16
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler69.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                4.96
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler70.py
+                                            </td>
+                                            <td align="right">
+                                                0.73
+                                            </td>
+                                            <td align="right">
+                                                0.61
+                                            </td>
+                                            <td align="right">
+                                                7.18
+                                            </td>
+                                            <td align="right">
+                                                1.02
+                                            </td>
+                                            <td align="right">
+                                                1.22
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler71.py
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                1.44
+                                            </td>
+                                            <td align="right">
+                                                6.48
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                            <td align="right">
+                                                0.91
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler72.py
+                                            </td>
+                                            <td align="right">
+                                                7.23
+                                            </td>
+                                            <td align="right">
+                                                30.18
+                                            </td>
+                                            <td align="right">
+                                                37.07
+                                            </td>
+                                            <td align="right">
+                                                8.42
+                                            </td>
+                                            <td align="right">
+                                                49.23
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler73.py
+                                            </td>
+                                            <td align="right">
+                                                9.50
+                                            </td>
+                                            <td align="right">
+                                                22.54
+                                            </td>
+                                            <td align="right">
+                                                21.23
+                                            </td>
+                                            <td align="right">
+                                                3.35
+                                            </td>
+                                            <td align="right">
+                                                24.59
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler75.py
+                                            </td>
+                                            <td align="right">
+                                                2.12
+                                            </td>
+                                            <td align="right">
+                                                2.22
+                                            </td>
+                                            <td align="right">
+                                                5.56
+                                            </td>
+                                            <td align="right">
+                                                0.62
+                                            </td>
+                                            <td align="right">
+                                                2.43
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler77.py
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                            <td align="right">
+                                                0.30
+                                            </td>
+                                            <td align="right">
+                                                4.86
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler79.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.13
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler80.py
+                                            </td>
+                                            <td align="right">
+                                                0.91
+                                            </td>
+                                            <td align="right">
+                                                0.71
+                                            </td>
+                                            <td align="right">
+                                                3.94
+                                            </td>
+                                            <td align="right">
+                                                0.72
+                                            </td>
+                                            <td align="right">
+                                                0.62
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler81.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                3.54
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler82.py
+                                            </td>
+                                            <td align="right">
+                                                0.71
+                                            </td>
+                                            <td align="right">
+                                                0.30
+                                            </td>
+                                            <td align="right">
+                                                8.70
+                                            </td>
+                                            <td align="right">
+                                                0.30
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler83.py
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                0.81
+                                            </td>
+                                            <td align="right">
+                                                4.04
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                            <td align="right">
+                                                0.61
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler84.py
+                                            </td>
+                                            <td align="right">
+                                                2.65
+                                            </td>
+                                            <td align="right">
+                                                15.13
+                                            </td>
+                                            <td align="right">
+                                                23.56
+                                            </td>
+                                            <td align="right">
+                                                4.66
+                                            </td>
+                                            <td align="right">
+                                                19.91
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler85.py
+                                            </td>
+                                            <td align="right">
+                                                7.98
+                                            </td>
+                                            <td align="right">
+                                                7.99
+                                            </td>
+                                            <td align="right">
+                                                22.23
+                                            </td>
+                                            <td align="right">
+                                                10.41
+                                            </td>
+                                            <td align="right">
+                                                13.85
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler87.py
+                                            </td>
+                                            <td align="right">
+                                                1.93
+                                            </td>
+                                            <td align="right">
+                                                1.74
+                                            </td>
+                                            <td align="right">
+                                                7.28
+                                            </td>
+                                            <td align="right">
+                                                1.03
+                                            </td>
+                                            <td align="right">
+                                                1.23
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler89.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                5.17
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler93.py
+                                            </td>
+                                            <td align="right">
+                                                3.54
+                                            </td>
+                                            <td align="right">
+                                                5.56
+                                            </td>
+                                            <td align="right">
+                                                12.72
+                                            </td>
+                                            <td align="right">
+                                                6.58
+                                            </td>
+                                            <td align="right">
+                                                12.33
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler94.py
+                                            </td>
+                                            <td align="right">
+                                                34.69
+                                            </td>
+                                            <td align="right">
+                                                29.33
+                                            </td>
+                                            <td align="right">
+                                                24.57
+                                            </td>
+                                            <td align="right">
+                                                26.20
+                                            </td>
+                                            <td align="right">
+                                                20.42
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler97.py
+                                            </td>
+                                            <td align="right">
+                                                3.64
+                                            </td>
+                                            <td align="right">
+                                                4.95
+                                            </td>
+                                            <td align="right">
+                                                10.61
+                                            </td>
+                                            <td align="right">
+                                                2.63
+                                            </td>
+                                            <td align="right">
+                                                3.13
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler98.py
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                            <td align="right">
+                                                0.61
+                                            </td>
+                                            <td align="right">
+                                                3.84
+                                            </td>
+                                            <td align="right">
+                                                0.51
+                                            </td>
+                                            <td align="right">
+                                                0.61
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler99.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                2.12
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler100.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                2.43
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler101.py
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                4.76
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler102.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.44
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler103.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                2.94
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler105.py
+                                            </td>
+                                            <td align="right">
+                                                0.61
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                            <td align="right">
+                                                7.90
+                                            </td>
+                                            <td align="right">
+                                                0.42
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler106.py
+                                            </td>
+                                            <td align="right">
+                                                0.71
+                                            </td>
+                                            <td align="right">
+                                                0.51
+                                            </td>
+                                            <td align="right">
+                                                8.82
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                            <td align="right">
+                                                0.51
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler107.py
+                                            </td>
+                                            <td align="right">
+                                                0.31
+                                            </td>
+                                            <td align="right">
+                                                0.62
+                                            </td>
+                                            <td align="right">
+                                                7.19
+                                            </td>
+                                            <td align="right">
+                                                0.31
+                                            </td>
+                                            <td align="right">
+                                                0.31
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler108.py
+                                            </td>
+                                            <td align="right">
+                                                3.66
+                                            </td>
+                                            <td align="right">
+                                                19.55
+                                            </td>
+                                            <td align="right">
+                                                17.52
+                                            </td>
+                                            <td align="right">
+                                                8.86
+                                            </td>
+                                            <td align="right">
+                                                10.62
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler109.py
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                            <td align="right">
+                                                1.23
+                                            </td>
+                                            <td align="right">
+                                                11.61
+                                            </td>
+                                            <td align="right">
+                                                0.62
+                                            </td>
+                                            <td align="right">
+                                                2.36
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler111.py
+                                            </td>
+                                            <td align="right">
+                                                2.64
+                                            </td>
+                                            <td align="right">
+                                                17.94
+                                            </td>
+                                            <td align="right">
+                                                25.92
+                                            </td>
+                                            <td align="right">
+                                                6.19
+                                            </td>
+                                            <td align="right">
+                                                17.00
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler112.py
+                                            </td>
+                                            <td align="right">
+                                                4.57
+                                            </td>
+                                            <td align="right">
+                                                12.55
+                                            </td>
+                                            <td align="right">
+                                                12.85
+                                            </td>
+                                            <td align="right">
+                                                12.45
+                                            </td>
+                                            <td align="right">
+                                                14.97
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler114.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                5.17
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler115.py
+                                            </td>
+                                            <td align="right">
+                                                0.31
+                                            </td>
+                                            <td align="right">
+                                                0.42
+                                            </td>
+                                            <td align="right">
+                                                5.58
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                0.41
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler116.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                4.86
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler117.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                4.76
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler119.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                3.74
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler120.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                3.56
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler121.py
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                0.30
+                                            </td>
+                                            <td align="right">
+                                                4.87
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler123.py
+                                            </td>
+                                            <td align="right">
+                                                5.59
+                                            </td>
+                                            <td align="right">
+                                                5.42
+                                            </td>
+                                            <td align="right">
+                                                24.12
+                                            </td>
+                                            <td align="right">
+                                                7.08
+                                            </td>
+                                            <td align="right">
+                                                7.48
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler124.py
+                                            </td>
+                                            <td align="right">
+                                                1.24
+                                            </td>
+                                            <td align="right">
+                                                1.84
+                                            </td>
+                                            <td align="right">
+                                                9.22
+                                            </td>
+                                            <td align="right">
+                                                0.62
+                                            </td>
+                                            <td align="right">
+                                                2.77
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler125.py
+                                            </td>
+                                            <td align="right">
+                                                1.32
+                                            </td>
+                                            <td align="right">
+                                                1.52
+                                            </td>
+                                            <td align="right">
+                                                6.28
+                                            </td>
+                                            <td align="right">
+                                                1.22
+                                            </td>
+                                            <td align="right">
+                                                1.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler126.py
+                                            </td>
+                                            <td align="right">
+                                                4.06
+                                            </td>
+                                            <td align="right">
+                                                15.59
+                                            </td>
+                                            <td align="right">
+                                                13.75
+                                            </td>
+                                            <td align="right">
+                                                3.85
+                                            </td>
+                                            <td align="right">
+                                                17.70
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler128.py
+                                            </td>
+                                            <td align="right">
+                                                9.50
+                                            </td>
+                                            <td align="right">
+                                                21.56
+                                            </td>
+                                            <td align="right">
+                                                26.49
+                                            </td>
+                                            <td align="right">
+                                                12.63
+                                            </td>
+                                            <td align="right">
+                                                14.76
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler135.py
+                                            </td>
+                                            <td align="right">
+                                                3.34
+                                            </td>
+                                            <td align="right">
+                                                5.36
+                                            </td>
+                                            <td align="right">
+                                                7.48
+                                            </td>
+                                            <td align="right">
+                                                2.22
+                                            </td>
+                                            <td align="right">
+                                                3.34
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler142.py
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                0.71
+                                            </td>
+                                            <td align="right">
+                                                5.57
+                                            </td>
+                                            <td align="right">
+                                                0.22
+                                            </td>
+                                            <td align="right">
+                                                0.51
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler143.py
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                4.46
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler157.py
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                            <td align="right">
+                                                3.97
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.12
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler162.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.44
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler171.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.74
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler173.py
+                                            </td>
+                                            <td align="right">
+                                                0.93
+                                            </td>
+                                            <td align="right">
+                                                1.12
+                                            </td>
+                                            <td align="right">
+                                                6.17
+                                            </td>
+                                            <td align="right">
+                                                0.61
+                                            </td>
+                                            <td align="right">
+                                                1.53
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler174.py
+                                            </td>
+                                            <td align="right">
+                                                4.45
+                                            </td>
+                                            <td align="right">
+                                                4.16
+                                            </td>
+                                            <td align="right">
+                                                8.08
+                                            </td>
+                                            <td align="right">
+                                                3.74
+                                            </td>
+                                            <td align="right">
+                                                3.23
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler181.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.85
+                                            </td>
+                                            <td align="right">
+                                                0.11
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler190.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                2.43
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler193.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                2.12
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler202.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                2.74
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler205.py
+                                            </td>
+                                            <td align="right">
+                                                0.92
+                                            </td>
+                                            <td align="right">
+                                                0.72
+                                            </td>
+                                            <td align="right">
+                                                10.16
+                                            </td>
+                                            <td align="right">
+                                                1.03
+                                            </td>
+                                            <td align="right">
+                                                0.72
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler207.py
+                                            </td>
+                                            <td align="right">
+                                                0.21
+                                            </td>
+                                            <td align="right">
+                                                0.83
+                                            </td>
+                                            <td align="right">
+                                                6.29
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                            <td align="right">
+                                                1.43
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler222.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.44
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler233.py
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                3.35
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                            <td align="right">
+                                                0.10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler234.py
+                                            </td>
+                                            <td align="right">
+                                                4.46
+                                            </td>
+                                            <td align="right">
+                                                9.00
+                                            </td>
+                                            <td align="right">
+                                                19.12
+                                            </td>
+                                            <td align="right">
+                                                7.71
+                                            </td>
+                                            <td align="right">
+                                                7.48
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler235.py
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                0.20
+                                            </td>
+                                            <td align="right">
+                                                5.47
+                                            </td>
+                                            <td align="right">
+                                                0.32
+                                            </td>
+                                            <td align="right">
+                                                0.22
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                euler240.py
+                                            </td>
+                                            <td align="right">
+                                                14.57
+                                            </td>
+                                            <td align="right">
+                                                14.52
+                                            </td>
+                                            <td align="right">
+                                                48.67
+                                            </td>
+                                            <td align="right">
+                                                12.14
+                                            </td>
+                                            <td align="right">
+                                                22.65
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                total
+                                            </td>
+                                            <td align="right">
+                                                250.37
+                                            </td>
+                                            <td align="right">
+                                                509.72
+                                            </td>
+                                            <td align="right">
+                                                1211.07
+                                            </td>
+                                            <td align="right">
+                                                282.73
+                                            </td>
+                                            <td align="right">
+                                                569.37
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                wins
+                                            </td>
+                                            <td align="right">
+                                                68
+                                            </td>
+                                            <td align="right">
+                                                33
+                                            </td>
+                                            <td align="right">
+                                                0
+                                            </td>
+                                            <td align="right">
+                                                59
+                                            </td>
+                                            <td align="right">
+                                                51
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.ripton.net/blog/?p=59">http://www.ripton.net/blog/?p=59</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

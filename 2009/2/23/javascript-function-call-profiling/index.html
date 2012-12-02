@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            JavaScript Function Call Profiling
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 23 Feb 2009 12:49:52 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-23T07:49:52-04:00">
+                    <meta itemprop="dateModified" content="2009-02-23T07:49:52-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-23T11:49:52+00:00">Feb 23</time>
+                    <h2 itemprop="title">
+                        JavaScript Function Call Profiling
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/39ba18e7b43e3e5d">
+                        <blockquote>
+                            <p>
+                                With <a href="http://docs.jquery.com/Release:jQuery_1.3.2">jQuery 1.3.2</a> out the door I've been looking for more ways to profile and optimize jQuery.
+                            </p>
+                            <p>
+                                Previously I <a href="http://ejohn.org/blog/selectors-that-people-actually-use/">did a survey</a> of jQuery-using sites to figure out which selectors they were using. This led to the construction of the new <a href="http://sizzlejs.com/">Sizzle Selector Engine</a> which targeted those selectors for improvement.
+                            </p>
+                            <p>
+                                Additionally, I constructed a <a href="http://ejohn.org/blog/deep-profiling-jquery-apps/">deep profiling plugin</a> for jQuery which helped to spot methods that were taking a long time to run in live jQuery sites. This helped bring about the improvements in jQuery <a href="http://docs.jquery.com/Release:jQuery_1.2.6">1.2.6</a>, <a href="http://docs.jquery.com/Release:jQuery_1.3">1.3</a>, and <a href="http://docs.jquery.com/Release:jQuery_1.3.2">1.3.2</a>.
+                            </p>
+                            <p>
+                                What do we tackle next? A good place to start would be to tackle optimizing methods that are obviously inefficient - but how do we determine that? One way would be to measure the number of function calls that occur every time a method is run. Firebug provides this information in its profiling data (along with how long it takes to run each method). Unfortunately it's very clunky to manually type out code, check the results in the console, and determine if they're bad or if they've changed. If only there was a way to progamatically get at those numbers.
+                            </p>
+                            <h3>
+                                FireUnit Profiling Methods
+                            </h3>
+                            <p>
+                                Yesterday I did some work to make getting at the profiling data possible, adding two new methods to <a href="http://fireunit.org/">FireUnit</a>.
+                            </p>
+                            <p>
+                                <code>fireunit.getProfile();</code>
+                            </p>
+                            <p>
+                                Run this method after you've run <code>console.profile();</code> and <code>console.profileEnd();</code> to get a full dump of the profiling information. For example, given the following profile run:
+                            </p>
+                            <center>
+                                <img src="http://ejohn.org/files/jquery-profile-run.png">
+                            </center>
+                            <p>
+                                You'll get the following JavaScript object returned from <code>fireunit.getProfile()</code>:
+                            </p>
+                            <div>
+                                <div>
+                                    <div>
+                                        <span style="color:#008800;font-weight:bold">{</span><br>
+                                        &nbsp; <span style="color:#3366CC">"time"</span>: <span style="color:#CC0000">8</span>.<span style="color:#CC0000">443</span>,<br>
+                                        &nbsp; <span style="color:#3366CC">"calls"</span>: <span style="color:#CC0000">611</span>,<br>
+                                        &nbsp; <span style="color:#3366CC">"data"</span>:<span style="color:#008800;font-weight:bold">[</span><br>
+                                        &nbsp; <span style="color:#008800;font-weight:bold">{</span><br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"name"</span>:<span style="color:#3366CC">"makeArray()"</span>,<br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"calls"</span>:<span style="color:#CC0000">1</span>,<br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"percent"</span>:<span style="color:#CC0000">23</span>.<span style="color:#CC0000">58</span>,<br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"ownTime"</span>:<span style="color:#CC0000">1</span>.<span style="color:#CC0000">991</span>,<br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"time"</span>:<span style="color:#CC0000">1</span>.<span style="color:#CC0000">991</span>,<br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"avgTime"</span>:<span style="color:#CC0000">1</span>.<span style="color:#CC0000">991</span>,<br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"minTime"</span>:<span style="color:#CC0000">1</span>.<span style="color:#CC0000">991</span>,<br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"maxTime"</span>:<span style="color:#CC0000">1</span>.<span style="color:#CC0000">991</span>,<br>
+                                        &nbsp; &nbsp; <span style="color:#3366CC">"fileName"</span>:<span style="color:#3366CC">"jquery.js (line 2059)"</span><br>
+                                        &nbsp; <span style="color:#008800;font-weight:bold">}</span>,<br>
+                                        &nbsp; <span style="color:#009900;font-style:italic">// etc.</span><br>
+                                        <span style="color:#008800;font-weight:bold">]</span><span style="color:#008800;font-weight:bold">}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p>
+                                <code>fireunit.profile( fn );</code>
+                            </p>
+                            <p>
+                                The second method added to FireUnit provides an easy way to execute and profile a single function. Roughly, this method starts the profiler, executes the function, stops the profiler, and then returns the results from getProfile(). Additionally, it watches for any exceptions that might be thrown and makes sure that the profiler is cleanly turned off anyway (a frequent frustration of mine).
+                            </p>
+                            <p>
+                                You would use it like this:
+                            </p>
+                            <div>
+                                <div>
+                                    <div>
+                                        fireunit.<span style="color:#006600">profile</span><span style="color:#008800;font-weight:bold">(</span><span style="color:#003366;font-weight:bold">function</span><span style="color:#008800;font-weight:bold">(</span><span style="color:#008800;font-weight:bold">)</span><span style="color:#008800;font-weight:bold">{</span><br>
+                                        &nbsp; document.<span style="color:#006600">getElementsByClassName</span><span style="color:#008800;font-weight:bold">(</span><span style="color:#3366CC">"foo"</span><span style="color:#008800;font-weight:bold">)</span>;<br>
+                                        <span style="color:#008800;font-weight:bold">}</span><span style="color:#008800;font-weight:bold">)</span>;
+                                    </div>
+                                </div>
+                            </div>
+                            <h3>
+                                How To Use
+                            </h3>
+                            <p>
+                                First, you'll need to be sure to have the <a href="http://github.com/jeresig/fireunit">latest copy</a> of FireUnit installed. I've built a copy of the latest code, into an extension, if you wish to install it:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="http://fireunit.org/fireunit-1.0a1.xpi">http://fireunit.org/fireunit-1.0a1.xpi</a>
+                                </li>
+                            </ul>
+                            <p>
+                                When running it you'll need to make sure that:
+                            </p>
+                            <ol>
+                                <li>Both the Console and Script tabs are enabled in Firebug
+                                </li>
+                                <li>That the 'extensions.firebug.throttleMessages' property in 'about:config' is set to 'false'.
+                                </li>
+                            </ol>
+                            <h3>
+                                The Results
+                            </h3>
+                            <p>
+                                I put up <a href="http://ejohn.org/files/jquery-profile.html">a test page</a> so that I could quickly run through some jQuery methods to see how they stacked up.
+                            </p>
+                            <p>
+                                Here are the results of running against jQuery 1.3.2 ("Method" is the jQuery method that was called, with the specified arguments, "Calls" is the number of function calls that occurred when executing the method, "Big-O" is a very rough <a href="http://en.wikipedia.org/wiki/Big_O_notation">Big-O Notation</a> for the function calls):
+                            </p>
+                            <table style="width:500px">
+                                <tbody>
+                                    <tr>
+                                        <th style="width:100%">
+                                            Method
+                                        </th>
+                                        <th>
+                                            Calls
+                                        </th>
+                                        <th>
+                                            Big-O
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .addClass("test");
+                                        </td>
+                                        <td>
+                                            542
+                                        </td>
+                                        <td>
+                                            6n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .addClass("test");
+                                        </td>
+                                        <td>
+                                            592
+                                        </td>
+                                        <td>
+                                            6n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .removeClass("test");
+                                        </td>
+                                        <td>
+                                            754
+                                        </td>
+                                        <td>
+                                            8n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .removeClass("test");
+                                        </td>
+                                        <td>
+                                            610
+                                        </td>
+                                        <td>
+                                            6n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .css("color", "red");
+                                        </td>
+                                        <td>
+                                            495
+                                        </td>
+                                        <td>
+                                            5n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .css({color: "red", border: "1px solid red"});
+                                        </td>
+                                        <td>
+                                            887
+                                        </td>
+                                        <td>
+                                            9n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .remove();
+                                        </td>
+                                        <td>
+                                            23772
+                                        </td>
+                                        <td>
+                                            2n+n<sup>2</sup>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .append("&lt;p&gt;test&lt;/p&gt;");
+                                        </td>
+                                        <td>
+                                            307
+                                        </td>
+                                        <td>
+                                            3n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .append("&lt;p&gt;test&lt;/p&gt;&lt;p&gt;test&lt;/p&gt;<br>
+                                            &lt;p&gt;test&lt;/p&gt;&lt;p&gt;test&lt;/p&gt;&lt;p&gt;test&lt;/p&gt;");
+                                        </td>
+                                        <td>
+                                            319
+                                        </td>
+                                        <td>
+                                            3n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .show();
+                                        </td>
+                                        <td>
+                                            394
+                                        </td>
+                                        <td>
+                                            4n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .hide();
+                                        </td>
+                                        <td>
+                                            394
+                                        </td>
+                                        <td>
+                                            4n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .html("&lt;p&gt;test&lt;/p&gt;");
+                                        </td>
+                                        <td>
+                                            28759
+                                        </td>
+                                        <td>
+                                            3n+n<sup>2</sup>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .empty();
+                                        </td>
+                                        <td>
+                                            28452
+                                        </td>
+                                        <td>
+                                            3n+n<sup>2</sup>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .is("div");
+                                        </td>
+                                        <td>
+                                            110
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .filter("div");
+                                        </td>
+                                        <td>
+                                            216
+                                        </td>
+                                        <td>
+                                            2n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .find("div");
+                                        </td>
+                                        <td>
+                                            1564
+                                        </td>
+                                        <td>
+                                            16n
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p>
+                                We can immediately see, by looking at the big-O notation, that most jQuery methods execute at least one function for every element that they have to operate against. addClass runs about 6 functions per element, filter runs about 2, and 'is' runs only 1.
+                            </p>
+                            <p>
+                                We can see the problematic functions sticking out like a massive sore thumb: .remove(), .empty(), and .html() - they all run over n<sup>2</sup> function calls, which is a huge issue. (These numbers are all large for a simple reason: .html() uses .empty(), .empty() uses .remove(), and .remove() is obviously inefficient.) While function calls do not, necessarily, indicate slow code (a lot of jQuery's internal functions are pretty lightweight) it is very likely to indicate inefficiently-written code.
+                            </p>
+                            <p>
+                                I poked around the code for a little bit and realized that .remove() could be dramatically simplified. I <a href="http://dev.jquery.com/ticket/4222">filed a ticket</a> and <a href="http://dev.jquery.com/changeset/6253">landed a patch</a> which resulted in these much-improved numbers:
+                            </p>
+                            <table style="width:500px">
+                                <tbody>
+                                    <tr>
+                                        <th style="width:100%">
+                                            Method
+                                        </th>
+                                        <th>
+                                            Calls
+                                        </th>
+                                        <th>
+                                            Big-O
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .remove();
+                                        </td>
+                                        <td>
+                                            298
+                                        </td>
+                                        <td>
+                                            3n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .html("&lt;p&gt;test&lt;/p&gt;");
+                                        </td>
+                                        <td>
+                                            507
+                                        </td>
+                                        <td>
+                                            5n
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            .empty();
+                                        </td>
+                                        <td>
+                                            200
+                                        </td>
+                                        <td>
+                                            2n
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p>
+                                I'm really excited by this new tool. Automating the process of code profiling opens up whole avenues of exploration. Even using nothing more than the above tool I can immediately see room for improving just about every jQuery method.
+                            </p>
+                            <p>
+                                It's also be very interesting to have this running in some sort of continuous integration setting, to catch any egregious regressions - but I'll leave that for another day.
+                            </p><img src="http://ejohn.org/apps/rss/?from=rss&amp;id=5678" style="width:0px;height:0px"><img src="http://feeds.feedburner.com/~r/JohnResig/~4/8ib2HML635Y" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ejohn.org/blog/function-call-profiling/">http://ejohn.org/blog/function-call-profiling/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

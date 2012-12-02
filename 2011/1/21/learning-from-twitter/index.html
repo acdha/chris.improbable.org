@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Learning from Twitter
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 21 Jan 2011 15:46:21 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-21T10:46:21-04:00">
+                    <meta itemprop="dateModified" content="2011-01-21T10:46:21-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-21T14:46:21+00:00">Jan 21</time>
+                    <h2 itemprop="title">
+                        Learning from Twitter
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/7063cccf95d30528">
+                        <p class="annotation">
+                            I do believe Twitter was just shown up…
+                        </p>
+                        <blockquote>
+                            <p>
+                                An <a href="http://www.dustindiaz.com/about-that-slowness-on-twitter/">issue</a> popped up on Twitter this past week that caused the web site to be generally unusable for many users. It appears as if attempts to scroll were unbearably slow and caused the site to be unresponsive.
+                            </p>
+                            <p>
+                                The Twitter team <a href="http://www.dustindiaz.com/about-that-slowness-on-twitter/">investigated</a> and determined that if they reverted the version of jQuery that they used back to 1.4.2 from 1.4.4 the site would be responsive again. After more investigation they determined that the code that was slow was doing a contextual selector search for an item by class name, for example: <code>$something.find(".class")</code>.
+                            </p>
+                            <p>
+                                So - what happened? How did this come about? To start, nothing is inherently wrong with jQuery 1.4.4 - this particular performance regression came in jQuery 1.4.3. In 1.4.3 we switched from using the old Sizzle selector engine for contextual queries to using the browser's native querySelectorAll method, if it exists. This change was even <a href="http://blog.jquery.com/2010/10/16/jquery-143-released/">explicitly mentioned and highlighted</a> in the 1.4.3 release notes as it's a <em>really good change</em>. In general using querySelectorAll will result in much faster queries, especially for complicated queries and complicated documents (which there seem to be a lot of).
+                            </p>
+                            <p>
+                                However, as with every performance change, while some things get way faster some things can also get slower. This was the case for some previously-optimized queries like .find(".class") (where we use getElementsByClassName, if it exists) and .find("div") (where we use getElementsByTagName). Both of those aforementioned methods always end up being faster than the queries run through querySelectorAll. Whether this will always end up being the case is another question entirely.
+                            </p>
+                            <p>
+                                What's interesting here is that we've been using querySelectorAll for our default selector engine in jQuery for quite some time now (doing $('.class') would use querySelectorAll). The only change in 1.4.3 was just filling in a gap where .find('.class') wasn't using querySelectorAll. We've not heard of any particular performance regressions regarding the use of querySelectorAll and $('.class').
+                            </p>
+                            <p>
+                                This brings up the important point: Just how much faster is getElementsByClassName compared to querySelectorAll? In our <a href="http://jsperf.com/jquery-context-find-class">preliminary tests</a> it looks like it's about 0.5-2x faster, depending upon the browser. While this is certainly nothing to scoff at the performance hit of this difference is quite negligible. For example the difference between searching by class name and querying in Firefox 3.6 is about 0.007s - certainly nothing that is capable of crippling a large application.
+                            </p>
+                            <p>
+                                That being said, we don't like performance regressions so today we <a href="https://github.com/jeresig/sizzle/compare/f9491d4f7c1494cd19f865aff909fee21da321de...787b111c4743240bf042">backported some shortcuts</a> into Sizzle (from jQuery) to <a href="http://jsperf.com/jquery-context-find-class">improve its performance</a> for some common cases. For example: Sizzle("div"), Sizzle(".foo"), and Sizzle("#id") will all skip using querySelectorAll and try to use the native methods provided by the browser if they exist. (jQuery already did some of these (namely "div" and "#id", we just added the ".foo" shortcut as well).
+                            </p>
+                            <p>
+                                So. If the performance hit wasn't very large then why was Twitter having so many problems? The reality is that this particular change was just the straw that broke the camel's back. Two things were happening that caused Twitter to have the issues that it was having. These can be distilled down into two general best practices:
+                            </p>
+                            <h2>
+                                Best Practices
+                            </h2>
+                            <p>
+                                <strong>It's a very, very, bad idea to attach handlers to the window scroll event.</strong> Depending upon the browser the scroll event can fire <em>a lot</em> and putting code in the scroll callback will slow down any attempts to scroll the page (not a good idea). Any performance degradation in the scroll handler(s) as a result will only compound the performance of scrolling overall. Instead it's much better to use some form of a timer to check every X milliseconds OR to attach a scroll event and only run your code after a delay (or even after a given number of executions - and then a delay).
+                            </p>
+                            <p>
+                                <strong>Always cache the selector queries that you're re-using.</strong> It's not clear why Twitter decided to re-query the DOM every single time the scroll event fired, but this does not appear to be necessary (since scrolling itself didn't change the DOM). They could've saved the result of that single query to a variable and looked it up whenever they wanted to re-use. This would've resulted in absolutely no querying overhead (which is even better than having the faster getElementsByClassName code!).
+                            </p>
+                            <p>
+                                Thus, combining these two techniques, the resulting code would look something like:
+                            </p>
+                            <div>
+                                <div>
+                                    <div>
+                                        <span style="color:#003366;font-weight:bold">var</span> outerPane = $details.<span style="color:#006600">find</span><span style="color:#008800;font-weight:bold">(</span><span style="color:#3366CC">".details-pane-outer"</span><span style="color:#008800;font-weight:bold">)</span>,<br>
+                                        &nbsp; &nbsp; didScroll = <span style="color:#003366;font-weight:bold">false</span>;
+                                        <p>
+                                            $<span style="color:#008800;font-weight:bold">(</span>window<span style="color:#008800;font-weight:bold">)</span>.<span style="color:#006600">scroll</span><span style="color:#008800;font-weight:bold">(</span><span style="color:#003366;font-weight:bold">function</span><span style="color:#008800;font-weight:bold">(</span><span style="color:#008800;font-weight:bold">)</span> <span style="color:#008800;font-weight:bold">{</span><br>
+                                            &nbsp; &nbsp; didScroll = <span style="color:#003366;font-weight:bold">true</span>;<br>
+                                            <span style="color:#008800;font-weight:bold">}</span><span style="color:#008800;font-weight:bold">)</span>;
+                                        </p>
+                                        <p>
+                                            setInterval<span style="color:#008800;font-weight:bold">(</span><span style="color:#003366;font-weight:bold">function</span><span style="color:#008800;font-weight:bold">(</span><span style="color:#008800;font-weight:bold">)</span> <span style="color:#008800;font-weight:bold">{</span><br>
+                                            &nbsp; &nbsp; <span style="color:#000066;font-weight:bold">if</span> <span style="color:#008800;font-weight:bold">(</span> didScroll <span style="color:#008800;font-weight:bold">)</span> <span style="color:#008800;font-weight:bold">{</span><br>
+                                            &nbsp; &nbsp; &nbsp; &nbsp; didScroll = <span style="color:#003366;font-weight:bold">false</span>;<br>
+                                            &nbsp; &nbsp; &nbsp; &nbsp; <span style="color:#009900;font-style:italic">// Check your page position and then</span><br>
+                                            &nbsp; &nbsp; &nbsp; &nbsp; <span style="color:#009900;font-style:italic">// Load in more results</span><br>
+                                            &nbsp; &nbsp; <span style="color:#008800;font-weight:bold">}</span><br>
+                                            <span style="color:#008800;font-weight:bold">}</span>, <span style="color:#CC0000">250</span><span style="color:#008800;font-weight:bold">)</span>;
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p>
+                                Hope this helps to clear things up and provides some good advice for future infinitely-scrolling-page developers!
+                            </p><img src="http://feeds.feedburner.com/~r/JohnResig/~4/oRBKvIEMNLE" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ejohn.org/blog/learning-from-twitter/">http://ejohn.org/blog/learning-from-twitter/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

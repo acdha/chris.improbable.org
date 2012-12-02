@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            HipHop talk
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 06 Apr 2011 23:37:08 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-04-06T18:39:00-04:00">
+                    <meta itemprop="dateModified" content="2011-04-06T18:39:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-04-06T22:39:00+00:00">Apr 06</time>
+                    <h2 itemprop="title">
+                        HipHop talk
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/4b14e289c9ed6196">
+                        <blockquote>
+                            <div>
+                                I just went to a talk by Facebook HipHop engineer Haiping Zhao about various systems issues FB has had. There was a discussion of language issues with data movement in distributed systems and how to get that right, but I'm going to focus on HipHop, Facebook's open source PHP to C++ translator, since that's more up my alley.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Thinking carefully about HipHop, it seems to make better tradeoffs for large web deployments than the (at this point) traditional JIT approach. HipHop essentially trades compilation time, code size, and maximum performance for performance predictability and immediate startup performance. Furthermore, static compilation is probably perceived as being less likely to have bugs than a JIT compilation to someone in charge of deploying the system, although I would argue against that perception.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                The main argument against static compilation of dynamic languages is that you don't have enough information to generate efficient code, and that you need to be able to run it before compiling it. To address that, HipHop is uses feedback directed (aka profile guided) optimization, even though PGO has never caught on in the C/C++ world. Essentially, they translate all their PHP to instrumented C++ to get types of variables, and then run that on an instance with a model workload. The compile takes about 15 minutes to make a 1 GB binary (the gold linker helps), and the profiling takes about another 15 minutes. Then they re-do the compilation with the profile information. This allows optimizations like speculating the target of a call, and speculating the type of a variable as being int or string, the easy to optimize types.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                I would argue that this approach won't have as good peak performance as a JIT, which only has to generate the specialized version of the code, and can do some more clever optimizations. Also, a JIT can always fallback to the interpreter for the general case. If your profiling ends up being wrong (unlikely), a JIT can respond appropriately.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                The drawback of the JIT is that you don't know when or if your code is going to get compiled, and you have to wait for that to happen. Debugging performance problems with JITed code is tricky. On the other hand, there are many solid tools for profiling C++, and mapping that back to PHP doesn't sound too hard.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                It's probably possible to do a little better in the static model by avoiding generating or loading code for slow paths that you feel will never actually be loaded. I imagine right now the generated code looks like:
+                            </div>
+                            <div>
+                                <br>
+                            </div><code>if (is_int(v)) { /* large int code */ }<br>
+                            else { /* massive general code */ }</code>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                The else branch is probably never taken. It seems like there should be techniques to either move the else branch far away from the hot code so that the cold code is never even faulted in from disk, or you could try to rig up a fallback to the interpreter, which I think would be much harder and not help your code size. On the other hand, branch predictors these days are good and moving code around is really only going to show up as instruction cache effects, which are pretty hard to predict. HipHop probably already uses __builtin_expect to tell g++ which branch it expects to take as well.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                One other major thing I remembered during the talk is that optimizing PHP turns out to be much easier than Python. In Python, functions, classes, and globals in a module all share the same namespace. In PHP, variables start with a $ and functions do not. Short of eval, which HipHop forbids, there is no way to shadow a function without the compiler noticing that it might be shadowed. For example, this works:
+                            </div>
+                            <div>
+                                <br>
+                            </div><code>if ($a) {<br>
+                            function foo() { return true; }<br>
+                            } else {<br>
+                            function foo() { return false; }<br>
+                            }</code>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                But this is not possible:
+                            </div>
+                            <div>
+                                <br>
+                            </div><code>function foo() { return true; }<br>
+                            function bar() { return false; }<br>
+                            foo = bar; // No can do.</code>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                You can also invoke functions through variables, like so:
+                            </div>
+                            <div>
+                                <br>
+                            </div><code>function foo() { return true; }<br>
+                            $func = "foo";<br>
+                            $bar = $func();</code>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                That will set $bar to true. This is generally rare and easy to implement by falling back to the standard dynamic lookup.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                OTOH, local variable lookup seems like it sucks because PHP supports something like the following:
+                            </div>
+                            <div>
+                                <br>
+                            </div><code>$which = $a ? "foo" : "bar";<br>
+                            $$which = "string";</code>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Which will assign "string" to the variable $foo or $bar depending on whether $a is true or false. Hopefully the scoping rules restrict this to the scope of the local function, so you only need to worry about this feature in functions that use it.
+                            </div>
+                            <div>
+                                <br>
+                                Another feature of HipHop is that, once you forbid certain features like eval or using include to pull in generated or uploaded source from the filesystem, you get to do whole program compilation. One of the major optimization blockers even for C and C++ is that the compiler only gets to see a translation unit (TU) at a time. HipHop gets to see the whole program, so it makes it possible to do the checks I mentioned earlier, like making sure that there is only a single definition of a function 'foo' at top-level which is always present, so you can statically bind it at the call-site even if it's in a different source file.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                Finally, Haiping mentioned that the massive binary produced is deployed to servers using BitTorrent, which surprisingly seems like exactly the right tool for the job. You could try to be more clever if you knew something about the network topology, or you could just use a general, well-tested tool and call it a day. =D
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                P.S. Hopefully none of this is considered FB confidential and Haiping doesn't get in any trouble. It was a very interesting talk!
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/5346954106731174402-4721579343798009065?l=qinsb.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://qinsb.blogspot.com/2011/04/hiphop-talk.html">http://qinsb.blogspot.com/2011/04/hiphop-talk.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

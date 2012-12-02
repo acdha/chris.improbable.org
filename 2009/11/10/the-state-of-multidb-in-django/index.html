@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The State of MultiDB (in Django)
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 11 Nov 2009 02:07:32 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-10T21:06:00-04:00">
+                    <meta itemprop="dateModified" content="2009-11-10T21:06:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-11T01:06:00+00:00">Nov 11</time>
+                    <h2 itemprop="title">
+                        The State of MultiDB (in Django)
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/403d0ab3d9cc6959">
+                        <blockquote>
+                            As you, the reader, may know this summer I worked for the Django Software Foundation via the Google Summer of Code program. My task was to implement multiple database support for Django. Assisting me in this task were my mentors Russell Keith-Magee and Nicolas Lara (you may recognize them as the people responsible for aggregates in Django). By the standards of the Google Summer of Code project my work was considered a success, however, it's not yet merged into Django's trunk, so I'm going to outline what happened, and what needs to happen before this work is considered complete.<br>
+                            <br>
+                            Most of the major things happened, settings were changed from a series of DATABASE_* to a DATABASES setting that's keyed by DB aliases and who's values are dictionaries containing the usual DATABASE* options, QuerySets grew a using() method which takes a DB alias and says what DB the QuerySet should be evaluated against, save() and delete() grew similar using keyword arguments, a using option was added to the inner Meta class for models, transaction support was expanded to include support for multiple databases, as did the testing framework. In terms of internals almost every internal DB related function grew explicit passing of the connection or DB alias around, rather than assuming the global connection object as they used to. As I blogged previously ManyToMany relations were completely refactored. If it sounds like an awful lot got done, that's because it did, I knew going in that multi-db was a big project and it might not all happen within the confines of the summer.<br>
+                            <br>
+                            So if all of that stuff got done, what's left? Right before the end of the GSOC time frame Russ and I decided that a fairly radical rearchitecting of the Query class (the internal datastructure that both tracks the state of an operation and forms its SQL) was needed. Specifically the issue was that database backends come in two varieties. One is something like a backend for App Engine, or CouchDB. These have a totally different design than SQL, they need different datastructures to track the relevant information, and they need different code generation. The second type of database backend is one for a SQL database. By contrast these all share the same philosophies and basic structure, in most cases their implementation just involves changing the names of database column types or the law LIMIT/OFFSET is handled. The problem is Django treated all the backends equally. For SQL backends this meant that they got their own Query classes even though they only needed to overide half of the Query functionality, the SQL generation half, as the datastructure part was identical since the underlying model is the same. What this means is that if you make a call to using() on a QuerySet half way through it's construction you need to change the class of the Query representation if you switch to a database with a different backend. This is obviously a poor architecture since the Query class doesn't need to be changed, just the bit at the end that actually constructs the SQL. To solve this problem Russ and I decided that the Query class should be split into two parts, a Query class that stores bits about the current query, and a SQLCompiler which generated SQL at the end of the process. And this is the refactoring that's holding up the merger of my multi-db work primarily.<br>
+                            <br>
+                            This work is largely done, however the API needs to be finalized and the Oracle backend ported to the new system. In terms of other work that needs to be done, GeoDjango needs to be shown to shown to still work (or fixed). In my opinion everything else on the TODO list (<a href="http://etherpad.com/DWIzZa2UZn">available here</a>, please don't deface) is optional for multi-db to be merge ready, with the exception of more example documentation.<br>
+                            <br>
+                            There are already people using the multi-db branch (some even in production), so I'm confident about it's stability. For the next 6 weeks or so (until the 1.2 feature deadline), my biggest priority is going to be getting this branch into a merge ready state. If this is something that interests you please feel free to get in contact with me (although if you don't come bearing a patch I might tell you that I'll see you in 6 weeks ;)), if you happen to find bugs they can be filed on the Django trac, with version "soc2009/multidb". As always contributors are welcome, you can find the absolute latest work on <a href="http://github.com/alex/django">my Github</a> and a relatively stable version in my <a href="http://code.djangoproject.com/browser/django/branches/soc2009/multidb/">SVN branch</a> (this doesn't contain the latest, in progress, refactoring). Have fun.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/7176062489626496619-5729996680743630677?l=lazypython.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://lazypython.blogspot.com/2009/11/state-of-multidb-in-django.html">http://lazypython.blogspot.com/2009/11/state-of-multidb-in-django.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

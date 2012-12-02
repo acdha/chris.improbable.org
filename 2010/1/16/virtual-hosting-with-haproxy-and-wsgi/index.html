@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Virtual Hosting with HAProxy and WSGI
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 17 Jan 2010 00:29:38 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-16T19:29:38-04:00">
+                    <meta itemprop="dateModified" content="2010-01-16T19:29:38-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-16T23:29:38+00:00">Jan 16</time>
+                    <h2 itemprop="title">
+                        Virtual Hosting with HAProxy and WSGI
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/520ab894313efb0f">
+                        <blockquote>
+                            <p>
+                                Lately I've fallen in love with a couple of fairly simple but powerful technologies: <a href="http://haproxy.1wt.eu/">haproxy</a> and <a href="http://en.wikipedia.org/wiki/Web%20Server%20Gateway%20Interface">WSGI</a> (web server gateway interface). While the latter is more of a specification (<a href="http://en.wikipedia.org/wiki/Wsgi">PEP 333</a>) the concepts it puts forth have made my life significantly easier. In combination, the two of them make for a powerful combination for serving web applications of all kinds and colors.
+                            </p>
+                            <p>
+                                HAProxy is a robust, reliable piece of load balancing software that's <strong>very</strong> easy to get started with, For the uninitiated, load balancing is a common means of distributing the load of a number of inbound requests across a pool of processes, machines, clusters and so on. Whenever you hit any web site of non-trivial size, your HTTP requests are invariably transparently proxied through a load balancer to a pool of web machines.
+                            </p>
+                            <p>
+                                I started looking into haproxy when I began to move <a href="http://urlenco.de">Urlenco.de</a> away from my franken-setup of <a href="http://en.wikipedia.org/wiki/Lighttpd">Lighttpd</a>/<a href="http://en.wikipedia.org/wiki/FastCGI">FastCGI</a>/<a href="http://en.wikipedia.org/wiki/Mono%20%28software%29">Mono</a>/<a href="http://www.asp.net/">ASP.NET</a> to a pure <a href="http://en.wikipedia.org/wiki/Python%20%28programming%20language%29">Python</a> stack. After poking around some articles about haproxy I discovered it can be used for <strong>virtual hosts</strong> as well as simple load balancing. Using a haproxy's ACLs feature (see Section 7 in the <a href="http://haproxy.1wt.eu/download/1.4/doc/configuration.txt">configuration.txt</a>), you can redirect requests to one backend or another. While my "virtual hosting" with haproxy is using the ability to inspect the HTTP headers of inbound requests, you can use a number of different criterion to determine the right backend for serving a request: url matching, request method matching (GET/POST), protocol matching (haproxy can load balance any kind of TCP connection) and so on.
+                            </p>
+                            <p>
+                                WSGI (pronounced: <em>whiskey</em>) comes into play on the backend side of haproxy, using the <a href="http://eventlet.net/doc/modules/wsgi.html">eventlet.wsgi</a> module which provides a WSGI interface I can build web applications <strong>very</strong> quickly, test them and deploy them. When deployed, I can run them as "nobody" in userspace on the server, binding to some higher numbered port (i.e. 8080) and haproxy will do the work routing to the appropriate WSGI process.
+                            </p>
+                            <p>
+                                Below is a simple haproxy configuration that I'm using to run <a href="http://urlenco.de">Urlenco.de</a> and a site for <a href="http://erinandtylerswedding.com">my wedding</a> and many more as soon as I finish them. The section to note is <code>frontend http-in</code> in which the ACLs are defined for the different virtually hosted domains and the conditionals for selecting a backend based on those ACLs.
+                            </p>
+                            <pre>
+<code>global
+    maxconn         20000
+    ulimit-n        16384
+    log             127.0.0.1 local0
+    uid             200
+    gid             200
+    chroot          /var/empty
+    nbproc          4
+    daemon
+
+defaults
+    log global
+    mode http
+    option httplog
+    option dontlognull
+    retries 3
+    option redispatch
+    maxconn 2000
+    contimeout 5000
+    clitimeout 50000
+    srvtimeout 50000
+
+frontend http-in
+    bind *:80
+    acl is_urlencode hdr_end(host) -i urlenco.de
+    acl is_wedding hdr_end(host) -i erinandtylerswedding.com
+
+    use_backend urlencode if is_urlencode
+    use_backend wedding if is_wedding
+    default_backend urlencode
+
+backend urlencode
+    balance roundrobin
+    cookie SERVERID insert nocache indirect
+    option httpchk HEAD /check.txt HTTP/1.0
+    option httpclose
+    option forwardfor
+    server Local 127.0.0.1:8181 cookie Local
+
+backend wedding
+    balance roundrobin
+    cookie SERVERID insert nocache indirect
+    option httpchk HEAD /check.txt HTTP/1.0
+    option httpclose
+    option forwardfor
+    server Local 127.0.0.1:8081 cookie Local
+</code>
+</pre><img src="http://feeds.feedburner.com/~r/UnethicalBlogger/~4/DOjg1cx1PtE" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://unethicalblogger.com/posts/2010/01/virtual_hosting_haproxy_and_wsgi/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+UnethicalBlogger+%28unethical+blogger%29">http://unethicalblogger.com/posts/2010/01/virtual_hosting_haproxy_and_wsgi/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+UnethicalBlogger+%28unethical+blogger%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

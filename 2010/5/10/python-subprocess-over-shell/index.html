@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            python subprocess over shell
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 10 May 2010 12:25:22 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-05-10T08:25:22-04:00">
+                    <meta itemprop="dateModified" content="2010-05-10T08:25:22-04:00"><time class="date" itemprop="datePublished" datetime="2010-05-10T12:25:22+00:00">May 10</time>
+                    <h2 itemprop="title">
+                        python subprocess over shell
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/418319f55ed7ed8c">
+                        <p class="annotation">
+                            I really should update my old post on the subject and move the code example to github. So many sysadmins, so few round wheels…
+                        </p>
+                        <blockquote>
+                            <p>
+                                One of my common gripes is when people struggle with complicated shell scripts that would be much simpler in a scripting language like Python, Ruby or Perl. I used to abuse PHP for this, but saw the light.
+                            </p>
+                            <p>
+                                If you’re talking about replacing shell scripts, all of these are pretty much equivalent, but I don’t really do Perl for no particular reason, I’m a big fan of Python for general purpose work just because of the rich module system, and at least <a href="http://python.org/about/quotes/">“dozens of engineers” use it at work.</a>.
+                            </p>
+                            <p>
+                                The reason we generally write shell scripts is because we want to execute a bunch of external processes in an automated way.
+                            </p>
+                            <p>
+                                In this area you can whip something basic up fastest in shell, yes, but at some point you’re going to have to repay that <a href="http://explanatorygap.net/2009/10/02/the-complexity-debt/">technical debt</a> if you need to get past a certain point.
+                            </p>
+                            <p>
+                                Besides, <a href="http://mywiki.wooledge.org/BashPitfalls">it’s not like shell scripting always stays simple and easy</a>… and the overhead of moving to a more powerful language isn’t that huge.
+                            </p>
+                            <p>
+                                If I’m sure the scope of a script will be small, or I don’t have the option of moving to structured data format for input and output with external commands, or I don’t have to futz around with arrays, I’ll stick with bash.
+                            </p>
+                            <p>
+                                But, if I want to work with dictionary objects or talk in a protocol like LDAP or model things as objects, or need complex handling and passing around of stdin/stdout/exit statuses, or know some module handles lots of edge cases for me, I’ll move to Python or Ruby. I quite like both, but feel that Python is more utilitarian, and simply due to whitespace enforcement and <a href="http://www.logilab.org/857">extensive linters</a> is a good fit for code that may need to be picked up and understood quickly by a co-worker.
+                            </p>
+                            <p>
+                                When it comes to getting started with Python, I still suggest <a href="http://www.diveintopython.org/">Dive into Python</a> for people. Just flipping through Chapters 1-3 equips you with an awful lot.
+                            </p>
+                            <p>
+                                Anyway, some people think Python is hard, but it’s really quite explicit. Someone posted on the <a href="http://www.macenterprise.org">MacEnterprise</a> list a question about working out what PPD was in use by each printer on the system in OS X, and someone gave a good shell example using the usual suspects of for, grep and awk.
+                            </p>
+                            <p>
+                                There’s nothing really wrong with doing this, but I’ve come to distrust parsing non-structured output if I need to keep this solution working across many multiple versions of operating systems, or even between OS X major versions given Apple’s history. One of the big advantages of moving to Python is being able to parse and manipulate property lists, which can get really painful in shell. You end up writing out lots of temp files or giving up on dealing with error conditions.
+                            </p>
+                            <p>
+                                Anyway, so lets see what it’s like executing a command in Python with the subprocess module. We’re asking System Profiler for printer info, and telling it to return the output in XML plist format.
+                            </p>
+                            <pre>
+#!/usr/bin/python
+
+import subprocess
+
+command = ['system_profiler', '-xml', 'SPPrintersDataType']
+task = subprocess.Popen(command,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE)
+
+(stdout, stderr) = task.communicate()
+print stdout
+</pre>
+                            <p>
+                                To skim through those lines, we’re
+                            </p>
+                            <ul>
+                                <li>setting the python shebang
+                                </li>
+                                <li>importing the subprocess module
+                                </li>
+                                <li>defining a list called ‘command’ to store the command we want to run
+                                </li>
+                                <li>creating a subprocess Popen object to run our command called ‘task’
+                                </li>
+                                <li>setting standard out and standard error to go to our own pipes
+                                </li>
+                                <li>getting standard out and standard error from the task.
+                                </li>
+                                <li>printing standard out
+                                </li>
+                            </ul>
+                            <p>
+                                This really isn’t much work, and if you really only wanted this functionality, there are other <a href="http://docs.python.org/library/subprocess.html#convenience-functions">convenience functions</a> that you can use to make this even shorter, or write your own convenience function.
+                            </p>
+                            <p>
+                                But we have all sorts of options now.
+                            </p>
+                            <p>
+                                We can send standard input to the task:
+                            </p>
+                            <pre>
+(stdout, stderr) = task.communicate(stdin)
+</pre>
+                            <p>
+                                We can ask what the exit status is easily:
+                            </p>
+                            <pre>
+status = task.returncode
+</pre>
+                            <p>
+                                and if we get None we know the process hasn’t terminated yet.
+                            </p>
+                            <p>
+                                And if we want to do something a bit more complicated we can search through the structured data plist output easily like:
+                            </p>
+                            <pre>
+#!/usr/bin/python
+
+import plistlib
+import subprocess
+
+command = ['system_profiler', '-xml', 'SPPrintersDataType']
+task = subprocess.Popen(command,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE)
+
+(stdout, stderr) = task.communicate()
+printers = plistlib.readPlistFromString(stdout)
+printers = printers[0]['_items']
+
+for printer in printers:
+  print 'Name: ' + printer['ppd']
+  print 'PPD: ' + printer['_name']
+</pre>
+                            <p>
+                                This is easier to extend than the standard for/grep/awk/sed equivalents tend to be, and much easier for a co-worker to pick up and understand. It comes close to documenting itself, just needs some comments about the structure of Apple’s output, and some try/except blocks in case the output is malformed or does change.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://explanatorygap.net/2010/05/10/python-subprocess-over-shell/">http://explanatorygap.net/2010/05/10/python-subprocess-over-shell/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

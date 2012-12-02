@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Much ado about NULL: An introduction to virtual memory
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 31 Mar 2010 15:53:21 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-31T11:53:21-04:00">
+                    <meta itemprop="dateModified" content="2010-03-31T11:53:21-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-31T15:53:21+00:00">Mar 31</time>
+                    <h2 itemprop="title">
+                        Much ado about NULL: An introduction to virtual memory
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/1658393617cec800">
+                        <p class="annotation">
+                            I like the way they're running a good systems programming intro, even if they did wait until the last paragraph to answer my "Surely they're going to mention that this doesn't work on modenr Unixes" question
+                        </p>
+                        <blockquote>
+                            <div>
+                                <div>
+                                    <p>
+                                        Here at <a href="http://ksplice.com">Ksplice</a>, we’re always keeping a very close eye on vulnerabilities that are being announced in Linux. And in the last half of last year, it was very clear that <a href="http://en.wikipedia.org/wiki/Pointer_(computing)#Null_pointer">NULL pointer</a> dereference vulnerabilities were the current big thing. <a href="http://grsecurity.net/">Brad Spengler</a> made it <a href="http://www.milw0rm.com/exploits/9627">abundantly clear</a> to anyone who was paying the least bit attention that these vulnerabilities, far more than being mere <a href="http://en.wikipedia.org/wiki/Denial-of-service_attack">denial of service attacks</a>, were trivially exploitable privilege escalation vulnerabilities. Some observers even dubbed 2009 the <a href="http://www.awe.com/mark/blog/20100216.html">year of the kernel NULL pointer dereference</a>.
+                                    </p>
+                                    <p>
+                                        If you’ve ever programmed in C, you’ve probably run into a <code>NULL</code> pointer dereference at some point. But almost certainly, all it did was crash your program with the dreaded “Segmentation Fault”. Annoying, and often painful to debug, but nothing more than a crash. So how is it that this simple programming error becomes so dangerous when it happens in the kernel? Inspired by all the fuss, this post will explore a little bit of how memory works behind the scenes on your computer. By the end of today’s installment, we’ll understand how to write a C program that reads and writes to a <code>NULL</code> pointer without crashing. In a future post, I’ll take it a step further and go all the way to showing how an attacker would exploit a <code>NULL</code> pointer dereference in the kernel to take control of a machine!
+                                    </p>
+                                </div>
+                                <div>
+                                    <h2>
+                                        What’s in a pointer?
+                                    </h2>
+                                    <div>
+                                        <p>
+                                            There’s nothing fundamentally magical about pointers in C (or assembly, if that’s your thing). A pointer is just an integer, that (with the help of the hardware) refers to a location somewhere in that big array of bits we call a computer’s memory. We can write a C program to print out a random pointer:
+                                        </p>
+                                        <pre>
+#include &lt;stdio.h&gt;
+int main(int argc, char **argv) {
+  printf("The argv pointer = %d\n", argv);
+  return 0;
+}
+</pre>
+                                        <p>
+                                            Which, if you run it on my machine, prints:
+                                        </p>
+                                        <pre>
+The argv pointer = 1680681096
+</pre>
+                                        <p>
+                                            (Pointers are conventionally written in <a href="http://en.wikipedia.org/wiki/Hexadecimal">hexadecimal</a>, which would make that <code>0x642d2888</code>, but that’s just a notational thing. They’re still just integers.)
+                                        </p>
+                                        <p>
+                                            <code>NULL</code> is only slightly special as a pointer value: if we look in <a href="http://lxr.linux.no/linux/include/linux/stddef.h">stddef.h</a>, we can see that it’s just defined to be the pointer with value 0. The only thing really special about <code>NULL</code> is that, by convention, the operating system sets things up so that <code>NULL</code> is an invalid pointer, and any attempts to read or write through it lead to an error, which we call a <b>segmentation fault</b>. However, this is just convention; to the hardware, <code>NULL</code> is just another possible pointer value.
+                                        </p>
+                                        <p>
+                                            But what do those integers actually mean? We need to understand a little bit more about how memory works in a modern computer. In the old days (and still on many embedded devices), a pointer value was literally an index into all of the memory on those little RAM chips in your computer:
+                                        </p>
+                                        <div style="width:146px">
+                                            <a href="http://blog.ksplice.com/wp-content/uploads/2010/03/physmem.jpg"><img src="http://blog.ksplice.com/wp-content/uploads/2010/03/physmem-136x300.jpg" alt="Diagram of Physical Memory Addresses" title="Physical Memory Addresses" width="136" height="300"></a>
+                                            <p>
+                                                Mapping pointers directly to hardware memory
+                                            </p>
+                                        </div>
+                                        <p>
+                                            This was true for every program, including the operating system itself. You can probably guess what goes wrong here: suppose that Microsoft Word is storing your document at address <code>700</code> in memory. Now, you’re browsing the web, and a bug in Internet Explorer causes it to start scribbling over random memory and it happens to scribble over memory around address <code>700</code>. Suddenly, <b>bam</b>, Internet Explorer takes Word down with it. It’s actually even worse than that: a bug in IE can even take down the entire operating system.
+                                        </p>
+                                        <p>
+                                            This was widely regarded as a bad move, and so all modern hardware supports, and operating systems use, a scheme called <a href="http://en.wikipedia.org/wiki/Virtual_memory">virtual memory</a>. What this means it that every program running on your computer has its own namespace for pointers (from 0 to 2<sup>32</sup>-1, on a 32-bit machine). The value <code>700</code> means something completely different to Microsoft Word and Internet Explorer, and neither can access the other’s memory. The operating system is in charge of managing these so-called address spaces, and mapping different pieces of each program’s address space to different pieces of physical memory.
+                                        </p>
+                                        <div style="width:282px">
+                                            <a href="http://blog.ksplice.com/wp-content/uploads/2010/03/virtmem.jpg"><img src="http://blog.ksplice.com/wp-content/uploads/2010/03/virtmem-272x300.jpg" alt="A diagram of virtual memory" title="Virtual Memory" width="272" height="300"></a>
+                                            <p>
+                                                The world with Virtual Memory. Dark gray shows portions of the address space that refer to valid memory.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        <tt>mmap(2)</tt>
+                                    </h2>
+                                    <div>
+                                        <p>
+                                            One feature of this setup is that while each process has its own 2<sup>32</sup> possible addresses, not all of them need to be valid (correspond to real memory). In particular, by default, the <code>NULL</code> or <code>0</code> pointer does not correspond to valid memory, which is why accessing it leads to a crash.
+                                        </p>
+                                        <p>
+                                            Because each application has its own address space, however, it is free to do with it as it wants. For instance, you’re welcome to declare that <code>NULL</code> should be a valid address in your application. We refer to this as “mapping” the <code>NULL</code> page, because you’re declaring that that area of memory should map to some piece of physical memory.
+                                        </p>
+                                        <p>
+                                            On Linux (and other UNIX) systems, the function call used for mapping regions of memory is <a href="http://linux.die.net/man/2/mmap"><code>mmap(2)</code></a>. <code>mmap</code> is defined as:
+                                        </p>
+                                        <pre>
+void *mmap(void *addr, size_t length, int prot, int flags,
+           int fd, off_t offset);
+</pre>
+                                        <p>
+                                            Let’s go through those arguments in order (All of this information comes from the <a href="http://linux.die.net/man/2/mmap">man page</a>):
+                                        </p>
+                                        <dl>
+                                            <dt>
+                                                <code>addr</code>
+                                            </dt>
+                                            <dd>
+                                                This is the address where the application wants to map memory. If <code>MAP_FIXED</code> is not specified in <code>flags</code>, <code>mmap</code> may select a different address if the selected one is not available or inappropriate for some reason.
+                                            </dd>
+                                            <dt>
+                                                <code>length</code>
+                                            </dt>
+                                            <dd>
+                                                The length of the region the application wants to map. Memory can only be mapped in increments of a “page”, which is 4k (4096 bytes) on x86 processors.
+                                            </dd>
+                                            <dt>
+                                                <code>prot</code>
+                                            </dt>
+                                            <dd>
+                                                Short for “protection”, this argument must be a combination of one or more of the values <code>PROT_READ</code>, <code>PROT_WRITE</code>, <code>PROT_EXEC</code>, or <code>PROT_NONE</code>, indicating whether the application should be able to read, write, execute, or none of the above, the mapped memory.
+                                            </dd>
+                                            <dt>
+                                                <code>flags</code>
+                                            </dt>
+                                            <dd>
+                                                Controls various options about the mapping. There are a number of flags that can go here. Some interesting ones are <code>MAP_PRIVATE</code>, which indicates the mapping should not be shared with any other process, <code>MAP_ANONYMOUS</code>, which indicates that the <code>fd</code> argument is irrelevant, and <code>MAP_FIXED</code>, which indicates that we want memory located exactly at <code>addr</code>.
+                                            </dd>
+                                            <dt>
+                                                <code>fd</code>
+                                            </dt>
+                                            <dd>
+                                                The primary use of <code>mmap</code> is not just as a memory allocator, but in order to map files on disk to appear in a process’s address space, in which case <code>fd</code> refers to an open <a href="http://en.wikipedia.org/wiki/File_descriptor">file descriptor</a> to map. Since we just want a random chunk of memory, we’re going pass <code>MAP_ANONYMOUS</code> in <code>flags</code>, which indicates that we don’t want to map a file, and <code>fd</code> is irrelevant.
+                                            </dd>
+                                            <dt>
+                                                <code>offset</code>
+                                            </dt>
+                                            <dd>
+                                                This argument would be used with <code>fd</code> to indicate which portion of a file we wanted to map.
+                                            </dd>
+                                        </dl>
+                                        <p>
+                                            <code>mmap</code> returns the address of the new mapping, or <code>MAP_FAILED</code> if something went wrong.
+                                        </p>
+                                        <p>
+                                            If we just want to be able to read and write the <code>NULL</code> pointer, we’ll want to set <code>addr</code> to 0 and <code>length</code> to 4096, in order to map the first page of memory. We’ll need <code>PROT_READ</code> and <code>PROT_WRITE</code> to be able to read and write, and all three of the <code>flags</code> I mentioned. <code>fd</code> and <code>offset</code> are irrelevant; we’ll set them to <code>-1</code> and <code>0</code> respectively.
+                                        </p>
+                                        <p>
+                                            Putting it all together, we get the following short C program, which successfully reads and writes through a <code>NULL</code> pointer without crashing!
+                                        </p>
+                                        <p>
+                                            (Note that most modern systems actually specifically disallow mapping the NULL page, out of security concerns. To run the following example on a recent Linux machine at home, you’ll need to run <code># echo 0 &gt; /proc/sys/vm/mmap_min_addr</code> as root, first.)
+                                        </p>
+                                        <pre>
+#include &lt;sys/mman.h&gt;
+#include &lt;stdio.h&gt;
+
+int main() {
+  int *ptr = NULL;
+  if (mmap(0, 4096, PROT_READ|PROT_WRITE,
+           MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED, -1, 0)
+      == MAP_FAILED) {
+    perror("Unable to mmap(NULL)");
+    fprintf(stderr, "Is /proc/sys/vm/mmap_min_addr non-zero?\n");
+    return 1;
+  }
+  printf("Defererencing my NULL pointer yields: %d\n", *ptr);
+  *ptr = 17;
+  printf("Now it's: %d\n", *ptr);
+  return 0;
+}
+</pre>
+                                        <p>
+                                            Next time, we’ll look at how a process can not only map <code>NULL</code> in its own address space, but can also create mappings in the kernel’s address space. And, I’ll show you how this lets an attacker use a <code>NULL</code> dereference in the kernel to take over the entire machine. Stay tuned!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div><img src="http://feeds.feedburner.com/~r/Ksplice/~4/lROrIljo338" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.ksplice.com/2010/03/null-pointers-part-i/">http://blog.ksplice.com/2010/03/null-pointers-part-i/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

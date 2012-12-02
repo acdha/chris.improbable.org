@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How Complex Systems Fail: A WebOps Perspective
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 12 Nov 2009 22:39:05 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-12T17:39:05-04:00">
+                    <meta itemprop="dateModified" content="2009-11-12T17:39:05-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-12T21:39:05+00:00">Nov 12</time>
+                    <h2 itemprop="title">
+                        How Complex Systems Fail: A WebOps Perspective
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/afd0f941fce399ab">
+                        <blockquote>
+                            <p>
+                                I guess I’m late on getting to this, but<a href="http://www.ctlab.org/documents/How%20Complex%20Systems%20Fail.pdf">How Complex Systems Fail</a> by <a href="http://www.ctlab.org/Cook.cfm">Richard Cook</a> is excellent.
+                            </p>
+                            <p>
+                                Let me start with this: I don’t think I can overstate how right-on this paper is, with respect to the challenges, solutions, observations, and concerns involved with operating a medium to large web infrastructure. I found this via @<a href="http://twitter.com/benjaminblack">benjaminblack</a>, and I agree with him 100%: this should be considered <em><strong>required reading</strong></em> for anyone in our industry. I’m not sure if Cook ever thought that his paper would apply to web infrastructure, but I think it can and does. Please take 30 minutes right now and read it. <img src="http://www.kitchensoap.com/wp-includes/images/smilies/icon_smile.gif" alt=":)">
+                            </p>
+                            <p>
+                                There are a number of salient points in the paper that I’d like to comment on. Again, this is through the lens of failures of complex systems as it pertains to web operations:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <strong>7) Post-accident attribution accident to a ‘root cause’ is fundamentally wrong.</strong>
+                                </p>
+                            </blockquote>
+                            <p>
+                                I’m going to guess that this portion may be viewed as controversial in the prevailing webops wisdom, where post-mortems are for sure necessary, but whose content may or may not be effective in preventing similar types of failure. I <em>do</em> value the process of a post-mortem, because I think the human element of understanding complex failures is important and doing whatever you can to put in place safety is good, modulo what is said in section #16 of the paper. I believe that even a rudimentary process of “<a href="http://www.startuplessonslearned.com/2009/07/how-to-conduct-five-whys-root-cause.html">5 Whys</a>” has value. But at the same time, I also think that there is something in the spirit of this paragraph, which is that there is a danger in standing behind a single underlying cause when there are systemic failures involved. Doing this can lead to the false belief that you’ve got this mode covered, you’ve found the silver bullet that made the whole mountain crumble, and jeez what a relief because <em><strong>that</strong></em> will never bite us again.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <strong>14) Change introduces new forms of failure.</strong>
+                                </p>
+                            </blockquote>
+                            <p>
+                                I totally agree with this point. However, I often see this as a rallying point for operations teams to say “No!” to change, when instead they should be working alongside development (and product owners) with a goal of <em>reducing</em> the risk of failure associated with each change. I do not believe that ‘release early, release often’ in and of itself can reduce that risk. I believe that the real (and only) way to do this is both technical <em>and</em> cultural. But I’ve <a href="http://velocityconference.blip.tv/file/2284377/">spoken about this before</a>.
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <strong>16) Safety is a characteristic of systems and not of their components</strong>
+                                </p>
+                            </blockquote>
+                            <p>
+                                Emphasis on <em>“Safety cannot be purchased or manufactured; it is not a feature that is separate from the other components of the system.”</em> Real safety comes from smart people doing smart things to the entire shebang, not the individual guts.
+                            </p>
+                            <p>
+                                and I think the point I love the most, with all of my heart:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <strong>18) Failure free operations require experience with failure.</strong>
+                                </p>
+                            </blockquote>
+                            <p>
+                                Fear is a strong emotion. I believe it can be used as a strong motivator for ensuring safety in the face of constant change, instead of a reason to push back on the very idea of change. Embrace fear of outages and degradation. Use it to guide your architecture, your code, your infrastructure. So <em>lean into it.</em>
+                            </p>
+                            <p>
+                                There are a lot of great points in the paper, and I could go on, but you get the idea.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.kitchensoap.com/2009/11/12/how-complex-systems-fail-a-webops-perspective/">http://www.kitchensoap.com/2009/11/12/how-complex-systems-fail-a-webops-perspective/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

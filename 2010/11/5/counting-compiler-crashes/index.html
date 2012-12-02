@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Counting Compiler Crashes
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 05 Nov 2010 17:50:53 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-05T13:50:53-04:00">
+                    <meta itemprop="dateModified" content="2010-11-05T13:50:53-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-05T17:50:53+00:00">Nov 05</time>
+                    <h2 itemprop="title">
+                        Counting Compiler Crashes
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c547e335da313e4c">
+                        <blockquote>
+                            <p>
+                                This is a bit of material from my GCC Summit talk that I thought was worth bringing out in a separate post.
+                            </p>
+                            <p>
+                                As an experiment, we compiled 1,000,000 randomly generated C programs using GCC 3.[0-4].0, GCC 4.[0-5].0, LLVM-GCC 1.9, LLVM-GCC 2.[0-8], and Clang 2.[6-8]. All compilers targeted x86 and were given the -O0, -O1, -O2, -Os, and -O3 options. We then asked the question: How many ways is each compiler crashed? We count crash bugs by looking for unique “assertion failure” strings in LLVM output and “internal compiler error” strings in GCC output. This is conservative because typically a compiler will also have a number of crashes due to null pointer dereferences and other memory safety violations, and we don’t try to tell these apart. Here are the three crash messages we got from Clang 2.8:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Statement.cpp:944: void Statement::post_creation_analysis(std::vector&lt;const Fact*, std::allocator&lt;const Fact*&gt; &gt;&amp;, CGContext&amp;) const: Assertion `0′ failed.
+                                </p>
+                                <p>
+                                    StatementIf.cpp:81: static StatementIf* StatementIf::make_random(CGContext&amp;): Assertion `ok’ failed.
+                                </p>
+                                <p>
+                                    Block.cpp:512: bool Block::find_fixed_point(std::vector&lt;const Fact*, std::allocator&lt;const Fact*&gt; &gt;, std::vector&lt;const Fact*, std::allocator&lt;const Fact*&gt; &gt;&amp;, CGContext&amp;, int&amp;, bool) const: Assertion `0′ failed.
+                                </p>
+                            </blockquote>
+                            <p>
+                                Here are the GCC results:<br>
+                                <img src="http://blog.regehr.org/wp-content/uploads/2010/11/gcc_unique_crash.png" alt=""><br>
+                                And here are the LLVM-GCC results:<br>
+                                <img src="http://blog.regehr.org/wp-content/uploads/2010/11/llvm_unique_crash.png" alt="">
+                            </p>
+                            <p>
+                                The thing I really like about these results is the way it shows that the latest versions of GCC and LLVM are really solid. Both teams have put a tremendous amount of work into their tools.
+                            </p>
+                            <p>
+                                The “bugs fixed” annotations in the graphs refer to fixes to bugs that we found (using random testing) and reported. We had hoped to establish some sort of nice causal link between fixing these bugs and improving the resistance of compilers to crashing, but these graphs are a long way from showing anything like that. There is just a lot going on in each of these projects — the experiment is too uncontrolled to give us any kind of solid evidence.
+                            </p>
+                            <p>
+                                Are compiler crashes good or bad? Certainly they’re a pain when you’re just trying to get work done, but overall they’re good. First, they can almost always be worked around by changing the optimization level. Second, a crash is the compiler’s way of failing fast, which is good. If that assertion hadn’t been there, it’s entirely possible the compiler would have run to completion, generating incorrect code.
+                            </p>
+                            <p>
+                                <strong>Update from 11/6/2010:</strong> Here are the graphs showing rate of crashing, as opposed to number of distinct crash bugs, that Chris asked about in a comment.<br>
+                                <img src="http://blog.regehr.org/wp-content/uploads/2010/11/gcc_crash_log.png" alt=""><br>
+                                <img src="http://blog.regehr.org/wp-content/uploads/2010/11/llvm_crash_log.png" alt="">
+                            </p>
+                            <p>
+                                Although it’s not totally clear what to read into these numbers, they do seem to tell a good story. GCC steadily improves during the 3.x series, regresses following the major changes that went into 4.0.0, then (more or less) steadily improves again. Similarly, LLVM starts off with a rather high rate of crashes and improves over time. Both compilers are exceptionally solid in their latest releases (note the log scale: both compilers have reduced their crash rates by at least 3 orders of magnitude).
+                            </p><img src="http://feeds.feedburner.com/~r/EmbeddedInAcademia/~4/MWfkj4liUMc" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.regehr.org/archives/295?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29">http://blog.regehr.org/archives/295?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

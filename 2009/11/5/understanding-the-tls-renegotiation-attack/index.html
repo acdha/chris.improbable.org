@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Understanding the TLS Renegotiation Attack
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 05 Nov 2009 20:51:45 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-05T15:51:45-04:00">
+                    <meta itemprop="dateModified" content="2009-11-05T15:51:45-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-05T19:51:45+00:00">Nov 05</time>
+                    <h2 itemprop="title">
+                        Understanding the TLS Renegotiation Attack
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/f60048daea1cebd5">
+                        <blockquote>
+                            Marsh Ray has <a href="http://extendedsubset.com/">published</a> a new attack on the TLS renegotiation logic. The high level impact of the attack is that an attacker can arrange to inject traffic into a legitimate client-server exchange such that the TLS server will accept it as if it came from the client. This may allow the attacker to execute operations on the server using the client's credentials (e.g., order a pizza as the client). However, the attacker does not (generally) get to see the response. Obviously this isn't good, but it's not the end of the world. More details below.
+                            <p>
+                                <i>TLS Details</i><br>
+                                The attack exploits TLS's renegotiation feature, which allows a client and server who already have a TLS connection to negotiate new parameters, generate new keys, etc. Renegotiation is carried out <i>in</i> the existing TLS connection, with the new handshake packets being encrypted along with application packets. The difficulty is that they're not otherwise tied to the channel, which gives the attacker a window. The simplest form of the attack is shown below [cribbed from <a href="https://svn.resiprocate.org/rep/ietf-drafts/ekr/draft-rescorla-tls-renegotiate.txt">draft-rescorla-tls-renegotiate.txt</a>]
+                            </p>
+                            <pre>
+Client                        Attacker                        Server
+------                        -------                         ------
+                                  &lt;----------- Handshake ----------&gt;
+                                  &lt;======= Initial Traffic ========&gt;
+&lt;--------------------------  Handshake ============================&gt;
+&lt;======================== Client Traffic ==========================&gt;
+</pre>
+                            <p>
+                                So, in order to mount the attack, the attacker first connects to the TLS server. He can communicate with the server as much as he wants, including making an arbitrary number of requests/responses, etc. This traffic is all encrypted and shown as ==. Then when he's ready, he hijacks the client's connection to the server (in practice he might start by hijacking the connection and then connect to the server but it doesn't matter) and just proxies the client's traffic over the encrypted channel. The client negotiates with the server and from that point on the client and the server communicate directly. Note that the client is communicating with the attacker in the clear but the second handshake is encrypted and goes over the attacker's channel. Thus, the client does not know that he is renegotiating. However, the server thinks that the initial traffic with the attacker is also from the client. There are also other (probably less useful) variants where both sides see a renegotiation but of different connections.
+                            </p>
+                            <p>
+                                <i>Impact on Existing Applications</i><br>
+                                TLS itself is just a security protocol, so the impact of this attack depends on the application protocol running over TLS. The most important of these protocols is of course HTTP over TLS (HTTPS). Most Web applications do initial authentication via a username/password pair and then persist that authentication state with HTTP cookies (a secret token that is sent with any request). An attacker might exploit this issue by sending a partial HTTP request of his own that requested some resource. This then gets prefixed to the client's real request.
+                            </p>
+                            <p>
+                                E.g., the attacker would send:
+                            </p>
+                            <pre>
+GET /pizza?toppings=pepperoni;address=attackersaddress HTTP/1.1 
+X-Ignore-This:
+</pre>
+                            <p>
+                                And leave the last line empty without a carriage return line feed. Then when the client makes his own request
+                            </p>
+                            <pre>
+GET /pizza?toppings=sausage;address=victimssaddress HTTP/1.1 
+Cookie: victimscookie
+
+</pre>
+                            <p>
+                                the two requests get glued together into:
+                            </p>
+                            <pre>
+GET /pizza?toppings=pepperoni;address=attackersaddress HTTP/1.1 
+X-Ignore-This: GET /pizza?toppings=sausage;address=victimssaddress HTTP/1.1 
+Cookie: victimscookie
+</pre>
+                            <p>
+                                And the server uses the victim's account to send a pizza to the attacker.
+                            </p>
+                            <p>
+                                You can mount a similar attack if the server uses certificate-based client authentication: it's common (well, common in the small number of cases where client certs are used at all) for the server to let the client connect and request a resource and then if the resource is protected renegotiate asking for a certificate. The attacker can exploit this by doing the initial handshake and asking for the resource and then letting the client do the renegotiation, at which point the server acts as if the initial request was made by the client.
+                            </p>
+                            <p>
+                                It's important to note that in both the cases we just described the attacker doesn't get to see any sensitive information directly: that's just sent back encrypted to the client. However, he can exploit side effects of the exchange, e.g., to get a pizza. It may also be possible to exploit HTTP features to directly access the data. For instance, he might be able to generate a combined request that would cause the server (or perhaps somehow mirrored through the client) to send the original client request to the attacker. If the request contains the client's cookie or password, this would cause their credentials to leak. It's not clear to me if this is possible, but I'm hoping some of the Web security specialists will weigh in.
+                            </p>
+                            <p>
+                                The impact on other protocols (IMAP, SIP, etc.) would depend on those protocols and I haven't seen complete analyses of these yet.
+                            </p>
+                            <p>
+                                <i>Mitigations</i><br>
+                                Eventually there will be a TLS level protocol fix (see below). However, in the meantime options are limited.
+                            </p>
+                            <p>
+                                For 99+% of applications, the mitigation is very simple: the server should simply disable all renegotiation, which stops the attack. (OpenSSL will helpfully automatically renegotiate which facilitates the attack even if the application isn't otherwise set up to do renegotiation). Unfortunately, there is no similar defense on the client side. In the example I showed above, the client is unaware that renegotiation happened. Moreover, the client can't tell that the server will refuse renegotiation (it could explicitly probe but the attacker could of course fake a failure). So, the client can't really do anything useful to protect itself.
+                            </p>
+                            <p>
+                                The second drawback is that there are a small number of cases (e.g., the certificate authentication one I described above) where renegotiation actually should happen. The most practical defense on the server side is to restructure the site so that requests which require client auth are redirected to a different address or port which <i>always</i> requests a certificate and itself refuses renegotiation. However, this obviously requires major work on many sites.
+                            </p>
+                            <p>
+                                There are a few other legitimate reasons for renegotiation, but they're mostly things one doesn't need to do. For instance, people sometimes renegotiate to force the generation of fresh keying material. This is not necessary with modern cryptographic algorithms. Another example provided by Ray is sites that support algorithms with differential strength. Again, this isn't really necessary. Unless you're doing certificate-based client authentication it's very unlikely you need to renegotiate and if you are using it, the workaround above is the simplest.
+                            </p>
+                            <p>
+                                <i>Long-Term Defense</i><br>
+                                Despite the existence of some defenses, it seems clear that TLS should really defend against this. There's a fairly obvious defense that at least three people have independently come up with: carry information about handshake n-1 in handshake n (if n==1 you just carry an empty field). This prevents attacks where the client and server have different views of the negotiation state. The predisclosure group that worked on this after Ray discovered this worked to develop a draft describing this technique which can found at <a href="https://svn.resiprocate.org/rep/ietf-drafts/ekr/draft-rescorla-tls-renegotiate.txt">draft-rescorla-tls-renegotiate.txt</a> and we'll be submitting it to the TLS working group shortly. Of course, this will take a very long time to make it into enough clients and servers to make a real difference, so for now we're mostly stuck with the mitigations I've described.
+                            </p>
+                            <p>
+                                <i>The Software Situation</i><br>
+                                People have also developed patches for existing implementations. These fall into two categories:
+                            </p>
+                            <ul>
+                                <li>Just disable renegotiation (really important for OpenSSL because of the aforementioned automatic renegotiation) issue.
+                                </li>
+                                <li>Implement the long-term fix.
+                                </li>
+                            </ul>
+                            <p>
+                                As far as I know none of these have been formally released yet. Ben Laurie's OpenSSL disabling patch can be found <a href="http://www.links.org/files/no-renegotiation-2.patch">here</a>. I've developed a patch that performs the long-term fix protocol pieces but it doesn't disable non-fixed renegotiation so it's usable primarily for interop testing right now. That can be found <a href="https://svn.resiprocate.org/rep/ietf-drafts/ekr/tls-patch.diff">here</a>. Expect both of these to eventually appear in official OpenSSL distributions/patches. I don't know the release status of other fixes.
+                            </p>
+                            <p>
+                                <i>Big Picture Perspective</i><br>
+                                Now that we've covered how this attack works, how bad is it? It's being billed as a man-in-the-middle attack, but it's really far more limited than your classic MITM. Rather, it's a plaintext injection attack. I'm not saying that's good, but we need to put it into perspective: over the past two years, we have seen two separate issues that allow a complete TLS server impersonation: the Debian PRNG bug (see our paper <a href="https://cseweb.ucsd.edu/~hovav/papers/yrses09.html">here</a> for a description of the issue [which we did not discover] and its impact) and the TLS certificate "NULL" issue. Both of these issues had much more severe impact since they allowed the attacker access to all the data sent by the client. However, it's worth noting that they differed from this issue in that they were detectable/fixable on the client side so people could in principle protect themselves. As a practical matter, however, most clients never checked the Debian keys against a blacklist, so that protection was minimal at best.
+                            </p>
+                            <p>
+                                Second, it's important to remember that even simple MITM attacks with fake certificates don't seem that hard to mount. Cranor et al. <a href="http://lorrie.cranor.org/pubs/sslwarnings.pdf">report</a> that users very frequently ignore browser warnings of bad certificates, which more or less obviates any security protections TLS provides. If the user will accept the attacker's certificate, there's no need to do anything as limited as the attack described here. Obviously, that's not information that should give you a huge amount of confidence in any form of Internet communications security, but it does provide some perspective on the marginal impact of this attack.
+                            </p>
+                            <p>
+                                One other comparison point is a remote vulnerability in the server. TLS implementations have historically had and continue to have remote vulnerabilities which would allow an attacker to subvert the server. Such an attacker could read all your traffic to that server. As with this issue, you can't really detect that from the client side and need to rely on the server being upgraded. So, this issue is somewhat less serious than a remote vulnerability in a really popular server stack like OpenSSL. It's primarily unusual because it's an issue in the protocol not the software and those are quite rare.
+                            </p>
+                            <p>
+                                <i>Bottom Line</i><br>
+                                As I said at the beginning, this obviously isn't good. We'd like SSL/TLS to provide it's nominal security guarantees and it clearly doesn't. There likely to be exploitable attack paths using this issue. It's far less clear whether they will actually see exploitation, given that these attacks aren't necessarily as powerful as other already known paths. In the not too distant future you should expect most important servers to have fixed, at which point most of your Web server interactions will be safe (even though you can't verify it easily). In the long term, most clients and servers will adopt the protocol fix at which point clients will be able to be sure that the servers they are interacting with are safe.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.educatedguesswork.org/2009/11/understanding_the_tls_renegoti.html">http://www.educatedguesswork.org/2009/11/understanding_the_tls_renegoti.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

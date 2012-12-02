@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Common bugs and why exercises matter (binary search part 2)
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 21 Apr 2010 00:39:42 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-20T20:39:42-04:00">
+                    <meta itemprop="dateModified" content="2010-04-20T20:39:42-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-21T00:39:42+00:00">Apr 21</time>
+                    <h2 itemprop="title">
+                        Common bugs and why exercises matter (binary search part 2)
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/900def37da5fda2c">
+                        <blockquote>
+                            <p>
+                                Many, many thanks to all of you who have contributed to the astonishing response to <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/">the previous article on the difficulty of getting binary search right</a>. &nbsp;I’ve never seen anything like this: in just over 24 hours since I posted the article, 541 comments have been posted, and they’re still rolling in. &nbsp;(That number is a bit inflated by people re-posting the same code-samples multiple times after seeing WordPress mangle their source, but even taking that into account it still amazes me.)
+                            </p>
+                            <p>
+                                You guys rule. &nbsp;Seriously.
+                            </p>
+                            <p>
+                                I have <em>a lot</em> to say in response to it all. &nbsp;Read on …
+                            </p>
+                            <h2>
+                                <a href="http://reprog.files.wordpress.com/2010/04/sushi-rice-japanese-food-recipes_513463502791.jpg"><img title="Sushi Rice Japanese Food Recipes_51346350279" src="http://reprog.files.wordpress.com/2010/04/sushi-rice-japanese-food-recipes_513463502791.jpg?w=250&amp;h=256" alt="" width="250" height="256"></a>The lameness of the WordPress commenting system
+                            </h2>
+                            <p>
+                                First up, an apology to all of you who posted code that got mangled. &nbsp;As several commenters pointed out, WordPress comments are not really a great medium for this kind of challenge: their tendency to eat less-than characters, their lack of a Preview facility and the inability to edit a comment once it’s been posted combine to make the post-a-code-fragment process rather more of an adventure than it ought to be. &nbsp;(That said, I remain astonished at how many people used curly brackets around their {source} tags even though my instructions clearly said <strong>in bold</strong> to use square brackets. &nbsp;Come on, folks — read the article before submitting your code!)
+                            </p>
+                            <p>
+                                Anyway, the next time I do something like this, I will be sure to include very, very explicit instructions right at the start, and to include links to various code-fragment hosting services such as <a href="http://pastebin.com/">pastebin.com</a>, <a href="http://pastebay.com/">pastebay.com</a> and <a href="http://gist.github.com/">gist.github.com</a>.
+                            </p>
+                            <p>
+                                In the mean time, see <a href="http://en.support.wordpress.com/code/posting-source-code/">the WordPress Support article on</a> <em><a href="http://en.support.wordpress.com/code/posting-source-code/">Posting Source Code</a></em>.
+                            </p>
+                            <h2>
+                                Different kinds of comments
+                            </h2>
+                            <p>
+                                It’s been fascinating to see how different the comments have been in the three places that the binary search article was discussed. &nbsp;Here on The Reinvigorated Programmer, <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comments">the comment thread</a> was massively dominated by attempts to meet the challenge. &nbsp;The <a href="http://news.ycombinator.com/item?id=1277459">comments on Hacker News</a> were primarily discussions of the problem, of how it applies in real development situations, of what the gotchas are, and of how best to guard against them. &nbsp;<a href="http://www.reddit.com/r/programming/comments/bt7nh/according_to_jon_bentleys_book_programming_pearls/">The Reddit comments</a> were rather more mystifying — many redditors seemed to feel that the idea of actually coding anything was rather beneath them, and were rather affronted that anyone might suggest such a thing; others found the idea of coding a binary search “elitist”.
+                            </p>
+                            <p>
+                                Of course there was plenty of variation in all three venues (for example, <a href="http://www.reddit.com/r/programming/comments/bt7nh/according_to_jon_bentleys_book_programming_pearls/c0ohu2j">this guy</a> on Reddit made a serious attempt to solve the problem, then fessed up when he realised his routine was buggy). &nbsp;But that’s the overall impression I got. &nbsp;Sorry, redditors — I still love Reddit, honest! &nbsp;By the way, Reddit had a very ambivalent response to this article, as it often seems to with what I post here: at the time of writing, Reddit scores the binary-search challenge with 44 points, but that is the result of 121 upvotes and 77 downvotes, so only 60% of the votes were positive. &nbsp;At the risk of alienating redditors, I can’t help wondering whether some of the negativity comes from insecurity — programmers who know they can’t write low-level code and prefer not to be reminded of it. &nbsp;I probably shouldn’t have said that. &nbsp;Hmm. &nbsp;Must remember to go back afterwards and delete it.
+                            </p>
+                            <p>
+                                Two of the more interesting areas of commenting (both of which I disagree with) were that you don’t need to write this routine because it’s already in the libraries; and that coding without testing as you go is nonsensical. &nbsp;I’ll address the first of those in more detail below; and I’ll talk about testing next time, to avoid making this article too long.
+                            </p>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/salmon_sashimi.jpg"><img title="Salmon_Sashimi" src="http://reprog.files.wordpress.com/2010/04/salmon_sashimi.jpg?w=300&amp;h=208" alt="" width="300" height="208"></a>
+                            </p>
+                            <h2>
+                                Statistics
+                            </h2>
+                            <p>
+                                At this stage I’d hoped to unveil a simple analysis of the form “14 people attempted the challenge, of whom 6 reported bugs in their own code and 8 claimed success, but I found bugs in 5 of those for a total success rate of 3/14 = 21% which means <em>Reinvigorated Programmer</em> readers are 2.1 times as clever as IBM and Bell Labs professionals”.
+                            </p>
+                            <p>
+                                That neat idea went out the window for three reasons:
+                            </p>
+                            <ul>
+                                <li>The good: there were 557 submissions instead of 14, in maybe fifteen different languages, and there was <em>no way</em> I could test them all.
+                                </li>
+                                <li>The bad: because I produced the Jon Bentley quote from <em>Programming Pearls</em> before stating the rules of the challenge, a lot of people eagerly ploughed straight in, and so inadvertently broke the rules. &nbsp;My bad.
+                                </li>
+                                <li>The ugly: WordPress mangled the source code of many of the submissions.
+                                </li>
+                            </ul>
+                            <p>
+                                So I am not even going to attempt to come up with numbers based on the actual data.
+                            </p>
+                            <p>
+                                That said, I have <em>read</em> all 562 comments, and gathered at least a general sense of the success rate, and I’d say that based on people’s self-reporting, about half of the binary searches were correct. &nbsp;(Kudos, by the way, to all those of you who were honest enough to report failure; and, for that matter, to those of you who achieved success.)
+                            </p>
+                            <p>
+                                If that 50% figure is anywhere near accurate, then this group of blog-readers are well ahead of the averages. &nbsp;But bear in mind that probably some people failed but didn’t report that fact; and for sure plenty of people who reported success had simply not found bugs in their programs. &nbsp;For example, Eric Burnett <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-2031">claimed in a comment</a> that he’d found bugs in nine solutions reported as correct. &nbsp;I’m sure that plenty more “correct” solutions still harbour bugs, and I encourage you all to go and hunt down each others’ mistakes! &nbsp;In particular, finsprings, Aaron, Mike J, Langtree, Luke, Marcus, cycojesus, Erik Swanson and donaq (the nine people whose code Eric challenged) might want to see if they can find a mistake in <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-1869">Eric’s own solution</a>!
+                            </p>
+                            <p>
+                                Those of you who want to find bugs in other people’s solutions — or indeed assure yourselves that your own solutions are as good as you think they are — will find it useful to take advantage of Steve Witham’s <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-1882">set of 4096 test cases</a>. &nbsp;Many thanks to Steve to providing these.
+                            </p>
+                            <p>
+                                Anyway, even allowing the various biasing factors, it seems possible — maybe even likely — that our hit rate is better than 10%.
+                            </p>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/soy-sauce-new.jpg"><img title="soy-sauce-new" src="http://reprog.files.wordpress.com/2010/04/soy-sauce-new.jpg?w=300&amp;h=252" alt="" width="300" height="252"></a>
+                            </p>
+                            <h2>
+                                Common bugs
+                            </h2>
+                            <p>
+                                It’s been interesting to see that many of the programs that had bugs were going wrong in the same ways. &nbsp;Common bugs included:
+                            </p>
+                            <ul>
+                                <li>Not dealing correctly with a zero-element array
+                                </li>
+                                <li>Not dealing correctly with a one-element array
+                                </li>
+                                <li>Not finding a value in the last element of the array
+                                </li>
+                                <li>Not dealing with failed searches (the sought element is not there)
+                                </li>
+                                <li>Not coping with repeated elements in the array
+                                </li>
+                                <li>Not omitting the midpoint from the subranges when narrowing the range after a probe. &nbsp;(This &nbsp;results in an infinite loop for some inputs.)
+                                </li>
+                                <li>Pointing to the first and last members of the range but coding as though the last-pointer variable pointed to the element after the range (or vice versa).
+                                </li>
+                            </ul>
+                            <p>
+                                (And, yes, not dealing with a zero-element array <em>is</em> a bug, for those commenters who asked. &nbsp;Zero is a perfectly good number of elements for an array to have, and an array search that fails for empty arrays is no more acceptable than an addition operator that fails if you add zero. &nbsp;A few commenters also asked whether it’s OK to ignore the case when a null Array reference is passed in: yes, of course — that would violate the precondition that the search is in a pre-sorted array, so all bets are off. &nbsp;No array at all is completely different from an empty array.)
+                            </p>
+                            <p>
+                                The interesting thing about these common failure modes is that they are all so predictable. &nbsp;If, before&nbsp;starting to code,&nbsp;we’d each taken two minutes to write down the ways in which we could imagine our programs failing, I bet we’d all have listed most if not all of these. &nbsp;Yet even knowing that, we find them hard to avoid.
+                            </p>
+                            <p>
+                                In light of the list of common bugs, we can easily see what kinds of test cases we need to include in the suite: empty arrays, single-element arrays, arrays where the sought element is absent, or appears only at the end, or only at the start, or multiple times; and of course a healthy does of randomly generated sorted arrays.
+                            </p>
+                            <p>
+                                Looking at the list of bugs, I find myself thinking of the rules in Kernighan and Pike’s <em>Elements of Programming Style</em>. &nbsp;Back <a href="http://reprog.wordpress.com/2010/03/06/programming-books-part-2-the-elements-of-programming-style/">when I reviewed that book</a>, and listed the rules that are gathered at the end of the article, some commenters felt that they were so obvious, so trivial, as to be worthless or even insulting. &nbsp;And yet most of the mistakes listed above are covered in K&amp;P’s list. &nbsp;A few of the relevant rules are:
+                            </p>
+                            <div>
+                                <ul>
+                                    <li>“Write clearly — don’t be too clever.”
+                                    </li>
+                                    <li>“Make sure your code “does nothing” gracefully.”
+                                    </li>
+                                    <li>“Watch out for off-by-one errors.”
+                                    </li>
+                                    <li>“Take care to branch the right way on equality.”
+                                    </li>
+                                    <li>“Make sure special cases are truly special.”
+                                    </li>
+                                    <li>“Choose a data representation that makes your program simple.”
+                                    </li>
+                                </ul>
+                            </div>
+                            <p>
+                                Then there is the rule that the I didn’t let you follow literally, but the spirit of which should pervade our design process: “Test programs at their boundary values”. &nbsp;And the very general but very relevant rule “Don’t stop with your first draft.” &nbsp;And of course I must mention my favourite:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <strong>“Say what you mean, simply and directly.”</strong>
+                                </p>
+                            </blockquote>
+                            <p>
+                                <a href="http://reprog.files.wordpress.com/2010/04/49er_rolls2.jpg"><img title="49er_Rolls2" src="http://reprog.files.wordpress.com/2010/04/49er_rolls2.jpg?w=500&amp;h=137" alt="" width="500" height="137"></a>
+                            </p>
+                            <h2>
+                                Why does this exercise matter?
+                            </h2>
+                            <p>
+                                A lot of the comments on Reddit (and some here) were along the lines that it’s dumb to write a binary search routine, and that we should just use one from a library. &nbsp;For example, <a href="http://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/#comment-2093">Michael Eriksson wrote</a> that “Trying to write an own sorting/searching/whatnot algorithm is a beginner’s error (in and by it self). There are well-tested and highly performant libraries for such basic functions available in any established high-level language”.
+                            </p>
+                            <p>
+                                That seems wrongheaded to me. &nbsp;A boxer never has to skip rope in the ring, but it’s an important part of his training regime. &nbsp;A concert pianist never has to play D-flat major, four octaves, hands together, ascending and descending, as part of a performance; but he doesn’t for that reason neglect the exercise. &nbsp;An olympic sprinter never lifts weights during the 100 meters final, but he certainly does as part of his preparation. &nbsp;Why would we think that in programming we don’t need to do exercises that are similarly related to our day-to-day work?
+                            </p>
+                            <p>
+                                I have a hypothesis about that, but it’s not one that’s going to be popular. &nbsp;The boxer, the concert pianist and the sprinter need to be at the absolute top of their game in order to succeed. &nbsp;If the boxer’s not light on his feet, he’ll get beaten up; if the pianist lacks dexterity, he simply won’t get booked, in such a competitive career; the sprinter deals in margins of hundredths of a second. &nbsp;They practice, exercise, do training drills because they <em>must</em>: if they fall to, say, 97% of their best performance, they lose. &nbsp;Could it be that programming is a little too comfortable? &nbsp;Do employers expect too little? &nbsp;Are we content just to stay some way ahead of the pack rather than striving to excel? &nbsp;That’ll work if you’re happy to write Enterprise Beans For The Enterprise for the rest of your career. &nbsp;Not so much if you’re hoping to go and work for Google.
+                            </p>
+                            <p>
+                                So the primary reason for writing a binary search routine is not because we need to write binary search routines. &nbsp;It’s because we need the mental exercise, the discipline, the pleasingly firm, cool feel of solid code beneath our fingers. &nbsp;The ability to do a binary search right first time probably correlates pretty well with the ability to write more complex code correctly. &nbsp;It builds up the right brain-muscles.
+                            </p>
+                            <p>
+                                That’s the primary reason. &nbsp;The secondary reason is because actually sometimes you <em>do</em> need to write a binary search, and the library routines won’t get the job done. &nbsp;Or if they will, they’re grotesquely inefficient. &nbsp;For example, suppose you have a 64-bit integer, and you need to find out whether it’s among the nine billion 64-bit integers that are stored in ascending order in a 72 Gb file. &nbsp;The naive solution is to read the file into memory, making an array (or, heaven help us, an Array) of nine billion elements, then invoke the library search function. &nbsp;And of course that just plain won’t work — the array won’t fit in memory.
+                            </p>
+                            <p>
+                                Or consider a less extreme, and therefore more subtle, case: the file to be searched has only half a billion numbers in it (so it’s a 4 Gb file). &nbsp;That will fit in memory in some modern computers, depending on how space-inefficient the in-memory representation is. &nbsp;But the result of using the naive approach is that you read 4 Gb from disk every time you need to do the search. &nbsp;Whereas if you could implement binary search directly against the disk file you’d only need to do log(2) (half a billion) = 29 probes, of which the last 10 will all be in the same 8 Kb disk block. &nbsp;So you’ll only do 20 seek-and-read pairs instead of a seek and half a million reads.
+                            </p>
+                            <p>
+                                <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/cripy_spider_rolls.jpg"><img title="Cripy_Spider_Rolls" src="http://reprog.files.wordpress.com/2010/04/cripy_spider_rolls.jpg?w=300&amp;h=249" alt="" width="300" height="249"></a>
+                            </p>
+                            <p>
+                                No, this stuff doesn’t happen every day. &nbsp;But situations do crop up when someone needs to know some actual, you know, computer science. &nbsp;And when that happens, don’t we want to be the ones who can come swooping in and save the day?
+                            </p>
+                            <p>
+                                Next time, I’ll be addressing all the howls of outrage about Rule 6 (“NO TESTING until after you’ve decided your program is correct”), and trying to escape the pestilence of “test-driven development”. &nbsp;Stay tuned!
+                            </p>
+                            <h2>
+                                Update (the next day)
+                            </h2>
+                            <p>
+                                If you usually just read the articles and skip the comments (and who could blame you in the case of the original binary-search challenge post!), then I urge you at least to read <a href="http://reprog.wordpress.com/2010/04/21/binary-search-redux-part-1/#comment-2178"><span style="color:#000000">this comment by Antti</span></a> — it’s solid gold (even if it does rather trespass on the stuff I was saving up for my own next post, bah!)
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/reprog.wordpress.com/569/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/reprog.wordpress.com/569/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/reprog.wordpress.com/569/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/reprog.wordpress.com/569/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/reprog.wordpress.com/569/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/reprog.wordpress.com/569/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/reprog.wordpress.com/569/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/reprog.wordpress.com/569/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/reprog.wordpress.com/569/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/reprog.wordpress.com/569/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=reprog.wordpress.com&amp;blog=12269820&amp;post=569&amp;subd=reprog&amp;ref=&amp;feed=1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://reprog.wordpress.com/2010/04/21/binary-search-redux-part-1/">http://reprog.wordpress.com/2010/04/21/binary-search-redux-part-1/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

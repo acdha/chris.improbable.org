@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Protocol Buffers, Avro, Thrift &amp; MessagePack
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 01 Aug 2011 19:31:08 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-08-01T15:31:08-04:00">
+                    <meta itemprop="dateModified" content="2011-08-01T15:31:08-04:00"><time class="date" itemprop="datePublished" datetime="2011-08-01T19:31:08+00:00">Aug 01</time>
+                    <h2 itemprop="title">
+                        Protocol Buffers, Avro, Thrift &amp; MessagePack
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/2320901c962621cd">
+                        <blockquote>
+                            <p>
+                                <img align="left" style="margin:0pt 1em 0pt 0pt" src="http://www.igvita.com/blog/posts/11/avro-fb-gb-json.png">Perhaps one of the first inescapable observations that a new Google developer (<em>Noogler</em>) makes once they dive into the code is that <a href="http://code.google.com/p/protobuf/">Protocol Buffers</a> (PB) is the "language of data" at Google. Put simply, <strong>Protocol Buffers are used for serialization, RPC, and about everything in between</strong>.
+                            </p>
+                            <p>
+                                Initially developed in early 2000's as an optimized server request/response protocol (hence the name), they have become the de-facto data persistence format and RPC protocol. Later, following a major (v2) rewrite in 2008, Protocol Buffers was <a href="http://google-opensource.blogspot.com/2008/07/protocol-buffers-googles-data.html">open sourced by Google</a> and now, through a number of <a href="http://code.google.com/p/protobuf/wiki/ThirdPartyAddOns">third party extensions</a>, can be used across dozens of languages - including Ruby, of course.
+                            </p>
+                            <p>
+                                But, Protocol Buffers for <em>everything?</em> Well, it appears to work for Google, but more importantly I think this is a great example of where <strong>understanding the historical context in which each was developed is just as instrumental as comparing features and <a href="https://github.com/eishay/jvm-serializers/wiki/">benchmarking speed</a></strong>.
+                            </p>
+                            <h4>
+                                <strong>Protocol Buffers vs. Thrift</strong>
+                            </h4>
+                            <p>
+                                Let's take a step back and compare Protocol Buffers to the "competitors", of which there are plenty. Between PB, <a href="http://thrift.apache.org/">Thrift</a>, <a href="http://avro.apache.org/">Avro</a> and <a href="http://msgpack.org/">MessagePack</a>, which is the best? Truth of the matter is, they are all very good and each has its own strong points. Hence, the answer is as much of a personal choice, as well as understanding of the historical context for each, and correctly identifying your own, individual requirements.
+                            </p>
+                            <p>
+                                When Protocol Buffers was first being developed (early 2000's), the preferred language at Google was C++ (nowadays, Java is on par). Hence it should not be surprising that PB is strongly typed, has a separate schema file, and also requires a compilation step to output the language-specific boilerplate to read and serialize messages. To achieve this, Google defined their own language (<a href="http://en.wikipedia.org/wiki/Interface_description_language">IDL</a>) for specifying the proto files, and limited PB's design scope to efficient serialization of common types and attributes found in Java, C++ and Python. Hence, <strong>PB was designed to be layered over an (existing) RPC mechanism</strong>.
+                            </p>
+                            <p>
+                                <img align="left" style="margin:0pt 1em 0pt 0pt" src="http://www.igvita.com/blog/posts/11/facebook-thrift.png">By comparison, Thrift which was <a href="http://www.igvita.com/2007/11/30/ruby-web-services-with-facebooks-thrift/">open sourced by Facebook in late 2007</a>, looks and feels very similar to Protocol Buffers - in all likelihood, there was some design influence from PB there. However, unlike PB, <strong>Thrift makes RPC a first class citizen</strong>: Thrift compiler provides a variety of transport options (network, file, memory), and also tries to target <a href="http://wiki.apache.org/thrift/LibraryFeatures?action=show&amp;redirect=LanguageSupport">many more languages</a>.
+                            </p>
+                            <p>
+                                Which is the <em>"better"</em> of the two? Both have been production tested at scale, so it really depends on your own situation. If you are primarily interested in the binary serialization, or if you already have an RPC mechanism then Protocol Buffers is a great place to start. Conversely, if you don't yet have an RPC mechanism and are looking for one, then Thrift may be a good choice. <em>(Word of warning: historically, Thrift has not been consistent in their feature support and performance across all the languages, so <a href="http://floatingsun.net/articles/thrift-vs-protocol-buffers/">do some research</a>).</em>
+                            </p>
+                            <h4>
+                                <strong>Protocol Buffers vs. Avro, MessagePack</strong>
+                            </h4>
+                            <p>
+                                While Thrift and PB differ primarily in their scope, <strong>Avro and MessagePack should really be compared in light of the more recent trends: rising popularity of dynamic languages, and JSON over XML</strong>. As most every web developers knows, JSON is now <a href="http://json.org/">ubiquitous</a>, and easy to parse, generate, and read, which explains its popularity. JSON also requires no schema, provides no type checking, and it is a UTF-8 based protocol - in other words, easy to work with, but not very efficient when put on the wire.
+                            </p>
+                            <p>
+                                <strong>MessagePack is effectively JSON, but with efficient binary encoding.</strong> Like JSON, there is no type checking or schemas, which depending on your application can be either be a pro or a con. But, if you are already streaming JSON via an API or using it for storage, then MessagePack can be a drop-in replacement.
+                            </p>
+                            <p>
+                                <img align="left" style="margin:0pt 1em 0pt 0pt" src="http://www.igvita.com/blog/posts/11/avro.png"><strong><a href="http://avro.apache.org/">Avro</a>, on the other hand, is somewhat of a hybrid. In its scope and functionality it is close to PB and Thrift, but it was <a href="http://www.igvita.com/2010/02/16/data-serialization-rpc-with-avro-ruby/">designed with dynamic languages in mind</a></strong>. Unlike PB and Thrift, the Avro schema is embedded directly in the header of the messages, which eliminates the need for the extra compile stage. Additionally, the schema itself is just a JSON blob - no custom parser required! By enforcing a schema Avro allows us to do data projections (read individual fields out of each record), perform type checking, and enforce the overall message structure.
+                            </p>
+                            <h4>
+                                <strong>"The Best" Serialization Format</strong>
+                            </h4>
+                            <p>
+                                Reflecting on the use of Protocol Buffers at Google and all of the above competitors it is clear that there is no one definitive, <em>"best"</em> option. Rather, each solution makes perfect sense in the context it was developed and hence the same logic should be applied to your own situation.
+                            </p>
+                            <p>
+                                If you are looking for a battle-tested, strongly typed serialization format, then Protocol Buffers is a great choice. If you also need a variety of built-in RPC mechanisms, then Thrift is worth investigating. If you are already exchanging or working with JSON, then MessagePack is almost a drop-in optimization. And finally, if you like the strongly typed aspects, but want the flexibility of easy interoperability with dynamic languages, then Avro may be your best bet at this point in time.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=T9TW7LN6hys:Zdz708KGkNk:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=T9TW7LN6hys:Zdz708KGkNk:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=T9TW7LN6hys:Zdz708KGkNk:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=T9TW7LN6hys:Zdz708KGkNk:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=T9TW7LN6hys:Zdz708KGkNk:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=T9TW7LN6hys:Zdz708KGkNk:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=T9TW7LN6hys:Zdz708KGkNk:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=T9TW7LN6hys:Zdz708KGkNk:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=T9TW7LN6hys:Zdz708KGkNk:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/T9TW7LN6hys" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2011/08/01/protocol-buffers-avro-thrift-messagepack/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2011/08/01/protocol-buffers-avro-thrift-messagepack/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

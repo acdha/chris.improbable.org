@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Sam Hartman: Kerberos 1.8: Anonymous and the Cloud
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 11 Mar 2010 20:25:43 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-11T15:25:43-04:00">
+                    <meta itemprop="dateModified" content="2010-03-11T15:25:43-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-11T19:25:43+00:00">Mar 11</time>
+                    <h2 itemprop="title">
+                        Sam Hartman: Kerberos 1.8: Anonymous and the Cloud
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/dfb56754f194b215">
+                        <blockquote>
+                            <p>
+                                The Kerberos team recently released <a href="http://www.mit.edu/~kerberos/krb5-1.8/">Kerberos 5 1.8</a>. This is the first of a couple of posts talking about features in the new release and how they significantly enhance what you can do with Kerberos. Before I get to that though, I’d like to wax excited for a moment on the development process. There is much more of a community actively involved in the development process. As with the last release, MIT, Painless Security and PADL Software made contributions along with a number of others.. However the biggest change is the number of parties actively working with each other on designs, design reviews, testing and debugging. There was also a lot more real-time collaboration. It was great to see people from Sun, Debian and Redhat all actively bringing their prospectives to the discussion. My thanks to the Kerberos Consortium for pulling everyone together and for livening up the development process.
+                            </p>
+                            <p>
+                                Kerberos 1.8 testing releases are already available in Debian Squeeze and Ubuntu Lucid. I will be updating Debian to the final release soon, but everything discussed here should already work in both Debian and Ubuntu. I don’t know about the state of other distributions, although given how heavily Redhat was involved in the process, I’m sure they have 1.8 internally.
+                            </p>
+                            <p>
+                                One of the frustrating problems with previous versions of Kerberos was the need to key hosts before they could run Kerberized services. An administrator needed to set up a keytab and securely get it on the machine. That creates problems for automated installs of services, virtual services in the cloud, and environments where people installing servers are not the same as those running the Kerberos realm. Kerberos 1.8 still requires servers be keyed, but the need for the administrator is removed. <a href="http://k5wiki.kerberos.org/wiki/Anonymous_kerberos">Anonymous Kerberos</a> provides a way for a machine to authenticate to Kerberos without an existing account. That page shows how the Kerberos administration server can be configured to permit machines to create their own keytabs. Anonymous Kerberos does require <a href="http://k5wiki.kerberos.org/wiki/Pkinit_configuration">pkinit</a> be configured and that the client know the public key of the KDC. However it is easy to build the KDC public key into an auto installer image or place it onto a USB key.
+                            </p>
+                            <p>
+                                I think it would be really neat to build a Debian image for Amazon EC2 that would show how easy it is to boot a virtual machine, have it register itself with a Kerberos realm, use something like <a href="http://www.eyrie.org/~eagle/software/remctl/">remctl</a> to request a work load and then begin serving that work load. The work load could include both clients for distributed computation or even services provided to the world, all secured by Kerberos with automatic bootstrapping. I don’t know if I’ll have time to put this together, but if someone were interested in helping or paying for the work it would be much more likely to happen.
+                            </p>
+                            <p>
+                                I believe the links above are enough that you should be able to get Anonymous Kerberos working and minimally configured. If not, feel free to send questions; I’ll focus more on updating the public instructions than on providing individual help, but I’m definitely interested in making this easy to use.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.painless-security.com/blog/?p=46">http://www.painless-security.com/blog/?p=46</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How debuggers work: Part 3 – Debugging information
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 07 Feb 2011 17:02:37 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-07T12:02:37-04:00">
+                    <meta itemprop="dateModified" content="2011-02-07T12:02:37-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-07T16:02:37+00:00">Feb 07</time>
+                    <h2 itemprop="title">
+                        How debuggers work: Part 3 – Debugging information
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/da52fb61c064e2c3">
+                        <blockquote>
+                            <p>
+                                This is the third part in a series of articles on how debuggers work. Make sure you read <a href="http://eli.thegreenplace.net/2011/01/23/how-debuggers-work-part-1/">the first</a> and <a href="http://eli.thegreenplace.net/2011/01/27/how-debuggers-work-part-2-breakpoints/">the second</a> parts before this one.
+                            </p>
+                            <div>
+                                <h3>
+                                    In this part
+                                </h3>
+                                <p>
+                                    I’m going to explain how the debugger figures out where to find the C functions and variables in the machine code it wades through, and the data it uses to map between C source code lines and machine language words.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    Debugging information
+                                </h3>
+                                <p>
+                                    Modern compilers do a pretty good job converting your high-level code, with its nicely indented and nested control structures and arbitrarily typed variables into a big pile of bits called machine code, the sole purpose of which is to run as fast as possible on the target CPU. Most lines of C get converted into several machine code instructions. Variables are shoved all over the place – into the stack, into registers, or completely optimized away. Structures and objects don’t even <em>exist</em> in the resulting code – they’re merely an abstraction that gets translated to hard-coded offsets into memory buffers.
+                                </p>
+                                <p>
+                                    So how does a debugger know where to stop when you ask it to break at the entry to some function? How does it manage to find what to show you when you ask it for the value of a variable? The answer is – debugging information.
+                                </p>
+                                <p>
+                                    Debugging information is generated by the compiler together with the machine code. It is a representation of the relationship between the executable program and the original source code. This information is encoded into a pre-defined format and stored alongside the machine code. Many such formats were invented over the years for different platforms and executable files. Since the aim of this article isn’t to survey the history of these formats, but rather to show how they work, we’ll have to settle on something. This something is going to be DWARF, which is almost ubiquitously used today as the debugging information format for ELF executables on Linux and other Unix-y platforms.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    The DWARF in the ELF
+                                </h3>
+                                <div align="center">
+                                    <img alt="http://eli.thegreenplace.net/wp-content/uploads/2011/02/dwarf_logo.gif" src="http://eli.thegreenplace.net/wp-content/uploads/2011/02/dwarf_logo.gif">
+                                </div>
+                                <p>
+                                    According to <a href="http://en.wikipedia.org/wiki/DWARF">its Wikipedia page</a>, DWARF was designed alongside ELF, although it can in theory be embedded in other object file formats as well <a href="http://eli.thegreenplace.net/#id7">[1]</a>.
+                                </p>
+                                <p>
+                                    DWARF is a complex format, building on many years of experience with previous formats for various architectures and operating systems. It has to be complex, since it solves a very tricky problem – presenting debugging information from any high-level language to debuggers, providing support for arbitrary platforms and ABIs. It would take much more than this humble article to explain it fully, and to be honest I don’t understand all its dark corners well enough to engage in such an endeavor anyway <a href="http://eli.thegreenplace.net/#id8">[2]</a>. In this article I will take a more hands-on approach, showing just enough of DWARF to explain how debugging information works in practical terms.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    Debug sections in ELF files
+                                </h3>
+                                <p>
+                                    First let’s take a glimpse of where the DWARF info is placed inside ELF files. ELF defines arbitrary sections that may exist in each object file. A <em>section header table</em> defines which sections exist and their names. Different tools treat various sections in special ways – for example the linker is looking for some sections, the debugger for others.
+                                </p>
+                                <p>
+                                    We’ll be using an executable built from this C source for our experiments in this article, compiled into <tt><span>tracedprog2</span></tt>:
+                                </p>
+                                <div>
+                                    <pre>
+<span style="color:#007f00">#include &lt;stdio.h&gt;</span>
+
+<span style="color:#00007f;font-weight:bold">void</span> <span style="color:#00007f">do_stuff</span>(<span style="color:#00007f;font-weight:bold">int</span> my_arg)
+{
+    <span style="color:#00007f;font-weight:bold">int</span> my_local = my_arg + <span style="color:#007f7f">2</span>;
+    <span style="color:#00007f;font-weight:bold">int</span> i;
+
+    <span style="color:#00007f;font-weight:bold">for</span> (i = <span style="color:#007f7f">0</span>; i &lt; my_local; ++i)
+        printf(<span style="color:#7f007f">"i = %d\n"</span>, i);
+}
+
+<span style="color:#00007f;font-weight:bold">int</span> <span style="color:#00007f">main</span>()
+{
+    do_stuff(<span style="color:#007f7f">2</span>);
+    <span style="color:#00007f;font-weight:bold">return</span> <span style="color:#007f7f">0</span>;
+}
+</pre>
+                                </div>
+                                <p>
+                                    Dumping the section headers from the ELF executable using <tt><span>objdump</span> <span>-h</span></tt> we’ll notice several sections with names beginning with <tt><span>.debug_</span></tt> – these are the DWARF debugging sections:
+                                </p>
+                                <div>
+                                    <pre>
+26 .debug_aranges 00000020  00000000  00000000  00001037
+                 CONTENTS, READONLY, DEBUGGING
+27 .debug_pubnames 00000028  00000000  00000000  00001057
+                 CONTENTS, READONLY, DEBUGGING
+28 .debug_info   000000cc  00000000  00000000  0000107f
+                 CONTENTS, READONLY, DEBUGGING
+29 .debug_abbrev 0000008a  00000000  00000000  0000114b
+                 CONTENTS, READONLY, DEBUGGING
+30 .debug_line   0000006b  00000000  00000000  000011d5
+                 CONTENTS, READONLY, DEBUGGING
+31 .debug_frame  00000044  00000000  00000000  00001240
+                 CONTENTS, READONLY, DEBUGGING
+32 .debug_str    000000ae  00000000  00000000  00001284
+                 CONTENTS, READONLY, DEBUGGING
+33 .debug_loc    00000058  00000000  00000000  00001332
+                 CONTENTS, READONLY, DEBUGGING
+</pre>
+                                </div>
+                                <p>
+                                    The first number seen for each section here is its size, and the last is the offset where it begins in the ELF file. The debugger uses this information to read the section from the executable.
+                                </p>
+                                <p>
+                                    Now let’s see a few practical examples of finding useful debug information in DWARF.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    Finding functions
+                                </h3>
+                                <p>
+                                    One of the most basic things we want to do when debugging is placing breakpoints at some function, expecting the debugger to break right at its entrance. To be able to perform this feat, the debugger must have some mapping between a function name in the high-level code and the address in the machine code where the instructions for this function begin.
+                                </p>
+                                <p>
+                                    This information can be obtained from DWARF by looking at the <tt><span>.debug_info</span></tt> section. Before we go further, a bit of background. The basic descriptive entity in DWARF is called the Debugging Information Entry (DIE). Each DIE has a tag – its type, and a set of attributes. DIEs are interlinked via sibling and child links, and values of attributes can point at other DIEs.
+                                </p>
+                                <p>
+                                    Let’s run:
+                                </p>
+                                <div>
+                                    <pre>
+objdump --dwarf=info tracedprog2
+</pre>
+                                </div>
+                                <p>
+                                    The output is quite long, and for this example we’ll just focus on these lines <a href="http://eli.thegreenplace.net/#id9">[3]</a>:
+                                </p>
+                                <div>
+                                    <pre>
+&lt;1&gt;&lt;71&gt;: Abbrev Number: 5 (DW_TAG_subprogram)
+    &lt;72&gt;   DW_AT_external    : 1
+    &lt;73&gt;   DW_AT_name        : (...): do_stuff
+    &lt;77&gt;   DW_AT_decl_file   : 1
+    &lt;78&gt;   DW_AT_decl_line   : 4
+    &lt;79&gt;   DW_AT_prototyped  : 1
+    &lt;7a&gt;   DW_AT_low_pc      : 0x8048604
+    &lt;7e&gt;   DW_AT_high_pc     : 0x804863e
+    &lt;82&gt;   DW_AT_frame_base  : 0x0      (location list)
+    &lt;86&gt;   DW_AT_sibling     : &lt;0xb3&gt;
+
+&lt;1&gt;&lt;b3&gt;: Abbrev Number: 9 (DW_TAG_subprogram)
+    &lt;b4&gt;   DW_AT_external    : 1
+    &lt;b5&gt;   DW_AT_name        : (...): main
+    &lt;b9&gt;   DW_AT_decl_file   : 1
+    &lt;ba&gt;   DW_AT_decl_line   : 14
+    &lt;bb&gt;   DW_AT_type        : &lt;0x4b&gt;
+    &lt;bf&gt;   DW_AT_low_pc      : 0x804863e
+    &lt;c3&gt;   DW_AT_high_pc     : 0x804865a
+    &lt;c7&gt;   DW_AT_frame_base  : 0x2c     (location list)
+</pre>
+                                </div>
+                                <p>
+                                    There are two entries (DIEs) tagged <tt><span>DW_TAG_subprogram</span></tt>, which is a function in DWARF’s jargon. Note that there’s an entry for <tt><span>do_stuff</span></tt> and an entry for <tt><span>main</span></tt>. There are several interesting attributes, but the one that interests us here is <tt><span>DW_AT_low_pc</span></tt>. This is the program-counter (<tt><span>EIP</span></tt> in x86) value for the beginning of the function. Note that it’s <tt><span>0x8048604</span></tt> for <tt><span>do_stuff</span></tt>. Now let’s see what this address is in the disassembly of the executable by running <tt><span>objdump</span> <span>-d</span></tt>:
+                                </p>
+                                <div>
+                                    <pre>
+08048604 &lt;do_stuff&gt;:
+ 8048604:       55           push   ebp
+ 8048605:       89 e5        mov    ebp,esp
+ 8048607:       83 ec 28     sub    esp,0x28
+ 804860a:       8b 45 08     mov    eax,DWORD PTR [ebp+0x8]
+ 804860d:       83 c0 02     add    eax,0x2
+ 8048610:       89 45 f4     mov    DWORD PTR [ebp-0xc],eax
+ 8048613:       c7 45 (...)  mov    DWORD PTR [ebp-0x10],0x0
+ 804861a:       eb 18        jmp    8048634 &lt;do_stuff+0x30&gt;
+ 804861c:       b8 20 (...)  mov    eax,0x8048720
+ 8048621:       8b 55 f0     mov    edx,DWORD PTR [ebp-0x10]
+ 8048624:       89 54 24 04  mov    DWORD PTR [esp+0x4],edx
+ 8048628:       89 04 24     mov    DWORD PTR [esp],eax
+ 804862b:       e8 04 (...)  call   8048534 &lt;printf@plt&gt;
+ 8048630:       83 45 f0 01  add    DWORD PTR [ebp-0x10],0x1
+ 8048634:       8b 45 f0     mov    eax,DWORD PTR [ebp-0x10]
+ 8048637:       3b 45 f4     cmp    eax,DWORD PTR [ebp-0xc]
+ 804863a:       7c e0        jl     804861c &lt;do_stuff+0x18&gt;
+ 804863c:       c9           leave
+ 804863d:       c3           ret
+</pre>
+                                </div>
+                                <p>
+                                    Indeed, <tt><span>0x8048604</span></tt> is the beginning of <tt><span>do_stuff</span></tt>, so the debugger can have a mapping between functions and their locations in the executable.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    Finding variables
+                                </h3>
+                                <p>
+                                    Suppose that we’ve indeed stopped at a breakpoint inside <tt><span>do_stuff</span></tt>. We want to ask the debugger to show us the value of the <tt><span>my_local</span></tt> variable. How does it know where to find it? Turns out this is much trickier than finding functions. Variables can be located in global storage, on the stack, and even in registers. Additionally, variables with the same name can have different values in different lexical scopes. The debugging information has to be able to reflect all these variations, and indeed DWARF does.
+                                </p>
+                                <p>
+                                    I won’t cover all the possibilities, but as an example I’ll demonstrate how the debugger can find <tt><span>my_local</span></tt> in <tt><span>do_stuff</span></tt>. Let’s start at <tt><span>.debug_info</span></tt> and look at the entry for <tt><span>do_stuff</span></tt> again, this time also looking at a couple of its sub-entries:
+                                </p>
+                                <div>
+                                    <pre>
+&lt;1&gt;&lt;71&gt;: Abbrev Number: 5 (DW_TAG_subprogram)
+    &lt;72&gt;   DW_AT_external    : 1
+    &lt;73&gt;   DW_AT_name        : (...): do_stuff
+    &lt;77&gt;   DW_AT_decl_file   : 1
+    &lt;78&gt;   DW_AT_decl_line   : 4
+    &lt;79&gt;   DW_AT_prototyped  : 1
+    &lt;7a&gt;   DW_AT_low_pc      : 0x8048604
+    &lt;7e&gt;   DW_AT_high_pc     : 0x804863e
+    &lt;82&gt;   DW_AT_frame_base  : 0x0      (location list)
+    &lt;86&gt;   DW_AT_sibling     : &lt;0xb3&gt;
+ &lt;2&gt;&lt;8a&gt;: Abbrev Number: 6 (DW_TAG_formal_parameter)
+    &lt;8b&gt;   DW_AT_name        : (...): my_arg
+    &lt;8f&gt;   DW_AT_decl_file   : 1
+    &lt;90&gt;   DW_AT_decl_line   : 4
+    &lt;91&gt;   DW_AT_type        : &lt;0x4b&gt;
+    &lt;95&gt;   DW_AT_location    : (...)       (DW_OP_fbreg: 0)
+ &lt;2&gt;&lt;98&gt;: Abbrev Number: 7 (DW_TAG_variable)
+    &lt;99&gt;   DW_AT_name        : (...): my_local
+    &lt;9d&gt;   DW_AT_decl_file   : 1
+    &lt;9e&gt;   DW_AT_decl_line   : 6
+    &lt;9f&gt;   DW_AT_type        : &lt;0x4b&gt;
+    &lt;a3&gt;   DW_AT_location    : (...)      (DW_OP_fbreg: -20)
+&lt;2&gt;&lt;a6&gt;: Abbrev Number: 8 (DW_TAG_variable)
+    &lt;a7&gt;   DW_AT_name        : i
+    &lt;a9&gt;   DW_AT_decl_file   : 1
+    &lt;aa&gt;   DW_AT_decl_line   : 7
+    &lt;ab&gt;   DW_AT_type        : &lt;0x4b&gt;
+    &lt;af&gt;   DW_AT_location    : (...)      (DW_OP_fbreg: -24)
+</pre>
+                                </div>
+                                <p>
+                                    Note the first number inside the angle brackets in each entry. This is the nesting level – in this example entries with <tt><span>&lt;2&gt;</span></tt> are children of the entry with <tt><span>&lt;1&gt;</span></tt>. So we know that the variable <tt><span>my_local</span></tt> (marked by the <tt><span>DW_TAG_variable</span></tt> tag) is a child of the <tt><span>do_stuff</span></tt> function. The debugger is also interested in a variable’s type to be able to display it correctly. In the case of <tt><span>my_local</span></tt> the type points to another DIE – <tt><span>&lt;0x4b&gt;</span></tt>. If we look it up in the output of <tt><span>objdump</span></tt> we’ll see it’s a signed 4-byte integer.
+                                </p>
+                                <p>
+                                    To actually locate the variable in the memory image of the executing process, the debugger will look at the <tt><span>DW_AT_location</span></tt> attribute. For <tt><span>my_local</span></tt> it says <tt><span>DW_OP_fbreg:</span> <span>-20</span></tt>. This means that the variable is stored at offset -20 from the <tt><span>DW_AT_frame_base</span></tt> attribute of its containing function – which is the base of the frame for the function.
+                                </p>
+                                <p>
+                                    The <tt><span>DW_AT_frame_base</span></tt> attribute of <tt><span>do_stuff</span></tt> has the value <tt><span>0x0</span> <span>(location</span> <span>list)</span></tt>, which means that this value actually has to be looked up in the location list section. Let’s look at it:
+                                </p>
+                                <div>
+                                    <pre>
+$ objdump --dwarf=loc tracedprog2
+
+tracedprog2:     file format elf32-i386
+
+Contents of the .debug_loc section:
+
+    Offset   Begin    End      Expression
+    00000000 08048604 08048605 (DW_OP_breg4: 4 )
+    00000000 08048605 08048607 (DW_OP_breg4: 8 )
+    00000000 08048607 0804863e (DW_OP_breg5: 8 )
+    00000000 &lt;End of list&gt;
+    0000002c 0804863e 0804863f (DW_OP_breg4: 4 )
+    0000002c 0804863f 08048641 (DW_OP_breg4: 8 )
+    0000002c 08048641 0804865a (DW_OP_breg5: 8 )
+    0000002c &lt;End of list&gt;
+</pre>
+                                </div>
+                                <p>
+                                    The location information we’re interested in is the first one <a href="http://eli.thegreenplace.net/#id10">[4]</a>. For each address where the debugger may be, it specifies the current frame base from which offsets to variables are to be computed as an offset from a register. For x86, <tt><span>bpreg4</span></tt> refers to <tt><span>esp</span></tt> and <tt><span>bpreg5</span></tt> refers to <tt><span>ebp</span></tt>.
+                                </p>
+                                <p>
+                                    It’s educational to look at the first several instructions of <tt><span>do_stuff</span></tt> again:
+                                </p>
+                                <div>
+                                    <pre>
+08048604 &lt;do_stuff&gt;:
+ 8048604:       55          push   ebp
+ 8048605:       89 e5       mov    ebp,esp
+ 8048607:       83 ec 28    sub    esp,0x28
+ 804860a:       8b 45 08    mov    eax,DWORD PTR [ebp+0x8]
+ 804860d:       83 c0 02    add    eax,0x2
+ 8048610:       89 45 f4    mov    DWORD PTR [ebp-0xc],eax
+</pre>
+                                </div>
+                                <p>
+                                    Note that <tt><span>ebp</span></tt> becomes relevant only after the second instruction is executed, and indeed for the first two addresses the base is computed from <tt><span>esp</span></tt> in the location information listed above. Once <tt><span>ebp</span></tt> is valid, it’s convenient to compute offsets relative to it because it stays constant while <tt><span>esp</span></tt> keeps moving with data being pushed and popped from the stack.
+                                </p>
+                                <p>
+                                    So where does it leave us with <tt><span>my_local</span></tt>? We’re only really interested in its value after the instruction at <tt><span>0x8048610</span></tt> (where its value is placed in memory after being computed in <tt><span>eax</span></tt>), so the debugger will be using the <tt><span>DW_OP_breg5:</span> <span>8</span></tt> frame base to find it. Now it’s time to rewind a little and recall that the <tt><span>DW_AT_location</span></tt> attribute for <tt><span>my_local</span></tt> says <tt><span>DW_OP_fbreg:</span> <span>-20</span></tt>. Let’s do the math: -20 from the frame base, which is <tt><span>ebp</span> <span>+</span> <span>8</span></tt>. We get <tt><span>ebp</span> <span>-</span> <span>12</span></tt>. Now look at the disassembly again and note where the data is moved from <tt><span>eax</span></tt> – indeed, <tt><span>ebp</span> <span>-</span> <span>12</span></tt> is where <tt><span>my_local</span></tt> is stored.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    Looking up line numbers
+                                </h3>
+                                <p>
+                                    When we talked about finding functions in the debugging information, I was cheating a little. When we debug C source code and put a breakpoint in a function, we’re usually not interested in the first <em>machine code</em> instruction <a href="http://eli.thegreenplace.net/#id11">[5]</a>. What we’re <em>really</em> interested in is the first <em>C code</em> line of the function.
+                                </p>
+                                <p>
+                                    This is why DWARF encodes a full mapping between lines in the C source code and machine code addresses in the executable. This information is contained in the <tt><span>.debug_line</span></tt> section and can be extracted in a readable form as follows:
+                                </p>
+                                <div>
+                                    <pre>
+$ objdump --dwarf=decodedline tracedprog2
+
+tracedprog2:     file format elf32-i386
+
+Decoded dump of debug contents of section .debug_line:
+
+CU: /home/eliben/eli/eliben-code/debugger/tracedprog2.c:
+File name           Line number    Starting address
+tracedprog2.c                5           0x8048604
+tracedprog2.c                6           0x804860a
+tracedprog2.c                9           0x8048613
+tracedprog2.c               10           0x804861c
+tracedprog2.c                9           0x8048630
+tracedprog2.c               11           0x804863c
+tracedprog2.c               15           0x804863e
+tracedprog2.c               16           0x8048647
+tracedprog2.c               17           0x8048653
+tracedprog2.c               18           0x8048658
+</pre>
+                                </div>
+                                <p>
+                                    It shouldn’t be hard to see the correspondence between this information, the C source code and the disassembly dump. Line number 5 points at the entry point to <tt><span>do_stuff</span></tt> – <tt><span>0x8040604</span></tt>. The next line, 6, is where the debugger should really stop when asked to break in <tt><span>do_stuff</span></tt>, and it points at <tt><span>0x804860a</span></tt> which is just past the prologue of the function. This line information easily allows bi-directional mapping between lines and addresses:
+                                </p>
+                                <ul>
+                                    <li>When asked to place a breakpoint at a certain line, the debugger will use it to find which address it should put its trap on (remember our friend <tt><span>int</span> <span>3</span></tt> from the previous article?)
+                                    </li>
+                                    <li>When an instruction causes a segmentation fault, the debugger will use it to find the source code line on which it happened.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3>
+                                    <tt><span>libdwarf</span></tt> – Working with DWARF programmatically
+                                </h3>
+                                <p>
+                                    Employing command-line tools to access DWARF information, while useful, isn’t fully satisfying. As programmers, we’d like to know how to write actual code that can read the format and extract what we need from it.
+                                </p>
+                                <p>
+                                    Naturally, one approach is to grab the DWARF specification and start hacking away. Now, remember how everyone keeps saying that you should never, ever parse HTML manually but rather use a library? Well, with DWARF it’s even worse. DWARF is <em>much</em> more complex than HTML. What I’ve shown here is just the tip of the iceberg, and to make things even harder, most of this information is encoded in a very compact and compressed way in the actual object file <a href="http://eli.thegreenplace.net/#id12">[6]</a>.
+                                </p>
+                                <p>
+                                    So we’ll take another road and use a library to work with DWARF. There are two major libraries I’m aware of (plus a few less complete ones):
+                                </p>
+                                <ol>
+                                    <li>BFD (<tt><span>libbfd</span></tt>) is used by the <a href="http://www.gnu.org/software/binutils/">GNU binutils</a>, including <tt><span>objdump</span></tt> which played a star role in this article, <tt><span>ld</span></tt> (the GNU linker) and <tt><span>as</span></tt> (the GNU assembler).
+                                    </li>
+                                    <li>
+                                        <tt><span>libdwarf</span></tt> – which together with its big brother <tt><span>libelf</span></tt> are used for the tools on Solaris and FreeBSD operating systems.
+                                    </li>
+                                </ol>
+                                <p>
+                                    I’m picking <tt><span>libdwarf</span></tt> over BFD because it appears less arcane to me and its license is more liberal (<tt><span>LGPL</span></tt> vs. <tt><span>GPL</span></tt>).
+                                </p>
+                                <p>
+                                    Since <tt><span>libdwarf</span></tt> is itself quite complex it requires a lot of code to operate. I’m not going to show all this code here, but <a href="http://eli.thegreenplace.net/files/prog_code/articles_code/debugger/dwarf_get_func_addr.c">you can download</a> and run it yourself. To compile this file you’ll need to have <tt><span>libelf</span></tt> and <tt><span>libdwarf</span></tt> installed, and pass the <tt><span>-lelf</span></tt> and <tt><span>-ldwarf</span></tt> flags to the linker.
+                                </p>
+                                <p>
+                                    The demonstrated program takes an executable and prints the names of functions in it, along with their entry points. Here’s what it produces for the C program we’ve been playing with in this article:
+                                </p>
+                                <div>
+                                    <pre>
+$ dwarf_get_func_addr tracedprog2
+DW_TAG_subprogram: 'do_stuff'
+low pc  : 0x08048604
+high pc : 0x0804863e
+DW_TAG_subprogram: 'main'
+low pc  : 0x0804863e
+high pc : 0x0804865a
+</pre>
+                                </div>
+                                <p>
+                                    The documentation of <tt><span>libdwarf</span></tt> (linked in the References section of this article) is quite good, and with some effort you should have no problem pulling any other information demonstrated in this article from the DWARF sections using it.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    Conclusion and next steps
+                                </h3>
+                                <p>
+                                    Debugging information is a simple concept in principle. The implementation details may be intricate, but in the end of the day what matters is that we now know how the debugger finds the information it needs about the original source code from which the executable it’s tracing was compiled. With this information in hand, the debugger bridges between the world of the user, who thinks in terms of lines of code and data structures, and the world of the executable, which is just a bunch of machine code instructions and data in registers and memory.
+                                </p>
+                                <p>
+                                    This article, with its two predecessors, concludes an introductory series that explains the inner workings of a debugger. Using the information presented here and some programming effort, it should be possible to create a basic but functional debugger for Linux.
+                                </p>
+                                <p>
+                                    As for the next steps, I’m not sure yet. Maybe I’ll end the series here, maybe I’ll present some advanced topics such as backtraces, and perhaps debugging on Windows. Readers can also suggest ideas for future articles in this series or related material. Feel free to use the comments or send me an email.
+                                </p>
+                            </div>
+                            <div>
+                                <h3>
+                                    References
+                                </h3>
+                                <ul>
+                                    <li>
+                                        <tt><span>objdump</span></tt> man page
+                                    </li>
+                                    <li>Wikipedia pages for <a href="http://en.wikipedia.org/wiki/Executable_and_Linkable_Format">ELF</a> and <a href="http://en.wikipedia.org/wiki/DWARF">DWARF</a>.
+                                    </li>
+                                    <li>
+                                        <a href="http://dwarfstd.org/">Dwarf Debugging Standard home page</a> – from here you can obtain the excellent DWARF tutorial by Michael Eager, as well as the DWARF standard itself. You’ll probably want version 2 since it’s what <tt><span>gcc</span></tt> produces.
+                                    </li>
+                                    <li>
+                                        <a href="http://reality.sgiweb.org/davea/dwarf.html">libdwarf home page</a> – the download package includes a comprehensive reference document for the library
+                                    </li>
+                                    <li>
+                                        <a href="http://sourceware.org/binutils/docs-2.21/bfd/index.html">BFD documentation</a>
+                                    </li>
+                                </ul>
+                                <div align="center">
+                                    <img alt="http://eli.thegreenplace.net/wp-content/uploads/hline.jpg" src="http://eli.thegreenplace.net/wp-content/uploads/hline.jpg" style="width:320px;height:5px">
+                                </div>
+                                <table>
+                                    <colgroup>
+                                        <col>
+                                        <col>
+                                    </colgroup>
+                                    <tbody valign="top">
+                                        <tr>
+                                            <td>
+                                                <a href="http://eli.thegreenplace.net/#id1">[1]</a>
+                                            </td>
+                                            <td>
+                                                DWARF is an open standard, published <a href="http://dwarfstd.org/">here</a> by the DWARF standards committee. The DWARF logo displayed above is taken from that website.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table>
+                                    <colgroup>
+                                        <col>
+                                        <col>
+                                    </colgroup>
+                                    <tbody valign="top">
+                                        <tr>
+                                            <td>
+                                                <a href="http://eli.thegreenplace.net/#id2">[2]</a>
+                                            </td>
+                                            <td>
+                                                At the end of the article I’ve collected some useful resources that will help you get more familiar with DWARF, if you’re interested. Particularly, start with the DWARF tutorial.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table>
+                                    <colgroup>
+                                        <col>
+                                        <col>
+                                    </colgroup>
+                                    <tbody valign="top">
+                                        <tr>
+                                            <td>
+                                                <a href="http://eli.thegreenplace.net/#id3">[3]</a>
+                                            </td>
+                                            <td>
+                                                Here and in subsequent examples, I’m placing <tt><span>(...)</span></tt> instead of some longer and un-interesting information for the sake of more convenient formatting.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table>
+                                    <colgroup>
+                                        <col>
+                                        <col>
+                                    </colgroup>
+                                    <tbody valign="top">
+                                        <tr>
+                                            <td>
+                                                <a href="http://eli.thegreenplace.net/#id4">[4]</a>
+                                            </td>
+                                            <td>
+                                                Because the <tt><span>DW_AT_frame_base</span></tt> attribute of <tt><span>do_stuff</span></tt> contains offset <tt><span>0x0</span></tt> into the location list. Note that the same attribute for <tt><span>main</span></tt> contains the offset <tt><span>0x2c</span></tt> which is the offset for the second set of location expressions.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table>
+                                    <colgroup>
+                                        <col>
+                                        <col>
+                                    </colgroup>
+                                    <tbody valign="top">
+                                        <tr>
+                                            <td>
+                                                <a href="http://eli.thegreenplace.net/#id5">[5]</a>
+                                            </td>
+                                            <td>
+                                                Where the function prologue is usually executed and the local variables aren’t even valid yet.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table>
+                                    <colgroup>
+                                        <col>
+                                        <col>
+                                    </colgroup>
+                                    <tbody valign="top">
+                                        <tr>
+                                            <td>
+                                                <a href="http://eli.thegreenplace.net/#id6">[6]</a>
+                                            </td>
+                                            <td>
+                                                Some parts of the information (such as location data and line number data) are encoded as instructions for a specialized virtual machine. Yes, really.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div><img src="http://eli.thegreenplace.net/?ak_action=api_record_view&amp;id=2402&amp;type=feed" alt="">
+                            <p>
+                                Related posts:
+                            </p>
+                            <ol>
+                                <li>
+                                    <a href="http://eli.thegreenplace.net/2011/01/27/how-debuggers-work-part-2-breakpoints/" rel="bookmark" title="Permanent Link: How debuggers work: Part 2 – Breakpoints">How debuggers work: Part 2 – Breakpoints</a> <small>This is the second part in a series of articles...</small>
+                                </li>
+                                <li>
+                                    <a href="http://eli.thegreenplace.net/2011/01/23/how-debuggers-work-part-1/" rel="bookmark" title="Permanent Link: How debuggers work: Part 1 – Basics">How debuggers work: Part 1 – Basics</a> <small>This is the first part in a series of articles...</small>
+                                </li>
+                                <li>
+                                    <a href="http://eli.thegreenplace.net/2004/11/14/pure-delight-mix-byte-code-debugger-and-other-oddities/" rel="bookmark" title="Permanent Link: pure delight !! (MIX byte code, debugger and other oddities)">pure delight !! (MIX byte code, debugger and other oddities)</a> <small>If you one of those weirdos who thinks that real-life...</small>
+                                </li>
+                            </ol>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://eli.thegreenplace.net/2011/02/07/how-debuggers-work-part-3-debugging-information/">http://eli.thegreenplace.net/2011/02/07/how-debuggers-work-part-3-debugging-information/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

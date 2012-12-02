@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Twisted - hello, asynchronous programming
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 12 Feb 2009 01:22:14 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-11T20:22:14-04:00">
+                    <meta itemprop="dateModified" content="2009-02-11T20:22:14-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-12T00:22:14+00:00">Feb 12</time>
+                    <h2 itemprop="title">
+                        Twisted - hello, asynchronous programming
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ffcfe123b3b00092">
+                        <blockquote>
+                            <p>
+                                <b>Note:</b>This is the third post in what I hope will be a series leading up to my concurrency/distributed systems talk at PyCon. I’m steadily working through experimenting with and learning the various frameworks/libraries in the python ecosystem.
+                            </p>
+                            <p>
+                                I reserve the right (and probably will) to revise these entries based on feedback from people (mainly the author(s) of said tool(s)). I will also add additional bits and pieces as I learn and explore more. Additionally, thanks to glyph for giving me a hell of a lot of feedback.<b>/Note</b>
+                            </p>
+                            <p>
+                                Twisted is the 800 lbs gorilla of the “concurrency” frameworks. It’s been around for awhile, has a large following - it’s used by everyone from Apple (<a href="http://www.macosforge.org/">iCal server</a>) to Buildbot <a href="http://buildbot.net/trac">Buildbot</a>. It has a literal ton of sub projects and other “semi attached appendages”.<br>
+                                <br>
+                                Twisted can be daunting for almost everyone - while it is conceptually simple, the docs and examples could be more approachable. People look at Twisted as an all-or-nothing bet when considering it for their applications, which to an extent, it is.
+                            </p>
+                            <p>
+                                But if I am going to do a concurrency/distributed systems talk - I can’t ignore one of the most widely used and original frameworks in this space.
+                            </p>
+                            <p>
+                                So, as always - these are my semi-rough notes diving into Twisted-core. Like Kamaelia, I am going to side step the asteroid ring which surrounds Twisted (or tentacles… I can’t decide which to use) and delve into the core.
+                            </p>
+                            <p>
+                                Moving along - Twisted is based around asynchronous programming - a model for adding a great deal of concurrency to your application via non blocking calls or isolating blocking calls “elsewhere”. This is largely the same approach that GUI toolkits use wherein a given event is assigned something to run when an “event” occurs, such as a button click or data is available. Glyph sent me a very simple side-by-side:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+    reactor.<span style="color:black">listenTCP</span><span style="color:black">(</span><span style="color:#ff4500">8080</span>, someFactory<span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+    button.<span style="color:black">connect</span><span style="color:black">(</span><span style="color:#483d8b">'clicked'</span>, someCallback<span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                This shows the essential aspect of asynchronus/event-driven systems - you tell x that when y occurs, call z. It really is conceptually simple. The main loop of the application simply focuses on constructing these relationships, and executing the callbacks when the event occurs.
+                            </p>
+                            <p>
+                                Twisted’s focus is on network-based applications - these mesh well with the idea of non-blocking I/O, where you have to fundamentally chunk your work up into small pieces which take a very short time to execute. Networked apps spend most of their time waiting for data to come in over the wire. Twisted also has faculties to isolate CPU intensive and/or blocking calls within threads or processes.
+                            </p>
+                            <p>
+                                I’m going to focus on two of the core components - Deferreds and the Reactor, this should help illustrate what the core paradigm is.
+                            </p>
+                            <p>
+                                Deferreds are a core component of Twisted - a deferred in the simplest terms is an object that when created, represents some Thing which will eventually return Something or Error - a placeholder for something in the future. The way you handle Something or Error is you tell the deferred that if it gets Something, it should call consume_function, otherwise - if it gets an Error, it should call error_function. Easy!
+                            </p>
+                            <p>
+                                Take the below for example - read_mail and error_function are what’s known as callbacks - a function which is called by something else when something occurs (I hate me for writing that).
+                            </p>
+                            <p>
+                                Callbacks are really simple, as illustrated here:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> <span style="color:#dc143c">os</span>, <span style="color:#dc143c">sys</span>
+<span style="color:#ff7700;font-weight:bold">def</span> read_mail<span style="color:black">(</span>mailitems<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">print</span> mailitems
+    <span style="color:#dc143c">sys</span>.<span style="color:black">exit</span><span style="color:black">(</span><span style="color:black">)</span>
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> read_error<span style="color:black">(</span>error<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">raise</span> <span style="color:#008000">Exception</span><span style="color:black">(</span><span style="color:#483d8b">'error: %s'</span> <span style="color:#66cc66">%</span> error<span style="color:black">)</span>
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> wait_for_mail<span style="color:black">(</span>callback, errback<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">while</span> <span style="color:#008000">True</span>:
+        <span style="color:#ff7700;font-weight:bold">try</span>:
+            mail = <span style="color:#dc143c">os</span>.<span style="color:black">path</span>.<span style="color:black">isfile</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span><span style="color:black">)</span>
+            <span style="color:#ff7700;font-weight:bold">if</span> mail:
+                callback<span style="color:black">(</span><span style="color:#008000">open</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span>,<span style="color:#483d8b">'r'</span><span style="color:black">)</span>.<span style="color:black">readlines</span><span style="color:black">(</span><span style="color:black">)</span><span style="color:black">)</span>
+            <span style="color:#ff7700;font-weight:bold">else</span>:
+                <span style="color:#ff7700;font-weight:bold">pass</span>
+        <span style="color:#ff7700;font-weight:bold">except</span> <span style="color:#008000">Exception</span>, e:
+            errback<span style="color:black">(</span>e<span style="color:black">)</span>
+ 
+wait_for_mail<span style="color:black">(</span>read_mail, read_error<span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                Sidenote: Callbacks are stupid easy with python. I love them. Heck, you can pickle a callback and shoot it over the wire to another machine. Callbacks are cool. You should watch Alex Martelli’s <a href="http://www.youtube.com/watch?v=LCZRJStwkKM">callback talk on youtube</a>.
+                            </p>
+                            <p>
+                                In any case, you tell a deferred (the object which represents a promise of something) what to do when data is returned - you do this by generating a deferred, and then adding callbacks onto it - note that the function wait_for_mail needs to <b>return</b> a deferred. In this toy example, I want to just look for a “mail file” on disk, and then if it exists, return a string to the callback:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> <span style="color:#dc143c">os</span>
+<span style="color:#ff7700;font-weight:bold">from</span> twisted.<span style="color:black">internet</span> <span style="color:#ff7700;font-weight:bold">import</span> reactor, defer
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> read_mail<span style="color:black">(</span>mailitems<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">print</span> mailitems
+    reactor.<span style="color:black">stop</span><span style="color:black">(</span><span style="color:black">)</span>
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> wait_for_mail<span style="color:black">(</span>d=<span style="color:#008000">None</span><span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">if</span> <span style="color:#ff7700;font-weight:bold">not</span> d:
+        d = defer.<span style="color:black">Deferred</span><span style="color:black">(</span><span style="color:black">)</span>
+    <span style="color:#ff7700;font-weight:bold">if</span> <span style="color:#ff7700;font-weight:bold">not</span> <span style="color:#dc143c">os</span>.<span style="color:black">path</span>.<span style="color:black">isfile</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span><span style="color:black">)</span>:
+        reactor.<span style="color:black">callLater</span><span style="color:black">(</span><span style="color:#ff4500">1</span>, wait_for_mail, d<span style="color:black">)</span>
+    <span style="color:#ff7700;font-weight:bold">else</span>:
+        d.<span style="color:black">callback</span><span style="color:black">(</span><span style="color:#008000">open</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span>,<span style="color:#483d8b">'r'</span><span style="color:black">)</span>.<span style="color:black">readlines</span><span style="color:black">(</span><span style="color:black">)</span><span style="color:black">)</span>
+    <span style="color:#ff7700;font-weight:bold">return</span> d
+ 
+deferred = wait_for_mail<span style="color:black">(</span><span style="color:black">)</span>
+deferred.<span style="color:black">addCallback</span><span style="color:black">(</span>read_mail<span style="color:black">)</span>
+reactor.<span style="color:black">callLater</span><span style="color:black">(</span><span style="color:#ff4500">60</span>, reactor.<span style="color:black">stop</span><span style="color:black">)</span>
+reactor.<span style="color:black">run</span><span style="color:black">(</span><span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                I wanted to keep this as simple as possible, as it illustrates some things that fundamentally tripped me up at first.
+                            </p>
+                            <p>
+                                First typically, if you were to solve a problem - say, polling a mailbox, you might do this:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> <span style="color:#dc143c">os</span>, <span style="color:#dc143c">sys</span>, <span style="color:#dc143c">threading</span>, <span style="color:#dc143c">time</span>
+<span style="color:#ff7700;font-weight:bold">def</span> read_mail<span style="color:black">(</span>mailitems<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">print</span> mailitems
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> wait_for_mail<span style="color:black">(</span>reader<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">while</span> <span style="color:#ff7700;font-weight:bold">not</span> <span style="color:#dc143c">os</span>.<span style="color:black">path</span>.<span style="color:black">isfile</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span><span style="color:black">)</span>:
+        <span style="color:#dc143c">time</span>.<span style="color:black">sleep</span><span style="color:black">(</span>.1<span style="color:black">)</span>
+ 
+    reader<span style="color:black">(</span><span style="color:#008000">open</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span>,<span style="color:#483d8b">'r'</span><span style="color:black">)</span>.<span style="color:black">readlines</span><span style="color:black">(</span><span style="color:black">)</span><span style="color:black">)</span>
+ 
+t = <span style="color:#dc143c">threading</span>.<span style="color:black">Thread</span><span style="color:black">(</span>target=wait_for_mail, args=<span style="color:black">(</span>read_mail,<span style="color:black">)</span><span style="color:black">)</span>
+t.<span style="color:black">start</span><span style="color:black">(</span><span style="color:black">)</span>
+t.<span style="color:black">join</span><span style="color:black">(</span><span style="color:black">)</span>
+<span style="color:#dc143c">sys</span>.<span style="color:black">exit</span><span style="color:black">(</span><span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                Or some other pattern of spawning a thread and then waiting for that thread to chuck the data back to you. The thread gets out of your way, and doesn’t force the main part of the program to block, sort of. In fact, with Twisted, the main part of your application <b>is required</b> not to block.
+                            </p>
+                            <p>
+                                As a point of order, you could do the same thing with Twisted like this:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+...
+<span style="color:black">d</span> = deferToThread<span style="color:black">(</span>wait_for_mail<span style="color:black">)</span>
+...
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                Threads are the common way of pushing blocking work off to the side - most of us have had to do it at one point or another. In the Twisted world, this has to be turned on it’s head a bit.
+                            </p>
+                            <p>
+                                In Twisted, you have to split your problem into small, individual functions/methods - ideally, you isolate the really blocking part (say, waiting for a file to appear) in it’s very own function. You make the non blocking parts - say checking initial existence and constructing the deferred object run as quickly as possible, and then return the deferred - a promise of data to come via the slow method. The slow part in the threading example is the time.sleep().
+                            </p>
+                            <p>
+                                You then <b>schedule</b> that blocking call to run, it shouldn’t block, but rather it should poll for data or changes in it’s buffer(s) and either reschedule itself to run if there is no data, or return the data if there is. This event is time based - but the same applies to adding a callback to a non-time-based item, such as setting up something which listen on a socket for data.
+                            </p>
+                            <p>
+                                The fact you schedule work within the reactor tripped me up at first. I was thinking in blocking terms though (Twisted has a faculty for passing blocking work off to threads via the deferToThread call) - the function kept wanting to block instead of polling, or looking for state change. Everything needs to be scheduled in one way or another.
+                            </p>
+                            <p>
+                                Glyph wisely pointed out that this is a common issue with people rethinking concurrency in terms of “discrete events”. For example, most people are content to think about concurrency in terms of workers “who are off doing things”. In theory, those workers are “always doing something” - in reality, the operating system is simply suspending your worker(s) until an interrupt (i.e.) discreet event occurs, which causes the worker(s)/app unblock.
+                            </p>
+                            <p>
+                                Glyph suggest the following as a good example using generator syntax:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">from</span> twisted.<span style="color:black">internet</span>.<span style="color:black">defer</span> <span style="color:#ff7700;font-weight:bold">import</span> inlineCallbacks, returnValue
+<span style="color:#ff7700;font-weight:bold">from</span> twisted.<span style="color:black">internet</span>.<span style="color:black">task</span> <span style="color:#ff7700;font-weight:bold">import</span> deferLater
+<span style="color:#ff7700;font-weight:bold">from</span> twisted.<span style="color:black">internet</span> <span style="color:#ff7700;font-weight:bold">import</span> reactor
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> deferredSleep<span style="color:black">(</span>howLong<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">return</span> deferLater<span style="color:black">(</span>reactor, howLong, <span style="color:#ff7700;font-weight:bold">lambda</span> : <span style="color:#008000">None</span><span style="color:black">)</span>
+ 
+@inlineCallbacks
+<span style="color:#ff7700;font-weight:bold">def</span> wait_for_mail<span style="color:black">(</span><span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">while</span> <span style="color:#008000">True</span>:
+        <span style="color:#ff7700;font-weight:bold">if</span> <span style="color:#dc143c">os</span>.<span style="color:black">path</span>.<span style="color:black">isfile</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span><span style="color:black">)</span>:
+            returnValue<span style="color:black">(</span><span style="color:#008000">open</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span>,<span style="color:#483d8b">'r'</span><span style="color:black">)</span>.<span style="color:black">readlines</span><span style="color:black">(</span><span style="color:black">)</span><span style="color:black">)</span>
+        <span style="color:#ff7700;font-weight:bold">yield</span> deferredSleep<span style="color:black">(</span><span style="color:#ff4500">1.0</span><span style="color:black">)</span>
+ 
+@inlineCallbacks
+<span style="color:#ff7700;font-weight:bold">def</span> check_mail<span style="color:black">(</span><span style="color:black">)</span>:
+    mail = <span style="color:#ff7700;font-weight:bold">yield</span> wait_for_mail<span style="color:black">(</span><span style="color:black">)</span>
+    <span style="color:#ff7700;font-weight:bold">print</span> <span style="color:#483d8b">'got mail'</span>, mail
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                The example he provided is interesting - it has no “scheduling” involved, and instead it uses something I didn’t see originally - <a href="http://twistedmatrix.com/documents/current/api/twisted.internet.task.html">deferLater</a> and <a href="http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks">inlineCallback</a>, inlineCallback accepts a function as an argument, that function can yield a deffered or call returnValue, essentially anywhere where you would normally block, you simply yield. In this case, we simply call deferLater if the file doesn’t exist, which tells the reactor to re-run this some time in the future.
+                            </p>
+                            <p>
+                                Before I move off the basic view of deferreds - there’s something to note, deferreds can accept a chain of callbacks:
+                            </p>
+                            <div>
+                                <span><sup><a href="http://www.ericbess.com/ericblog/2008/03/03/wp-codebox/#examples" title="WP-CodeBox HowTo?"><span style="color:#99cc00">?</span></a></sup></span><span><a href="javascript:void(0);">View Code</a> PYTHON</span>
+                            </div>
+                            <div>
+                                <table width="100%">
+                                    <tr>
+                                        <td>
+                                            <pre>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+</pre>
+                                        </td>
+                                        <td>
+                                            <pre style="font-family:monospace">
+<span style="color:#ff7700;font-weight:bold">import</span> <span style="color:#dc143c">os</span>
+<span style="color:#ff7700;font-weight:bold">from</span> twisted.<span style="color:black">internet</span> <span style="color:#ff7700;font-weight:bold">import</span> reactor, defer
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> read_mail<span style="color:black">(</span>mailitems<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">print</span> mailitems
+    <span style="color:#ff7700;font-weight:bold">return</span> <span style="color:#483d8b">"this %s is junk"</span> <span style="color:#66cc66">%</span> mailitems
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> shred_mail<span style="color:black">(</span>mailitems<span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">print</span> <span style="color:#483d8b">'buzzzzz: %s'</span> <span style="color:#66cc66">%</span> mailitems
+    reactor.<span style="color:black">stop</span><span style="color:black">(</span><span style="color:black">)</span>
+ 
+<span style="color:#ff7700;font-weight:bold">def</span> wait_for_mail<span style="color:black">(</span>d=<span style="color:#008000">None</span><span style="color:black">)</span>:
+    <span style="color:#ff7700;font-weight:bold">if</span> <span style="color:#ff7700;font-weight:bold">not</span> d:
+        d = defer.<span style="color:black">Deferred</span><span style="color:black">(</span><span style="color:black">)</span>
+    <span style="color:#ff7700;font-weight:bold">if</span> <span style="color:#ff7700;font-weight:bold">not</span> <span style="color:#dc143c">os</span>.<span style="color:black">path</span>.<span style="color:black">isfile</span><span style="color:black">(</span><span style="color:#483d8b">'mail'</span><span style="color:black">)</span>:
+        reactor.<span style="color:black">callLater</span><span style="color:black">(</span><span style="color:#ff4500">1</span>, wait_for_mail, d<span style="color:black">)</span>
+    <span style="color:#ff7700;font-weight:bold">else</span>:
+        d.<span style="color:black">callback</span><span style="color:black">(</span><span style="color:#483d8b">'letter'</span><span style="color:black">)</span>
+    <span style="color:#ff7700;font-weight:bold">return</span> d
+ 
+deferred = wait_for_mail<span style="color:black">(</span><span style="color:black">)</span>
+deferred.<span style="color:black">addCallback</span><span style="color:black">(</span>read_mail<span style="color:black">)</span>
+deferred.<span style="color:black">addCallback</span><span style="color:black">(</span>shred_mail<span style="color:black">)</span>
+reactor.<span style="color:black">callLater</span><span style="color:black">(</span><span style="color:#ff4500">60</span>, reactor.<span style="color:black">stop</span><span style="color:black">)</span>
+reactor.<span style="color:black">run</span><span style="color:black">(</span><span style="color:black">)</span>
+</pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p>
+                                And the output:
+                            </p>
+                            <pre>
+letter
+buzzzzz: this letter is junk
+</pre>
+                            <p>
+                                This allows each callback chained onto a deferred to alter the data in some form - the modified data is passed to the next callback in the chain. It’s not really magic. It’s simply a series of functions to call when an event occurs.
+                            </p>
+                            <p>
+                                One thing to keep in mind when thinking about Twisted - Twisted is <b>single threaded</b>. Ok, not really - sort of. Glyph called me out on this, and rightly so. In reality all I/O in Twisted is single-threaded, most Twisted APIs are not thread safe and deferred callback chains execute in a single thread… But - Twisted does support both threads and processes. There is no reason why you can’t use a library which uses threads in your twisted application for example. You can use threads with twisted, so don’t worry too much about that.
+                            </p>
+                            <p>
+                                On the other hand, if your entire application is a thread-spawnfest, you might want to reconsider - the design of your app, that is. /flamebait
+                            </p>
+                            <p>
+                                All code executes in the main thread of a single python process, which is why when discussing deferreds and blocking calls, it is so important to break your problem down into the smallest steps possible and isolate/rework blocking code into deferred actions.
+                            </p>
+                            <p>
+                                Onto the reactor then.
+                            </p>
+                            <p>
+                                The reactor is the event loop mechanism for Twisted. It takes care of executing all of the various timed actions and the execution of the callback/errback stack. Timed actions can be deferreds, etc. Deferreds are simply objects executed by the Reactor.
+                            </p>
+                            <p>
+                                You’ll notice in the example above, we didn’t create an instance of the reactor, instead we just imported it. If you look at Twisted.internet.reactor - you’ll see this removes any previous instances of reactor in sys.modules and then calls install() on the target reactor. This means the reactor is a singleton, all future imports/calls will always refer to this reactor.
+                            </p>
+                            <p>
+                                Now, the documentation in internet.reactor mentions that new application code should pass around an instance of a reactor - this moves away from the reactor-as-a-singleton (the simple behavior) and into something a bit more interesting. Glyph pointed out the obvious usefulness for this - testability, you can pass in a reactor rather than grabbing it from the global, you have more control.
+                            </p>
+                            <p>
+                                You can also use this to group a series of actions both timed and otherwise, connections/etc within a given reactor, and then create a meta-reactor to control the multiple reactors. Reactors, all the way down.
+                            </p>
+                            <p>
+                                See, Twisted has multiple types of reactors - there are reactors based on select (the default), GTK, Cocoa (PyObjc), etc. Each reactor manages the scheduling and execution of the tasks added to it in it’s on unique style, but implement a common <a href="http://twistedmatrix.com/documents/8.2.0/api/twisted.internet.interfaces.html">interface</a>. Application code should not <b>care</b> what reactor is running - the reactor is an abstraction above other, some operating system optimized polling/looping mechanisms. For example, GTK+ looping and polling, select on Linux/etc.
+                            </p>
+                            <p>
+                                Quoting Glyph:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    The idea of all this is that Twisted code is at the top of the food chain.<br>
+                                    GTK+ networking code can only run in GTK+ programs, kqueue networking code can<br>
+                                    only run on FreeBSD machines, but Twisted networking code can run anywhere it<br>
+                                    can get its hands on something that looks even vaguely like select(). If you<br>
+                                    want a Windows desktop program and a UNIX server program to run the same<br>
+                                    networking code, but have radically different event APIs under the covers for<br>
+                                    good performance, Twisted has you covered.
+                                </p>
+                            </blockquote>
+                            <p>
+                                You can install a given reactor by doing the from twisted.xxx.reactor_name and calling the install() method (which is all twisted.internet.reactor does). The preferred method is to use the “–reactor” argument to the twistd/trial tools.
+                            </p>
+                            <p>
+                                Twisted is fundamentally a networking stack: it’s built to solve non computationally intensive tasks that require a lot of waiting and polling for data: networking fits perfectly into this. With additions - it can also serve as a platform for computationally intensive/distributed applications. For example, the <a href="https://launchpad.net/ampoule/">ampoule</a> add on.
+                            </p>
+                            <p>
+                                In the networking sense: Twisted is perfect as long as you can deconstruct and rethink the way you solve day to day problems, remove or rethink blocking code, switch your application model to something event/message driven.
+                            </p>
+                            <p>
+                                Admittedly; Twisted isn’t for me (right now) - but with time, it could be, and it could work great for your application today. It has libraries for just about any protocol you could possibly ask for. It’s code base is <b>huge</b> and actually has some pretty cool code inside of it. The catch is - you don’t port an application <b>to</b> Twisted: You write a Twisted application in most cases.
+                            </p>
+                            <p>
+                                However; it can also be hard to approach - both within the code, and the documentation. You see questions pop up all the time “I think Twisted does this” - and while it probably does it could take you awhile just to grok what it is to be Twisted.
+                            </p>
+                            <p>
+                                For example - dumb down the examples. While the finger tutorial is “the introduction” starting down on a level where you take a normal, single threaded application (perhaps using generators), port it to threads, point out the issues there, and then port it to twisted, using as little “twisted magic” as possible.
+                            </p>
+                            <p>
+                                This isn’t to say it’s impossible to grok; but helping walk people through learning how to begin to think asynchronously, rather than explaining the esoteric or the One True way of doing something, consider the positive feedback that Steve Holden’s “Teach Me Twisted” got (summary <a href="http://catherinedevlin.blogspot.com/2008/03/teach-me-twisted.html">here</a>). Assume most people can’t spell asynchronous, and build it up.
+                            </p>
+                            <p>
+                                The Django documentation is probably one of my favorite examples of this - it starts very simple and very approachable and walks the user through everything “from the beginning”.
+                            </p>
+                            <h3>
+                                Related Links
+                            </h3>
+                            <ul>
+                                <li>
+                                    <a href="http://stackoverflow.com/questions/80617/asychronous-programming-in-python-twisted/81456#81456">http://stackoverflow.com/questions/80617/asychronous-programming-in-python-twisted/81456#81456</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.usenix.org/events/usenix03/tech/freenix03/full_papers/lefkowitz/lefkowitz_html/index.html">http://www.usenix.org/events/usenix03/tech/freenix03/full_papers/lefkowitz/lefkowitz_html/index.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://mumak.net/stuff/Twisted-intro.html">http://mumak.net/stuff/Twisted-intro.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://sluggo.scrapping.cc/python/Twisted_finger_gentle.txt">http://sluggo.scrapping.cc/python/Twisted_finger_gentle.txt</a>
+                                </li>
+                                <li>
+                                    <a href="http://Twistedmatrix.com/projects/core/documentation/howto/defer.html">http://Twistedmatrix.com/projects/core/documentation/howto/defer.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://Twistedmatrix.com/projects/core/documentation/howto/gendefer.html">http://Twistedmatrix.com/projects/core/documentation/howto/gendefer.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://Twistedmatrix.com/projects/core/documentation/howto/async.html">http://Twistedmatrix.com/projects/core/documentation/howto/async.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://Twistedmatrix.com/projects/core/documentation/howto/reactor-basics.html">http://Twistedmatrix.com/projects/core/documentation/howto/reactor-basics.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://www.nightmare.com/pythonwin/async_sockets.html">http://www.nightmare.com/pythonwin/async_sockets.html</a>
+                                </li>
+                                <li>
+                                    <a href="http://enthusiasm.cozy.org/archives/2009/02/twisted-nevermind">http://enthusiasm.cozy.org/archives/2009/02/twisted-nevermind</a>
+                                </li>
+                            </ul>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://jessenoller.com/2009/02/11/twisted-hello-asynchronous-programming/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Jessenollercom+%28jessenoller.com%29">http://jessenoller.com/2009/02/11/twisted-hello-asynchronous-programming/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Jessenollercom+%28jessenoller.com%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

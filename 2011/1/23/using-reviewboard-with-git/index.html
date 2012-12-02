@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Using Reviewboard with Git
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 24 Jan 2011 04:25:40 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-23T23:25:40-04:00">
+                    <meta itemprop="dateModified" content="2011-01-23T23:25:40-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-24T03:25:40+00:00">Jan 24</time>
+                    <h2 itemprop="title">
+                        Using Reviewboard with Git
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/288a5bd8520fdd35">
+                        <blockquote>
+                            <p>
+                                <a href="http://www.reviewboard.org/">Reviewboard</a> is a great tool for managing the process of Code Reviews. It has pretty good git support, but it might not be obvious what the best way is to use it. At work, I have a couple of different ways of pushing up code for reviews, which I'll talk about.
+                            </p>
+                            <p>
+                                This guide is assuming you are using your own bare repositories, on the server hosting the Reviewboard instance. It's mainly here so that I can remember how to do this next time I need to. Also, thanks to <a href="http://traviscline.com/blog/">Travis Cline</a> for the initial pointers for this post.
+                            </p>
+                            <h2>
+                                Setting up Reviewboard
+                            </h2>
+                            <p>
+                                Once you have Reviewboard installed, you need to add a Repository in the admin, which is located at <code>/admin/db/scmtools/repository/</code>. The required fields have the following values:
+                            </p>
+                            <ul>
+                                <li>Name: The name of the project
+                                </li>
+                                <li>Hosting service: Custom
+                                </li>
+                                <li>Repository type: Git
+                                </li>
+                                <li>Path: The path to the local checkout of the git repository (ex. /var/lib/git/name)
+                                </li>
+                                <li>Mirror Path: The <strong>Url</strong> to the repository (ex. ssh://git@your.server.com/var/lib/git/name)
+                                </li>
+                            </ul>
+                            <p>
+                                The <a href="http://www.reviewboard.org/docs/manual/dev/admin/management/repositories/#git">Repository Documentation</a> has more about why you need this screwy configuration.
+                            </p>
+                            <h2>
+                                post Review
+                            </h2>
+                            <p>
+                                Before we get started, you're going to want to get the <a href="http://www.reviewboard.org/docs/manual/dev/users/tools/post-review/">post-review</a> tool that works along with Reviewboard. The easiest way to get it is to <code>pip install RBTools</code>.
+                            </p>
+                            <h2>
+                                Pointing to the right Reviewboard Instance
+                            </h2>
+                            <p>
+                                The easiest way to make sure your pointing at the right Reviewboard instance is the <em>.reviewboardrc</em> file in your home directory. You only need to add one line to that file, which is:
+                            </p>
+                            <div>
+                                <pre>
+<span>REVIEWBOARD_URL</span> <span>=</span> <span>"https://path.to.your.instance"</span>
+</pre>
+                            </div>
+                            <p>
+                                If you are working with multiple instances that map to different repos, you can set the Reviewboard instance for the specific repo as well:
+                            </p>
+                            <div>
+                                <pre>
+<span>git</span> <span>config</span> <span>reviewboard</span><span>.</span><span>url</span> <span>https:</span><span>//</span><span>path</span><span>.</span><span>to</span><span>.</span><span>your</span><span>.</span><span>instance</span>
+</pre>
+                            </div>
+                            <h2>
+                                Reviewing a Branch
+                            </h2>
+                            <p>
+                                Alright, now you are all setup to start posting reviews. The easiest way to do that is to branch off of master, and start committing. If you are following something similar to <a href="http://nvie.com/posts/a-successful-git-branching-model/">this awesome branching model</a>, this should be your normal workflow. Once your branch is ready to be merged back into your project, you want to get it reviewed. You can send a review equivalent to "this branch diffed against master" like so:
+                            </p>
+                            <div>
+                                <pre>
+<span>post</span><span>-</span><span>review</span> <span>--</span><span>guess</span><span>-</span><span>summary</span> <span>--</span><span>guess</span><span>-</span><span>description</span>
+</pre>
+                            </div>
+                            <h2>
+                                Reviewing one commit
+                            </h2>
+                            <p>
+                                Another thing I find myself doing a lot is working on my master, and only having one commit to review. In theory this should probably be done on a bugfix branch, but such is life. There are other good use cases for only reviewing the latest commit as well. It's done like so:
+                            </p>
+                            <div>
+                                <pre>
+<span>post</span><span>-</span><span>review</span> <span>--</span><span>guess</span><span>-</span><span>summary</span> <span>--</span><span>guess</span><span>-</span><span>description</span> <span>--</span><span>parent</span><span>=</span><span>HEAD</span><span>^</span>
+</pre>
+                            </div>
+                            <h2>
+                                Reviewing arbitrary number of commits
+                            </h2>
+                            <p>
+                                It's also possible to review any number of previous commits. It looks a lot like the previous command:
+                            </p>
+                            <div>
+                                <pre>
+<span>post</span><span>-</span><span>review</span> <span>-</span><span>o</span> <span>--</span><span>guess</span><span>-</span><span>summary</span> <span>--</span><span>guess</span><span>-</span><span>description</span> <span>--</span><span>parent</span><span>=</span><span>HEAD</span><span>~</span><span>4</span> <span>#To review last 4 commits.</span>
+</pre>
+                            </div>
+                            <p>
+                                If you are familiar with git, you will understand that there is a lot more that you can do with the --parent argument. I'll leave the possibilities up to your imagination.
+                            </p>
+                            <h2>
+                                Other useful post-review flags
+                            </h2>
+                            <p>
+                                The are a couple of other useful post-review flags, that I use from time to time.
+                            </p>
+                            <ul>
+                                <li>-d This basically outputs all of the git commands that post-review is using to generate the diffs. It's a great way to figure out what's going wrong when it can't find a diff.
+                                </li>
+                                <li>-o: This opens a web browser to the posted review once it's done. Great for easily making the review public.
+                                </li>
+                            </ul>
+                            <p>
+                                I hope this makes it a little easier for you to set up a git repository with reviewboard.
+                            </p><img src="http://feeds.feedburner.com/~r/EricsThoughts/~4/mRNnFsBd_10" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://ericholscher.com/blog/2011/jan/24/using-reviewboard-git/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EricsThoughts+%28Eric%27s+Thoughts%29">http://ericholscher.com/blog/2011/jan/24/using-reviewboard-git/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EricsThoughts+%28Eric%27s+Thoughts%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

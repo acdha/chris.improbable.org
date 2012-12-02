@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Benchmarking twisted
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 02 Mar 2010 13:50:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-01T10:05:00-04:00">
+                    <meta itemprop="dateModified" content="2010-03-01T10:05:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-01T14:05:00+00:00">Mar 01</time>
+                    <h2 itemprop="title">
+                        Benchmarking twisted
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/d009577a01d497e4">
+                        <blockquote>
+                            <p>
+                                Hello.
+                            </p>
+                            <p>
+                                I recently did some benchmarking of <a href="http://twistedmatrix.com">twisted</a> on top of PyPy. For the very impatient: <b>PyPy is up to 285% faster than CPython</b>. For more patient people, there is a full explanation of what I did and how I performed measurments, so they can judge themselves.
+                            </p>
+                            <p>
+                                The benchmarks are living in <a href="https://code.launchpad.net/~exarkun/+junk/twisted-benchmarks">twisted-benchmarks</a> and were mostly written by <a href="http://jcalderone.livejournal.com/">Jean Paul Calderone</a>. Even though he called them "initial exploratory investigation into a potential direction for future development resulting in performance oriented metrics guiding the process of optimization and avoidance of complexity regressions", they're still much much better than average benchmarks found out there.
+                            </p>
+                            <p>
+                                The methodology was to run each benchmark for quite some time (about 1 minute), measuring number of requests each 5s. Then I looked at <a href="http://codespeak.net/svn/user/fijal/txt/twisted-data.txt">dump</a> of data and substracted some time it took for JIT-capable interpreters to warm up (up to 15s), averaging everything after that. Averages of requests per second are in the table below (the higher the better):
+                            </p>
+                            <table border="1">
+                                <colgroup>
+                                    <col width="19%">
+                                    <col width="16%">
+                                    <col width="31%">
+                                    <col width="34%">
+                                </colgroup>
+                                <tbody valign="top">
+                                    <tr>
+                                        <td>
+                                            benchname
+                                        </td>
+                                        <td>
+                                            CPython
+                                        </td>
+                                        <td>
+                                            Unladen swallow
+                                        </td>
+                                        <td>
+                                            PyPy
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            names
+                                        </td>
+                                        <td style="background-color:red">
+                                            10930
+                                        </td>
+                                        <td>
+                                            11940 (9% faster)
+                                        </td>
+                                        <td style="background-color:#0C0">
+                                            15429 (40% faster)
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            pb
+                                        </td>
+                                        <td style="background-color:red">
+                                            1705
+                                        </td>
+                                        <td>
+                                            2280 (34% faster)
+                                        </td>
+                                        <td style="background-color:#0C0">
+                                            3029 (78% faster)
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            iterations
+                                        </td>
+                                        <td style="background-color:red">
+                                            75569
+                                        </td>
+                                        <td>
+                                            94554 (25% faster)
+                                        </td>
+                                        <td style="background-color:#0C0">
+                                            291066 (285% faster)
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            accept
+                                        </td>
+                                        <td>
+                                            2176
+                                        </td>
+                                        <td>
+                                            2166 (same speed)
+                                        </td>
+                                        <td>
+                                            2290 (5% faster)
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            web
+                                        </td>
+                                        <td>
+                                            879
+                                        </td>
+                                        <td>
+                                            854 (3% slower)
+                                        </td>
+                                        <td style="background-color:#0C0">
+                                            1040 (18% faster)
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            tcp
+                                        </td>
+                                        <td>
+                                            105M
+                                        </td>
+                                        <td style="background-color:#0C0">
+                                            119M (7% faster)
+                                        </td>
+                                        <td style="background-color:red">
+                                            60M (46% slower)
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p>
+                                To reproduce, run each benchmark with:
+                            </p>
+                            <blockquote>
+                                benchname.py -n 12 -d 5
+                            </blockquote>
+                            <p>
+                                <em>WARNING</em>: running tcp-based benchmarks that open new connection for each request (web &amp; accept) can exhaust number of some kernel structures, limit <strong>n</strong> or wait until next run if you see drops in request per second.
+                            </p>
+                            <p>
+                                The first obvious thing is that various benchmarks are more or less amenable to speedups by JIT compilation. Accept and tcp getting smallest speedups, if at all. This is understandable, since JIT is mostly about reducing interpretation and frame overhead, which is probably not large when it comes to accepting connections. However, if you actually loop around, doing something, JIT can give you a lot of speedup.
+                            </p>
+                            <p>
+                                The other obvious thing is that <b>PyPy is the fastest python interpreter here</b>, almost across-the board (Jython and IronPython won't run twisted), except for raw tcp throughput. However, speedups can vary and I expect this to improve after the release, as there are points, where PyPy can be improved. Regarding raw tcp throughput - this can be a problem for some applications and we're looking forward to improve this particular bit.
+                            </p>
+                            <p>
+                                The main reason to use twisted for this comparison is a lot of support from twisted team and JP Calderone in particular, especially when it comes to providing benchmarks. If some open source project wants to be looked at by PyPy team, please <b>provide a reasonable set of benchmarks and infrastructure</b>.
+                            </p>
+                            <p>
+                                If, however, you're a closed source project fighting with performance problems of Python, we're providing <b>contracting for investigating opportunities</b>, how PyPy and not only PyPy, can speed up your project.
+                            </p>
+                            <p>
+                                Cheers,<br>
+                                fijal
+                            </p><br>
+                            <p>
+                                Benchmark descriptions:
+                            </p>
+                            <ul>
+                                <li>
+                                    <em>names</em> - simple DNS server
+                                </li>
+                                <li>
+                                    <em>web</em> - simple http hello world server
+                                </li>
+                                <li>
+                                    <em>pb</em> - perspective broker, RPC mechanism for twisted
+                                </li>
+                                <li>
+                                    <em>iterations</em> - empty twisted loop
+                                </li>
+                                <li>
+                                    <em>accept</em> - number of tcp connections accepted per second
+                                </li>
+                                <li>
+                                    <em>tcp</em> - raw socket transfer throughput
+                                </li>
+                            </ul>
+                            <p>
+                                Used interpreters:
+                            </p>
+                            <ul>
+                                <li>CPython 2.6.2 - as packaged by ubuntu
+                                </li>
+                                <li>Unladen swallow svn trunk, revision 1109
+                                </li>
+                                <li>PyPy svn trunk, revision 71439
+                                </li>
+                            </ul>
+                            <p>
+                                Twisted version used: svn trunk, revision 28580
+                            </p>
+                            <p>
+                                Machine: unfortunately 32bit virtual-machine under qemu, running ubuntu karmic, on top of Quad core intel Q9550 with 6M cache. Courtesy of Michael Schneider.
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3971202189709462152-5058108566628405592?l=morepypy.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/PyPyStatusBlog/~4/CLQ36wRZkL4" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://morepypy.blogspot.com/2010/03/hello.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29">http://morepypy.blogspot.com/2010/03/hello.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+PyPyStatusBlog+%28PyPy+Status+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

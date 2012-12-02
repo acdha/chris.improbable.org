@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Slicing your 2D class/function matrix vertically or horizontally
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 09 Apr 2010 20:16:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-09T16:16:00-04:00">
+                    <meta itemprop="dateModified" content="2010-04-09T16:16:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-09T20:16:00+00:00">Apr 09</time>
+                    <h2 itemprop="title">
+                        Slicing your 2D class/function matrix vertically or horizontally
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/1c392131a154ef63">
+                        <blockquote>
+                            <div>
+                                <p>
+                                    Today, I want to talk about a problem that I don’t have a good solution for, and throw the floor open in the hope that someone else does. &nbsp;Teach me, O commenters.
+                                </p>
+                                <p>
+                                    Suppose your program has to build a tree structure — as the result of parsing a query, say. &nbsp;And suppose that, having built the tree, you want to do several different operations that involve walking that tree. &nbsp;How do you design that program?
+                                </p>
+                                <p>
+                                    To make it concrete, consider my (rather aged) package&nbsp;<a href="http://zing.z3950.org/cql/java/">CQL-Java</a>, which — get ready for a big surprise — provides a CQL parser in Java. &nbsp;<a href="http://zing.z3950.org/cql/intro.html">CQL is a conceptually simple but very precise and expressive query language</a> used in information retrieval, but for our current purposes all we need to know is that it supports structured boolean queries like these:
+                                </p>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000"><span style="color:#800000">kernighan</span></span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">kernighan and ritchie</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">(kernighan and ritchie) or fowler</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">kernighan and (ritchie or pike)</span>
+                                </div>
+                                <div>
+                                    Our task is to parse such queries, and to be able to render them out either in an XML format called XCQL or in Index Data’s ugly but functional&nbsp;<a href="http://www.indexdata.com/yaz/doc/tools.html#PQF">Prefix Query Format</a>.
+                                </div>
+                                <p style="text-align:center">
+                                    <a href="http://reprog.files.wordpress.com/2010/04/minimal-sushi.jpg"><img title="minimal-sushi" src="http://reprog.files.wordpress.com/2010/04/minimal-sushi.jpg?w=367&amp;h=180" alt="" width="367" height="180"></a>
+                                </p>
+                                <p>
+                                    I guess we can all agree that we want an API something like this:
+                                </p>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">class CQLParser {</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">Node compile(String textualQuery);</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">class Node {</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">String toXCQL();</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">String toPQF();</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <p>
+                                    And that the Node object returned from the parser is the root of a tree of nodes which represent the parse tree, where nodes can be of types And, Or and Term. &nbsp;(In reality there are lots of other kinds of node, too, the we can ignore them for our purposes.)
+                                </p>
+                                <p>
+                                    Assuming that we’ve written the actual parser, the question becomes, where do we put the code that generates the formatted textual output that becomes the XCQL and PQF? &nbsp;In the old days, especially if we were used to writing C, we’d have a pair of functions defined on the Node class, both switching on the node’s type and looking more or less like this:
+                                </p>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">Class Node {</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000"><span style="color:#800000">String toPQF() {</span></span>
+                                </div>
+                                <div style="padding-left:90px">
+                                    <span style="color:#800000">if (type == AND) {</span>
+                                </div>
+                                <div style="padding-left:120px">
+                                    <span style="color:#800000">return concat(“@and “, left.toPQF(), ” “, right.toPQF());</span>
+                                </div>
+                                <div style="padding-left:90px">
+                                    <span style="color:#800000">} else if (type == OR) {</span>
+                                </div>
+                                <div style="padding-left:120px">
+                                    <span style="color:#800000">return concat(“@or “, left.toPQF(), ” “, right.toPQF());</span>
+                                </div>
+                                <div style="padding-left:90px">
+                                    <span style="color:#800000">} else {</span>
+                                </div>
+                                <div style="padding-left:120px">
+                                    <span style="color:#800000">return term;</span>
+                                </div>
+                                <div style="padding-left:90px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <p>
+                                    These days, of course, no-one would be so crass. &nbsp;We’ve all read <a href="http://reprog.wordpress.com/2010/03/28/what-is-simplicity-in-programming/">Fowler’s</a> <em><a href="http://reprog.wordpress.com/2010/03/28/what-is-simplicity-in-programming/">Refactoring</a></em>, and we know that Switch Statements Are Evil. &nbsp;In particular, we’ve read Fowler’s page 223, the introduction to his <strong>Replace Type Code with Subclasses</strong> refactoring, and we remember that it says:
+                                </p>
+                                <blockquote>
+                                    <p>
+                                        Switches or if-then-else constructs [...] test the value of the type code and then execute different code depending on the value of the type code. &nbsp;Such conditionals need to be refactored with <strong>Replace Conditional with Polymorphism</strong> [...] &nbsp;The advantage of <strong>Replace Type Code with Subclasses</strong> is that it moves knowledge of the variant behaviour from clients of the class to the class itself. &nbsp;If I add new variants, all I need to do is add a subclass. &nbsp;Without polymorphism I have to find all the conditionals and change those.
+                                    </p>
+                                </blockquote>
+                                <p>
+                                    So we’d be more likely to make Node an abstract class, and derive three subclasses, AndNode, OrNode and TermNode. &nbsp;Then each of those subclasses would have its own little <span style="color:#800000">toPQF()</span> method — and <span style="color:#800000">toXCQL()</span> — and the Evil Switch Statement is avoided:
+                                </p>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000"><span style="color:#800000"><span style="color:#800000">Class AndNode {</span></span></span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">String toPQF() {</span>
+                                </div>
+                                <div style="padding-left:90px">
+                                    <span style="color:#800000">return concat(“@and “, left.toPQF(), ” “, right.toPQF());</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000"><br></span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">Class OrNode {</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">String toPQF() {</span>
+                                </div>
+                                <div style="padding-left:90px">
+                                    <span style="color:#800000">return concat(“@or “, left.toPQF(), ” “, right.toPQF());</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000"><br></span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">Class TermNode {</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">String toPQF() {</span>
+                                </div>
+                                <div style="padding-left:90px">
+                                    <span style="color:#800000">return term</span>
+                                </div>
+                                <div style="padding-left:60px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <div style="padding-left:30px">
+                                    <span style="color:#800000">}</span>
+                                </div>
+                                <p>
+                                    And all is well with the world.
+                                </p>
+                                <p>
+                                    <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/roll.jpg"><img title="Roll" src="http://reprog.files.wordpress.com/2010/04/roll.jpg?w=500&amp;h=333" alt="" width="500" height="333"></a>
+                                </p>
+                                <p>
+                                    Or is it?
+                                </p>
+                                <p>
+                                    It’s certainly true, as Fowler points out, that if you later need to add support for a new node-type — let’s say a unary NOT node — you can do that by making a single new subtype, NotNode, say, and tweaking the parser to generate it. &nbsp;Then the PQF generator is extended by the addition of <span style="color:#800000">NotNode::toPQF()</span>, which returns <span style="color:#800000">concat(“@not “, subtree.cql())</span>. &nbsp;It’s neat, clean and satisfying.
+                                </p>
+                                <p>
+                                    The problem comes when you want to add a new back-end — for example, when you want to be able to translate CQL into the query language of the <a href="http://lucene.apache.org/solr/">Solr</a> database. &nbsp;Now that our Node class is split into four subclasses (and in reality, many more), we have to mess with all of those subclasses, adding a <span style="color:#800000">toSolr()</span> method to each of them. &nbsp;Whereas if we’d stayed with the old-fashioned single-node-class-with-a-type-indicator representation, we’d have to add only a single new method, <span style="color:#800000">Node::toSolr()</span>.
+                                </p>
+                                <p>
+                                    In fact, I am going to take the low road here, and rewrite the Fowler quote above:
+                                </p>
+                                <blockquote>
+                                    <p>
+                                        Such class hierarchies need to be refactored with&nbsp;<strong>Replace&nbsp;Polymorphism&nbsp;<span style="font-weight:normal"><strong>with</strong> <strong>Conditional</strong> [...] &nbsp;The advantage of&nbsp;<strong>Replace&nbsp;Subclasses&nbsp;with&nbsp;Type Code&nbsp;<span style="font-weight:normal">is that it centralises knowledge of the variant behaviour from being spread among many classes to concentrated in one. &nbsp;If I add new operations, all I need to do is add a method. &nbsp;With polymorphism I have to find all the subclasses and change those.</span></strong></span></strong>
+                                    </p>
+                                </blockquote>
+                                <p>
+                                    <a style="text-decoration:none" href="http://reprog.files.wordpress.com/2010/04/pag1967sushi2-499x334.jpg"><img title="PAG1967sushi2-499x334" src="http://reprog.files.wordpress.com/2010/04/pag1967sushi2-499x334.jpg?w=499&amp;h=334" alt="" width="499" height="334"></a>
+                                </p>
+                                <p>
+                                    To be clear, I am <em>not</em> saying that the single-class-with-type-indicator approach is always and necessarily better. &nbsp;But I am a bit mystified that the subclasses-with-polymorphism is so universally and uncritically accepted as The Right Way, All The Time.
+                                </p>
+                                <p>
+                                    Even Fowler, who to his credit is usually careful not to insist on a One Right Way, seems to lose his moral compass when it comes to this particular design choice. &nbsp;Although I’ve been critical of the more unthinking Fowlerite followers, I actually really like lots of things about Fowler himself: for example, his catalog of refactorings includes several complementary pairs, showing that he doesn’t in general consider that there is One Right Way. &nbsp;(Pairs include:&nbsp;<strong>Extract Method</strong> vs. <strong>Inline Method</strong>; <strong>Hide Delegate</strong> vs. <strong>Remove Middle Man</strong>; <strong>Change Value to Reference</strong> vs. <strong>Change Reference to Value</strong>.) &nbsp;But against this backdrop, his insistence that conditionals should <em>always</em> be replaced by polymorphism (note the word “must” in the quote above) is all the more puzzling.
+                                </p>
+                                <p>
+                                    The situation is this: when you have to&nbsp;implement <em>n</em> functions (such as the&nbsp;<span style="color:#800000">toPQF()</span>,&nbsp;<span style="color:#800000">toXCQL()</span> and&nbsp;<span style="color:#800000">toSolr()</span> methods above)&nbsp;across a class hierarchy of&nbsp;<em>m</em> classes (such as the AndNode, OrNode, TermNode and NotNode classes&nbsp;above), you need <em>n</em>×<em>m</em> code fragments — one to implement each function for each class. &nbsp;The old-fashioned approach uses <em>n</em> functions each consisting of a switch statement covering the <em>m</em> versions; the fashionable approach uses&nbsp;<em>n</em>×<em>m</em> small methods, split across the <em>m</em> classes — which in practice always seems to mean <em>m</em> different source files, at least if you’re writing Java. &nbsp;It seems to me that the choice of which is better depends on the relative sizes of <em>n</em> and <em>m</em>, and on how likely each is to change. &nbsp;If you’re going to need lots of new types, then, yes, a class per type is the way to go; but if the set of types is fixed (as in the CQL parser where the structure of the parse tree is determined by the formal specification of CQL itself), and if many new functions are likely to be needed, then the old way may be the best.
+                                </p>
+                                <p>
+                                    In other words, you can slice your two-dimensional code-fragment matrix either&nbsp;vertically&nbsp;into classes, or&nbsp;horizontally&nbsp;into functions. &nbsp;It seems obvious to me that different slicing directions are going to be better in different circumstances. &nbsp;A reflexive <strong>Replace Conditional with Polymorphism</strong> reaction is not going to help. &nbsp;(And when did the switch statement become synonymous with evil, anyway?)
+                                </p>
+                                <p>
+                                    <a href="http://reprog.files.wordpress.com/2010/04/inside-out-maki-roll_0264.jpg"><img title="inside-out-maki-roll_0264" src="http://reprog.files.wordpress.com/2010/04/inside-out-maki-roll_0264.jpg?w=500&amp;h=375" alt="" width="500" height="375"></a>
+                                </p>
+                                <p>
+                                    And what about the distressingly common situation where you don’t have access to the original source-code, only object code? &nbsp;What would you do if I’d distributed CQL-Java only as a&nbsp;<strong>.jar</strong> and not as source, and your job was to use it to generate Solr queries? &nbsp;How would you implement the&nbsp;<span style="color:#800000">toSolr()</span> method?
+                                </p>
+                                <p>
+                                    If you’re using Java, I don’t think you have any realistic option but to write a method like the first&nbsp;<span style="color:#800000">toPQF()</span> that I listed near the start — a method that takes a Node as an argument, then interrogates it to figure of which of the Node subtypes it really is, and switches on the result, invoking itself recursively as needed. &nbsp;So in that common case you’re back to square one anyway.
+                                </p>
+                                <p>
+                                    In more dynamic languages such as Perl, Python and Ruby, you can use the technique known variously as&nbsp;<a href="http://en.wikipedia.org/wiki/Monkey_patch">monkey-patching</a> or duck-punching: just go ahead and extend the classes. &nbsp;Add&nbsp;<span style="color:#800000">toSolr()</span> methods after the event for AndNode, OrNode and the rest. &nbsp;I did exactly this in 2007, in a Perl module called&nbsp;<a href="http://search.cpan.org/~MIRK/Net-Z3950-Simple2ZOOM/bin/simple2zoom">Simple2ZOOM</a>, not previously having heard of the technique, and consequently feeling a bit dirty — I used it to add a&nbsp;<span style="color:#800000">toCQL()</span>method to a parse-tree representing a PQF query, the opposite of what we’ve been considering here. Now that the technique has a name, I feel a bit better about it. &nbsp;It’s actually a pretty cool way to get things done, although like most powerful techniques, it is prone to abuse if not done with taste and judgement. &nbsp;(See also: Lisp macros, continuations, C++ templates, and well, pretty much all Perl programming techniques.) &nbsp;I think the jury is out on whether monkey-patching is a good approach for this problem or not.
+                                </p>
+                                <p>
+                                    Is there a better way? &nbsp;I don’t really know. &nbsp;The Ruby way would be to pass a <span style="text-decoration:line-through"><a href="http://reprog.wordpress.com/2010/02/27/closures-finally-explained/">closure</a></span><a href="http://reprog.wordpress.com/2010/02/27/closures-finally-explained/">block</a> into a parse-tree walker provided by the library. &nbsp;That closure would get invoked for each node in the parse-tree, and would … well, that’s where it falls down: each invocation of the closure would have to ask the node what its type is in order to know what to do, so we’re really back at the first version again.
+                                </p>
+                                <p>
+                                    OK, I’m done. &nbsp;Will someone please tell me what obvious idea I am missing?
+                                </p>
+                                <p>
+                                    <a href="http://reprog.files.wordpress.com/2010/04/uromaki-1024x768.jpg"><img title="uromaki 1024x768" src="http://reprog.files.wordpress.com/2010/04/uromaki-1024x768.jpg?w=500&amp;h=375" alt="" width="500" height="375"></a>
+                                </p>
+                                <h2>
+                                    Update (a couple of hours later)
+                                </h2>
+                                <p>
+                                    Quite a few people have suggested the Visitor pattern (from the Gang of Four book). &nbsp;The best exposition I’ve seen of this is in <a href="http://www.reddit.com/r/programming/comments/both0/is_polymorphism_always_the_answer_sometimes_it/c0ntnl6">munificent’s detailed comment at Reddit</a>, which I commend to you all. &nbsp;(Apart from anything else, he expounds both the pros and the cons of this approach).
+                                </p>
+                                <p>
+                                    I’m not wholly convinced that this is the cleanest and simplest approach, at least in dynamic languages; but it is, at least, and excellent workaround for static languages. &nbsp;For more thoughts on Visitor, see my earlier comment below in response to&nbsp;Phillip Howell.
+                                </p>
+                                <p>
+                                    Also: it turns out (also as mentioned by several commenters) that the conundrum I described here is not only a well-known one, it even has a name: <a href="http://en.wikipedia.org/wiki/Expression_Problem">the Expression Problem</a>.
+                                </p>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://reprog.wordpress.com/2010/04/09/slicing-your-2d-classfunction-matrix-vertically-or-horizontally">http://reprog.wordpress.com/2010/04/09/slicing-your-2d-classfunction-matrix-vertically-or-horizontally</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

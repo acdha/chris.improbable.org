@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Against rekeying
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 22 Mar 2010 16:20:13 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-22T12:20:13-04:00">
+                    <meta itemprop="dateModified" content="2010-03-22T12:20:13-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-22T16:20:13+00:00">Mar 22</time>
+                    <h2 itemprop="title">
+                        Against rekeying
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/323e1946a9bcc56d">
+                        <blockquote>
+                            It's IETF time again and recently I've reviewed a bunch of drafts concerned with cryptographic rekeying. In my opinion, rekeying is massively overrated, but apparently I've never bothered to comprehensively address the usual arguments. Now seems like as good a time as any...
+                            <p>
+                                As background, there are two major kinds of cryptographic keys:
+                            </p>
+                            <ul>
+                                <li>Long-term keys (e.g., your password or an SSL server's RSA key pair).
+                                </li>
+                                <li>Traffic keys used to encrypt and/or authenticate data in transit.
+                                </li>
+                            </ul>
+                            <p>
+                                For instance, in channel security protocols like SSL/TLS, SSH, or IPsec, you use your long-term keys to authenticate a cryptographic handshake which sets up the traffic keys which are then used to encrypt/MAC the data between the communicating peers. In other protocols, such as DNSSEC or X.509, long-term keys are used to directly protect data—this is particularly common in applications where data is signed and then published. Sometimes these situations shade into each other: even though TCP-MD5 is a channel security protocol, you use the shared key directly to authenticate the traffic. Even with TCP-AO, where you generate a separate key for each connection, connections are very long-lived so the traffic keys are very long-lived as well.
+                            </p>
+                            <p>
+                                All of the following rationales were recently seen in IETF submissions:
+                            </p>
+                            <p>
+                                <i>Key "strengthening".</i> If you change keys frequently, analytic or brute-force attackers need to do more work in order to maintain their access to valid keys. See, for instance: <a href="http://tools.ietf.org/search/draft-birkos-p2psip-security-key-refresh-00">draft-birkos-p2psip-security-key-refresh-00</a>:<br>
+                            </p>
+                            <blockquote>
+                                A secondary goal is to limit the amount of time available to attackers that may be using cryptanalysis in order to reveal private keys.
+                            </blockquote>
+                            <p>
+                                I've already <a href="http://www.educatedguesswork.org/2009/10/on_the_security_of_zsk_rollove.html">beat up</a> on this idea: unless you change keys incredibly frequently, you just don't get a significant level of security enhancement. For instance, changing keys daily is only about 9 bits more secure than changing them yearly.
+                            </p>
+                            <p>
+                                This rationale gets applied especially often in situations where for some reason you can't use a key as long as you would like, e.g., for packet size reasons or because you're using a key that the user has to remember.
+                            </p>
+                            <p>
+                                <i>Key exhaustion:</i> minimizing the amount of traffic available to the attacker protected with the same key. For instance: <a href="http://tools.ietf.org/html/draft-ietf-karp-design-guide-00">draft-ietf-karp-design-guide-00</a>:
+                            </p>
+                            <blockquote>
+                                Cryptographic keys must have a limited lifetime so that they are vulnerable against cryptanalysis attacks. Each time a key is employed, it generates a cipher text. In case of routing protocols the cipher text is the authentication data that is carried by the protocol packets. Using the same key repetitively allows an attacker to build up a store of cipher texts which can prove sufficient for a successful cryptanalysis of the key value.
+                            </blockquote>
+                            <p>
+                                This was true once upon a time, but now it's just cryptographic inertia (do you still type "sync; sync; sync"?). While it's not true that cryptographic algorithms can be used for an unlimited number of operations, the limits are extremely far out and mostly depend on the properties of the cryptographic modes rather than the algorithms themselves. For instance, in cipher block chaining mode, with a <i>b</i>-bit block, you can safely encrypt up to around <i>2^{b/2}</i> blocks. With a modern algorithm like AES, this means <i>2^{68}</i> bytes of data, which is a truly ridiculous number. Even in situations where there are limits (e.g., counter mode with a limited counter space), the threat is generally to the data rather than the key. When we're talking about asymmetric algorithms (public key encryption, digital signature, etc.) there's no realistic threat from processing an unlimited amount of data.
+                            </p>
+                            <ul>
+                                <li>Damage limitation If a key is disclosed, but you change it in the meantime, then you're only vulnerable during the time period before it is changed. (This is especially relevant sounding if the key is disclosed but you don't know about it). For instance <a href="http://tools.ietf.org/html/draft-ietf-karp-design-guide-00">draft-ietf-karp-design-guide-00</a>.
+                                    <blockquote>
+                                        Another reason for limiting the lifetime of a key is to minimize the damage from a compromised key. It is unlikely a user will discover an attacker has compromised his or her key if the attacker remains "passive." Relatively frequent key changes will limit any potential damage from compromised keys.
+                                    </blockquote>
+                                    <p>
+                                        This isn't totally crazy: obviously if you know that your key has been compromised, you should change it, so it's at least superficially plausible that if you think your key might have been compromised you should change it. But we need to ask how that could actually happen. You've got a 128-bit (or whatever) encryption key stuffed into some file on your hard drive. There are a few ways that key could become available to an attacker:
+                                    </p>
+                                    <ul>
+                                        <li>You could accidentally send it to them (e.g., cut-and-paste it into an AIM window [thanks to Chris Morrow for this vivid example]
+                                        </li>
+                                        <li>They could compromise your endpoint and steal it.
+                                        </li>
+                                        <li>They could gain temporary access, e.g., by bribing your staff.
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <p>
+                                So, in the second case, changing your keys doesn't help, since the attacker will just steal them. In the third case, it might help, if the relevant staffer has been fired, or they have to take a risk every time they steal a key, or something. On the other hand, if they have continuous access, then changing the key doesn't help. The first is a real risk, but despite my native paranoia it seems like realistically you would know if this happened, and just be able to change the key then, rather than worrying about whether it happened and you didn't know.
+                            </p>
+                            <p>
+                                Having a key leak and not know it is primarily (though not exclusively) a concern for keys used for confidentiality. In order to exploit a key used for authentication/integrity you need to inject traffic, so this is more likely to be noticed. By contrast, to exploit a key used for confidentiality you just need to watch passively. This can also be done retroactively, since disclosure of an encryption key at time T still compromises data encrypted before the key was disclosed. Note that we're talking about the direct use of a key here, not about intent: protocols which use a long-term RSA key to authenticate a DH exchange aren't vulnerable to passive attack from disclosure of the RSA key, even if the only purpose of the protocol is confidentiality.
+                            </p>
+                            <p>
+                                Moreover, if we follow this logic to its obvious conclusion we should be changing keys every few minutes; we don't, of course, because changing keys has costs (I'm also concerned that the very process of changing keys increases the risk for leakage, since you need more direct contact with the key management process). Without a mathematical model for the cost/benefit computation (I don't have anything more than handwaving just yet), I don't think it makes much sense to provide guidance that keys should be changed frequently.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.educatedguesswork.org/2010/03/against_rekeying.html">http://www.educatedguesswork.org/2010/03/against_rekeying.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

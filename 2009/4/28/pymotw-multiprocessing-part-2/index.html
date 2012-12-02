@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            PyMOTW: multiprocessing, part 2
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 28 Apr 2009 12:03:48 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-28T08:03:00-04:00">
+                    <meta itemprop="dateModified" content="2009-04-28T08:03:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-28T12:03:00+00:00">Apr 28</time>
+                    <h2 itemprop="title">
+                        PyMOTW: multiprocessing, part 2
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ae9b5cf642e43cd8">
+                        <blockquote>
+                            <div>
+                                <h1>
+                                    Communication between processes with multiprocessing
+                                </h1>
+                                <p>
+                                    <i>This is part 2 of coverage of the multiprocessing module. If you missed <a href="http://blog.doughellmann.com/2009/04/pymotw-multiprocessing-part-1.html">part one</a>, you may want to start there.</i>
+                                </p>
+                                <div>
+                                    <br>
+                                    <h2>
+                                        Passing Messages to Processes
+                                    </h2>
+                                    <p>
+                                        As with threads, a common use pattern for multiple processes is to divide a job up among several workers to run in parallel. A simple way to do that with <a title="Manage processes like threads." href="http://blog.doughellmann.com/index.html#module-multiprocessing"><tt><span>multiprocessing</span></tt></a> is to use Queues to pass messages back and forth. Any pickle-able object can pass through a <a title="Manage processes like threads." href="http://blog.doughellmann.com/index.html#module-multiprocessing"><tt><span>multiprocessing</span></tt></a> Queue.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><br><span>class</span> <span>MyFancyClass</span><span>(</span><span>object</span><span>):</span><br><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>name</span><span>):</span><br><span>self</span><span>.</span><span>name</span> <span>=</span> <span>name</span><br><br><span>def</span> <span>do_something</span><span>(</span><span>self</span><span>):</span><br><span>proc_name</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>current_process</span><span>()</span><span>.</span><span>name</span><br><span>print</span> <span>'Doing something fancy in </span><span>%s</span><span> for </span><span>%s</span><span>!'</span> <span>%</span> <span>(</span><span>proc_name</span><span>,</span> <span>self</span><span>.</span><span>name</span><span>)</span><br><br><br><span>def</span> <span>worker</span><span>(</span><span>q</span><span>):</span><br><span>obj</span> <span>=</span> <span>q</span><span>.</span><span>get</span><span>()</span><br><span>obj</span><span>.</span><span>do_something</span><span>()</span><br><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>queue</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Queue</span><span>()</span><br><br><span>p</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>worker</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>queue</span><span>,))</span><br><span>p</span><span>.</span><span>start</span><span>()</span><br><br><span>queue</span><span>.</span><span>put</span><span>(</span><span>MyFancyClass</span><span>(</span><span>'Fancy Dan'</span><span>))</span><br><br><span># Wait for the worker to finish</span><br><span>queue</span><span>.</span><span>close</span><span>()</span><br><span>queue</span><span>.</span><span>join_thread</span><span>()</span><br><span>p</span><span>.</span><span>join</span><span>()</span><br><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        This short example only passes a single message to a single worker, then the main process waits for the worker to finish.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_queue.py<br>Doing something fancy in Process-1 for Fancy Dan!
+</pre><br>
+                                    </div>
+                                    <p>
+                                        A more complex example shows how to manage several workers consuming data from the queue and passing results back to the parent process. The <em>poison pill</em> technique is used to stop the workers. After setting up the real tasks, the main program adds one “stop” value per worker to the job queue. When a worker encounters the special value, it breaks out of its processing loop.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><span>import</span> <span>time</span><br><br><span>class</span> <span>Consumer</span><span>(</span><span>multiprocessing</span><span>.</span><span>Process</span><span>):</span><br><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>task_queue</span><span>,</span> <span>result_queue</span><span>):</span><br><span>multiprocessing</span><span>.</span><span>Process</span><span>.</span><span>__init__</span><span>(</span><span>self</span><span>)</span><br><span>self</span><span>.</span><span>task_queue</span> <span>=</span> <span>task_queue</span><br><span>self</span><span>.</span><span>result_queue</span> <span>=</span> <span>result_queue</span><br><br><span>def</span> <span>run</span><span>(</span><span>self</span><span>):</span><br><span>proc_name</span> <span>=</span> <span>self</span><span>.</span><span>name</span><br><span>while</span> <span>True</span><span>:</span><br><span>next_task</span> <span>=</span> <span>self</span><span>.</span><span>task_queue</span><span>.</span><span>get</span><span>()</span><br><span>if</span> <span>next_task</span> <span>is</span> <span>None</span><span>:</span><br><span># Poison pill means we should exit</span><br><span>print</span> <span>'</span><span>%s</span><span>: Exiting'</span> <span>%</span> <span>proc_name</span><br><span>break</span><br><span>print</span> <span>'</span><span>%s</span><span>: </span><span>%s</span><span>'</span> <span>%</span> <span>(</span><span>proc_name</span><span>,</span> <span>next_task</span><span>)</span><br><span>answer</span> <span>=</span> <span>next_task</span><span>()</span><br><span>self</span><span>.</span><span>result_queue</span><span>.</span><span>put</span><span>(</span><span>answer</span><span>)</span><br><span>return</span><br><br><br><span>class</span> <span>Task</span><span>(</span><span>object</span><span>):</span><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>,</span> <span>a</span><span>,</span> <span>b</span><span>):</span><br><span>self</span><span>.</span><span>a</span> <span>=</span> <span>a</span><br><span>self</span><span>.</span><span>b</span> <span>=</span> <span>b</span><br><span>def</span> <span>__call__</span><span>(</span><span>self</span><span>):</span><br><span>time</span><span>.</span><span>sleep</span><span>(</span><span>0.1</span><span>)</span> <span># pretend to take some time to do our work</span><br><span>return</span> <span>'</span><span>%s</span><span> * </span><span>%s</span><span> = </span><span>%s</span><span>'</span> <span>%</span> <span>(</span><span>self</span><span>.</span><span>a</span><span>,</span> <span>self</span><span>.</span><span>b</span><span>,</span> <span>self</span><span>.</span><span>a</span> <span>*</span> <span>self</span><span>.</span><span>b</span><span>)</span><br><span>def</span> <span>__str__</span><span>(</span><span>self</span><span>):</span><br><span>return</span> <span>'</span><span>%s</span><span> * </span><span>%s</span><span>'</span> <span>%</span> <span>(</span><span>self</span><span>.</span><span>a</span><span>,</span> <span>self</span><span>.</span><span>b</span><span>)</span><br><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span># Establish communication queues</span><br><span>tasks</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Queue</span><span>()</span><br><span>results</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Queue</span><span>()</span><br><br><span># Start consumers</span><br><span>num_consumers</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>cpu_count</span><span>()</span> <span>*</span> <span>2</span><br><span>print</span> <span>'Creating </span><span>%d</span><span> consumers'</span> <span>%</span> <span>num_consumers</span><br><span>consumers</span> <span>=</span> <span>[</span> <span>Consumer</span><span>(</span><span>tasks</span><span>,</span> <span>results</span><span>)</span><br><span>for</span> <span>i</span> <span>in</span> <span>xrange</span><span>(</span><span>num_consumers</span><span>)</span> <span>]</span><br><span>for</span> <span>w</span> <span>in</span> <span>consumers</span><span>:</span><br><span>w</span><span>.</span><span>start</span><span>()</span><br><br><span># Enqueue jobs</span><br><span>num_jobs</span> <span>=</span> <span>10</span><br><span>for</span> <span>i</span> <span>in</span> <span>xrange</span><span>(</span><span>num_jobs</span><span>):</span><br><span>tasks</span><span>.</span><span>put</span><span>(</span><span>Task</span><span>(</span><span>i</span><span>,</span> <span>i</span><span>))</span><br><br><span># Add a poison pill for each consumer</span><br><span>for</span> <span>i</span> <span>in</span> <span>xrange</span><span>(</span><span>num_consumers</span><span>):</span><br><span>tasks</span><span>.</span><span>put</span><span>(</span><span>None</span><span>)</span><br><br><span># Start printing results</span><br><span>while</span> <span>num_jobs</span><span>:</span><br><span>result</span> <span>=</span> <span>results</span><span>.</span><span>get</span><span>()</span><br><span>print</span> <span>'Result:'</span><span>,</span> <span>result</span><br><span>num_jobs</span> <span>-=</span> <span>1</span><br><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        Although the jobs enter the queue in order, since their execution is parallelized there is no guarantee about the order they will be completed.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_producer_consumer.py<br>Creating 4 consumers<br>Consumer-4: 3 * 3<br>Consumer-4: 7 * 7<br>Consumer-4: Exiting<br>Consumer-2: 1 * 1<br>Consumer-2: 6 * 6<br>Consumer-2: Exiting<br>Consumer-3: 0 * 0<br>Consumer-3: 5 * 5<br>Consumer-3: 8 * 8<br>Consumer-3: Exiting<br>Consumer-1: 2 * 2<br>Consumer-1: 4 * 4<br>Consumer-1: 9 * 9<br>Consumer-1: Exiting<br>Result: 0 * 0 = 0<br>Result: 1 * 1 = 1<br>Result: 2 * 2 = 4<br>Result: 3 * 3 = 9<br>Result: 5 * 5 = 25<br>Result: 4 * 4 = 16<br>Result: 6 * 6 = 36<br>Result: 7 * 7 = 49<br>Result: 8 * 8 = 64<br>Result: 9 * 9 = 81
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Signaling between Processes with Event objects
+                                    </h2>
+                                    <p>
+                                        Events provide a simple way to communicate state information between processes. An event can be toggled between set and unset states. Users of the event object can wait for it to change from unset to set, using an optional timeout value.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><span>import</span> <span>time</span><br><br><span>def</span> <span>wait_for_event</span><span>(</span><span>e</span><span>):</span><br><span>"""Wait for the event to be set before doing anything"""</span><br><span>print</span> <span>'wait_for_event: starting'</span><br><span>e</span><span>.</span><span>wait</span><span>()</span><br><span>print</span> <span>'wait_for_event: e.is_set()-&gt;'</span><span>,</span> <span>e</span><span>.</span><span>is_set</span><span>()</span><br><br><span>def</span> <span>wait_for_event_timeout</span><span>(</span><span>e</span><span>,</span> <span>t</span><span>):</span><br><span>"""Wait t seconds and then timeout"""</span><br><span>print</span> <span>'wait_for_event_timeout: starting'</span><br><span>e</span><span>.</span><span>wait</span><span>(</span><span>t</span><span>)</span><br><span>print</span> <span>'wait_for_event_timeout: e.is_set()-&gt;'</span><span>,</span> <span>e</span><span>.</span><span>is_set</span><span>()</span><br><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>e</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Event</span><span>()</span><br><span>w1</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>name</span><span>=</span><span>'block'</span><span>,</span> <br><span>target</span><span>=</span><span>wait_for_event</span><span>,</span><br><span>args</span><span>=</span><span>(</span><span>e</span><span>,))</span><br><span>w1</span><span>.</span><span>start</span><span>()</span><br><br><span>w2</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>name</span><span>=</span><span>'non-block'</span><span>,</span> <br><span>target</span><span>=</span><span>wait_for_event_timeout</span><span>,</span> <br><span>args</span><span>=</span><span>(</span><span>e</span><span>,</span> <span>2</span><span>))</span><br><span>w2</span><span>.</span><span>start</span><span>()</span><br><br><span>print</span> <span>'main: waiting before calling Event.set()'</span><br><span>time</span><span>.</span><span>sleep</span><span>(</span><span>3</span><span>)</span><br><span>e</span><span>.</span><span>set</span><span>()</span><br><span>print</span> <span>'main: event is set'</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        When <tt><span>wait()</span></tt> times out it returns without an error. The caller is responsible for checking the state of the event using <tt><span>is_set()</span></tt>.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_event.py<br>wait_for_event_timeout: starting<br>wait_for_event_timeout: e.is_set()-&gt; False<br>wait_for_event: starting<br>wait_for_event: e.is_set()-&gt; True<br>main: waiting before calling Event.set()<br>main: event is set
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Controlling access to resources with Lock
+                                    </h2>
+                                    <p>
+                                        In situations when a single resource needs to be shared between multiple processes, a Lock can be used to avoid conflicting accesses.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><span>import</span> <span>sys</span><br><br><span>def</span> <span>worker_with</span><span>(</span><span>lock</span><span>,</span> <span>stream</span><span>):</span><br><span>with</span> <span>lock</span><span>:</span><br><span>stream</span><span>.</span><span>write</span><span>(</span><span>'Lock acquired via with</span><span>\n</span><span>'</span><span>)</span><br><br><span>def</span> <span>worker_no_with</span><span>(</span><span>lock</span><span>,</span> <span>stream</span><span>):</span><br><span>lock</span><span>.</span><span>acquire</span><span>()</span><br><span>try</span><span>:</span><br><span>stream</span><span>.</span><span>write</span><span>(</span><span>'Lock acquired directly</span><span>\n</span><span>'</span><span>)</span><br><span>finally</span><span>:</span><br><span>lock</span><span>.</span><span>release</span><span>()</span><br><br><span>lock</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Lock</span><span>()</span><br><span>w</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>worker_with</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>lock</span><span>,</span> <span>sys</span><span>.</span><span>stdout</span><span>))</span><br><span>nw</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>worker_no_with</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>lock</span><span>,</span> <span>sys</span><span>.</span><span>stdout</span><span>))</span><br><br><span>w</span><span>.</span><span>start</span><span>()</span><br><span>nw</span><span>.</span><span>start</span><span>()</span><br><br><span>w</span><span>.</span><span>join</span><span>()</span><br><span>nw</span><span>.</span><span>join</span><span>()</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        In this example, the messages printed to stdout may be jumbled together if the two processes do not synchronize their access of the output stream with the lock.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_lock.py<br>Lock acquired via with<br>Lock acquired directly
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Synchronizing threads with a Condition object
+                                    </h2>
+                                    <p>
+                                        Condition objects let you synchronize parts of a workflow so that some run in parallel but others run sequentially, even if they are in separate processes.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><span>import</span> <span>time</span><br><br><span>def</span> <span>stage_1</span><span>(</span><span>cond</span><span>):</span><br><span>"""perform first stage of work, then notify stage_2 to continue"""</span><br><span>name</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>current_process</span><span>()</span><span>.</span><span>name</span><br><span>print</span> <span>'Starting'</span><span>,</span> <span>name</span><br><span>with</span> <span>cond</span><span>:</span><br><span>print</span> <span>'</span><span>%s</span><span> done and ready for stage 2'</span> <span>%</span> <span>name</span><br><span>cond</span><span>.</span><span>notify_all</span><span>()</span><br><br><span>def</span> <span>stage_2</span><span>(</span><span>cond</span><span>):</span><br><span>"""wait for the condition telling us stage_1 is done"""</span><br><span>name</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>current_process</span><span>()</span><span>.</span><span>name</span><br><span>print</span> <span>'Starting'</span><span>,</span> <span>name</span><br><span>with</span> <span>cond</span><span>:</span><br><span>cond</span><span>.</span><span>wait</span><span>()</span><br><span>print</span> <span>'</span><span>%s</span><span> running'</span> <span>%</span> <span>name</span><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>condition</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Condition</span><span>()</span><br><span>s1</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>name</span><span>=</span><span>'s1'</span><span>,</span> <span>target</span><span>=</span><span>stage_1</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>condition</span><span>,))</span><br><span>s2_clients</span> <span>=</span> <span>[</span><br><span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>name</span><span>=</span><span>'stage_2[</span><span>%d</span><span>]'</span> <span>%</span> <span>i</span><span>,</span> <span>target</span><span>=</span><span>stage_2</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>condition</span><span>,))</span><br><span>for</span> <span>i</span> <span>in</span> <span>range</span><span>(</span><span>1</span><span>,</span> <span>3</span><span>)</span><br><span>]</span><br><br><span>for</span> <span>c</span> <span>in</span> <span>s2_clients</span><span>:</span><br><span>c</span><span>.</span><span>start</span><span>()</span><br><span>time</span><span>.</span><span>sleep</span><span>(</span><span>1</span><span>)</span><br><span>s1</span><span>.</span><span>start</span><span>()</span><br><br><span>s1</span><span>.</span><span>join</span><span>()</span><br><span>for</span> <span>c</span> <span>in</span> <span>s2_clients</span><span>:</span><br><span>c</span><span>.</span><span>join</span><span>()</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        In this example, two process run stage two of a job in parallel once the first stage is done.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_condition.py<br>Starting s1<br>s1 done and ready for stage 2<br>Starting stage_2[1]<br>stage_2[1] running<br>Starting stage_2[2]<br>stage_2[2] running
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Controlling concurrent access to resources with a Semaphore
+                                    </h2>
+                                    <p>
+                                        Sometimes it is useful to allow more than one worker access to a resource at a time,<br>
+                                        while still limiting the overall number. For example, a connection pool might<br>
+                                        support a fixed number of simultaneous connections, or a network application<br>
+                                        might support a fixed number of concurrent downloads. A Semaphore is one way<br>
+                                        to manage those connections.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>random</span><br><span>import</span> <span>multiprocessing</span><br><span>import</span> <span>time</span><br><br><span>class</span> <span>ActivePool</span><span>(</span><span>object</span><span>):</span><br><span>def</span> <span>__init__</span><span>(</span><span>self</span><span>):</span><br><span>super</span><span>(</span><span>ActivePool</span><span>,</span> <span>self</span><span>)</span><span>.</span><span>__init__</span><span>()</span><br><span>self</span><span>.</span><span>mgr</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Manager</span><span>()</span><br><span>self</span><span>.</span><span>active</span> <span>=</span> <span>self</span><span>.</span><span>mgr</span><span>.</span><span>list</span><span>()</span><br><span>self</span><span>.</span><span>lock</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Lock</span><span>()</span><br><span>def</span> <span>makeActive</span><span>(</span><span>self</span><span>,</span> <span>name</span><span>):</span><br><span>with</span> <span>self</span><span>.</span><span>lock</span><span>:</span><br><span>self</span><span>.</span><span>active</span><span>.</span><span>append</span><span>(</span><span>name</span><span>)</span><br><span>def</span> <span>makeInactive</span><span>(</span><span>self</span><span>,</span> <span>name</span><span>):</span><br><span>with</span> <span>self</span><span>.</span><span>lock</span><span>:</span><br><span>self</span><span>.</span><span>active</span><span>.</span><span>remove</span><span>(</span><span>name</span><span>)</span><br><span>def</span> <span>__str__</span><span>(</span><span>self</span><span>):</span><br><span>with</span> <span>self</span><span>.</span><span>lock</span><span>:</span><br><span>return</span> <span>str</span><span>(</span><span>self</span><span>.</span><span>active</span><span>)</span><br><br><span>def</span> <span>worker</span><span>(</span><span>s</span><span>,</span> <span>pool</span><span>):</span><br><span>name</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>current_process</span><span>()</span><span>.</span><span>name</span><br><span>with</span> <span>s</span><span>:</span><br><span>pool</span><span>.</span><span>makeActive</span><span>(</span><span>name</span><span>)</span><br><span>print</span> <span>'Now running: </span><span>%s</span><span>'</span> <span>%</span> <span>str</span><span>(</span><span>pool</span><span>)</span><br><span>time</span><span>.</span><span>sleep</span><span>(</span><span>random</span><span>.</span><span>random</span><span>())</span><br><span>pool</span><span>.</span><span>makeInactive</span><span>(</span><span>name</span><span>)</span><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>pool</span> <span>=</span> <span>ActivePool</span><span>()</span><br><span>s</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Semaphore</span><span>(</span><span>3</span><span>)</span><br><span>jobs</span> <span>=</span> <span>[</span><br><span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>worker</span><span>,</span> <span>name</span><span>=</span><span>str</span><span>(</span><span>i</span><span>),</span> <span>args</span><span>=</span><span>(</span><span>s</span><span>,</span> <span>pool</span><span>))</span><br><span>for</span> <span>i</span> <span>in</span> <span>range</span><span>(</span><span>10</span><span>)</span><br><span>]</span><br><br><span>for</span> <span>j</span> <span>in</span> <span>jobs</span><span>:</span><br><span>j</span><span>.</span><span>start</span><span>()</span><br><br><span>for</span> <span>j</span> <span>in</span> <span>jobs</span><span>:</span><br><span>j</span><span>.</span><span>join</span><span>()</span><br><span>print</span> <span>'Now running: </span><span>%s</span><span>'</span> <span>%</span> <span>str</span><span>(</span><span>pool</span><span>)</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        In this example, the ActivePool class simply serves as a convenient way to<br>
+                                        track which process are running at a given moment. A real resource pool<br>
+                                        would probably allocate a connection or some other value to the newly active<br>
+                                        process, and reclaim the value when the task is done. Here, it is just used to<br>
+                                        hold the names of the active processes to show that only 3 are running<br>
+                                        concurrently.
+                                    </p>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_semaphore.py<br>Now running: ['3', '2', '0']<br>Now running: ['3', '2', '0']<br>Now running: ['0', '1', '5']<br>Now running: ['2', '0', '1']<br>Now running: ['0', '1', '4']<br>Now running: ['3', '2', '0']<br>Now running: ['0', '7', '6']<br>Now running: ['0', '4', '7']<br>Now running: ['7', '6', '8']<br>Now running: ['7', '8', '9']<br>Now running: ['7', '6', '8']<br>Now running: ['7', '6', '8']<br>Now running: ['7', '6', '8']<br>Now running: ['7', '6', '8']<br>Now running: ['7', '6', '8']<br>Now running: ['7', '6', '8']<br>Now running: ['7', '8', '9']<br>Now running: ['8', '9']<br>Now running: ['9']<br>Now running: []
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Managers
+                                    </h2>
+                                    <p>
+                                        In the previous example, the list of active processes is maintained centrally in the ActivePool instance via a special type of list object created by a Manager. The Manager is responsible for coordinating shared information state between all of its users. By creating the list through the manager, the list is updated in all processes when anyone modifies it. In addition to lists, dictionaries are also supported.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><br><span>def</span> <span>worker</span><span>(</span><span>d</span><span>,</span> <span>key</span><span>,</span> <span>value</span><span>):</span><br><span>d</span><span>[</span><span>key</span><span>]</span> <span>=</span> <span>value</span><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>mgr</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Manager</span><span>()</span><br><span>d</span> <span>=</span> <span>mgr</span><span>.</span><span>dict</span><span>()</span><br><span>jobs</span> <span>=</span> <span>[</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>worker</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>d</span><span>,</span> <span>i</span><span>,</span> <span>i</span><span>*</span><span>2</span><span>))</span><br><span>for</span> <span>i</span> <span>in</span> <span>range</span><span>(</span><span>10</span><span>)</span> <br><span>]</span><br><span>for</span> <span>j</span> <span>in</span> <span>jobs</span><span>:</span><br><span>j</span><span>.</span><span>start</span><span>()</span><br><span>for</span> <span>j</span> <span>in</span> <span>jobs</span><span>:</span><br><span>j</span><span>.</span><span>join</span><span>()</span><br><span>print</span> <span>'Results:'</span><span>,</span> <span>d</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_manager_dict.py<br>Results: {0: 0, 1: 2, 2: 4, 3: 6, 4: 8, 5: 10, 6: 12, 7: 14, 8: 16, 9: 18}
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Namespaces
+                                    </h2>
+                                    <p>
+                                        In addition to dictionaries and lists, a Manager can create a shared Namespace. Any named value added to the Namespace is visible across all of the clients.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><br><span>def</span> <span>producer</span><span>(</span><span>ns</span><span>,</span> <span>event</span><span>):</span><br><span>ns</span><span>.</span><span>value</span> <span>=</span> <span>'This is the value'</span><br><span>event</span><span>.</span><span>set</span><span>()</span><br><br><span>def</span> <span>consumer</span><span>(</span><span>ns</span><span>,</span> <span>event</span><span>):</span><br><span>try</span><span>:</span><br><span>value</span> <span>=</span> <span>ns</span><span>.</span><span>value</span><br><span>except</span> <span>Exception</span><span>,</span> <span>err</span><span>:</span><br><span>print</span> <span>'Before event, consumer got:'</span><span>,</span> <span>str</span><span>(</span><span>err</span><span>)</span><br><span>event</span><span>.</span><span>wait</span><span>()</span><br><span>print</span> <span>'After event, consumer got:'</span><span>,</span> <span>ns</span><span>.</span><span>value</span><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>mgr</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Manager</span><span>()</span><br><span>namespace</span> <span>=</span> <span>mgr</span><span>.</span><span>Namespace</span><span>()</span><br><span>event</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Event</span><span>()</span><br><span>p</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>producer</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>namespace</span><span>,</span> <span>event</span><span>))</span><br><span>c</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>consumer</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>namespace</span><span>,</span> <span>event</span><span>))</span><br><br><span>c</span><span>.</span><span>start</span><span>()</span><br><span>p</span><span>.</span><span>start</span><span>()</span><br><br><span>c</span><span>.</span><span>join</span><span>()</span><br><span>p</span><span>.</span><span>join</span><span>()</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_namespaces.py<br>Before event, consumer got: 'Namespace' object has no attribute 'value'<br>After event, consumer got: This is the value
+</pre><br>
+                                    </div>
+                                    <p>
+                                        It is important to know that <em>updates</em> to mutable values in the namespace are <em>not</em> propagated.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><br><span>def</span> <span>producer</span><span>(</span><span>ns</span><span>,</span> <span>event</span><span>):</span><br><span>ns</span><span>.</span><span>my_list</span><span>.</span><span>append</span><span>(</span><span>'This is the value'</span><span>)</span> <span># DOES NOT UPDATE GLOBAL VALUE!</span><br><span>event</span><span>.</span><span>set</span><span>()</span><br><br><span>def</span> <span>consumer</span><span>(</span><span>ns</span><span>,</span> <span>event</span><span>):</span><br><span>print</span> <span>'Before event, consumer got:'</span><span>,</span> <span>ns</span><span>.</span><span>my_list</span><br><span>event</span><span>.</span><span>wait</span><span>()</span><br><span>print</span> <span>'After event, consumer got:'</span><span>,</span> <span>ns</span><span>.</span><span>my_list</span><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>mgr</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Manager</span><span>()</span><br><span>namespace</span> <span>=</span> <span>mgr</span><span>.</span><span>Namespace</span><span>()</span><br><span>namespace</span><span>.</span><span>my_list</span> <span>=</span> <span>[]</span><br><br><span>event</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Event</span><span>()</span><br><span>p</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>producer</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>namespace</span><span>,</span> <span>event</span><span>))</span><br><span>c</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Process</span><span>(</span><span>target</span><span>=</span><span>consumer</span><span>,</span> <span>args</span><span>=</span><span>(</span><span>namespace</span><span>,</span> <span>event</span><span>))</span><br><br><span>c</span><span>.</span><span>start</span><span>()</span><br><span>p</span><span>.</span><span>start</span><span>()</span><br><br><span>c</span><span>.</span><span>join</span><span>()</span><br><span>p</span><span>.</span><span>join</span><span>()</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_namespaces_mutable.py<br>Before event, consumer got: []<br>After event, consumer got: []
+</pre><br>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Pool.map
+                                    </h2>
+                                    <p>
+                                        For simple cases where the work to be done can be broken up and distributed between workers, you do not have to manage the queue and worker processes yourself. The Pool class maintains a fixed number of workers and passes them jobs. The return values are collected and returned as a list. The result is functionally equivalent to the built-in <tt><span>map()</span></tt>, except that individual tasks run in parallel.
+                                    </p>
+                                    <div>
+                                        <div>
+                                            <pre>
+<span>import</span> <span>multiprocessing</span><br><br><span>def</span> <span>do_calculation</span><span>(</span><span>data</span><span>):</span><br><span>return</span> <span>data</span> <span>*</span> <span>2</span><br><br><span>if</span> <span>__name__</span> <span>==</span> <span>'__main__'</span><span>:</span><br><span>pool_size</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>cpu_count</span><span>()</span> <span>*</span> <span>2</span><br><span>pool</span> <span>=</span> <span>multiprocessing</span><span>.</span><span>Pool</span><span>(</span><span>processes</span><span>=</span><span>pool_size</span><span>)</span><br><br><span>inputs</span> <span>=</span> <span>list</span><span>(</span><span>range</span><span>(</span><span>10</span><span>))</span><br><span>print</span> <span>'Input   :'</span><span>,</span> <span>inputs</span><br><br><span>builtin_outputs</span> <span>=</span> <span>map</span><span>(</span><span>do_calculation</span><span>,</span> <span>inputs</span><span>)</span><br><span>print</span> <span>'Built-in:'</span><span>,</span> <span>builtin_outputs</span><br><br><span>pool_outputs</span> <span>=</span> <span>pool</span><span>.</span><span>map</span><span>(</span><span>do_calculation</span><span>,</span> <span>inputs</span><span>)</span><br><span>print</span> <span>'Pool    :'</span><span>,</span> <span>pool_outputs</span><br>
+</pre>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <pre>
+$ python multiprocessing_pool.py<br>Input   : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]<br>Built-in: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]<br>Pool    : [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+</pre><br>
+                                    </div>
+                                </div>
+                            </div>
+                            <p>
+                                <a href="http://www.doughellmann.com/PyMOTW/">PyMOTW Home</a>
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="http://blogger.googleusercontent.com/tracker/5440028356946346379-3596934198114985802?l=blog.doughellmann.com">
+                            </div>
+                            <div>
+                                <a href="http://feeds2.feedburner.com/~ff/DougHellmann?a=iyDAeM5-a18:FyvX1WmYnV8:yIl2AUoC8zA"><img src="http://feeds2.feedburner.com/~ff/DougHellmann?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds2.feedburner.com/~ff/DougHellmann?a=iyDAeM5-a18:FyvX1WmYnV8:V_sGLiPBpWU"><img src="http://feeds2.feedburner.com/~ff/DougHellmann?i=iyDAeM5-a18:FyvX1WmYnV8:V_sGLiPBpWU" border="0"></a> <a href="http://feeds2.feedburner.com/~ff/DougHellmann?a=iyDAeM5-a18:FyvX1WmYnV8:bcOpcFrp8Mo"><img src="http://feeds2.feedburner.com/~ff/DougHellmann?d=bcOpcFrp8Mo" border="0"></a> <a href="http://feeds2.feedburner.com/~ff/DougHellmann?a=iyDAeM5-a18:FyvX1WmYnV8:4cEx4HpKnUU"><img src="http://feeds2.feedburner.com/~ff/DougHellmann?i=iyDAeM5-a18:FyvX1WmYnV8:4cEx4HpKnUU" border="0"></a> <a href="http://feeds2.feedburner.com/~ff/DougHellmann?a=iyDAeM5-a18:FyvX1WmYnV8:qj6IDK7rITs"><img src="http://feeds2.feedburner.com/~ff/DougHellmann?d=qj6IDK7rITs" border="0"></a> <a href="http://feeds2.feedburner.com/~ff/DougHellmann?a=iyDAeM5-a18:FyvX1WmYnV8:F7zBnMyn0Lo"><img src="http://feeds2.feedburner.com/~ff/DougHellmann?i=iyDAeM5-a18:FyvX1WmYnV8:F7zBnMyn0Lo" border="0"></a>
+                            </div><img src="http://feeds2.feedburner.com/~r/DougHellmann/~4/iyDAeM5-a18" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.doughellmann.com/2009/04/pymotw-multiprocessing-part-2.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+DougHellmann+%28Doug+Hellmann%29">http://blog.doughellmann.com/2009/04/pymotw-multiprocessing-part-2.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+DougHellmann+%28Doug+Hellmann%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Representing Non-Unicode Text on the JVM
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 06 Jan 2011 02:14:27 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-01-05T19:04:00-04:00">
+                    <meta itemprop="dateModified" content="2011-01-05T19:04:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-01-05T23:04:00+00:00">Jan 05</time>
+                    <h2 itemprop="title">
+                        Representing Non-Unicode Text on the JVM
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/aa01a544f0e1a4fd">
+                        <blockquote>
+                            JRuby is an implementation of Ruby, and in order to achieve the high level of compatibility we boast we've had to put in some extra work. Probably the biggest area is in management of String data.<br>
+                            <br>
+                            <span style="font-weight:bold">Strings in Ruby 1.8</span><br>
+                            <br>
+                            Ruby 1.8 did not differentiate between strings of bytes or strings of characters. A String was just an array of bytes, and the representation of those bytes was dependent on how you used them. You could do regular expression matches against non-text binary sequences (used by some to parse binary formats like PNG). You could treat them as UTF-8 text by setting global encoding variables to assume UTF-8 in literal strings. And you could use the same methods for dealing with strings of bytes you would with strings of characters...split, gsub, and so on. The lack of a character abstraction was painful, but the ability to do character-string operations against byte-strings was frequently useful.<br>
+                            <br>
+                            In order to support all this, we were forced in JRuby to also represent strings as byte[]. This was not an easy decision. Java's strings are all UTF-16 internally. By moving to byte[]-based strings, we lost many benefits of being on the JVM, like built-in regular expression support, seamless passing of strings to Java methods, and easy interaction with any Java libraries that accept, return, or manipulate Java strings. We eventually had to implement our own regexp engines (or the byte[]-to-char[]-to-byte[] overhead would kill us) and calls from Ruby to Java still pay a cost to pass Strings.<br>
+                            <br>
+                            But we got a lot out of it too. We would not have been able to represent binary content easily with a char[]-based string, since it would either get garbled (when Java tried to decode it) or we'd have to force the data into only the lower byte of each char, doubling the size of all strings in memory. We have some of the fastest String IO capabilities of any JVM language, since we never have to decode text. And most importantly, we've achieved an incredibly high level of compatibility with C Ruby that would have been difficult or impossible forcing String data into char[].<br>
+                            <br>
+                            There's also another major benefit: we can support Ruby 1.9's "multilingualization".<br>
+                            <br>
+                            <span style="font-weight:bold">Strings in Ruby 1.9</span><br>
+                            <br>
+                            Ruby 1.9 still represents all string data as byte[] internally, but it adds an additional field to all strings: Encoding (there's also "code range", but it's merely an internal optimization).<br>
+                            <br>
+                            The biggest problem with encoded text in MRI was that you never knew what a string's encoding was supposed to be; the String object itself only aggregated byte[], and if you ever ended up with mixed encodings in a given app, you'd be in trouble. Rails even introduced its own "Chars" type specifically to deal with the lack of encoding support.<br>
+                            <br>
+                            In Ruby 1.9, however, Strings know their own encoding. Strings can be forced to a specific encoding or transcoded to another. IO streams are aware of (and configurable for) external and internal encodings, and there's also default external and internal encodings. And you can still deal with raw binary data in the same structure and with the same String-manipulating features. For a full discussion of encoding support in Ruby 1.9, see <a href="http://yehudakatz.com/">Yehuda Katz</a>'s excellent post on <a href="http://yehudakatz.com/2010/05/05/ruby-1-9-encodings-a-primer-and-the-solution-for-rails/">Ruby 1.9 Encodings: A Primer</a>.<br>
+                            <br>
+                            As part of JRuby 1.6, we've been working on getting much closer to 100% compatible with Ruby 1.9. Of course this has meant working on encoding support. Luckily, we had a hacking machine some years ago in Marcin Mielzynski, who implemented not only our encoding-agnostic regexp engine (a port of Oniguruma from C), but also our byte[]-based String logic and almost all of our Encoding support. The remaining work has trickled in over the subsequent years, leading up the the last few months of heavy activity on 1.9 support.<br>
+                            <br>
+                            <span style="font-weight:bold">How It Works</span><br>
+                            <br>
+                            You might find it interesting to know how all this works, since JRuby is a JVM-based language where Strings are supposed to be UTF-16 always.<br>
+                            <br>
+                            First off, String, implemented by the <a href="https://github.com/jruby/jruby/blob/master/src/org/jruby/RubyString.java">RubyString</a> class. RubyString aggregates an Encoding and an array of bytes, using a structure we call <a href="https://github.com/jruby/bytelist/blob/master/src/org/jruby/util/ByteList.java">ByteList</a>. ByteList represents an arbitrary array of bytes, a view into them, and an encoding. All operations against a String operate within RubyString's code against ByteLists.<br>
+                            <br>
+                            IO streams, implemented by <a href="https://github.com/jruby/jruby/blob/master/src/org/jruby/RubyIO.java">RubyIO</a> (and subclasses) and ChannelStream/ChannelDescriptor, accept and return ByteList instances. ByteList is the text/binary currency of JRuby...our java.lang.String.<br>
+                            <br>
+                            Regexp is implemented in <a href="javascript:void(0);">RubyRegexp</a> using <a href="https://github.com/jruby/joni">Joni</a>, our Java port of the Oniguruma regular expression library. Oniguruma accepts byte arrays and uses encoding-specific information at match time to know what constitutes a character in that byte array. It is the only regular expression engine on the JVM capable of dealing with encodings other than UTF-16.<br>
+                            <br>
+                            The JRuby parser also ties into encoding, using it on a per-file basis to know how to encode each literal string it encounters. Literal strings in the AST are held in <a href="https://github.com/jruby/jruby/blob/master/src/org/jruby/ast/StrNode.java">StrNode</a>, which aggregates a ByteList and constructs new String instances from it.<br>
+                            <br>
+                            The compiler is an interesting case. Ideally we would like all literal strings to still go into the class file's constant pool, so that they can be loaded quickly and live as part of the class metadata. In order to do this, the byte[]-based string content is forced into a char[], which is forced into a java.lang.String that goes in the constant pool. At load time, we unpack the bytes and return them to a ByteList that knows their actual encoding. Dare I claim that JRuby is the first JVM language to allow representing literal strings in encodings other than UTF-16?<br>
+                            <br>
+                            <span style="font-weight:bold">What It Means For You</span><br>
+                            <br>
+                            At the end of the day, how are you affected by all this? How is your life improved?<br>
+                            <br>
+                            If you are a Ruby user, you can count on JRuby having solid support for Ruby 1.9's "M17N" strings. That may not be complete for JRuby 1.6, but we intend to take it as far as possible. JRuby 1.6 *will* have the lion's share of M17N in-place and working.<br>
+                            <br>
+                            If you are a JVM user...JRuby represents the *only* way you can deal with arbitrarily-encoded text without converting it to UTF-16 Unicode. At a minimum, this means JRuby has the potential to deal with raw wire data much more efficiently than libraries that have to up-convert to UTF-16 and downconvert back to UTF-8. It may also mean encodings without complete representation in Unicode (like Japanese "emoji" characters) can *only* be losslessly processed using JRuby, since forcing them into UTF-16 would either destroy them or mangle characters. And of course no other JVM language provides JRuby's capabilities for using String-like operations against arbitrary binary data. That's gotta be worth something!<br>
+                            <br>
+                            I want to also take this opportunity to again thank Marcin for his work on JRuby in the past; Tom Enebo for his suffering through encoding-related parser work the past few weeks; Yukihiro "Matz" Matsumoto for adding encoding support to Ruby; and all JRuby committers and contributors who have helped us sort out M17N for JRuby 1.6.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/20975090-6030879933587376895?l=blog.headius.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.headius.com/2011/01/representing-non-unicode-text-on-jvm.html">http://blog.headius.com/2011/01/representing-non-unicode-text-on-jvm.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

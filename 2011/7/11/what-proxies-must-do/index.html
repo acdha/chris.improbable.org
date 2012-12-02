@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            What Proxies Must Do
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 11 Jul 2011 13:13:29 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-07-11T09:13:22-04:00">
+                    <meta itemprop="dateModified" content="2011-07-11T09:13:22-04:00"><time class="date" itemprop="datePublished" datetime="2011-07-11T13:13:22+00:00">Jul 11</time>
+                    <h2 itemprop="title">
+                        What Proxies Must Do
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/95e8533946fb5960">
+                        <blockquote>
+                            <p>
+                                The explosion of HTTP implementations isn’t just in clients and servers. An oft-overlooked but important part of the Web ecosystem is the intermediary, often called just a “proxy”<a href="http://www.mnot.net/blog/#note1">*</a>.
+                            </p>
+                            <p>
+                                These days, it’s pretty easy for anyone to build a proxy using Python, Ruby, Perl, Java or Node.JS, and there are a bunch of frameworks that can help you do this, such as <a href="https://github.com/nodejitsu/node-http-proxy">node-http-proxy</a>. Additionally, there are lots of off-the-shelf proxies that you can use, from the widely-known <a href="http://www.squid-cache.org/">Squid</a> and <a href="http://trafficserver.apache.org/">Traffic Server</a> to more niche products like <a href="http://www.pps.jussieu.fr/~jch/software/polipo/">Polipo</a> and <a href="https://banu.com/tinyproxy/">tinyproxy</a>.
+                            </p>
+                            <p>
+                                It’s great that it’s so easy to do this, but building a proxy is trickier than it seems; not only do you have to worry about things like concurrency, performance and stability, you can also hurt the Web if you get it wrong.
+                            </p>
+                            <p>
+                                Let me explain.
+                            </p>
+                            <h3>
+                                Bad Proxies Hurt the Web
+                            </h3>
+                            <p>
+                                When a Web server doesn’t interoperate with the rest of the Web well it becomes apparent pretty quickly, and the person running it either gets it fixed, or uses another server; it’s pretty simple. Likewise, if your Web browser makes it difficult to browse your favourite site, you know what happens next: the barrier to switching browsers has never been lower.
+                            </p>
+                            <p>
+                                However, proxies are awkward. When they go bad, Web sites can’t do anything about it, and users can only complain to faceless IT departments who don’t have much time and frankly probably care even less.
+                            </p>
+                            <p>
+                                So, when a problem is introduced into a proxy, <strong>it affects the whole Web</strong>, badly.
+                            </p>
+                            <p>
+                                <a href="http://www.pps.jussieu.fr/~jch/software/polipo/">Polipo</a>, for example<a href="http://www.mnot.net/blog/#note2">**</a>, <a href="http://www.mail-archive.com/polipo-users@lists.sourceforge.net/msg00860.html">doesn’t honour the Cache-Control: private directive</a>, which breaks the very important contract between servers and caches; now, when you’re setting your Cache-Control headers, you either have to accept that the very small number of people who use Polipo as a shared cache may see each others’ content, or you have to bend over backwards, wasting bytes (and money!) to send other directives that Polipo will follow. And, even if the Polipo guys decide to fix it, there’s no guarantee that existing deployments will be upgraded anytime soon.
+                            </p>
+                            <p>
+                                In other words, the privileged position of a proxy has great power (to muck things up), and correspondingly great responsibility to get it right, because at their hearts, <strong>protocols are agreement</strong>, and when you don’t honour them, you don’t communicate.
+                            </p>
+                            <p>
+                                So, what should proxies (and proxy frameworks) do? And, what should you look for when you’re shopping for one to deploy? Here’s a baker’s dozen of things to keep in mind.
+                            </p>
+                            <h3>
+                                0. Advertise HTTP/1.1 Correctly
+                            </h3>
+                            <p>
+                                HTTP/1.1 is the current version spoken on the Internet, and as long as the proxy implements it correctly (in particular, it handles chunked encoding correctly), it should <strong>always</strong> advertise itself as HTTP/1.1 conformant.
+                            </p>
+                            <p>
+                                This means that the top line of requests and responses should always contain <code>HTTP/1.1</code> as the version identifier, even when talking to something that says it’s <code>HTTP/1.0</code>.
+                            </p>
+                            <p>
+                                The reason for this is that HTTP 1.1 defines not only how to talk to 1.1 devices, but also to 1.0 ones. When a <code>HTTP/1.0</code> message contains a 1.1 mechanism like <code>Cache-Control</code>, its meaning doesn’t change, and should still be respected.
+                            </p>
+                            <p>
+                                See <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-14#section-2.5">the spec</a> for more information.
+                            </p>
+                            <h3>
+                                1. Remove Hop-by-hop Headers
+                            </h3>
+                            <p>
+                                The number one thing that proxies must do is remove hop-by-hop headers before forwarding messages — both requests and responses. This means that the Connection header and any header it lists MUST be removed, as well as TE, Transfer-Encoding, Keep-Alive, Proxy-Authorization, Proxy-Authentication, Trailer and Upgrade.
+                            </p>
+                            <p>
+                                Proxies that don’t do the right thing here will make it impossible to deploy new hop-by-hop mechanisms, and can introduce security vulnerabilities. For example, if transfer-encoding isn’t stripped, it can cause confusion about the message delimitation, as well as cause interop problems.
+                            </p>
+                            <p>
+                                For example, in this request:
+                            </p>
+                            <pre>
+GET /foo HTTP/1.1
+TE: gzip
+Host: example.net
+Connection: Keep-Alive, Foo, Bar
+Foo: abc
+Foo: def
+Keep-Alive: timeout=30
+</pre>
+                            <p>
+                                The <code>TE</code>, <code>Connection</code>, <code>Keep-Alive</code> and both <code>Foo</code> headers must be removed before forwarding it. If <code>Bar</code> occurred in the message, it would be removed too, but its absence isn’t an error.
+                            </p>
+                            <p>
+                                See the spec for <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-14#section-7.1.3">more details on getting it right</a>.
+                            </p>
+                            <h3>
+                                2. Detect Bad Framing
+                            </h3>
+                            <p>
+                                Proxies also need to be on the lookout for Content-Length headers that are duplicates, as well as ones that conflict with the use of Transfer-Encoding, and either reject the message or remove the bad headers.
+                            </p>
+                            <p>
+                                This is because there are <a href="http://projects.webappsec.org/w/page/13246931/HTTP-Response-Splitting">entire classes of attacks</a> that exploit the differences between how implementations frame messages.
+                            </p>
+                            <p>
+                                For example, this response:
+                            </p>
+                            <pre>
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 45
+Content-Length: 20
+</pre>
+                            <p>
+                                has an ambiguous length. If a proxy treats it differently than a client, an attacker can inject a response. Likewise, this one:
+                            </p>
+                            <pre>
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 200
+Transfer-Encoding: chunked
+</pre>
+                            <p>
+                                has both a Content-Length and chunked encoding. The chunked encoding has precedence, and the Content-Length has to be removed before forwarding the message.
+                            </p>
+                            <p>
+                                See <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-14#section-3.3">the spec</a> for how to do it well.
+                            </p>
+                            <h3>
+                                3. Route Well
+                            </h3>
+                            <p>
+                                The destination for a request can appear in the URL (as an absolute URI) as well as in the Host header. So, it’s important for proxies to behave correctly when both appear. In short, the host and port in an absolute URI <strong>always</strong> override the Host header. For example:
+                            </p>
+                            <pre>
+GET http://example.net/foo HTTP/1.1
+Host: www.example.com:8000
+</pre>
+                            <p>
+                                Here, the host is <code>example.net</code> and the port is <code>80</code> (the default for HTTP). When there’s disagreement, a proxy is expected to “fix up” the Host header. See <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-14#section-9.4">the spec</a> for more details.
+                            </p>
+                            <h3>
+                                4. Insert Via
+                            </h3>
+                            <p>
+                                A lot of proxies treat the Via header as optional; they don’t want to advertise their presence. However, HTTP depends on its use; not only does it tell clients and servers that an intermediary is present, but it also tells them what the HTTP version of the hop beyond the intermediary is, so that they can figure out the capabilities of the chain as a whole.
+                            </p>
+                            <p>
+                                This helps clients decide whether they can use 1.1-only features like pipelining and Expect: 100-continue.
+                            </p>
+                            <p>
+                                One of the common complaints about Via is that it exposes information about the network, but it doesn’t have to; the spec allows you to use a arbitrary pseudonym, like this:
+                            </p>
+                            <pre>
+Via: 1.0 bob, 1.1 mary, 1.1 private
+</pre>
+                            <p>
+                                Once again, see <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-14#section-9.9">the spec</a> for the fine points.
+                            </p>
+                            <h3>
+                                5. Meet Expectations
+                            </h3>
+                            <p>
+                                Proxies also need to forward requests with the <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p2-semantics-14#section-9.2">Expect</a> header correctly. Otherwise, clients can hang, waiting (usually for the <code>100 Continue</code> status code).
+                            </p>
+                            <p>
+                                See <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-14#section-7.2.3">the spec</a>.
+                            </p>
+                            <h3>
+                                6. Pipeline Correctly
+                            </h3>
+                            <p>
+                                HTTP/1.1 servers — including those built into intermediaries — are required to support pipelining. Unfortunately, some proxies haven’t supported pipelining well, very occasionally with disastrous results (e.g., mixing up responses), causing browsers to be very cautious about using pipelining.
+                            </p>
+                            <p>
+                                Fortunately, this is <a href="http://ducksong.com/httpbis/">starting to change</a>, so you can expect more pipelined requests on the Web. This is great for performance, but it raises the bar for implementing an intermediary.
+                            </p>
+                            <p>
+                                Unfortunately, there isn’t (yet) a clear, easy-to-follow guide to all of the pitfalls for implementing pipelining in a proxy. I have a <a href="http://tools.ietf.org/html/draft-nottingham-http-pipeline">draft about helping clients</a>; with a little work (help?), it may expand to cover intermediaries too.
+                            </p>
+                            <p>
+                                However, as long as your server-side handles pipelining well — even if it just buffers the requests and sends them out one at a time — that’s a good starting point.
+                            </p>
+                            <h3>
+                                7. Support Chunking — Both Ways
+                            </h3>
+                            <p>
+                                One of the biggest changes in HTTP/1.1 was the introduction of <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-14#section-6.2.1">chunked encoding</a>. This is a huge win when you don’t want to buffer a large message (e.g., one generated by a script), and essential for good performance in some use cases.
+                            </p>
+                            <p>
+                                Most intermediaries get response chunking right, because it’s so prevalent. However, there are growing use cases for request chunking as well. While it’s OK spec-wise to refuse these with a <code>411 Length Required</code>, a good intermediary will pass through chunked requests such as this one:
+                            </p>
+                            <pre>
+POST /thing HTTP/1.1
+Host: www.example.com
+Transfer-Encoding: chunked
+Content-Type: text/html
+
+...
+</pre>
+                            <h3>
+                                8. Buffer Intelligently
+                            </h3>
+                            <p>
+                                HTTP is a message-oriented protocol, which means that it’s technically fine to buffer an entire request or response before forwarding it. However, this isn’t friendly to a lot of uses that people have for HTTP.
+                            </p>
+                            <p>
+                                Of course, some amount of buffering is necessary (and indeed unavoidable), but it should be done in a way that the next hop isn’t waiting too long for part of a request or response.
+                            </p>
+                            <p>
+                                Note that some commonly-used HTTP “reverse” proxies will buffer the <strong>entire</strong> response and/or request; while this is fine in some deployments, it’s important to understand that it’s a serious limitation for others (e.g., serving large files and/or streaming).
+                            </p>
+                            <h3>
+                                9. Don’t Limit Arbitrarily
+                            </h3>
+                            <p>
+                                It’s necessary for all HTTP implementations to limit the resources used by a single request, to avoid various kinds of attacks. However, those limits should be generous; otherwise, you’re limiting the Web itself.
+                            </p>
+                            <p>
+                                In particular, URIs should be allowed at least 8000 octets, and HTTP headers should have 4000 as an absolute minimum (in practice, header blocks can get much bigger).
+                            </p>
+                            <p>
+                                All of this should be configurable, of course. We’re <a href="http://trac.tools.ietf.org/wg/httpbis/trac/ticket/282">discussing the details</a> in HTTPbis, but those numbers should be considered an absolute floor; most implementations will want to exceed them.
+                            </p>
+                            <h3>
+                                10. Cache Correctly
+                            </h3>
+                            <p>
+                                If your proxy implements a cache, it needs to respect the <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p6-cache-14#section-3.2">Cache-Control directives</a> that both clients and servers provide. This shouldn’t be hard; HTTP gives <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p6-cache-14#section-2.2">considerable latitude</a> to caches, but there are a few inviolate rules, especially regarding private and no-store. If caches don’t listen to sites, sites will find ways to work around bad caches, and everybody loses, so respect the contract that’s implicit in HTTP.
+                            </p>
+                            <p>
+                                Likewise, proxy caches need to do the right thing with the <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-14#section-9.3">Date</a> and <a href="http://tools.ietf.org/html/draft-ietf-httpbis-p6-cache-14#section-3.1">Age</a> headers. Date should NOT be changed by proxies; doing so messes up the caching model of HTTP in some pretty subtle ways, and Age is necessary to make sure that content isn’t double-cached (see <a href="http://www2.research.att.com/~edith/Papers/HTML/usits01/index.html">Edith Cohen’s paper</a> for more details).
+                            </p>
+                            <h3>
+                                11. Don’t Transform <code>no-transform</code>
+                            </h3>
+                            <p>
+                                If you’re writing a proxy, or deploying something as a proxy (i.e., something that goes to arbitrary Web sites, not just your own), you need to honour <code>Cache-Control: no-transform</code>, both in requests and responses.
+                            </p>
+                            <p>
+                                This allows people to tell you not to mess with their stuff, in a nutshell. While it’s tempting to ignore it and insert that ad / transcode that content / do whatever it is you do, if you ignore it, they’ll just find a way to work around you, and again, everybody loses.
+                            </p>
+                            <h3>
+                                12. Bonus: Support Trailers
+                            </h3>
+                            <p>
+                                Finally, while trailers are completely optional in HTTP, and they aren’t widely used to date, there are some interesting use cases for them, such as <a href="http://groups.google.com/group/firebug/browse_thread/thread/bf995d8e8553847f">post-response debugging and tracing</a>. A friendly intermediary will pass them through.
+                            </p>
+                            <h3>
+                                Getting It Right
+                            </h3>
+                            <p>
+                                Whether you’re creating a new proxy or you’re trying to find one to deploy, there are tools to help you. <a href="http://coad.measurement-factory.com/">Co-Advisor</a> is a comprehensive test suite for proxies — both with and without caches, and both forward and reverse — that can be used to assess how HTTP conformant a product is. It’s also free for Open Source projects, so there’s no excuse.
+                            </p>
+                            <p>
+                                If you run Co-Advisor, remember that perfect conformance isn’t necessary; almost every product will have problems. It’s the big stuff that’s important.
+                            </p>
+                            <p>
+                                * Proxy is actually a more specific term; it means something that direct requests to all sites, usually with explicit browser configuration. A “reverse proxy” is more correctly known as a gateway, and all of these things are intermediaries. I use proxy here more generically, as that seems to be how people use it casually.
+                            </p>
+                            <p>
+                                ** This isn’t intended to pick just on Polipo, of course; there are many other badly-behaved proxies out there.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.mnot.net/blog/2011/07/11/what_proxies_must_do">http://www.mnot.net/blog/2011/07/11/what_proxies_must_do</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

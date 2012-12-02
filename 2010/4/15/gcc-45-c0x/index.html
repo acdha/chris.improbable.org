@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            GCC 4.5 &amp; C++0x
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 15 Apr 2010 11:27:05 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-15T07:27:05-04:00">
+                    <meta itemprop="dateModified" content="2010-04-15T07:27:05-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-15T11:27:05+00:00">Apr 15</time>
+                    <h2 itemprop="title">
+                        GCC 4.5 &amp; C++0x
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/fa0faf7628172fa9">
+                        <blockquote>
+                            <p>
+                                <a href="http://gcc.gnu.org/gcc-4.5/">GCC 4.5.0</a> is out and their <a href="http://gcc.gnu.org/gcc-4.5/cxx0x_status.html">progress on implementing C++0x features</a> is coming along nicely.
+                            </p>
+                            <p>
+                                If you are on OS X and want to try it out you can install it via <a href="http://www.macports.org/">MacPorts</a>:
+                            </p>
+                            <pre>
+<code>sudo port install gcc45
+</code>
+</pre>
+                            <p>
+                                The binary installed is named <code>g++-mp-4.5</code> and you must use the <code>-std=c++0x</code> argument to enable the new features.
+                            </p>
+                            <p>
+                                Of the supported C++0x features here are some of those that I find the most interesting (for my use of C++).
+                            </p>
+                            <h2>
+                                Local and Unnamed Types as Template Arguments
+                            </h2>
+                            <p>
+                                The most common scenario in which I need this is when declaring a local lookup structure that I need to iterate. I have my own set of <code>beginof</code>/<code>endof</code> functions overloaded for most types (something that will be redundant with C++0x but which GCC does not yet seem to provide), for example for the array overload I have:
+                            </p>
+                            <pre>
+<code>template &lt;typename T, int N&gt; T* beginof (T (&amp;a)[N]) { return a; }
+template &lt;typename T, int N&gt; T* endof (T (&amp;a)[N])   { return a + N; }
+</code>
+</pre>
+                            <p>
+                                This allows writing a generic <code>foreach</code> macro like this:
+                            </p>
+                            <pre>
+<code>#define foreach(i, c) \
+   for(decltype(beginof(c)) i = beginof(c); i != endof(c); ++i)
+</code>
+</pre>
+                            <p>
+                                I am using <code>decltype</code> which is another C++0x feature but prior to this there was the <code>typeof</code> GCC extension.
+                            </p>
+                            <p>
+                                With the macro we can write code like this:
+                            </p>
+                            <pre>
+<code>int xs[] = { 1, 2, 3 };
+foreach(x, xs)
+    printf("%d\n", *x);
+</code>
+</pre>
+                            <p>
+                                But prior to C++0x we would get an error for this code:
+                            </p>
+                            <pre>
+<code>struct { char const* name; int value; } values[] =
+{
+    { "foo", 1 },
+    { "bar", 2 }
+};
+
+foreach(value, values)
+    printf("%s\n", value-&gt;name);
+</code>
+</pre>
+                            <p>
+                                The reason for the error is that <code>values</code> is both a local and unnamed type, and it is being passed as an argument to two template functions (<code>beginof</code>/<code>endof</code>).
+                            </p>
+                            <p>
+                                But with C++0x this is now allowed!
+                            </p>
+                            <h2>
+                                Initializer Lists
+                            </h2>
+                            <p>
+                                Basically <code>std::initializer_list&lt;T&gt;</code> is the type given to “values in braces”. This means “values in braces” is now a type we can work with, e.g. receive as a constructor argument.
+                            </p>
+                            <p>
+                                Looking at the code above, my local unnamed type was really a map. The reason why I would use a custom struct is mainly because I can declare the values in one go (w/o the overhead of calling functions). But now that “values in braces” has a type, <code>std::map</code> can be initialized from it:
+                            </p>
+                            <pre>
+<code>std::map&lt;std::string, int&gt; values =
+{
+    { "foo", 1 },
+    { "bar", 2 }
+};
+</code>
+</pre>
+                            <h2>
+                                Type Inference
+                            </h2>
+                            <p>
+                                If we continue with the example above we may want to search our <code>values</code> map using the <code>find</code> member function. The result of this is an iterator, the type of that is <code>std::map&lt;std::string, int&gt;::[const_]iterator</code>.
+                            </p>
+                            <p>
+                                Starting with C++0x we can use <code>auto</code> instead, e.g.:
+                            </p>
+                            <pre>
+<code>auto foo = values.find("foo");
+if(foo != values.end())
+    printf("foo’s value is %d\n", foo-&gt;second);
+</code>
+</pre>
+                            <p>
+                                Many advocate dynamic typing because they think static typing automatically require manifest typing. With the <code>auto</code> keyword and use of template functions, C++ is moving further and further away from that dreadful paradigm :)
+                            </p>
+                            <h2>
+                                Lambda Functions
+                            </h2>
+                            <p>
+                                This is probably what I am the most excited about but not sure how much I will actually use it.
+                            </p>
+                            <p>
+                                It is however painful having to define a new function (outside current scope) whenever using a standard library algorithm that takes a function argument, especially since many of the algorithms are effectively just saving me the loop, e.g. <code>std::find_if</code> can be written in two lines with the actual comparison included in those two lines.
+                            </p>
+                            <p>
+                                Following the style of this post, let me give an example of using <code>std::find_if</code> with a lambda:
+                            </p>
+                            <pre>
+<code>it = std::find_if(it, last, [](char ch){ return !isalnum(ch) &amp;&amp; ch != '_'; });
+</code>
+</pre>
+                            <p>
+                                Here we advance the iterator (<code>it</code>) to skip alpha numeric characters and underscores.
+                            </p>
+                            <p>
+                                The lambda can capture one or more variables from the current scope either by value or reference. This is declared inside the square brackets. Use <code>&amp;</code> to capture everything by reference, <code>=</code> to capture everything by value, or provide a list of variables that should be captured (with <code>&amp;</code> as prefix if by reference).
+                            </p>
+                            <h2>
+                                Explicit Conversion
+                            </h2>
+                            <p>
+                                One thing I love about C++ is its ability to do implicit conversions.
+                            </p>
+                            <p>
+                                For example I can define this type:
+                            </p>
+                            <pre>
+<code>struct my_type_t
+{
+    my_type_t ()         : initialized(false)          { }
+    my_type_t (size_t i) : initialized(true), value(i) { }
+
+    operator bool () const { return initialized; }
+
+    my_type_t operator+ (my_type_t const&amp; rhs) const
+    {
+        return my_type_t(value + rhs.value);
+    }
+
+private:
+    bool initialized;
+    size_t value;
+};
+</code>
+</pre>
+                            <p>
+                                And then this function:
+                            </p>
+                            <pre>
+<code>my_type_t foo (my_type_t const&amp; arg)
+{
+    if(!arg)
+        abort();
+    return arg + 8;
+}
+</code>
+</pre>
+                            <p>
+                                Here I rely on implicit construction of <code>my_type_t</code> from <code>8</code> but that will actually fail. The reason is that the compiler could also convert <code>arg</code> to <code>bool</code> (as we make use of in the <code>if</code>) and then add together a boolean and integer.
+                            </p>
+                            <p>
+                                To avoid this problem we prefix the <code>operator bool</code> with <code>explicit</code> and can drop the alternative workaround for this problem.
+                            </p>
+                            <p>
+                                Slightly related is the ability to delete functions. Say we are very strict about the API usage and we only want the user to construct <code>my_type_t</code> from <code>size_t</code> as opposed to <code>int</code>. The way to enforce this is to add the following constructor signature:
+                            </p>
+                            <pre>
+<code>my_type_t (int) = delete;
+</code>
+</pre>
+                            <p>
+                                An alternative to <code>delete</code> is <code>default</code> which gives us the default implementation.
+                            </p>
+                            <h2>
+                                Scoped Enumerations
+                            </h2>
+                            <p>
+                                I often declare enumerations like this:
+                            </p>
+                            <pre>
+<code>namespace color { enum type { red, green, blue }; }
+⋮
+color::type c = color::red;
+</code>
+</pre>
+                            <p>
+                                This however is not possible with enumerations declared inside a class (as we can’t nest a namespace inside a class). This menas the enumeration constants are declared in the scope of the class which can cause a problem, e.g.:
+                            </p>
+                            <pre>
+<code>class consumer_t
+{
+    enum state_t { active, done } state;
+public:
+    bool done () const; // error: we already declared ‘done’
+};
+</code>
+</pre>
+                            <p>
+                                For this reason I have changed my enumeration convention to:
+                            </p>
+                            <pre>
+<code>enum state_t { kActive, kDone };
+</code>
+</pre>
+                            <p>
+                                While this avoids most clashes the constants are still exported into too big a scope. C++0x has a new <code>enum class</code> that avoids this:
+                            </p>
+                            <pre>
+<code>class consumer_t
+{
+    enum class state_t { active, done } state;
+public:
+    bool done () const { return state == state_t::done; }
+};
+</code>
+</pre>
+                            <h2>
+                                Closing Words
+                            </h2>
+                            <p>
+                                There is still lots of cool stuff to come: range-based for, delegating/inheriting constructors, extensible literals, move semantics, all the stuff about threading, etc.
+                            </p>
+                            <p>
+                                Unfortunately if you want to develop for Cocoa then you are out of luck, since Apple’s fork of GCC is not going to incorporate these improvements due to them being licensed under the latest version of the GPL.
+                            </p>
+                            <p>
+                                I have not looked into building for Cocoa with the GCC included with MacPorts. If you have successful experience with that, let me know!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://sigpipe.macromates.com/2010/04/15/gcc-4-5-c0x/">http://sigpipe.macromates.com/2010/04/15/gcc-4-5-c0x/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

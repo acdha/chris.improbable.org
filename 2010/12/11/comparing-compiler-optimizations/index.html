@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Comparing Compiler Optimizations
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 11 Dec 2010 21:08:20 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-11T16:08:20-04:00">
+                    <meta itemprop="dateModified" content="2010-12-11T16:08:20-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-11T20:08:20+00:00">Dec 11</time>
+                    <h2 itemprop="title">
+                        Comparing Compiler Optimizations
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/922610cabb1c0650">
+                        <blockquote>
+                            <p>
+                                [Update from Dec 14: Some of these problems have already been fixed! <a href="http://blog.regehr.org/archives/324">Details here</a>.]
+                            </p>
+                            <p>
+                                [This is a guest post by my grad student <a href="http://www.cs.utah.edu/~chenyang/">Yang Chen</a>, describing one of the projects he's been working on lately. I elaborated on some of Yang's points, edited, and did some formatting for Wordpress.]
+                            </p>
+                            <p>
+                                Our goal is to help C compiler developers find areas where their optimizer could stand to be improved. We do this by taking some open source applications and, for each application:
+                            </p>
+                            <ol>
+                                <li>Select a number of benchmark functions. For now, all benchmarks are leaves: they make no function calls. There are a few other restrictions too.
+                                </li>
+                                <li>Instrument the source code so that all inputs to benchmark functions (including those accessed through pointers) are logged.
+                                </li>
+                                <li>Run whatever test suite comes with the application, logging inputs to benchmark functions. Logging stops after a configurable maximum number of distinct inputs has been seen.
+                                </li>
+                                <li>Extract standalone versions of the benchmark functions.
+                                </li>
+                                <li>For each compiler under test, compile each extracted benchmark with a test harness. Run the resulting code on an otherwise quiescent machine in order to measure the performance of the benchmark function in isolation.
+                                </li>
+                                <li>Look for outlier functions where one compiler created significantly faster code than another compiler — these are potentially interesting and we inspect them manually. Some examples are below.
+                                </li>
+                            </ol>
+                            <p>
+                                When we report the number of cycles required to execute a function, this is an average over all logged inputs.
+                            </p>
+                            <p>
+                                The test machine is built around an Intel Core i7-920 processor, which has 4 cores running at 2.67GHz and 8MB of shared L3 cache. It has 6 GB of RAM. It runs the x86-64 version of Ubuntu 9.10. Performance is measured using the RDTSC instruction. The test process is pinned to a single processor and all CPU and OS power management functionality is turned off.
+                            </p>
+                            <p>
+                                The compiler options we used are intended to:
+                            </p>
+                            <ol>
+                                <li>Optimize for maximum speed
+                                </li>
+                                <li>Give the tools a fighting chance at making equivalent assumptions about the hardware platform
+                                </li>
+                            </ol>
+                            <h1>
+                                Clang
+                            </h1>
+                            <p>
+                                Svn head built on Dec 4, 2010:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    $ clang -v<br>
+                                    clang version 2.9 (trunk 120838)<br>
+                                    Target: x86_64-unknown-linux-gnu<br>
+                                    Thread model: posix
+                                </p>
+                            </blockquote>
+                            <p>
+                                Invocation:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    clang -O3 -mssse3 -march=core2 -mtune=core2 -fomit-frame-pointer -fno-stack-protector -w
+                                </p>
+                            </blockquote>
+                            <h1>
+                                GCC
+                            </h1>
+                            <p>
+                                Svn head built on Dec 4, 2010:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    $ current-gcc -v<br>
+                                    Using built-in specs.<br>
+                                    COLLECT_GCC=./compilers/bin/current-gcc<br>
+                                    COLLECT_LTO_WRAPPER=/uusoc/exports/scratch/chenyang/performance_tests/compilers/libexec/gcc/x86_64-unknown-linux-gnu/4.6.0/lto-wrapper<br>
+                                    Target: x86_64-unknown-linux-gnu<br>
+                                    Configured with: ../configure –prefix=/uusoc/exports/scratch/chenyang/performance_tests/compilers –program-prefix=current- –enable-lto –enable-languages=c,c++,lto<br>
+                                    Thread model: posix<br>
+                                    gcc version 4.6.0 20101204 (experimental) (GCC)
+                                </p>
+                            </blockquote>
+                            <p>
+                                Invocation:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    current-gcc -O3 -mfpmath=sse -mssse3 -march=core2 -mtune=core2 -fno-stack-protector -fomit-frame-pointer -w
+                                </p>
+                            </blockquote>
+                            <h1>
+                                Intel
+                            </h1>
+                            <p>
+                                Version is:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    $ icc -V<br>
+                                    Intel(R) C Intel(R) 64 Compiler Professional for applications running on Intel(R) 64, Version 11.1 Build 20100414<br>
+                                    Copyright (C) 1985-2010 Intel Corporation. All rights reserved.<br>
+                                    FOR NON-COMMERCIAL USE ONLY
+                                </p>
+                            </blockquote>
+                            <p>
+                                Invocation:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    icc -O3 -static -not-prec-div -xHost -mssse3 -fno-stack-protector -fomit-frame-pointer -w
+                                </p>
+                            </blockquote>
+                            <h1>
+                                Example 1
+                            </h1>
+                            <p>
+                                (Here and in other examples, we have edited the assembly code for clarity. Also note that we are showing the source code as seen by the compilers being tested. It is not only preprocesssed, but also has been parsed by our benchmark extraction tool which is based on <a href="http://www.cs.berkeley.edu/~necula/cil/">CIL</a>. CIL does a few simple transformations that make C code a lot uglier sometimes.)
+                            </p>
+                            <p>
+                                This function is setboundaries() from zic.c in postgresql-9.0.0.
+                            </p>
+                            <pre>
+<a name="line1" id="line1">1</a> <strong>typedef</strong> <strong>long</strong> <span style="color:#2040a0">int64</span><span style="color:#4444ff">;</span>
+<a name="line2" id="line2">2</a> <strong>typedef</strong> <span style="color:#2040a0">int64</span> <span style="color:#2040a0">zic_t</span><span style="color:#4444ff">;</span>
+<a name="line3" id="line3">3</a> <strong>void</strong> <span style="color:#2040a0">setboundaries</span> <span style="color:#4444ff">(</span><strong>void</strong><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line4" id="line4">4</a> <span style="color:#2040a0">zic_t</span> <span style="color:#2040a0">max_time</span><span style="color:#4444ff">;</span>
+<a name="line5" id="line5">5</a> <span style="color:#2040a0">zic_t</span> <span style="color:#2040a0">min_time</span><span style="color:#4444ff">;</span>
+<a name="line6" id="line6">6</a> <strong>void</strong>
+<a name="line7" id="line7">7</a> <span style="color:#2040a0">setboundaries</span> <span style="color:#4444ff">(</span><strong>void</strong><span style="color:#4444ff">)</span>
+<a name="line8" id="line8">8</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line9" id="line9">9</a>   <strong>int</strong> <span style="color:#2040a0">i</span><span style="color:#4444ff">;</span>
+<a name="line10" id="line10">10</a>
+<a name="line11" id="line11">11</a>   <span style="color:#2040a0">min_time</span> <span style="color:#4444ff">=</span> <span style="color:#4444ff">-</span><span style="color:#ff0000">1L</span><span style="color:#4444ff">;</span>
+<a name="line12" id="line12">12</a>   <span style="color:#2040a0">i</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line13" id="line13">13</a>   <strong>while</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">i</span> <span style="color:#4444ff">&lt;</span> <span style="color:#ff0000">63</span><span style="color:#4444ff">)</span>
+<a name="line14" id="line14">14</a>     <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line15" id="line15">15</a>       <span style="color:#2040a0">min_time</span> <span style="color:#4444ff">*</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">2L</span><span style="color:#4444ff">;</span>
+<a name="line16" id="line16">16</a>       <span style="color:#2040a0">i</span><span style="color:#4444ff">+</span><span style="color:#4444ff">+</span><span style="color:#4444ff">;</span>
+<a name="line17" id="line17">17</a>     <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line18" id="line18">18</a>   <span style="color:#2040a0">max_time</span> <span style="color:#4444ff">=</span> <span style="color:#4444ff">-</span><span style="color:#4444ff">(</span><span style="color:#2040a0">min_time</span> <span style="color:#4444ff">+</span> <span style="color:#ff0000">1L</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line19" id="line19">19</a>   <strong>return</strong><span style="color:#4444ff">;</span>
+<a name="line20" id="line20">20</a> <span style="color:#4444ff"><strong>}</strong></span>
+</pre>
+                            <p>
+                                GCC and Intel CC generate code that executes in 124 cycles and 160 cycles, respectively. Clang’s output, on the other hand, requires only 4 cycles because it can statically evaluate the loop. GCC and ICC can statically evaluate many loops, but not this one.
+                            </p>
+                            <p>
+                                GCC output:
+                            </p>
+                            <pre>
+setboundaries:
+        movl    $63, %eax
+        movq    $-1, %rdx
+.L2:    addq    %rdx, %rdx
+        subl    $1, %eax
+        jne     .L2
+        movq    %rdx, min_time(%rip)
+        notq    %rdx
+        movq    %rdx, max_time(%rip)
+        ret
+</pre>
+                            <p>
+                                Clang output:
+                            </p>
+                            <pre>
+setboundaries:
+        movabsq $-9223372036854775808, %rax # imm = 0x8000000000000000
+        movq    %rax, min_time(%rip)
+        movabsq $9223372036854775807, %rax # imm = 0x7FFFFFFFFFFFFFFF
+        movq    %rax, max_time(%rip)
+        ret
+</pre>
+                            <h1>
+                                Example 2
+                            </h1>
+                            <p>
+                                This function is mad_synth_mute() from synth.c in mad-0.14.2b from the <a href="http://www.eecs.umich.edu/mibench/">MiBench</a> embedded benchmark suite.
+                            </p>
+                            <pre>
+<a name="line1" id="line1">1</a> <strong>typedef</strong> <strong>int</strong> <span style="color:#2040a0">mad_fixed_t</span><span style="color:#4444ff">;</span>
+<a name="line2" id="line2">2</a> <strong>struct</strong> <span style="color:#2040a0">mad_pcm</span>
+<a name="line3" id="line3">3</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line4" id="line4">4</a>   <strong>unsigned</strong> <strong>int</strong> <span style="color:#2040a0">samplerate</span><span style="color:#4444ff">;</span>
+<a name="line5" id="line5">5</a>   <strong>unsigned</strong> <strong>short</strong> <span style="color:#2040a0">channels</span><span style="color:#4444ff">;</span>
+<a name="line6" id="line6">6</a>   <strong>unsigned</strong> <strong>short</strong> <span style="color:#2040a0">length</span><span style="color:#4444ff">;</span>
+<a name="line7" id="line7">7</a>   <span style="color:#2040a0">mad_fixed_t</span> <span style="color:#2040a0">samples</span><span style="color:#4444ff">[</span><span style="color:#ff0000">2</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">1152</span><span style="color:#4444ff">]</span><span style="color:#4444ff">;</span>
+<a name="line8" id="line8">8</a> <span style="color:#4444ff"><strong>}</strong></span><span style="color:#4444ff">;</span>
+<a name="line9" id="line9">9</a> <strong>struct</strong> <span style="color:#2040a0">mad_synth</span>
+<a name="line10" id="line10">10</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line11" id="line11">11</a>   <span style="color:#2040a0">mad_fixed_t</span> <span style="color:#2040a0">filter</span><span style="color:#4444ff">[</span><span style="color:#ff0000">2</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">2</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">2</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">16</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">8</span><span style="color:#4444ff">]</span><span style="color:#4444ff">;</span>
+<a name="line12" id="line12">12</a>   <strong>unsigned</strong> <strong>int</strong> <span style="color:#2040a0">phase</span><span style="color:#4444ff">;</span>
+<a name="line13" id="line13">13</a>   <strong>struct</strong> <span style="color:#2040a0">mad_pcm</span> <span style="color:#2040a0">pcm</span><span style="color:#4444ff">;</span>
+<a name="line14" id="line14">14</a> <span style="color:#4444ff"><strong>}</strong></span><span style="color:#4444ff">;</span>
+<a name="line15" id="line15">15</a> <strong>void</strong> <span style="color:#2040a0">mad_synth_mute</span> <span style="color:#4444ff">(</span><strong>struct</strong> <span style="color:#2040a0">mad_synth</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">synth</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line16" id="line16">16</a> <strong>void</strong>
+<a name="line17" id="line17">17</a> <span style="color:#2040a0">mad_synth_mute</span> <span style="color:#4444ff">(</span><strong>struct</strong> <span style="color:#2040a0">mad_synth</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">synth</span><span style="color:#4444ff">)</span>
+<a name="line18" id="line18">18</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line19" id="line19">19</a>   <strong>unsigned</strong> <strong>int</strong> <span style="color:#2040a0">ch</span><span style="color:#4444ff">;</span>
+<a name="line20" id="line20">20</a>   <strong>unsigned</strong> <strong>int</strong> <span style="color:#2040a0">s</span><span style="color:#4444ff">;</span>
+<a name="line21" id="line21">21</a>   <strong>unsigned</strong> <strong>int</strong> <span style="color:#2040a0">v</span><span style="color:#4444ff">;</span>
+<a name="line22" id="line22">22</a>
+<a name="line23" id="line23">23</a>   <span style="color:#2040a0">ch</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0U</span><span style="color:#4444ff">;</span>
+<a name="line24" id="line24">24</a>   <strong>while</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">ch</span> <span style="color:#4444ff">&lt;</span> <span style="color:#ff0000">2U</span><span style="color:#4444ff">)</span>
+<a name="line25" id="line25">25</a>     <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line26" id="line26">26</a>       <span style="color:#2040a0">s</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0U</span><span style="color:#4444ff">;</span>
+<a name="line27" id="line27">27</a>       <strong>while</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">s</span> <span style="color:#4444ff">&lt;</span> <span style="color:#ff0000">16U</span><span style="color:#4444ff">)</span>
+<a name="line28" id="line28">28</a>         <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line29" id="line29">29</a>           <span style="color:#2040a0">v</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0U</span><span style="color:#4444ff">;</span>
+<a name="line30" id="line30">30</a>           <strong>while</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">v</span> <span style="color:#4444ff">&lt;</span> <span style="color:#ff0000">8U</span><span style="color:#4444ff">)</span>
+<a name="line31" id="line31">31</a>             <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line32" id="line32">32</a>               <span style="color:#2040a0">synth</span><span style="color:#4444ff">-</span><span style="color:#4444ff">&gt;</span><span style="color:#2040a0">filter</span><span style="color:#4444ff">[</span><span style="color:#2040a0">ch</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">1</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">1</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#2040a0">s</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#2040a0">v</span><span style="color:#4444ff">]</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line33" id="line33">33</a>               <span style="color:#2040a0">synth</span><span style="color:#4444ff">-</span><span style="color:#4444ff">&gt;</span><span style="color:#2040a0">filter</span><span style="color:#4444ff">[</span><span style="color:#2040a0">ch</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">1</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">0</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#2040a0">s</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#2040a0">v</span><span style="color:#4444ff">]</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line34" id="line34">34</a>               <span style="color:#2040a0">synth</span><span style="color:#4444ff">-</span><span style="color:#4444ff">&gt;</span><span style="color:#2040a0">filter</span><span style="color:#4444ff">[</span><span style="color:#2040a0">ch</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">0</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">1</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#2040a0">s</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#2040a0">v</span><span style="color:#4444ff">]</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line35" id="line35">35</a>               <span style="color:#2040a0">synth</span><span style="color:#4444ff">-</span><span style="color:#4444ff">&gt;</span><span style="color:#2040a0">filter</span><span style="color:#4444ff">[</span><span style="color:#2040a0">ch</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">0</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#ff0000">0</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#2040a0">s</span><span style="color:#4444ff">]</span><span style="color:#4444ff">[</span><span style="color:#2040a0">v</span><span style="color:#4444ff">]</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line36" id="line36">36</a>               <span style="color:#2040a0">v</span><span style="color:#4444ff">+</span><span style="color:#4444ff">+</span><span style="color:#4444ff">;</span>
+<a name="line37" id="line37">37</a>             <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line38" id="line38">38</a>           <span style="color:#2040a0">s</span><span style="color:#4444ff">+</span><span style="color:#4444ff">+</span><span style="color:#4444ff">;</span>
+<a name="line39" id="line39">39</a>         <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line40" id="line40">40</a>       <span style="color:#2040a0">ch</span><span style="color:#4444ff">+</span><span style="color:#4444ff">+</span><span style="color:#4444ff">;</span>
+<a name="line41" id="line41">41</a>     <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line42" id="line42">42</a>   <strong>return</strong><span style="color:#4444ff">;</span>
+<a name="line43" id="line43">43</a> <span style="color:#4444ff"><strong>}</strong></span>
+</pre>
+                            <p>
+                                The questions here are: Can the compiler recognize that the loops are equivalent to a bzero()? And, how fast of a bzero() can be generated?
+                            </p>
+                            <p>
+                                GCC’s code executes in 256 cycles because the loop is completely unrolled and SSE instructions are used. Intel CC’s code uses SSE but does less unrolling, and takes 308. Clang produces an obvious translation of the source code — locality is poor and 1032 cycles are required.
+                            </p>
+                            <p>
+                                GCC’s code:
+                            </p>
+                            <pre>
+mad_synth_mute:
+        pxor    %xmm0, %xmm0
+        movdqu  %xmm0, (%rdi)
+        movdqu  %xmm0, 16(%rdi)
+        movdqu  %xmm0, 32(%rdi)
+        movdqu  %xmm0, 48(%rdi)
+        movdqu  %xmm0, 64(%rdi)
+        ... (obvious sequence of movdqu instructions elided) ....
+        movdqu  %xmm0, 3936(%rdi)
+        movdqu  %xmm0, 3952(%rdi)
+        movdqu  %xmm0, 3968(%rdi)
+        movdqu  %xmm0, 3984(%rdi)
+        movdqu  %xmm0, 4064(%rdi)
+        movdqu  %xmm0, 4080(%rdi)
+        ret
+</pre>
+                            <h1>
+                                Example 3
+                            </h1>
+                            <p>
+                                This is an initialization function taken from pyexpat.c in Python 2.7.
+                            </p>
+                            <pre>
+<a name="line1" id="line1">1</a> <strong>char</strong> <span style="color:#2040a0">template_buffer</span><span style="color:#4444ff">[</span><span style="color:#ff0000">257</span><span style="color:#4444ff">]</span><span style="color:#4444ff">;</span>
+<a name="line2" id="line2">2</a> <strong>void</strong>
+<a name="line3" id="line3">3</a> <span style="color:#2040a0">init_template_buffer</span> <span style="color:#4444ff">(</span><strong>void</strong><span style="color:#4444ff">)</span>
+<a name="line4" id="line4">4</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line5" id="line5">5</a>   <strong>int</strong> <span style="color:#2040a0">i</span><span style="color:#4444ff">;</span>
+<a name="line6" id="line6">6</a>
+<a name="line7" id="line7">7</a>   <span style="color:#2040a0">i</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line8" id="line8">8</a>   <strong>while</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">i</span> <span style="color:#4444ff">&lt;</span> <span style="color:#ff0000">256</span><span style="color:#4444ff">)</span>
+<a name="line9" id="line9">9</a>     <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line10" id="line10">10</a>       <span style="color:#2040a0">template_buffer</span><span style="color:#4444ff">[</span><span style="color:#2040a0">i</span><span style="color:#4444ff">]</span> <span style="color:#4444ff">=</span> <span style="color:#4444ff">(</span><strong>char</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">i</span><span style="color:#4444ff">;</span>
+<a name="line11" id="line11">11</a>       <span style="color:#2040a0">i</span><span style="color:#4444ff">+</span><span style="color:#4444ff">+</span><span style="color:#4444ff">;</span>
+<a name="line12" id="line12">12</a>     <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line13" id="line13">13</a>   <span style="color:#2040a0">template_buffer</span><span style="color:#4444ff">[</span><span style="color:#ff0000">256</span><span style="color:#4444ff">]</span> <span style="color:#4444ff">=</span> <span style="color:#4444ff">(</span><strong>char</strong><span style="color:#4444ff">)</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line14" id="line14">14</a>   <strong>return</strong><span style="color:#4444ff">;</span>
+<a name="line15" id="line15">15</a> <span style="color:#4444ff"><strong>}</strong></span>
+</pre>
+                            <p>
+                                Here Clang generates the obvious looping code requiring 532 cycles: 2 cycles per loop iteration plus some overhead. GCC generates very good SSE code requiring 86 cycles. Intel CC generates code that executes in 18 cycles:
+                            </p>
+                            <pre>
+init_template_buffer:
+        movl      $269488144, %eax                              #6.3
+        movd      %eax, %xmm0                                   #6.3
+        pshufd    $0, %xmm0, %xmm1                              #6.3
+        movdqa    _2il0floatpacket.0(%rip), %xmm0               #6.3
+        xorl      %eax, %eax                                    #6.3
+..B1.2:                         # Preds ..B1.2 ..B1.1
+        movdqa    %xmm0, template_buffer(%rax)                  #7.5
+        paddb     %xmm1, %xmm0                                  #7.5
+        movdqa    %xmm0, 16+template_buffer(%rax)               #7.5
+        paddb     %xmm1, %xmm0                                  #7.5
+        movdqa    %xmm0, 32+template_buffer(%rax)               #7.5
+        paddb     %xmm1, %xmm0                                  #7.5
+        movdqa    %xmm0, 48+template_buffer(%rax)               #7.5
+        paddb     %xmm1, %xmm0                                  #7.5
+        movdqa    %xmm0, 64+template_buffer(%rax)               #7.5
+        paddb     %xmm1, %xmm0                                  #7.5
+        movdqa    %xmm0, 80+template_buffer(%rax)               #7.5
+        paddb     %xmm1, %xmm0                                  #7.5
+        movdqa    %xmm0, 96+template_buffer(%rax)               #7.5
+        paddb     %xmm1, %xmm0                                  #7.5
+        movdqa    %xmm0, 112+template_buffer(%rax)              #7.5
+        paddb     %xmm1, %xmm0                                  #7.5
+        addq      $128, %rax                                    #6.3
+        cmpq      $256, %rax                                    #6.3
+        jb        ..B1.2        # Prob 99%                      #6.3
+        movb      $0, 256+template_buffer(%rip)                 #10.3
+        ret                                                     #11.3
+</pre>
+                            <p>
+                                Here ICC has performed an impressive 16-way vectorization and 16-way unrolling; the result takes a bit of work to understand.
+                            </p>
+                            <p>
+                                The 269488144 loaded into eax is 0×10101010. The pshufd instruction (<a href="http://siyobik.info/index.php?module=x86&amp;id=254">shuffle packed doublewords</a>) loads the value 0×10101010 10101010 10101010 10101010 into xmm1. The next instruction loads xmm0 with 0×0f0e0d0c 0b0a0908 07060504 03020100.
+                            </p>
+                            <p>
+                                Now the purpose of the first movdqa in the loop is clear: it loads the values {0,1,2, …, 15} into the first 16 bytes of&nbsp; template_buffer. The paddb (packed add, byte-wise) adds 0×10 to each byte of xmm0, leaving its contents 0×1f1e1d1c 1b1a1918 17161514 13121110. These are moved into the next 16 bytes of template_buffer, and so on. The loop body executes only twice before the entire array is initialized.
+                            </p>
+                            <p>
+                                Although this translation seems very fragile, icc can generate equivalent object code for most versions of this code where N, X, and Y are constants:
+                            </p>
+                            <blockquote>
+                                <pre>
+for (i=0; i&lt;N; i++) a[i] = iX+Y;
+</pre>
+                            </blockquote>
+                            <p>
+                                <a name="example4" id="example4"><br></a>
+                            </p>
+                            <h1>
+                                <a name="example4" id="example4">Example 4</a>
+                            </h1>
+                            <p>
+                                This function is tf_bH() from _ctypes_test.c in Python 2.7.
+                            </p>
+                            <pre>
+<a name="line1" id="line1">1</a> <strong>unsigned</strong> <strong>long</strong> <strong>long</strong> <span style="color:#2040a0">last_tf_arg_u</span><span style="color:#4444ff">;</span>
+<a name="line2" id="line2">2</a> <strong>unsigned</strong> <strong>short</strong>
+<a name="line3" id="line3">3</a> <span style="color:#2040a0">tf_bH</span> <span style="color:#4444ff">(</span><strong>signed</strong> <strong>char</strong> <span style="color:#2040a0">x</span>, <strong>unsigned</strong> <strong>short</strong> <span style="color:#2040a0">c</span><span style="color:#4444ff">)</span>
+<a name="line4" id="line4">4</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line5" id="line5">5</a>   <span style="color:#2040a0">last_tf_arg_u</span> <span style="color:#4444ff">=</span> <span style="color:#4444ff">(</span><strong>unsigned</strong> <strong>long</strong> <strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span><span style="color:#4444ff">;</span>
+<a name="line6" id="line6">6</a>   <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>unsigned</strong> <strong>short</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> / <span style="color:#ff0000">3</span><span style="color:#4444ff">)</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line7" id="line7">7</a> <span style="color:#4444ff"><strong>}</strong></span>
+</pre>
+                            <p>
+                                Here GCC and Intel CC both generate code that executes in 6 cycles, whereas Clang’s takes 18.
+                            </p>
+                            <p>
+                                GCC’s output:
+                            </p>
+                            <pre>
+tf_bH:
+        movzwl  %si, %eax
+        movq    %rax, last_tf_arg_u(%rip)
+        movzwl  %si, %eax
+        imull   $43691, %eax, %eax
+        shrl    $17, %eax
+        ret
+</pre>
+                            <p>
+                                Clang’s:
+                            </p>
+                            <pre>
+tf_bH:                                  # @tf_bH
+        movq    %rsi, last_tf_arg_u(%rip)
+        movw    %si, %ax
+        movw    $-21845, %cx            # imm = 0xFFFFFFFFFFFFAAAB
+        mulw    %cx
+        andl    $65534, %edx            # imm = 0xFFFE
+        movl    %edx, %eax
+        shrl    %eax
+        ret
+</pre>
+                            <p>
+                                At first glance, both compilers have done the right thing: turned the divide-by-constant into a multiply. The difference in execution times is explained by the Intel Optimization Reference Manual, Assembly/Compiler Coding Rule 21:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Favor generating code using imm8 or imm32 values instead of imm16 values. If imm16 is needed, load equivalent imm32 into a register and use the word value in the register instead.
+                                </p>
+                            </blockquote>
+                            <p>
+                                We verified that this is the problem by changing the imm16 value to imm32 by hand and re-running the performance test.
+                            </p>
+                            <h1>
+                                Example 5
+                            </h1>
+                            <p>
+                                This function is get_domain() from tree-call-cdce.c in GCC 4.5.0.
+                            </p>
+                            <pre>
+<a name="line1" id="line1">1</a> <strong>struct</strong> <span style="color:#2040a0">input_domain</span>
+<a name="line2" id="line2">2</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line3" id="line3">3</a>   <strong>int</strong> <span style="color:#2040a0">lb</span><span style="color:#4444ff">;</span>
+<a name="line4" id="line4">4</a>   <strong>int</strong> <span style="color:#2040a0">ub</span><span style="color:#4444ff">;</span>
+<a name="line5" id="line5">5</a>   <strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">has_lb</span><span style="color:#4444ff">;</span>
+<a name="line6" id="line6">6</a>   <strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">has_ub</span><span style="color:#4444ff">;</span>
+<a name="line7" id="line7">7</a>   <strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">is_lb_inclusive</span><span style="color:#4444ff">;</span>
+<a name="line8" id="line8">8</a>   <strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">is_ub_inclusive</span><span style="color:#4444ff">;</span>
+<a name="line9" id="line9">9</a> <span style="color:#4444ff"><strong>}</strong></span><span style="color:#4444ff">;</span>
+<a name="line10" id="line10">10</a> <strong>typedef</strong> <strong>struct</strong> <span style="color:#2040a0">input_domain</span> <span style="color:#2040a0">inp_domain</span><span style="color:#4444ff">;</span>
+<a name="line11" id="line11">11</a> <span style="color:#2040a0">inp_domain</span>
+<a name="line12" id="line12">12</a> <span style="color:#2040a0">get_domain</span> <span style="color:#4444ff">(</span><strong>int</strong> <span style="color:#2040a0">lb</span>, <strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">has_lb</span>, <strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">lb_inclusive</span>,
+<a name="line13" id="line13">13</a>             <strong>int</strong> <span style="color:#2040a0">ub</span>, <strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">has_ub</span>, <strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">ub_inclusive</span><span style="color:#4444ff">)</span>
+<a name="line14" id="line14">14</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line15" id="line15">15</a>   <span style="color:#2040a0">inp_domain</span> <span style="color:#2040a0">domain</span><span style="color:#4444ff">;</span>
+<a name="line16" id="line16">16</a>
+<a name="line17" id="line17">17</a>   <span style="color:#2040a0">domain</span>.<span style="color:#2040a0">lb</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">lb</span><span style="color:#4444ff">;</span>
+<a name="line18" id="line18">18</a>   <span style="color:#2040a0">domain</span>.<span style="color:#2040a0">has_lb</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">has_lb</span><span style="color:#4444ff">;</span>
+<a name="line19" id="line19">19</a>   <span style="color:#2040a0">domain</span>.<span style="color:#2040a0">is_lb_inclusive</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">lb_inclusive</span><span style="color:#4444ff">;</span>
+<a name="line20" id="line20">20</a>   <span style="color:#2040a0">domain</span>.<span style="color:#2040a0">ub</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">ub</span><span style="color:#4444ff">;</span>
+<a name="line21" id="line21">21</a>   <span style="color:#2040a0">domain</span>.<span style="color:#2040a0">has_ub</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">has_ub</span><span style="color:#4444ff">;</span>
+<a name="line22" id="line22">22</a>   <span style="color:#2040a0">domain</span>.<span style="color:#2040a0">is_ub_inclusive</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">ub_inclusive</span><span style="color:#4444ff">;</span>
+<a name="line23" id="line23">23</a>   <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">domain</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line24" id="line24">24</a> <span style="color:#4444ff"><strong>}</strong></span>
+</pre>
+                            <p>
+                                This function simply loads its arguments into a struct. GCC pushes the values through memory, taking 35 cycles. Intel CC generates code that uses memory 6 times (as opposed to 8 for GCC), requiring 24 cycles. Clang assembles the struct using registers, requiring only 12 cycles.
+                            </p>
+                            <p>
+                                GCC’s code:
+                            </p>
+                            <pre>
+get_domain:
+        movl    %edi, -24(%rsp)
+        movl    %ecx, -20(%rsp)
+        movb    %sil, -16(%rsp)
+        movq    -24(%rsp), %rax
+        movb    %r8b, -15(%rsp)
+        movb    %dl, -14(%rsp)
+        movb    %r9b, -13(%rsp)
+        movl    -16(%rsp), %edx
+        ret
+</pre>
+                            <p>
+                                Clang’s:
+                            </p>
+                            <pre>
+get_domain:
+        movl    %edi, %eax
+        shlq    $32, %rcx
+        leaq    (%rcx,%rax), %rax
+        shll    $16, %edx
+        orl     %esi, %edx
+        shll    $8, %r8d
+        orl     %edx, %r8d
+        shll    $24, %r9d
+        movl    %r9d, %edx
+        orl     %r8d, %edx
+        ret
+</pre>
+                            <h1>
+                                Example 6
+                            </h1>
+                            <p>
+                                This function is php_filter_parse_int() from logical_filters.c in PHP 5.3.3.
+                            </p>
+                            <pre>
+<a name="line1" id="line1">1</a> <strong>int</strong>
+<a name="line2" id="line2">2</a> <span style="color:#2040a0">php_filter_parse_int</span> <span style="color:#4444ff">(</span><strong>char</strong> <strong>const</strong> <span style="color:#4444ff">*</span><span style="color:#2040a0">str</span>, <strong>unsigned</strong> <strong>int</strong> <span style="color:#2040a0">str_len</span>, <strong>long</strong> <span style="color:#4444ff">*</span><span style="color:#2040a0">ret</span><span style="color:#4444ff">)</span>
+<a name="line3" id="line3">3</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line4" id="line4">4</a>   <strong>long</strong> <span style="color:#2040a0">ctx_value</span><span style="color:#4444ff">;</span>
+<a name="line5" id="line5">5</a>   <strong>int</strong> <span style="color:#2040a0">sign</span><span style="color:#4444ff">;</span>
+<a name="line6" id="line6">6</a>   <strong>int</strong> <span style="color:#2040a0">digit</span><span style="color:#4444ff">;</span>
+<a name="line7" id="line7">7</a>   <strong>char</strong> <strong>const</strong> <span style="color:#4444ff">*</span><span style="color:#2040a0">end</span><span style="color:#4444ff">;</span>
+<a name="line8" id="line8">8</a>   <strong>int</strong> <span style="color:#2040a0">tmp</span><span style="color:#4444ff">;</span>
+<a name="line9" id="line9">9</a>   <strong>char</strong> <strong>const</strong> <span style="color:#4444ff">*</span><span style="color:#2040a0">tmp___0</span><span style="color:#4444ff">;</span>
+<a name="line10" id="line10">10</a>   <strong>char</strong> <strong>const</strong> <span style="color:#4444ff">*</span><span style="color:#2040a0">tmp___1</span><span style="color:#4444ff">;</span>
+<a name="line11" id="line11">11</a>
+<a name="line12" id="line12">12</a>   <span style="color:#2040a0">sign</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line13" id="line13">13</a>   <span style="color:#2040a0">digit</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">;</span>
+<a name="line14" id="line14">14</a>   <span style="color:#2040a0">end</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">str</span> <span style="color:#4444ff">+</span> <span style="color:#2040a0">str_len</span><span style="color:#4444ff">;</span>
+<a name="line15" id="line15">15</a>   <strong>switch</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">str</span><span style="color:#4444ff">)</span>
+<a name="line16" id="line16">16</a>     <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line17" id="line17">17</a>     <strong>case</strong> <span style="color:#ff0000">45</span><span style="color:#4444ff">:</span>
+<a name="line18" id="line18">18</a>       <span style="color:#2040a0">sign</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">1</span><span style="color:#4444ff">;</span>
+<a name="line19" id="line19">19</a>     <strong>case</strong> <span style="color:#ff0000">43</span><span style="color:#4444ff">:</span>
+<a name="line20" id="line20">20</a>       <span style="color:#2040a0">str</span><span style="color:#4444ff">+</span><span style="color:#4444ff">+</span><span style="color:#4444ff">;</span>
+<a name="line21" id="line21">21</a>     <strong>default</strong><span style="color:#4444ff">:</span><span style="color:#4444ff">;</span>
+<a name="line22" id="line22">22</a>       <strong>break</strong><span style="color:#4444ff">;</span>
+<a name="line23" id="line23">23</a>     <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line24" id="line24">24</a>   <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>unsigned</strong> <strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">str</span> <span style="color:#4444ff">&lt;</span> <span style="color:#4444ff">(</span><strong>unsigned</strong> <strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">end</span><span style="color:#4444ff">)</span>
+<a name="line25" id="line25">25</a>     <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line26" id="line26">26</a>       <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong> <strong>const</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">str</span> <span style="color:#4444ff">&gt;</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">49</span><span style="color:#4444ff">)</span>
+<a name="line27" id="line27">27</a>        <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line28" id="line28">28</a>          <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong> <strong>const</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">str</span> <span style="color:#4444ff">&lt;</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">57</span><span style="color:#4444ff">)</span>
+<a name="line29" id="line29">29</a>            <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line30" id="line30">30</a>              <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">sign</span><span style="color:#4444ff">)</span>
+<a name="line31" id="line31">31</a>                <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line32" id="line32">32</a>                  <span style="color:#2040a0">tmp</span> <span style="color:#4444ff">=</span> <span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">;</span>
+<a name="line33" id="line33">33</a>                <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line34" id="line34">34</a>              <strong>else</strong>
+<a name="line35" id="line35">35</a>                <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line36" id="line36">36</a>                  <span style="color:#2040a0">tmp</span> <span style="color:#4444ff">=</span> <span style="color:#ff0000">1</span><span style="color:#4444ff">;</span>
+<a name="line37" id="line37">37</a>                <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line38" id="line38">38</a>              <span style="color:#2040a0">tmp___0</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">str</span><span style="color:#4444ff">;</span>
+<a name="line39" id="line39">39</a>              <span style="color:#2040a0">str</span><span style="color:#4444ff">+</span><span style="color:#4444ff">+</span><span style="color:#4444ff">;</span>
+<a name="line40" id="line40">40</a>              <span style="color:#2040a0">ctx_value</span> <span style="color:#4444ff">=</span> <span style="color:#4444ff">(</span><strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">(</span><span style="color:#2040a0">tmp</span> <span style="color:#4444ff">*</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong> <strong>const</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">tmp___0</span> <span style="color:#4444ff">-</span> <span style="color:#ff0000">48</span><span style="color:#4444ff">)</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line41" id="line41">41</a>            <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line42" id="line42">42</a>          <strong>else</strong>
+<a name="line43" id="line43">43</a>            <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line44" id="line44">44</a>              <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line45" id="line45">45</a>            <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line46" id="line46">46</a>        <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line47" id="line47">47</a>       <strong>else</strong>
+<a name="line48" id="line48">48</a>        <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line49" id="line49">49</a>          <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line50" id="line50">50</a>        <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line51" id="line51">51</a>     <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line52" id="line52">52</a>   <strong>else</strong>
+<a name="line53" id="line53">53</a>     <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line54" id="line54">54</a>       <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line55" id="line55">55</a>     <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line56" id="line56">56</a>   <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">end</span> <span style="color:#4444ff">-</span> <span style="color:#2040a0">str</span> <span style="color:#4444ff">&gt;</span> <span style="color:#ff0000">19</span><span style="color:#4444ff">)</span>
+<a name="line57" id="line57">57</a>     <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line58" id="line58">58</a>       <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line59" id="line59">59</a>     <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line60" id="line60">60</a>   <strong>while</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>unsigned</strong> <strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">str</span> <span style="color:#4444ff">&lt;</span> <span style="color:#4444ff">(</span><strong>unsigned</strong> <strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">end</span><span style="color:#4444ff">)</span>
+<a name="line61" id="line61">61</a>     <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line62" id="line62">62</a>       <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong> <strong>const</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">str</span> <span style="color:#4444ff">&gt;</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">48</span><span style="color:#4444ff">)</span>
+<a name="line63" id="line63">63</a>        <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line64" id="line64">64</a>          <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong> <strong>const</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">str</span> <span style="color:#4444ff">&lt;</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">57</span><span style="color:#4444ff">)</span>
+<a name="line65" id="line65">65</a>            <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line66" id="line66">66</a>              <span style="color:#2040a0">tmp___1</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">str</span><span style="color:#4444ff">;</span>
+<a name="line67" id="line67">67</a>              <span style="color:#2040a0">str</span><span style="color:#4444ff">+</span><span style="color:#4444ff">+</span><span style="color:#4444ff">;</span>
+<a name="line68" id="line68">68</a>              <span style="color:#2040a0">digit</span> <span style="color:#4444ff">=</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong> <strong>const</strong><span style="color:#4444ff">)</span> <span style="color:#4444ff">*</span><span style="color:#2040a0">tmp___1</span> <span style="color:#4444ff">-</span> <span style="color:#ff0000">48</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line69" id="line69">69</a>              <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">!</span><span style="color:#2040a0">sign</span><span style="color:#4444ff">)</span>
+<a name="line70" id="line70">70</a>                <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line71" id="line71">71</a>                  <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">ctx_value</span> <span style="color:#4444ff">&lt;</span><span style="color:#4444ff">=</span>
+<a name="line72" id="line72">72</a>                      <span style="color:#4444ff">(</span><span style="color:#ff0000">9223372036854775807L</span> <span style="color:#4444ff">-</span> <span style="color:#4444ff">(</span><strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">digit</span><span style="color:#4444ff">)</span> / <span style="color:#ff0000">10L</span><span style="color:#4444ff">)</span>
+<a name="line73" id="line73">73</a>                    <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line74" id="line74">74</a>                      <span style="color:#2040a0">ctx_value</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">ctx_value</span> <span style="color:#4444ff">*</span> <span style="color:#ff0000">10L</span> <span style="color:#4444ff">+</span> <span style="color:#4444ff">(</span><strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">digit</span><span style="color:#4444ff">;</span>
+<a name="line75" id="line75">75</a>                    <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line76" id="line76">76</a>                  <strong>else</strong>
+<a name="line77" id="line77">77</a>                    <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line78" id="line78">78</a>                      <strong>goto</strong> <span style="color:#2040a0">_L</span><span style="color:#4444ff">;</span>
+<a name="line79" id="line79">79</a>                    <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line80" id="line80">80</a>                <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line81" id="line81">81</a>              <strong>else</strong>
+<a name="line82" id="line82">82</a>                <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line83" id="line83">83</a>                <span style="color:#2040a0">_L</span><span style="color:#4444ff">:</span>
+<a name="line84" id="line84">84</a>                  <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">sign</span><span style="color:#4444ff">)</span>
+<a name="line85" id="line85">85</a>                    <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line86" id="line86">86</a>                      <strong>if</strong> <span style="color:#4444ff">(</span><span style="color:#2040a0">ctx_value</span> <span style="color:#4444ff">&gt;</span><span style="color:#4444ff">=</span>
+<a name="line87" id="line87">87</a>                          <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">0x7FFFFFFFFFFFFFFF</span> <span style="color:#4444ff">-</span> <span style="color:#ff0000">1</span><span style="color:#4444ff">)</span> <span style="color:#4444ff">+</span> <span style="color:#4444ff">(</span><strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">digit</span><span style="color:#4444ff">)</span> / <span style="color:#ff0000">10L</span><span style="color:#4444ff">)</span>
+<a name="line88" id="line88">88</a>                        <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line89" id="line89">89</a>                          <span style="color:#2040a0">ctx_value</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">ctx_value</span> <span style="color:#4444ff">*</span> <span style="color:#ff0000">10L</span> <span style="color:#4444ff">-</span> <span style="color:#4444ff">(</span><strong>long</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">digit</span><span style="color:#4444ff">;</span>
+<a name="line90" id="line90">90</a>                        <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line91" id="line91">91</a>                      <strong>else</strong>
+<a name="line92" id="line92">92</a>                        <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line93" id="line93">93</a>                          <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line94" id="line94">94</a>                        <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line95" id="line95">95</a>                    <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line96" id="line96">96</a>                  <strong>else</strong>
+<a name="line97" id="line97">97</a>                    <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line98" id="line98">98</a>                      <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line99" id="line99">99</a>                    <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line100" id="line100">100</a>               <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line101" id="line101">101</a>           <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line102" id="line102">102</a>         <strong>else</strong>
+<a name="line103" id="line103">103</a>           <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line104" id="line104">104</a>             <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line105" id="line105">105</a>           <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line106" id="line106">106</a>       <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line107" id="line107">107</a>       <strong>else</strong>
+<a name="line108" id="line108">108</a>       <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line109" id="line109">109</a>         <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">-</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line110" id="line110">110</a>       <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line111" id="line111">111</a>     <span style="color:#4444ff"><strong>}</strong></span>
+<a name="line112" id="line112">112</a>   <span style="color:#4444ff">*</span><span style="color:#2040a0">ret</span> <span style="color:#4444ff">=</span> <span style="color:#2040a0">ctx_value</span><span style="color:#4444ff">;</span>
+<a name="line113" id="line113">113</a>   <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#ff0000">1</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line114" id="line114">114</a> <span style="color:#4444ff"><strong>}</strong></span>
+</pre>
+                            <p>
+                                The assembly is long and not that interesting. The upshot is that Clang and Intel CC are able to turn the divisions by 10 at lines 72 and 87 into integer multiplies, whereas GCC leaves division instructions in the generated code. It is not clear why this happens; as we saw above, other divisions-by-constant are optimized successfully by this compiler. The result is that Clang’s and ICC’s code executes in 41 cycles whereas GCC’s takes 133.<br>
+                                <a name="example7" id="example7"><br></a>
+                            </p>
+                            <h1>
+                                <a name="example7" id="example7">Example 7</a>
+                            </h1>
+                            <p>
+                                This function is crud() from ident.c in git-1.7.3.2.
+                            </p>
+                            <pre>
+<a name="line1" id="line1">1</a> <strong>int</strong> <span style="color:#2040a0">crud</span> <span style="color:#4444ff">(</span><strong>unsigned</strong> <strong>char</strong> <span style="color:#2040a0">c</span><span style="color:#4444ff">)</span>
+<a name="line2" id="line2">2</a> <span style="color:#4444ff"><strong>{</strong></span>
+<a name="line3" id="line3">3</a>   <strong>return</strong> <span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">&lt;</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">32</span> <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">46</span><span style="color:#4444ff">)</span> <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">44</span><span style="color:#4444ff">)</span>
+<a name="line4" id="line4">4</a>            <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">58</span><span style="color:#4444ff">)</span> <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">59</span><span style="color:#4444ff">)</span> <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">60</span><span style="color:#4444ff">)</span>
+<a name="line5" id="line5">5</a>         <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">62</span><span style="color:#4444ff">)</span> <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">34</span><span style="color:#4444ff">)</span> <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">92</span><span style="color:#4444ff">)</span>
+<a name="line6" id="line6">6</a>      <span style="color:#4444ff">|</span><span style="color:#4444ff">|</span> <span style="color:#4444ff">(</span><strong>int</strong><span style="color:#4444ff">)</span> <span style="color:#2040a0">c</span> <span style="color:#4444ff">=</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">39</span><span style="color:#4444ff">)</span> <span style="color:#4444ff">!</span><span style="color:#4444ff">=</span> <span style="color:#ff0000">0</span><span style="color:#4444ff">)</span><span style="color:#4444ff">;</span>
+<a name="line7" id="line7">7</a> <span style="color:#4444ff"><strong>}</strong></span>
+</pre>
+                            <p>
+                                GCC and Clang generate the obvious cascaded comparisons and their code executes in 21 and 24 cycles, respectively. Intel CC is far more clever and its code requires only 8 cycles:
+                            </p>
+                            <pre>
+crud:
+        movzbl    %dil, %edi
+        cmpl      $32, %edi
+        jle       ..B1.4
+        addl      $-34, %edi
+        cmpl      $64, %edi
+        jae       ..B1.5
+        movl      $1, %eax
+        movl      %edi, %ecx
+        shlq      %cl, %rax
+        movq      $0x400000017001421, %rdx
+        testq     %rdx, %rax
+        je        ..B1.5
+..B1.4:
+        movl      $1, %eax
+        ret
+..B1.5:
+        xorl      %eax, %eax
+        ret
+</pre>
+                            <p>
+                                Since the range of characters being checked for is less than 64, ICC is able to pre-compute a bitmap with 1s in positions corresponding to the desired characters.
+                            </p>
+                            <h1>
+                                Conclusions
+                            </h1>
+                            <p>
+                                Our idea is that using a small collection of compilers and a large collection of realistic benchmark functions, we can get the compilers to reveal performance limitations in each other. Once the basic infrastructure is in place, results can be recompiled with almost no manual effort. Although there are obvious limitations of this approach — it cannot spot an optimization missed by all compilers, it does not take the larger execution context of a benchmark function into account, etc. — we hope that it will become a useful part of compiler developers’ arsenal against performance problems.
+                            </p>
+                            <p>
+                                These are very early results, selected from only about 1400 benchmark functions. As we remove limitations of the tool, it should become possible to harvest and test hundreds of thousands of benchmark functions. At that point, it may become useful to incorporate profile data into our metric for interesting functions, in order to direct compiler developers towards missed optimizations that are causing the most real slowdown.
+                            </p><img src="http://feeds.feedburner.com/~r/EmbeddedInAcademia/~4/pUD2Cgnf0aE" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.regehr.org/archives/320?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29">http://blog.regehr.org/archives/320?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+EmbeddedInAcademia+%28Embedded+in+Academia%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

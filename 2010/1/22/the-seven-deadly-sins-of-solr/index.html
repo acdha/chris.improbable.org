@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The Seven Deadly Sins of Solr
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 22 Jan 2010 07:04:41 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-01-22T02:04:41-04:00">
+                    <meta itemprop="dateModified" content="2010-01-22T02:04:41-04:00"><time class="date" itemprop="datePublished" datetime="2010-01-22T06:04:41+00:00">Jan 22</time>
+                    <h2 itemprop="title">
+                        The Seven Deadly Sins of Solr
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5595eed67fa8998f">
+                        <blockquote>
+                            <p>
+                                Working at Lucid Imagination gives me the opportunity to analyze and evaluate a great many instances of Solr implementations, running in some of the largest Fortune 500 companies as well as some of the smallest start-ups. This experience has enabled me to identify many common mistakes and pitfalls that occur, either when starting out with a new Solr implementation, or by not keeping up with the latest improvements and changes.
+                            </p>
+                            <p>
+                                Thanks to my colleague Simon Rosenthal for suggesting the title, and to Simon, Lance Norskog, and Tom Hill for helpful input and suggestions.
+                            </p>
+                            <p>
+                                So, without further ado…the <em>Seven Deadly Sins of Solr.</em>
+                            </p>
+                            <h2>
+                                Sin number 1: Sloth
+                            </h2>
+                            <p>
+                                ﻿<a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/sloth.png"><img title="sloth" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/sloth-300x200.png" alt="I'll do it later" width="300" height="200"></a>
+                            </p>
+                            <p>
+                                Let’s define sloth as <em>laziness or indifference</em>. This one bites most of us at some time or another. We just can’t resist the impulse to take a shortcut, or we simply refuse to acknowledge the amount of effort required to do a task properly. Ultimately we wind up paying the price, usually with interest. Here are some common examples of how laziness or indifference lead to Solr problems.
+                            </p>
+                            <ul>
+                                <li>
+                                    <strong>A general lack of commitment either to Solr or to the search application project itself</strong>. Sometimes you see this when a company has decided to switch from a commercial search application to open-source alternatives like Lucene and Solr. The engineers involved in the project are used to the “old ways” and really don’t feel like mastering <a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/blind.png"><img title="blind" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/blind-150x150.png" alt="" width="150" height="150"></a>another search technology. So without making even the slightest effort they will claim that Solr is inefficient, difficult to learn, not worth the effort, etc. If you’re hungry it’s usually not productive to stand around waiting for a fried chicken to fly into your mouth – your time might be better spent being a little more active in your efforts to acquire some food. Open-source software is flexible, adaptable, and powerful, but the developers that become the experts at open-source solutions are those that are not afraid to roll up their sleeves and dive in to learn what they need. Participate in the mailing lists. Open the source code. Read the javadocs and the wiki. I’ve worked with customers that have embraced Solr and become experts in a fairly short amount of time, even contributing patches within a few weeks of starting their project. On the other hand I’ve seen problems fester and grow because a team just won’t put any effort into their Solr implementation. “There are none so blind as those who will not see.”
+                                </li>
+                                <li>
+                                    <strong>Not reviewing, editing, or changing the default schema.xml and/or solrconfig.xml files</strong>. If I had a dollar for every production Solr instance that was statically warming the query “solr rocks” I could afford a years worth of support from a commercial search vendor. The default example configuration files are there to be used as, yes, <em>examples</em>, and as starting points. Take the time to learn about the configuration settings and field types, and make the best use of them. Remove anything that is not being used (how many times have you really queried that “partitioned” request handler…) Keep your configuration files lean and mean and maintainable and it will pay off in the long run.
+                                </li>
+                                <li>
+                                    <strong>Ignoring the dismax query parser</strong>. I’ve seen cases where someone has written a custom query parser on their own when the work they needed to do could have easily been done with the dismax query parser. There are two different extremes to why folks sometimes avoid dismax. On one side there is the feeling that it is a “dumbed down” parser. I think part of the problem here is caused from the first line on the DismaxRequestHandler wiki page (and by the way, we still suffer from this unfortunate legacy nomenclature – it is a query parser, not a request handler) which says that dismax is “designed to process simple user entered phrases”. There is sometimes a feeling that it is merely an entry-level tool for those who don’t want to do any work crafting their queries. Au contraire! Dismax has an enormous amount of power and flexibility. Which leads to the second side of “dismax avoidance”, namely that it’s “too complicated”. Indeed, it is somewhat complicated. But the rewards of spending some time to get familiar with it are substantial.
+                                </li>
+                                <li>
+                                    <strong>Not enough attention on JVM settings and garbage collection</strong>. One needn’t become a JVM Jedi to run a well-tuned Solr instance, but some time spent on learning the basics about different garbage collector types and monitoring the JVM with tools such as JConsole, will pay dividends. A good starting place is a <a href="http://www.lucidimagination.com/blog/2009/09/19/java-garbage-collection-boot-camp-draft/">blog by my colleague Mark Miller</a> of Lucid Imagination. Another good resource is this <a href="http://java.sun.com/docs/hotspot/gc5.0/gc_tuning_5.html">document put out by Sun</a>.
+                                </li>
+                            </ul>
+                            <h2>
+                                Sin number 2: Greed
+                            </h2>
+                            <p>
+                                <a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/greed.png"><img title="greed" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/greed-234x300.png" alt="We already have plenty of RAM" width="234" height="300"></a>
+                            </p>
+                            <p>
+                                Penny-wise and pound-foolish. This is a surprisingly all-too-common trap that some fall into. Obviously not everyone has an unbounded budget, but sometimes terrible decisions are made to constrain resources, decisions that will prove to be more costly over time. For example:
+                            </p>
+                            <ul>
+                                <li>
+                                    <strong>Refusal to add the proper amount of RAM to a server</strong>. There have been occasions when I’ve had more RAM on my Mac laptop (4GB) than some of the production Solr implementations I’ve seen. Sometimes even Solr projects at large companies have been under-funded. There will be business requirements that make high memory demands (sorting on large String fields, lots of faceting on fields with huge numbers of distinct terms, etc.) but the expectation will be that this can somehow be “made to work” with an insufficient amount of RAM and some kind of wizardry. A friend of mine has a saying, “You can’t fit 15 pounds of rice into a 10 pound bag.” By all means commit to at least acquiring the minimum adequate amount of resources.
+                                </li>
+                                <li>
+                                    <strong>Insisting on running indexing and searching on the same host</strong>. One of the first recommendations we at Lucid Imagination often make to customers is to separate the indexing and searching process to (at least) two separate nodes. There are several benefits to be gained by doing this. First, the indexing and searching processes are not competing for resources (cpu, memory, etc.). Second, the master and slave(s) can be configured slightly differently for optimum performance. Be sure to budget for adequate hardware based on your document count, index size, and expected query volume.
+                                </li>
+                            </ul>
+                            <h2>
+                                Sin number 3: Pride
+                            </h2>
+                            <p>
+                                <a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/pride.png"><img title="pride" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/pride-180x300.png" alt="I've got this covered" width="180" height="300"></a>
+                            </p>
+                            <p>
+                                Pride (for our purposes): failing to acknowledge the good work of others. An excessive love of self.
+                            </p>
+                            <p>
+                                Engineers love to code. Sometimes to the point of wanting to create custom work that may have a solution in place already, just because: a) They believe they can do it better. b) They believe they can learn by going through the process. c) It “would be fun”. This is not meant to discourage new work to help out with an open-source project, to contribute bug fixes, or certainly to improve existing functionality. But be careful not to rush off and start coding before you know what options already exist. Measure twice, cut once.
+                            </p>
+                            <ul>
+                                <li>
+                                    <strong>Don’t re-invent the wheel</strong>. I’ve seen developers almost look for excuses to write their own query parser or other custom component. Sometimes such effort is necessary, and luckily open-source software makes this doable in ways that would never be possible with commercial search software. But make sure you have a real need before writing custom code – at least while on the company’s dime. There is extra effort in maintaining a custom codebase and keeping it in sync with Solr, so make sure it really is the only option to solve a particular use case.
+                                </li>
+                                <li>
+                                    <strong>Make use of the mailing lists and the list archives</strong>. This should be obvious, but there are still many who think that this is beneath them in some way, as if asking for help was somehow a flaw. On the other hand, when posting to the mailing lists, make efficient use of everyone’s time. Be sure to thoroughly search the list archives before posting. (<a href="http://search.lucidimagination.com">LucidFind</a> makes it a snap to search relevant mailing lists, wikis, blogs, javadoc, and other sources in one place.) If and when you do post a question provide a succinct description of the problem and make it clear to others what you need. Stay on topic throughout the thread. Lucene and Solr committers and Lucid Imagination staff are regular participants on the mailing lists, so take advantage of this resource when you have a real need.
+                                </li>
+                            </ul>
+                            <h2>
+                                Sin number 4: Lust
+                            </h2>
+                            <p>
+                                <a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/lust.png"><img title="lust" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/lust-280x300.png" alt="Must have more!" width="280" height="300"></a>
+                            </p>
+                            <p>
+                                You’ll have to grant me artistic license on this one, or else we won’t be able to keep this blog G-rated. So let’s define lust as “an unnatural craving for something to the point of self-indulgence or lunacy”. OK.
+                            </p>
+                            <ul>
+                                <li>
+                                    <strong>Setting the JVM Heap size too high, not leaving enough RAM for the OS</strong>. So we finally get the RAM allocation we’ve been pining for (see: Greed) and now what do we do? We’ve got 16GB of RAM on our machine now so we allocate 15GB to the heap where Solr is running. Whoa! Time for a cold shower! Solr may be the only object of your desire, but don’t neglect the operating system. Patience and attention come into play here. Monitor the JVM under load and determine what the real memory footprint of Solr is. You’ll want the operating system to be able to cache file system data (especially the Lucene indexes) so be sure to leave enough RAM for the OS.
+                                </li>
+                                <li>
+                                    <strong>Too much attention on the JVM and garbage collection</strong>. On the other hand (and in direct contrast to our first bullet-point under Greed), don’t overdo it on the JVM. There are seemingly unending ways to tweak and tune a JVM. Don’t fall into the trap of trying every arcane JVM or GC setting unless you are a JVM expert. Once you have mastered the basics of the JVM and understand the differences between the different types of garbage collectors, for the most part you shouldn’t have to get too creative. Don’t just toss “-XX:CMSIncrementalDutyCycleMin=10″ into the mix out of curiosity.
+                                </li>
+                                <li>
+                                    <strong>Trying to “push the envelope” on auto-warm counts</strong>. How warm is too warm? We all want the fastest search response times possible, and auto-warming Solr’s queryResultCache and filterCache are important tools to help keep responses for the most popular queries as fast as possible. But let’s not get carried away. Excessive auto-warm counts can cause excessive warm-up <a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/flame.png"><img title="flame" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/flame-150x150.png" alt="" width="150" height="150"></a>times for the caches, which in turn affect the warm-up time of new IndexSearchers after every commit. Ask yourself if you really need to auto-warm the top 5,000 queries every time a commit occurs. It’s very easy to get obsessed with this and find that the time to warm-up a new IndexSearcher is extending beyond your commit cycles, which can lead to all kinds of odd behavior, including OutOfMemory Exceptions. Make sure you know what your average warm-up times are for all of your caches and your new IndexSearchers. It’s actually best to start out with more modest auto-warm counts and work up if necessary rather than start out too high. Create reports or database records of user queries by parsing your production log files. Use that data to get a feel for what the most popular queries are. Sometimes just setting an auto-warm count to 100 is plenty. But it takes time and effort to find the sweet spot between caches that are too cool and caches that are “en fuego”.
+                                </li>
+                            </ul>
+                            <h2>
+                                Sin number 5: Envy
+                            </h2>
+                            <p>
+                                <a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/envy.png"><img title="envy" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/envy.png" alt="Bah!" width="295" height="259"></a>
+                            </p>
+                            <ul>
+                                <li>
+                                    <strong>Wanting features that other sites have, that you really don’t need</strong>. Stay focused on your business needs. Make sure you know what you really need from your search application. A common scenario on the mailing lists is one that Lucene/Solr committer Chris Hostetter calls the “XY” problem. From the Solr user mailing list: <em>“You are dealing with ‘X’, you are assuming ‘Y’ will help you, and you are asking about ‘Y’ without giving more details about the ‘X’ so that we can understand the full issue.&nbsp; Perhaps the best solution doesn’t involve ‘Y’ at all”</em>. Know what you need and keep focused on the requirements.
+                                </li>
+                                <li>
+                                    <strong>Wanting to have a bigger index than the other guy</strong>. The antithesis of the “greed” issue of not allocating enough resources. “Shooting for the moon” and trying to allow for possible growth over the next 20 years. A trap for those who believe their status is determined by the size of their server farm. By all means plan ahead, but don’t expect that you can see into the future to foresee every possible scenario. Plan smartly, but don’t overdo it.
+                                </li>
+                            </ul>
+                            <h2>
+                                Sin number 6: Gluttony
+                            </h2>
+                            <p>
+                                <a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/glutonny.png"><img title="glutonny" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/glutonny-300x225.png" alt="" width="300" height="225"></a>
+                            </p>
+                            <p>
+                                “Staying fit and trim” is usually good practice when designing and running Solr applications. A lot of these issues cross over into the “Sloth” category, and are generally cases where the extra effort to keep your configuration and data efficiently managed is not considered important.
+                            </p>
+                            <ul>
+                                <li>
+                                    <strong>Lack of attention to field configuration in the schema</strong>. Storing fields that will never be retrieved. Indexing fields that will never be searched. Storing term vectors, positions and offsets when they will never be used. Unnecessary bloat. Understand your data and your users and design your schema and fields accordingly.
+                                </li>
+                                <li>
+                                    <strong>Unexamined queries that are redundant or inefficient</strong>. I’ve seen cases where queries have been generated programatically with a lot of redundancy and nonsensical logic. Take advantage of filter queries whenever possible. For example, if you have a query like this – &amp;q=content:solr AND datasource:wiki AND category:search AND language:en – use filter queries on fields where it makes sense: &amp;q=content:solr&amp;fq=datasource:wiki&amp;fq=category:search&amp;fq=language:en.
+                                </li>
+                            </ul>
+                            <h2>
+                                Sin number 7: Wrath
+                            </h2>
+                            <p>
+                                <a href="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/wrath.png"><img title="wrath" src="http://www.lucidimagination.com/blog/wp-content/uploads/2010/01/wrath-300x225.png" alt="Now!" width="300" height="225"></a>
+                            </p>
+                            <p>
+                                While wrath is usually considered to be synonymous with anger, let’s use an older definition here: “a vehement denial of the truth, both to others and in the form of self-denial, impatience.”
+                            </p>
+                            <ul>
+                                <li>
+                                    <strong>Assuming you will never need to re-index your data</strong>. It’s easy to focus on schema design, configuration, deployment, scaling issues, performance, and relevance tuning, while neglecting to consider how to re-create your index in the event of a disaster, either major or minor. One step that should never be omitted from your planning is a step to consider how to re-create your index in the case of hardware failures. If you are replicating from a master to a slave or slaves, consider having an extra slave that might not be used for searching but can receive replications of the index to serve as a backup to the master. If feasible back up your index data to other storage media. At the very least, if you don’t have a large index and can re-create it without too much effort if it is deleted or lost, make sure you have a plan and procedures in place in preparation for quickly re-indexing.
+                                </li>
+                                <li>
+                                    <strong>Rushing to production</strong>. Of course we all have deadlines, but you only get one chance to make a first impression. Years ago I was part of a project where we released our search application prematurely (ahead of schedule) because the business decided it was better to have <em>something</em> in place rather than not have a search option. We developers felt that, with another four weeks of work we could deliver a fully-ready system that would be an excellent search application. But we rushed to production with some major flaws. Customers of ours were furious when they searched for their products and couldn’t find them. We developed a bad reputation, angered some business partners, and lost money just because it was deemed necessary to have a search application up and running four weeks early.
+                                </li>
+                            </ul>
+                            <p>
+                                So keep it simple, stay smart, stay up to date, and keep your search application on the straight-and-narrow. Seek (intelligently) and ye shall find.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.lucidimagination.com/blog/2010/01/21/the-seven-deadly-sins-of-solr/">http://www.lucidimagination.com/blog/2010/01/21/the-seven-deadly-sins-of-solr/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

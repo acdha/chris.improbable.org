@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Poking around MSVIDCTL.DLL
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 09 Jul 2009 22:35:19 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-07-09T16:04:00-04:00">
+                    <meta itemprop="dateModified" content="2009-07-09T16:04:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-07-09T20:04:00+00:00">Jul 09</time>
+                    <h2 itemprop="title">
+                        Poking around MSVIDCTL.DLL
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5a09ebf475f12934">
+                        <blockquote>
+                            Hey all,<br>
+                            <br>
+                            I have to admit that I did not follow the msvidctl.dll situation all that closely, except for my short tweet that this bug was apparently reported more than a year ago. Yesterday, my old friend Dennis Elser piqued my interest: He had isolated the bug down to a function called ATL::CComVariant::ReadFromStream. He had determined that the function in question made a rather strange mistake: Instead of passing a pointer to a data buffer to IStream::Read, it took the address of a (small) local variable, and passes this address as output buffer to IStream::Read, along with a length read from the stream previously.<br>
+                            <br>
+                            Somebody clearly got confused.<br>
+                            <br>
+                            So Dennis and me sat down tonight and did a bit of digging around and tried to clarify what was going on. So we dug in a bit deeper, and ended up with the following understanding of the situation:<br>
+                            <ol>
+                                <li>If the stuff that is supposed to be deserialized does not contain the proper value in the first 2 bytes, 8 more bytes are read, and SafeArrayCreate is used to create a new array with a 4-byte size obtained from these bytes.
+                                </li>
+                                <li>A pointer to the allocated memory is obtained by ways of calling SafeArrayAccessData. This function places a pointer to the memory in question into a memory cell pointed to by it's second argument.<br>
+                                </li>
+                                <li>Instead of passing the CONTENTS of the memory cell pointed to by the second argument to IStream::Read, the code in question passes the address of this variable in. This happens to be the re-used memory for the first argument of ReadFromStream, hence it is on the stack. Memory corruption hilarity ensues.
+                                </li>
+                            </ol>This is a cute little bug. First of all, it is a beautiful example of a single excess "&amp;" in the source code. But what is most amusing about this bug is the centrality of it -- it is, after all, in a method of a class from the ATL.<br>
+                            <br>
+                            Everybody loves bugs in libraries. Few things fill my heart with quite as much amusement as bugs in heavily-used, statically-linked libraries. OpenSSL (and libeay) was good for many laughs in the past, zlib was a favourite for a long time, too.<br>
+                            <br>
+                            So what we have here is a bug in a component that is used fairly widely, and that has the property of being statically linked (yay templates !).<br>
+                            <br>
+                            Now, a quick search of my harddisk turned out that a lot of third-party components (flash) contain the same function -- but in old and non-vulnerable versions (for an extra dash of irony, the function used to be safe before all this SafeArray-stuff was added). Only a small fraction of the files that use the ATL and contain this function appear to contain it in a vulnerable version.<br>
+                            <br>
+                            We ended up building a really naive / stupid / false-negative-and-false-positive-prone regexp to scan for the vulnerable basic block. This is of course going to fail if anyone has tweaked their optimization settings etc., but it would still be interesting to find out how many files contain this "trivial" byte string.<br>
+                            <br>
+                            So I searched my windows directory for the following regexp pattern:<br>
+                            <br>
+                            pattern = "\x8B\x07\x6A\x00\xFF\x75\x2E\x8D\x4D\x2E\x51\x57\xFF\x50\x0C\x53"<br>
+                            r = re.compile( pattern, re.DOTALL )<br>
+                            <br>
+                            There were a few files in which this pattern was found (XP):<br>
+                            <br>
+                            Found pattern in file c:\Windows\system32\ieframe.dll<br>
+                            Found pattern in file c:\Windows\system32\mstscax.dll<br>
+                            Found pattern in file c:\Windows\system32\msvidctl.dll<br>
+                            Found pattern in file c:\Windows\system32\wmp.dll<br>
+                            Found pattern in file c:\Windows\system32\wmpdxm.dll<br>
+                            <br>
+                            Dennis searched for the same pattern on his disk (Vista) and found:<br>
+                            ﻿<span style="font-size:100%"><br>
+                            c:\windows\system32\cic.dll<br>
+                            c:\windows\system32\comsnap.dll<br>
+                            c:\windows\system32\comsvcs.dll<br>
+                            c:\windows\system32\ieframe.dll<br>
+                            c:\windows\system32\mmcndmgr.dll<br>
+                            c:\windows\system32\mstscax.dll<br>
+                            c:\windows\system32\MSVidCtl.dll<br>
+                            c:\windows\system32\puiobj.dll<br>
+                            c:\windows\system32\rdpencom.dll<br>
+                            c:\windows\system32\shdocvw.dll<br>
+                            c:\windows\system32\wiaaut.dll<br>
+                            c:\windows\system32\wmp.dll<br>
+                            c:\windows\system32\wmpdxm.dll</span><br>
+                            <br>
+                            Why the difference ? Well, amusingly, shdocvw.dll on my XP machine doesn't have this SafeArray-stuff in it yet -- it is probably compiled using an older, not vulnerable variant of the ATL -- wheras Dennis variant of the same DLL is much newer, compiled with the 'broken' variant of the ATL.<br>
+                            <br>
+                            So, where does this leave us ?<br>
+                            <ol>
+                                <li>The bug is actually much "deeper" than most people realize.
+                                </li>
+                                <li>The killbit-fix is clearly insufficient, as there are bound to be many other ways of triggering the issue.<br>
+                                </li>
+                                <li>The bug might have weaseled it's way into third-party components, IF anyone outside of Microsoft had access to the broken ATL versions.<br>
+                                </li>
+                                <li>If this has happened, MS might have accidentally introduced security vulnerabilities into third-party products.
+                                </li>
+                                <li>Depending on the optimization settings applied to the executables, it might require a bit of an effort to find out whether a vulnerable or non-vulnerable version of the code is present.
+                                </li>
+                                <li>There might be a lot of recompiling next week.
+                                </li>
+                                <li>IF this has gotten into third-party-products, I would bet that only a tiny fraction of software vendors will push out proper/timely updates.
+                                </li>
+                            </ol>It just seems that spending time to improve <a href="http://addxorrol.blogspot.com/2008/09/improving-binary-comparison-and-its.html">BinDiffs ability to find statically linked libraries</a> might have been worth it :-)<br>
+                            <br>
+                            Anyhow, I really need to get to sleep -- I have a train to catch in a bit more than 4 hours.<br>
+                            <br>
+                            A lot of credit for this post has to go to Dennis Elser -- he did most of the hard work before we sat down.
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/14114712-606893327197178622?l=addxorrol.blogspot.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://addxorrol.blogspot.com/2009/07/poking-around-msvidctldll.html">http://addxorrol.blogspot.com/2009/07/poking-around-msvidctldll.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

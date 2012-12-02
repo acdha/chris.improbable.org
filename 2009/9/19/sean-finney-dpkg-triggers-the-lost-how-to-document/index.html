@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Sean Finney: dpkg triggers, the lost how-to document
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 19 Sep 2009 18:29:59 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-09-19T14:29:59-04:00">
+                    <meta itemprop="dateModified" content="2009-09-19T14:29:59-04:00"><time class="date" itemprop="datePublished" datetime="2009-09-19T18:29:59+00:00">Sep 19</time>
+                    <h2 itemprop="title">
+                        Sean Finney: dpkg triggers, the lost how-to document
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5cfdd9cf479324d6">
+                        <blockquote>
+                            <img src="http://planet.debian.org/heads/seanius.png" width="73" height="93" alt="" align="right" style="float:right">
+                            <p>
+                                this weekend while giving a bit of TLC to the php packages, i thought i'd finally get around to tackling <a href="http://bugs.debian.org/490023">#490023</a> and similar bugs, which meant learning about how to use the triggers feature provided by dpkg.
+                            </p>
+                            <p>
+                                unfortunately documentation for this feature was in fairly short supply, and after extensive searching (and by extensive searching i mean typing "dpkg triggers howto" into a google search) i had a couple short manpages (dpkg-trigger(1) and deb-triggers(5)) and an overly verbose and possibly out of date /usr/share/doc/dpkg/triggers.txt.gz. none of these documents really gave a clear "big-picture" for how to get going either.
+                            </p>
+                            <p>
+                                so, as is often the case, i got distracted from my intended task and ended up on a little side-project putting together a nice howto/tutorial for how to integrate dpkg triggers into a package. note that there may be misunderstandings or inaccuracies in the document, as it's based on an afternoon's worth of hacking and q&amp;a directed at #debian-dpkg (thanks to <a href="http://www.hadrons.org/~guillem/">Guillem</a> and <a href="http://www.ouaza.com/wp/">Raphaël</a> for fielding those questions). so if i'm off on anything, please feel free to let me know!
+                            </p>
+                            <p>
+                                to get started:
+                            </p>
+                            <pre>
+<code>git clone http://git.debian.org/git/users/seanius/dpkg-triggers-example.git
+</code>
+</pre>
+                            <p>
+                                and for those who are too lazy even for that, the README follows:
+                            </p>
+                            <h2>
+                                The debian package <em>triggertest</em>
+                            </h2>
+                            <p>
+                                This package is a dead-simple "triggers in a nutshell". It shows a few different ways that triggers can be used in practice, to hopefully cover most of the general use cases for triggers.
+                            </p>
+                            <h2>
+                                The purpose of triggers
+                            </h2>
+                            <p>
+                                Triggers are used to ensure that during the standard package-management process certain operations always run, but not more than necessary. For example:
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        during an upgrade many packages might provide updated texinfo(5) documentation, and triggers are used to ensure that update-info-dir(8) is run without having to be run several unnecessary times from the maintainer scripts of package in question.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        if a system has both apache2 and PHP's apache2 engine installed, apache2 will need to be restarted whenever new php extensions are installed or removed. Without triggers it would be very disruptive (and inefficient) to explicitly stop and start apache by each PHP extension.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        update-initramfs(8) should be run once and only once after kernels are updated or certain other packages are installed/upgraded that would want to have a new initramfs generated.
+                                    </p>
+                                </li>
+                                <li>
+                                    <p>
+                                        other expensive operations that are desirable to be aggregated and consolidated during installs/upgrades, such as update-texmf(8) or scrollkeeper-update.
+                                    </p>
+                                </li>
+                            </ul>
+                            <h2>
+                                How triggers work in a nutshell
+                            </h2>
+                            <p>
+                                Trigger-using packages can be classified in two behavioral categories:
+                            </p>
+                            <ul>
+                                <li>Consumers: packages which declare triggers and thus can be "triggered"
+                                </li>
+                                <li>Producers: packages which activate triggers (explicitly or implicitly)
+                                </li>
+                            </ul>
+                            <p>
+                                When a consumer is triggered, its postinst script is run with the arguments:
+                            </p>
+                            <pre>
+<code>postinst triggered "&lt;trigger1&gt; ... &lt;triggerN&gt;"
+</code>
+</pre>
+                            <p>
+                                i.e. $2 contains an iterable list of activated triggers.
+                            </p>
+                            <p>
+                                Note that if a consumer is going to be normally configured (i.e. it is also being updated), then no triggering may occur and thus the standard control flow of the maintainer scripts should still take care to handle this.
+                            </p>
+                            <p>
+                                A "trigger" is declared for the consumer by shipping a file in DEBIAN/triggers (in the case of debhelper based packages, ./debian/<em>consumer-package</em>.triggers will JDTRT). Useful RTFM: deb-triggers(5).
+                            </p>
+                            <p>
+                                Example:
+                            </p>
+                            <pre>
+<code>interest /path/to/a/directory
+interest my-second-trigger
+</code>
+</pre>
+                            <p>
+                                This declares that the package in question is interested in two triggers.
+                            </p>
+                            <p>
+                                The first trigger has a leading path separator in its name, which instructs dpkg that any filesystem modifications underneath this directory by other packages should cause the respective consumer(s) to be triggered.
+                            </p>
+                            <p>
+                                The second name is completely arbitrary (and also global, so you should probably pick something reasonably specific and identifiable), and will only cause a trigger to be activated when a producer
+                            </p>
+                            <ol>
+                                <li>ships its own triggers file with a corresponding "activate my-second-trigger", or
+                                </li>
+                                <li>invokes the trigger explicitly in a maintainer script by calling "dpkg-trigger my-second-trigger".
+                                </li>
+                            </ol>
+                            <p>
+                                Another perhaps useful RTFM: dpkg-trigger(1).
+                            </p>
+                            <h2>
+                                Examples contained in this source package
+                            </h2>
+                            <p>
+                                This source package produces a single "consumer" package and a number of different "producer" packages. The consumer is triggered in various ways, such as:
+                            </p>
+                            <ul>
+                                <li>Filesystem updates to a given directory from any other package
+                                </li>
+                                <li>"activate foo" from a producer's triggers file
+                                </li>
+                                <li>Activation from a producer's explicit call to dpkg-triggers
+                                </li>
+                            </ul>
+                            <p>
+                                In this case the triggers correspond to an "update-foo" and "update-bar" command, which do nothing other than echo to the console that they are being run. In practice they'd correspond to updating some kind of database or restarting a daemon.
+                            </p>
+                            <h2>
+                                More information
+                            </h2>
+                            <p>
+                                For more information about triggers, see /usr/share/doc/dpkg/triggers.txt.gz, which will make a lot more sense having a working example like this package as reference. Especially useful is "Transition hints for existing packages", which can be used if you need to gracefully handle migrating in support for triggers across other packages not directly under your control.
+                            </p>
+                            <h2>
+                                Corrections, suggestions, etc
+                            </h2>
+                            <p>
+                                Are appreciated and should be sent to the author, below.
+                            </p>
+                            <p>
+                                -- Sean Finney <a href="mailto:seanius@debian.org">seanius@debian.org</a> Sat, 19 Sep 2009 15:57:48 +0200
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.seanius.net/blog/2009/09/dpkg-triggers-howto/">http://www.seanius.net/blog/2009/09/dpkg-triggers-howto/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

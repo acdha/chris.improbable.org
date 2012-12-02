@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Reading out the end time in browser speed tests
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 19 Aug 2009 00:11:22 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-08-17T07:47:37-04:00">
+                    <meta itemprop="dateModified" content="2009-08-17T07:47:37-04:00"><time class="date" itemprop="datePublished" datetime="2009-08-17T11:47:37+00:00">Aug 17</time>
+                    <h2 itemprop="title">
+                        Reading out the end time in browser speed tests
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/86ea409fe8df871f">
+                        <blockquote>
+                            <p>
+                                A few weeks back I did some DOM speed tests on mobile browsers (results forthcoming). The most important result of these tests is not the actual values (although they’re interesting), but the fact that I could finally prove a theory that I’ve had in the back of my mind for at least two years now.
+                            </p>
+                            <p>
+                                Basically, when setting up a speed test you should be very careful to allow the browser to render the result on screen <em>before</em> you close the test by reading out the second timestamp.
+                            </p>
+                            <p>
+                                An example will clarify this point. A DOM speed test may look roughly as follows:
+                            </p>
+                            <pre>
+function testIt() {
+        var startTime = new Date().getTime();
+
+        // actual DOM functionality to be tested goes here
+
+        var endTime = new Date().getTime();
+        var result = (endTime-startTime)/1000;
+        // print result
+}
+</pre>
+                            <p>
+                                Although this script might seem fine at first sight, it’s not. The problem here is that the entire test, including the time measurements, are wrapped in one function, and that some browsers only applies the result of the test (i.e. the changes in the DOM you want to test) to the screen after the function has ended entirely. Thus the end timestamp is read <em>before</em> the browser has applied the result to the screen.
+                            </p>
+                            <p>
+                                So what really happens here is the following:
+                            </p>
+                            <ol>
+                                <li>Get start time
+                                </li>
+                                <li>Perform DOM manipulation in browser memory
+                                </li>
+                                <li>Get end time and calculate result
+                                </li>
+                                <li>The function ends, and only <em>now</em> does the browser start to apply the results of the DOM manipulation to the actual DOM.
+                                </li>
+                            </ol>
+                            <p>
+                                Not all browsers wait until the end of the function to apply the results, but some do, among which Safari for the iPhone 2.2. These browsers only report the time it takes them to build the new DOM tree in the browser memory, and disregard the time it takes to show it on the screen.
+                            </p>
+                            <p>
+                                Any testing methodology <em>must</em> work in all browsers, so our test function must work around this problem.
+                            </p>
+                            <p>
+                                The correct way of conducting this test is setting a timeout for reading out the end time. The function ends when the in-memory DOM manipulation has been done, which allows the browser to apply the changes.
+                            </p>
+                            <p>
+                                Because the browser uses its complete capacity for applying the changes to the screen, executing the timeout is deferred until it is done, even if that takes far longer than the formal timeout time.
+                            </p>
+                            <pre>
+function testIt() {
+        var startTime = new Date().getTime();
+
+        // actual DOM functionality to be tested goes here
+
+        setTimeout(function () {
+                var endTime = new Date().getTime();
+                var result = (endTime-startTime)/1000;
+                // print result
+        },10)
+}
+</pre>
+                            <p>
+                                What happens now is the following:
+                            </p>
+                            <ol>
+                                <li>Get start time
+                                </li>
+                                <li>Perform DOM manipulation in browser memory
+                                </li>
+                                <li>Define a function to get end time and calculate result and set a timeout
+                                </li>
+                                <li>The function ends, and only <em>now</em> does the browser start to apply the results of the DOM manipulation to the actual DOM.
+                                </li>
+                                <li>Once the DOM manipulation is finished, the browser is freed up to treat the timeout we set, and now the function that gets the end time and shows the result is executed.
+                                </li>
+                            </ol>
+                            <p>
+                                In other words, this allows us to also measure the time the browser needs to show the results on screen.
+                            </p>
+                            <p>
+                                This is what we really want to know. If the browser is lightning-fast in performing DOM manipulations in its memory, but sluggish in applying them to the screen, the net result for the end user is a relatively sluggish user experience.
+                            </p>
+                            <p>
+                                This is not a random theoretical musing. I tried both methodologies on Safari iPhone 2.2 in a test that generated 5,000 list items. The <a href="http://www.quirksmode.org/m/tests/DOMspeed2.html">first, incorrect, method</a> yields a total time of about 3 seconds, while the <a href="http://www.quirksmode.org/m/tests/DOMspeed.html">second, correct, method</a> yields a total time of about 14 seconds. That’s an 11 second difference.
+                            </p>
+                            <p>
+                                (I’d be interested in the iPhone 3 results. I deliberately haven’t updated my iPhone yet, because there still are some tests I want to conduct on the 2.2 OS.)
+                            </p>
+                            <p>
+                                In other words, the iPhone 2.2 takes 3 seconds to perform the necessary calculations in its memory, but subsequently takes 11 seconds to show the changes on screen. It’s slow, in other words. The first method does not reveal that; we need the second one for an accurate reading.
+                            </p>
+                            <p>
+                                Therefore it’s important that whenever you do speed tests, the end time should be calculated only after the browser has finished applying the results to the screen.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.quirksmode.org/blog/archives/2009/08/when_to_read_ou.html">http://www.quirksmode.org/blog/archives/2009/08/when_to_read_ou.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

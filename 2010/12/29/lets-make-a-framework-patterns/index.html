@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Let's Make a Framework: Patterns
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 30 Dec 2010 00:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-12-29T19:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-12-29T19:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-12-29T23:00:00+00:00">Dec 29</time>
+                    <h2 itemprop="title">
+                        Let's Make a Framework: Patterns
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/4eabe7e9d05adfe4">
+                        <blockquote>
+                            <p>
+                                Welcome to part 44 of <em>Let’s Make a Framework</em>, the ongoing series about building a JavaScript framework.
+                            </p>
+                            <p>
+                                If you haven’t been following along, these articles are tagged with <a href="http://dailyjs.com/tags.html#lmaf">lmaf</a>. The project we’re creating is called <a href="http://github.com/alexyoung/turing.js">Turing</a>.
+                            </p>
+                            <p>
+                                Over the last few weeks we’ve built a test framework based on the CommonJS assert module, a suitable test runner, and started converting Turing’s tests to use it. The test framework is called <a href="https://github.com/alexyoung/turing-test.js">Turing Test</a>.
+                            </p>
+                            <h3>
+                                Patterns
+                            </h3>
+                            <p>
+                                This week I want to discuss the patterns we’ve used to create the framework. I realise a lot of new readers find the prospect of reading a 44 part tutorial series daunting, so I thought I’d go back and explore some of the important patterns that you can use in your own JavaScript code.
+                            </p>
+                            <h3>
+                                Anonymous Functions
+                            </h3>
+                            <p>
+                                Anonymous functions are often used as callbacks for <span>API</span> calls:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>var</span> <span>a</span> <span>=</span> <span>1</span><span>;</span>
+<span>MyAPI</span><span>.</span><span>method</span><span>(</span><span>'parameter'</span><span>,</span> <span>function</span><span>()</span> <span>{</span>
+  <span>console</span><span>.</span><span>log</span><span>(</span><span>a</span><span>);</span>
+<span>});</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                Because this is a <em>closure</em> the <code>a</code> variable is visible to the anonymous function.
+                            </p>
+                            <p>
+                                Another important use of anonymous functions is to control scope. This is used throughout our framework to create self-contained modules that only expose a small part of their functionality, thereby creating private scopes:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>(</span><span>function</span><span>(</span><span>global</span><span>)</span> <span>{</span>
+  <span>function</span> <span>privateFunction</span><span>()</span> <span>{</span>
+    <span>console</span><span>.</span><span>log</span><span>(</span><span>'Hello from privateFunction'</span><span>);</span>
+  <span>}</span>
+
+  <span>var</span> <span>MyAPI</span> <span>=</span> <span>{</span>
+    <span>method</span><span>:</span> <span>function</span><span>()</span> <span>{</span>
+      <span>privateFunction</span><span>();</span>
+    <span>}</span>
+  <span>};</span>
+
+  <span>global</span><span>.</span><span>MyAPI</span> <span>=</span> <span>MyAPI</span><span>;</span>
+<span>})(</span><span>window</span><span>);</span>
+
+<span>MyAPI</span><span>.</span><span>method</span><span>();</span>
+<span>// Hello from privateFunction</span>
+</code>
+</pre>
+                            </div>
+                            <h3>
+                                CommonJS Module Compatibility
+                            </h3>
+                            <p>
+                                The previous example expects <em>window</em> to be defined. It can be made CommonJS module compatible like this:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>function</span> <span>getGlobal</span><span>()</span> <span>{</span>
+  <span>if</span> <span>(</span><span>typeof</span> <span>window</span> <span>!==</span> <span>'undefined'</span><span>)</span> <span>{</span>
+    <span>return</span> <span>window</span><span>;</span>
+  <span>}</span> <span>else</span> <span>if</span> <span>(</span><span>typeof</span> <span>exports</span> <span>!==</span> <span>'undefined'</span><span>)</span> <span>{</span>
+    <span>return</span> <span>exports</span><span>;</span>
+  <span>}</span>
+<span>}</span>
+
+<span>(</span><span>function</span><span>(</span><span>global</span><span>)</span> <span>{</span>
+  <span>function</span> <span>privateFunction</span><span>()</span> <span>{</span>
+    <span>console</span><span>.</span><span>log</span><span>(</span><span>'Hello from privateFunction'</span><span>);</span>
+  <span>}</span>
+
+  <span>var</span> <span>MyAPI</span> <span>=</span> <span>{</span>
+    <span>method</span><span>:</span> <span>function</span><span>()</span> <span>{</span>
+      <span>privateFunction</span><span>();</span>
+    <span>}</span>
+  <span>};</span>
+
+  <span>global</span><span>.</span><span>MyAPI</span> <span>=</span> <span>MyAPI</span><span>;</span>
+<span>})(</span><span>getGlobal</span><span>()</span> <span>||</span> <span>this</span><span>);</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                Now in a CommonJS-compatible interpreter this should work:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>&gt;</span> <span>var</span> <span>MyAPI</span> <span>=</span> <span>require</span><span>(</span><span>'./test'</span><span>).</span><span>MyAPI</span><span>;</span>
+<span>&gt;</span> <span>MyAPI</span><span>.</span><span>method</span><span>();</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                Many predominantly browser-based libraries are now adding CommonJS module compatibility so people can reuse them in server-side projects (Underscore and Backbone are good examples of this).
+                            </p>
+                            <h3>
+                                Iterators
+                            </h3>
+                            <p>
+                                To get around poor iterator support in some browsers, we had to build our own <a href="https://github.com/alexyoung/turing.js/blob/master/turing.enumerable.js">enumerable module</a>. This is all built from the <em>each</em> function, which jQuery defines in its core. We built <code>each</code> like this:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>turing</span><span>.</span><span>enumerable</span> <span>=</span> <span>{</span>
+  <span>Break</span><span>:</span> <span>{}</span><span>,</span>
+
+  <span>each</span><span>:</span> <span>function</span><span>(</span><span>enumerable</span><span>,</span> <span>callback</span><span>,</span> <span>context</span><span>)</span> <span>{</span>
+    <span>try</span> <span>{</span>
+      <span>if</span> <span>(</span><span>Array</span><span>.</span><span>prototype</span><span>.</span><span>forEach</span> <span>&amp;&amp;</span> <span>enumerable</span><span>.</span><span>forEach</span> <span>===</span> <span>Array</span><span>.</span><span>prototype</span><span>.</span><span>forEach</span><span>)</span> <span>{</span>
+        <span>enumerable</span><span>.</span><span>forEach</span><span>(</span><span>callback</span><span>,</span> <span>context</span><span>);</span>
+      <span>}</span> <span>else</span> <span>if</span> <span>(</span><span>turing</span><span>.</span><span>isNumber</span><span>(</span><span>enumerable</span><span>.</span><span>length</span><span>))</span> <span>{</span>
+        <span>for</span> <span>(</span><span>var</span> <span>i</span> <span>=</span> <span>0</span><span>,</span> <span>l</span> <span>=</span> <span>enumerable</span><span>.</span><span>length</span><span>;</span> <span>i</span> <span>&lt;</span> <span>l</span><span>;</span> <span>i</span><span>++</span><span>)</span> <span>callback</span><span>.</span><span>call</span><span>(</span><span>enumerable</span><span>,</span> <span>enumerable</span><span>[</span><span>i</span><span>]</span><span>,</span> <span>i</span><span>,</span> <span>enumerable</span><span>);</span>
+      <span>}</span> <span>else</span> <span>{</span>
+        <span>for</span> <span>(</span><span>var</span> <span>key</span> <span>in</span> <span>enumerable</span><span>)</span> <span>{</span>
+          <span>if</span> <span>(</span><span>hasOwnProperty</span><span>.</span><span>call</span><span>(</span><span>enumerable</span><span>,</span> <span>key</span><span>))</span> <span>callback</span><span>.</span><span>call</span><span>(</span><span>context</span><span>,</span> <span>enumerable</span><span>[</span><span>key</span><span>]</span><span>,</span> <span>key</span><span>,</span> <span>enumerable</span><span>);</span>
+        <span>}</span>
+      <span>}</span>
+    <span>}</span> <span>catch</span><span>(</span><span>e</span><span>)</span> <span>{</span>
+      <span>if</span> <span>(</span><span>e</span> <span>!=</span> <span>turing</span><span>.</span><span>enumerable</span><span>.</span><span>Break</span><span>)</span> <span>throw</span> <span>e</span><span>;</span>
+    <span>}</span>
+
+    <span>return</span> <span>enumerable</span><span>;</span>
+  <span>}</span><span>,</span>
+
+  <span>// etc.</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                This approach is used by many JavaScript frameworks, and works like this:
+                            </p>
+                            <ol>
+                                <li>
+                                    <code>Array.prototype.forEach</code> is checked to see if we can use the existing functionality based into most interpreters and browsers
+                                </li>
+                                <li>Else if the passed-in collection has a length, use a for loop to repeatedly call each value
+                                </li>
+                                <li>If the collection is not an Array, use a <code>for ... in ...</code> loop instead
+                                </li>
+                                <li>If <code>Break</code> has been thrown by a callback, catch it and return the collection
+                                </li>
+                            </ol>
+                            <h3>
+                                Chained APIs
+                            </h3>
+                            <p>
+                                We’re used to chained APIs from jQuery (and now a growing number of JavaScript libraries):
+                            </p>
+                            <div>
+                                <pre>
+<code><span>$</span><span>(</span><span>'selector'</span><span>)</span>
+  <span>.</span><span>attr</span><span>(</span><span>'attr'</span><span>,</span> <span>'value'</span><span>)</span>
+  <span>.</span><span>css</span><span>({</span> <span>'attr'</span><span>,</span> <span>'value'</span> <span>})</span>
+  <span>.</span><span>find</span><span>(</span><span>'selector'</span><span>)</span>
+    <span>.</span><span>css</span><span>({</span> <span>'attr'</span><span>,</span> <span>'value'</span> <span>})</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                This is a useful technique because it cuts down the noise that a lot of callbacks would introduce. It’s expressive and easy to get the hang of.
+                            </p>
+                            <p>
+                                We built this in <a href="https://github.com/alexyoung/turing.js/blob/master/turing.enumerable.js">turing.enumerable.js</a> by defining a <code>Chainer</code> class that collects results, and a method that wraps each <em>chainable</em> call into a form that returns <em>this</em> after each method has been called.
+                            </p>
+                            <p>
+                                Returning <em>this</em> and collecting results is how jQuery works. Because our module was designed to return results, the chained <span>API</span> style is triggered by calling <code>chain</code> first:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>turing</span><span>.</span><span>enumerable</span><span>.</span><span>chain</span><span>([</span><span>1</span><span>,</span> <span>2</span><span>,</span> <span>3</span><span>,</span> <span>4</span><span>])</span>
+      <span>.</span><span>filter</span><span>(</span><span>function</span><span>(</span><span>n</span><span>)</span> <span>{</span> <span>return</span> <span>n</span> <span>%</span> <span>2</span> <span>==</span> <span>0</span><span>;</span> <span>})</span>
+      <span>.</span><span>map</span><span>(</span><span>function</span><span>(</span><span>n</span><span>)</span> <span>{</span> <span>return</span> <span>n</span> <span>*</span> <span>10</span><span>;</span> <span>})</span>
+      <span>.</span><span>values</span><span>();</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                This is similar to <a href="http://documentcloud.github.com/underscore/#chain">Underscore</a>.
+                            </p>
+                            <h3>
+                                Prototypal Classes
+                            </h3>
+                            <p>
+                                I’ve used JavaScript’s native prototypal classes in Turing a lot, rather than relying on a library that adds classical object-oriented features. Prototypal classes are easy to get the hang of, and they’re a quick way to organise your code:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>function</span> <span>MyClass</span><span>()</span> <span>{</span>
+  <span>this</span><span>.</span><span>instanceVar</span> <span>=</span> <span>'a dull dude'</span><span>;</span>
+<span>}</span>
+
+<span>MyClass</span><span>.</span><span>classMethod</span> <span>=</span> <span>function</span><span>()</span> <span>{</span>
+  <span>console</span><span>.</span><span>log</span><span>(</span><span>'Greetings from MyClass'</span><span>);</span>
+<span>};</span>
+
+<span>MyClass</span><span>.</span><span>prototype</span><span>.</span><span>method</span> <span>=</span> <span>function</span><span>()</span> <span>{</span>
+  <span>console</span><span>.</span><span>log</span><span>(</span><span>'All work and no play makes Alex'</span><span>,</span> <span>this</span><span>.</span><span>instanceVar</span><span>);</span>
+<span>};</span>
+
+<span>MyClass</span><span>.</span><span>classMethod</span><span>();</span>
+<span>var</span> <span>myClass</span> <span>=</span> <span>new</span> <span>MyClass</span><span>();</span>
+<span>myClass</span><span>.</span><span>method</span><span>();</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                At first it seems strange using the <code>function</code> keyword to define what appears to be a class, but once you’ve got used to prototypes it becomes a powerful code organisation tool.
+                            </p>
+                            <h3>
+                                Prototypal Inheritance
+                            </h3>
+                            <p>
+                                In JavaScript 1.8.5, Mozilla introduced <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Object/create">Object.create</a> which can be used to inherit from objects:
+                            </p>
+                            <div>
+                                <pre>
+<code><span>function</span> <span>User</span><span>()</span> <span>{</span>
+<span>}</span>
+
+<span>User</span><span>.</span><span>prototype</span><span>.</span><span>toString</span> <span>=</span> <span>function</span><span>()</span> <span>{</span>
+  <span>return</span> <span>'User'</span><span>;</span>
+<span>};</span>
+
+<span>User</span><span>.</span><span>prototype</span><span>.</span><span>state</span> <span>=</span> <span>function</span><span>()</span> <span>{</span>
+  <span>return</span> <span>'Logged in'</span><span>;</span>
+<span>}</span>
+
+<span>function</span> <span>Admin</span><span>()</span> <span>{</span>
+<span>}</span>
+
+<span>// Some browsers won't have Object.create,</span>
+<span>// this is a simple version</span>
+<span>if</span> <span>(</span><span>typeof</span> <span>Object</span><span>.</span><span>create</span> <span>!==</span> <span>'function'</span><span>)</span> <span>{</span>
+  <span>Object</span><span>.</span><span>create</span> <span>=</span> <span>function</span><span>(</span><span>o</span><span>)</span> <span>{</span>
+    <span>function</span> <span>F</span><span>()</span> <span>{}</span>
+    <span>F</span><span>.</span><span>prototype</span> <span>=</span> <span>o</span><span>;</span>
+    <span>return</span> <span>new</span> <span>F</span><span>();</span>
+  <span>};</span>
+<span>}</span>
+
+<span>Admin</span><span>.</span><span>prototype</span> <span>=</span> <span>Object</span><span>.</span><span>create</span><span>(</span><span>User</span><span>.</span><span>prototype</span><span>);</span>
+
+<span>Admin</span><span>.</span><span>prototype</span><span>.</span><span>toString</span> <span>=</span> <span>function</span><span>()</span> <span>{</span>
+  <span>return</span> <span>'Admin'</span><span>;</span>
+<span>}</span>
+
+<span>var</span> <span>user</span> <span>=</span> <span>new</span> <span>User</span><span>()</span><span>,</span>
+    <span>admin</span> <span>=</span> <span>new</span> <span>Admin</span><span>();</span>
+
+<span>console</span><span>.</span><span>log</span><span>(</span><span>'User:'</span><span>,</span> <span>user</span><span>);</span>
+<span>console</span><span>.</span><span>log</span><span>(</span><span>'Admin:'</span><span>,</span> <span>admin</span><span>);</span>
+<span>console</span><span>.</span><span>log</span><span>(</span><span>user</span><span>.</span><span>state</span><span>());</span>
+<span>console</span><span>.</span><span>log</span><span>(</span><span>admin</span><span>.</span><span>state</span><span>());</span>
+</code>
+</pre>
+                            </div>
+                            <p>
+                                This example uses Crockford’s <a href="http://javascript.crockford.com/prototypal.html">Object.create</a> in browsers and interpreters that don’t have <code>Object.create</code>. It creates two prototypal classes, <code>User</code> and <code>Admin</code>, then extends <code>Admin</code>’s prototype to include the methods in <code>User</code>.
+                            </p>
+                            <h3>
+                                References
+                            </h3>
+                            <ul>
+                                <li>
+                                    <a href="http://documentcloud.github.com/underscore/">Underscore</a>
+                                </li>
+                                <li>
+                                    <a href="https://github.com/alexyoung/turing.js/blob/master/turing.enumerable.js">turing.enumerable.js</a>
+                                </li>
+                                <li>
+                                    <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Object/create">Object.create at <span>MDC</span></a>
+                                </li>
+                                <li>
+                                    <a href="http://javascript.crockford.com/prototypal.html">Prototypal Inheritance in JavaScript by Douglas Crockford</a>
+                                </li>
+                            </ul><img src="http://feeds.feedburner.com/~r/dailyjs/~4/34O8fayqs-0" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dailyjs.com/2010/12/30/framework-part-44/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+dailyjs+%28DailyJS%29">http://dailyjs.com/2010/12/30/framework-part-44/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+dailyjs+%28DailyJS%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How to triage bugs in the Debian bug tracking system
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 16 Sep 2011 08:34:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-09-16T04:34:00-04:00">
+                    <meta itemprop="dateModified" content="2011-09-16T04:34:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-09-16T08:34:00+00:00">Sep 16</time>
+                    <h2 itemprop="title">
+                        How to triage bugs in the Debian bug tracking system
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/ec54a9ffe793becb">
+                        <blockquote>
+                            <p>
+                                Triaging bugs is one of the easiest way to start <a href="http://raphaelhertzog.com/contributing-to-debian/">contributing to Debian</a>. I’ll teach you the basics in this article.
+                            </p>
+                            <h3>
+                                1. Prerequisites
+                            </h3>
+                            <p>
+                                All interactions with the Debian Bug Tracking System (BTS) happen through email so you need to have an email account with an address that you’re willing to make public.
+                            </p>
+                            <p>
+                                All the mail that you send to the BTS will be archived and publicly available through its <a href="http://www.debian.org/Bugs/">web-interface</a>. This also means that you should have some spam filters in place because it will inevitably be harvested by spammers. <img src="http://raphaelhertzog.com/wp-includes/images/smilies/icon_sad.gif" alt=":-(">
+                            </p>
+                            <p>
+                                To ensure that this email address is consistently used by the various tools that we’re going to use, it’s a good idea to put this email address in the DEBEMAIL environment variable. You can also specify your full name in DEBFULLNAME (in case you don’t want to use the name associated with your Unix account). You usually do this by modifying <code>~/.bashrc</code> (if you use bash as login shell):
+                            </p>
+                            <pre>
+export DEBEMAIL="hertzog@debian.org"
+export DEBFULLNAME="Raphaël Hertzog"
+</pre>
+                            <p>
+                                You should also install the <a href="http://packages.debian.org/devscripts">devscripts</a> package, it provides the <code>bts</code> command that we’re going to use.
+                            </p>
+                            <h3>
+                                2. Find a package or a team with too many bugs
+                            </h3>
+                            <p>
+                                You can literally pick any popular software that’s in Debian, they almost always get more bug reports than the maintainers can handle. Instead of picking a package, you can also select <a href="http://wiki.debian.org/Teams">a packaging team</a> and concentrate your efforts on the set of packages managed by the team.
+                            </p>
+                            <p>
+                                In any case, it’s important to receive the bug traffic for the packages that you’re going to work on. If you went for a specific package, you should subscribe to the package via the <a href="http://packages.qa.debian.org">Package Tracking System</a> (there’s a subscribe box on the bottom left corner once you selected the source package of interest). If you decided to help a team, there’s usually a dedicated mailing list receiving all bug traffic.
+                            </p>
+                            <p>
+                                You can browse a <a href="http://qa.debian.org/cgi-bin/bugs-by-source">list of packages with the most bugs</a> if you have troubles finding a package to work on.
+                            </p>
+                            <p>
+                                <img src="http://raphaelhertzog.com/files/2011/09/paper-stack-300x251.jpg" alt="A stack of bug reports to triage" title="A stack of bug reports to triage" width="300" height="251">
+                            </p>
+                            <h3>
+                                3. Triage bugs!
+                            </h3>
+                            <p>
+                                Bug triaging is all about making sure that bugs are correctly classified so that when a developer looks at the bug list, he can quickly find bugs with all the information required to be able to fix them!
+                            </p>
+                            <h4>
+                                3.1 Adding information to bug
+                            </h4>
+                            <p>
+                                Adding supplementary information is easily done just by sending a mail to <em>XXXX</em>@bugs.debian.org (replace XXXX with the bug number).
+                            </p>
+                            <p>
+                                But often you want to reply to a message in the bug history, in that case “<code>bts --mbox show <em>XXXX</em></code>” is for you. It will grab the corresponding mailbox and open a mailer (mutt by default) on it. Now you can directly reply in your favorite mailer.
+                            </p>
+                            <h4>
+                                3.2 Classifying bugs
+                            </h4>
+                            <p>
+                                The Debian BTS uses <a href="http://www.debian.org/Bugs/Developer#tags">tags</a> (click the link and read the doc!) to classify bugs. “<code>bts tag <em>XXXX</em> + <em>foo</em></code>” will add the <em>foo</em> tag (replace the + with a – to remove a tag). If you want to explain why you’re adding a tag, you should instead reply in the bug log as explained above, put control@bugs.debian.org in Bcc (Blind Carbon Copy) and start the body of your message with your tag command:
+                            </p>
+                            <pre>
+tag <em>XXXX</em> + <em>foo</em>
+thanks
+</pre>
+                            <p>
+                                <strong>But what tag should you add?</strong> When a bug is submitted, you should try to reproduce the bug. If you can reproduce it, then tag the bug “confirmed” (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=641710#10">#641710</a>). If you can’t, you should request more information (ex: a sample document triggering the bug, a configuration file, the output of some relevant command, etc.) until you can reproduce it or conclude that it was a user mistake. When you request supplementary information due to this, you should tag the bug “unreproducible moreinfo” (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=526774#15">#526774</a>). “moreinfo” should be later dropped when the requested information are provided, and “unreproducible” should be dropped if those information were enough to actually help reproduce the bug (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=526774#32">#526774</a>).
+                            </p>
+                            <p>
+                                During that initial evaluation, it’s also worth differentiating packaging bugs (which are specific to Debian) from upstream bugs (which are relevant also for non-Debian users). The latter should be tagged “upstream” (and forwarded upstream if the bug is reproducible or contains enough information for the upstream developers, example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=635112#17">#635112</a>).
+                            </p>
+                            <p>
+                                If you saw a (viable) patch in the bug log, the bug should be tagged “patch”. This is usually done by the patch submitter but sometimes it’s forgotten (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=632460#10">#632460</a>). Take care though to not reinstate the patch tag if it was initially set but then dropped by the package maintainer after a review of the patch.
+                            </p>
+                            <p>
+                                If the title of the bug report is not descriptive enough, you can change it with a “<code>retitle <em>XXXX</em> <em>new-title</em></code>” command (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=170850#10">#170850</a>).
+                            </p>
+                            <p>
+                                You can also change the severity of the bug report depending on the impact of the problem (with a command “<code>severity <em>XXXX</em> <em>new-severity</em></code>”, what a surprise!). Request for new features are “wishlist”, most documentation problems are “minor”. On the other side of the scale, you can use “important” for bugs that are very annoying but that should not block a release. “serious”, “grave” and “critical” are used for <a href="http://raphaelhertzog.com/2011/07/14/how-to-squash-debian-release-critical-bugs/">release critical bugs</a>, check the <a href="http://www.debian.org/Bugs/Developer#severities">official definitions of the severities</a> (examples in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=502738#10">502738</a> or <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=506498#10">#506498</a>).
+                            </p>
+                            <h4>
+                                3.3 Closing non-bugs and bugs that are already fixed
+                            </h4>
+                            <p>
+                                If your analysis of the bug report is that it’s not really a bug but a user mistake, then you should close it by sending a mail to <em>XXXX</em>-done@bugs.debian.org with some explanations of the user’s mistake so that he can get past his problem (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=592853#10">#592853</a>).
+                            </p>
+                            <p>
+                                If the problem was a real bug, but one that is apparently already fixed, you should try to quickly find the version that fixed the bug. If you can’t find it in the changelog (there’s a link to it in the PTS, or you can use /usr/share/doc/<em>package</em>/changelog.Debian.gz), you’ll make the safe assumption that the upstream version you’re currently using is the first one where this is fixed. Then you send a mail to <em>XXXX</em>-done@bugs.debian.org but you start your mail with “<code>Version: <em>version-that-fixed-the-bug</em></code>” and continue with a small explanation of why you believe the bug to be fixed by this version (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=122948#19">#122948</a>).
+                            </p>
+                            <h4>
+                                3.4 Reassigning misfiled bug reports
+                            </h4>
+                            <p>
+                                Bug reports are not always filed against the proper package. Users file bugs against applications where they experience the bugs, but the real bug might be in an underlying library or application.
+                            </p>
+                            <p>
+                                When that happens, you should use the “<code>reassign <em>XXXX</em> <em>correct-package</em> <em>version</em></code>” command to get it filed against the correct package. The <em>version</em> parameter is optional but should be provided if possible, it should be the oldest version that we know to have the problem (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=626232#20">#626232</a>).
+                            </p>
+                            <h4>
+                                3.5 Forwarding bugs
+                            </h4>
+                            <p>
+                                Forwarding bugs means opening bug reports in the upstream bug tracker for issues that have been reported in Debian but that applies to the upstream (unmodified) source code. Be sure to include all the relevant information and a link to the corresponding Debian bug.
+                            </p>
+                            <p>
+                                Depending on the upstream bug tracker, you might have to open an account to be able to file new bug reports.
+                            </p>
+                            <p>
+                                On the Debian side, you must record that a bug has been forwarded with “<code>bts forwarded <em>XXXX</em> <em>upstream-bug-url</em></code>”. <em>upstream-bug-url</em> is the URL corresponding to the upstream bug report you created (ex: <a href="http://projects.ciarang.com/p/feed2omb/issues/21/">http://projects.ciarang.com/p/feed2omb/issues/21/</a> recorded in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=609345#10">#609345″</a>).
+                            </p>
+                            <p>
+                                If the upstream authors fix the bug you reported, you can tag the Debian bug with “fixed-upstream” so that it’s easier to find bugs to close when the next upstream release comes out (example in <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=637275#12">#637275</a>).
+                            </p>
+                            <h4>
+                                3.6 Updating version information
+                            </h4>
+                            <p>
+                                The Debian BTS uses “version tracking” to know which package versions are affected by a given bug. It’s particularly important to have correct version information for release critical bugs since it might affect the migration of packages to testing.
+                            </p>
+                            <p>
+                                You can learn more on this topic here: <a href="http://wiki.debian.org/HowtoUseBTS#Version_tracking">http://wiki.debian.org/HowtoUseBTS</a>.
+                            </p>
+                            <h3>
+                                4. More advice
+                            </h3>
+                            <p>
+                                Colin Watson wrote a <a href="http://www.chiark.greenend.org.uk/ucgi/~cjwatson/blosxom/2009/03/02%232009-02-27-bug-triage-rants">constructive rant</a> explaining some mistakes that bug triagers are often doing. While it refers mainly to Ubuntu’s launchpad, the advice apply equally as well to Debian. Check it out to become a better bug triager!
+                            </p>
+                            <p>
+                                Note that you can refer to this article with this shorter URL: <a href="http://raphaelhertzog.com/go/bugtriaging/">http://raphaelhertzog.com/go/bugtriaging/</a>
+                            </p>
+                            <p>
+                                Do you want to read more tutorials like this one? <a href="http://raphaelhertzog.com/email-newsletter/">Click here to subscribe to my free newsletter</a>, you can opt to receive future articles by email.
+                            </p>
+                            <p style="font-size:smaller">
+                                <a href="http://raphaelhertzog.com/2011/09/16/how-to-triage-bugs-in-the-debian-bug-tracking-system/#comments">6 comments</a> | Liked this article? <a href="http://raphaelhertzog.com/support-my-work/">Click here</a>. | My blog is <a href="http://flattr.com/thing/26545/apt-get-install-debian-wizard">Flattr-enabled</a>.
+                            </p><img src="http://feeds.feedburner.com/~r/RaphaelHertzogCom/~4/XUSrzqCE2oM" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://raphaelhertzog.com/2011/09/16/how-to-triage-bugs-in-the-debian-bug-tracking-system/">http://raphaelhertzog.com/2011/09/16/how-to-triage-bugs-in-the-debian-bug-tracking-system/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

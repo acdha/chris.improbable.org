@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Luke Plant: Is static type checking a redundant testing mechanism?
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 09 Nov 2009 15:45:16 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-11-09T10:45:16-04:00">
+                    <meta itemprop="dateModified" content="2009-11-09T10:45:16-04:00"><time class="date" itemprop="datePublished" datetime="2009-11-09T14:45:16+00:00">Nov 09</time>
+                    <h2 itemprop="title">
+                        Luke Plant: Is static type checking a redundant testing mechanism?
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/eca27aa63215c45c">
+                        <blockquote>
+                            <p>
+                                As there has been discussion about <a href="http://blogs.msdn.com/cashto/archive/2009/03/31/it-s-ok-not-to-write-unit-tests.aspx">not writing unit tests</a> recently, I thought I'd use my recent experience in <a href="http://lukeplant.me.uk/blog/posts/haskell-blog-software/">finishing a non-trivial Haskell program</a> to comment on the issue of writing tests (unit tests and other automated tests) in the context of real code.
+                            </p>
+                            <p>
+                                I'm especially prompted by this comment by Ned Batcheldor that I came across a few weeks ago:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Since static type checking can't cover all possibilities, you will need automated testing. Once you have automated testing, static type checking is redundant.
+                                </p>
+                            </blockquote>
+                            <p>
+                                (that's in a comment on his own <a href="http://nedbatchelder.com/blog/200910/the_scalability_of_programming_languages.html">blog post</a>)
+                            </p>
+                            <p>
+                                To some extent I agree with this, but I want to give some reasons why a strong and powerful static type checker really does eliminate the need for automated tests in some cases—that is to say, there are instances when the static type checking makes the automated tests redundant and not the other way around, and does a better job.
+                            </p>
+                            <p>
+                                I have very few tests in my Haskell blog software. There are significantly more in the <a href="http://lukeplant.me.uk/resources/ella/">Ella</a> library which I wrote alongside it, but still far from complete coverage. While I like test driven development, and did it for some parts of this project, many times it felt like a waste of time. In some cases it was perhaps misdirected laziness, but I'm not convinced it always was. So what are the characteristics of code that doesn't benefit from automated/unit tests?
+                            </p>
+                            <div>
+                                <h1>
+                                    Trivial code
+                                </h1>
+                                <p>
+                                    If code is extremely simple, it can actually be worse to have tests than to not have them.
+                                </p>
+                                <p>
+                                    In defending that statement, the first thing to remember is that tests can have bugs in them too. Now, many bugs in the tests will be caught, as long as you follow the rule of making sure the test fails, then writing the code, then making sure it passes. However, many bugs of <em>omission</em>, which are also very common, will not be caught i.e. when the test fails to test something it ought to.
+                                </p>
+                                <p>
+                                    Second, there is always a cost to writing tests. So, as the probability of making a mistake in your code tends to zero, the usefulness of tests against that code also tends to zero—and not just to zero, it can go negative. You spent x minutes writing a test for something that didn't need testing, which is lost time and money already, and you also have extra (test) code to maintain in the future, and a longer test suite to run.
+                                </p>
+                                <p>
+                                    Third, you can write an infinite number of tests, and still have bugs. You can have 100% code coverage, and still have bugs. (I'll leave you to do the research on code coverage if you don't believe me). So, <strong>you have to stop somewhere, and therefore you need to know <em>when</em> to stop</strong>.
+                                </p>
+                                <p>
+                                    So suppose you write a utility function that is used to sanitise phone numbers that people might enter. It removes '-' and ' ' characters. (The result will of course be validated separately, but we want to allow people to enter phone numbers in a convenient way). In Python:
+                                </p>
+                                <pre>
+<code><span>def</span><span> </span><span>sanitise_phone_number</span><span>(</span><span>s</span><span>)</span><span>:</span><br><span>    </span><span>return</span><span> s.</span><span>replace</span><span>(</span><span>"-"</span><span>,</span><span>""</span><span>)</span><span>.</span><span>replace</span><span>(</span><span>" "</span><span>,</span><span>""</span><span>)</span><br></code>
+</pre>
+                                <p>
+                                    The testing fanatics might stop to write a unit test, but not the rest of us, because:
+                                </p>
+                                <ol>
+                                    <li>
+                                        <p>
+                                            You would mainly be testing that the built-in string library works.
+                                        </p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            If you think of the ways that the function is <em>likely</em> to be wrong, the test is just as likely to fail to catch it. For example, the function above might really need to strip newline chars as well, but that's not going to be tested unless I think to write a test for that.
+                                        </p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            If there actually is a bug here, or the implementation gets more complex so that it merits a test, I can cross that bridge when I come to it, and it won't cost me extra.
+                                        </p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            It's more likely that I'll forget to use this function than that I get it wrong. Therefore, an integration test would be far more useful. But in some cases, integration tests can be extremely expensive, both to write and to run, especially when testing javascript based web frontends, or GUIs that are not very testable. I'm almost certainly going to test this code by at least one manual integration test, and after that, do I really need to write an automatic one?
+                                        </p>
+                                    </li>
+                                </ol>
+                                <p>
+                                    However, if I was writing the function in a language that was less capable than Python, I might well write a test for the above.
+                                </p>
+                            </div>
+                            <div>
+                                <h1>
+                                    Declarative code
+                                </h1>
+                                <p>
+                                    (You could argue that this is an extension of trivial code, but it feels slightly different, and the case is even stronger).
+                                </p>
+                                <p>
+                                    Imagine your spec says that you should have 5 news items on the front page of your web site. You are using a library that has utility code for getting the first n items, or page x of n items each. And of course you are going to use a constant for that 5, rather than code it right in. So somewhere you are going to write (assuming Python):
+                                </p>
+                                <pre>
+<code><span>NEWS_ITEMS_ON_HOME_PAGE</span><span> </span><span>=</span><span> </span><span>5</span><br></code>
+</pre>
+                                <p>
+                                    Are you going to write a test that ensures that this value stays at 5, and doesn't accidentally get changed? Then your code base violates DRY—you now have <strong>two</strong> places where you are specifying the number of news items on the home page. That is, to some extent, the nature of all tests, but it's worse in this case. With non-declarative code and tests, one instance specifies behaviour, the other implementation, and it's usually obvious which is correct. But with declarative code, if one instance is different, how do you know which is correct?
+                                </p>
+                                <p>
+                                    Or are you going to write a test for the actual home page having 5 items? That would be pointless, because it's just testing that you are capable of calling a trivial API, which itself belongs to thoroughly tested code. You might want a sanity check that you have made a typo, but checking that the page returns anything with a 200 code will often be enough.
+                                </p>
+                                <p>
+                                    What about something like a Django model? Your spec says that a 'restaurant' needs to have a 'name' which is a maximum of 100 chars. You write the following code:
+                                </p>
+                                <pre>
+<code><span>class</span><span> </span><span>Restaurant</span><span>(</span><span>models</span><span>.</span><span>Model</span><span>)</span><span>:</span><br><span>    </span><span>name</span><span> </span><span>=</span><span> </span><span>models</span><span>.</span><span>CharField</span><span>(</span><span>"Name"</span><span>, </span><span>max_length</span><span>=</span><span>100</span><span>)</span><br><span>    </span><span># ...</span><br></code>
+</pre>
+                                <p>
+                                    Are you going to write code to test that you've typed this in correctly? It would again be violating DRY. Are you going to check that this interfaces with the database correctly? There are already hundreds of tests in Django which cover this. Are you going to write tests that are effectively checking for typos? Well, if you use this model at all, it's going to be very obvious if you've made a mistake, and some other simple integration test is going to catch it.
+                                </p>
+                            </div>
+                            <div>
+                                <h1>
+                                    Haskell
+                                </h1>
+                                <p>
+                                    Now, coming to Haskell. You can guess the point I'm going to make.
+                                </p>
+                                <p>
+                                    In Haskell, a lot of code is either trivial or declarative.
+                                </p>
+                                <p>
+                                    Further, many of the types of errors you could make are caught by the compiler. Typos and missing imports etc. are always caught, and many other errors beside.
+                                </p>
+                                <p>
+                                    Functional programming languages, especially pure ones, eliminate a lot of the kind of mistakes that are easy in imperative languages. Everything being an expression helps a lot—it forces you to think about every branch and return a value. In monadic code it becomes possible to avoid this, but a lot of your code is pure functional.
+                                </p>
+                                <div>
+                                    <h2>
+                                        Example 1
+                                    </h2>
+                                    <p>
+                                        Imagine a more complex function than our <code>sanitise_phone_number</code> above. It's going to take a list of 'transformation' functions and an input value and apply each function to the value in turn, returning the final value. In some languages, that would be just about worth writing a test for. You might have to worry about iterating over the list, boundary conditions, etc. But in Haskell it looks like this:
+                                    </p>
+                                    <pre>
+<code><span>apply = </span><span>foldl</span><span> (</span><span>flip</span><span> ($))</span><br></code>
+</pre>
+                                    <p>
+                                        In the above definition, there is basically nothing that can go wrong. We already know that <code>foldl</code> works, and isn't going to miss anything, or fail with an empty list. You can't forget to return the return value, like you can in Python. The compiler will catch any type errors. If the function doesn't do anything approaching what it's supposed to then you'll know as soon as you try to use it. I've used point-free style, so there isn't any chance of doing something silly with the input variables, because they don't even appear in the function definition!
+                                    </p>
+                                    <p>
+                                        For something like the above, you would often write your type signature first:
+                                    </p>
+                                    <pre>
+<code><span>apply ::</span><span> a -&gt; [a -&gt; a] -&gt; a</span><br></code>
+</pre>
+                                    <p>
+                                        Once you've done that, it's even harder to make a mistake. It's almost possible to try vaguely relevant code at random and see if it compiles. For something like this, if it compiles, and it looks very simple, it's probably correct. (There are obviously times when that will fail you, but it's amazing how often it doesn't. You often feel like you just have to keep doing what the compiler tells you and you'll get working code.)
+                                    </p>
+                                    <p>
+                                        Is the above code 'trivial' or 'declarative'? Well, that's a tough call. A lot of code in Haskell quickly becomes very declarative in style, especially when written point free.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Example 2
+                                    </h2>
+                                    <p>
+                                        But what about something much bigger—say the generation of an Atom feed? With a library that makes use of a strong static type system, this can be actually quite hard to get wrong.
+                                    </p>
+                                    <p>
+                                        In my blog software, I use the <a href="http://hackage.haskell.org/package/feed">feed</a> library for Atom feeds. The code I've had to write is extremely simple—a matter of creating some data structures corresponding to Atom feeds. The data structures are defined to force you to supply all required elements. Where there is a choice of data type, it forces you to choose — for example the 'content' field has to be set with either <code>HTMLContent "&lt;h1&gt;your content&lt;/h1&gt;"</code> or <code>TextContent "Your content"</code>. (For those who don't know Haskell, it should also be pointed out that there is no equivalent to 'null'. Optional values are made explicit using the <code>Maybe</code> type).
+                                    </p>
+                                    <p>
+                                        After filling in all the values for these feeds, I wrote some very simple 'glue' functions that fed in the data and returned the result as an HTTP response. I created 4 different feeds, all of which worked perfectly first time, as soon as I got them to compile. I cannot see any value, and only cost, in adding tests for this. A check for a 200 response code and non empty content might be worth it, but would be much easier to write as a bash script that uses 'curl' on a few known URLs.
+                                    </p>
+                                    <p>
+                                        Had I written this in Python, I might have wanted tests to ensure that the HTML in the Atom feed content was escaped properly and various other things, in addition to a simple check for status 200. But the API of the feed library, combined with the type checking that the compiler has done, has made that redundant, and has tested it far more easily and thoroughly than I could have done with tests.
+                                    </p>
+                                    <p>
+                                        And it's not in general true that the simple functional test will catch any type errors, because often it will only exercise one route through the code, ignoring the fact that in many places dynamically typed code can return values of different types, which can cause type failures etc.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h2>
+                                        Example 3
+                                    </h2>
+                                    <p>
+                                        One final example of reducing the need for automated tests is the routing system I've used in <a href="http://lukeplant.me.uk/resources/ella/">Ella</a>. OK, it's really a chance to show off the only slightly clever bit of code that I wrote, but hopefully it will explain something of the power of a strong type system :-)
+                                    </p>
+                                    <p>
+                                        Consider the following bits of code/configuration in a Django project, which are responsible for matching a URL, pulling out some bits from it and dispatching it to a view function.
+                                    </p>
+                                    <pre>
+<code><span>### myproject/urls.py</span><br><br><span>patterns</span><span> </span><span>=</span><span> </span><span>(</span><span>''</span><span>,</span><br><span>   </span><span>(</span><span>r'^members/(\d+)/$'</span><span>, </span><span>'myproject.views.member_detail'</span><span>)</span><span>,</span><br><span>   </span><span># etc...</span><br><span>)</span><br><br><span>### myproject/views.py</span><br><br><span>def</span><span> </span><span>member_detail</span><span>(</span><span>request</span><span>, </span><span>memberid</span><span>)</span><span>:</span><br><span>    </span><span>memberid</span><span> </span><span>=</span><span> </span><span>int</span><span>(</span><span>memberid</span><span>)</span><br><span>    </span><span>member</span><span> </span><span>=</span><span> </span><span>get_member</span><span>(</span><span>memberid</span><span>)</span><br><span>    </span><span># etc...</span><br></code>
+</pre>
+                                    <p>
+                                        Now, there are a number of possible failure points in this code that you might want some regression tests for. For example, if in the future we change it so that the URL uses a string such as a user name, rather an integer, we will need to change the URLconf, the line in <code>member_detail</code> that calls <code>int</code>, and the definition of <code>get_member</code> (or use a different function).
+                                    </p>
+                                    <p>
+                                        There is a <a href="http://en.wikipedia.org/wiki/Don't_repeat_yourself">DRY</a> or OAOO failure here—the fact that we are expecting an integer is specified multiple times, either implicitly or explicitly. This is one of the causes of fragility in this chunk of code — if one is changed, the others might not be updated, introducing bugs of different kinds. Now, there are things you can do about this, with some small or large changes to how URLconfs work. But they are not complete solutions, and one solution not open to Python developers is the one I coded in Ella.
+                                    </p>
+                                    <p>
+                                        The equivalent bits of code, with type signatures and explanations of them for those who don't know any Haskell, would look like this in my system.
+                                    </p>
+                                    <pre>
+<code><span>----- MyProject/Routes.hs</span><br><br><span>import</span><span> </span><span>MyProject.Views</span><br><br><span>routes = [</span><br><span>   </span><span>"members/"</span><span> &lt;+/&gt; intParam    //-&gt;   memberDetail  $ []</span><br><span>   </span><span>-- etc...</span><br><span>]</span><br><br><span>----- MyProject/Views.hs</span><br><br><span>-- memberDetail takes an 'Int' and an HTTP 'Request' object, and returns an</span><br><span>--  HTTP 'Response' (or 'Nothing' to indicate a 404), doing some IO on the</span><br><span>--  way.</span><br><span>memberDetail ::</span><span> </span><span>Int</span><span> -&gt; Request -&gt; </span><span>IO</span><span> (</span><span>Maybe</span><span> Response)</span><br><span>memberDetail memberId request = </span><span>do</span><br><span>   member &lt;- getMember memberId</span><br><span>   </span><span>-- etc...</span><br></code>
+</pre>
+                                    <p>
+                                        You should read <code>&lt;+/&gt;</code> as ‘followed by’ and <code>//-&gt;</code> as ‘routes to’. Just ignore the <code>$ []</code> bit for now (it exists to allow decorators to be applied easily in the routing configuration, but we are applying no decorators, hence the empty list).
+                                    </p>
+                                    <p>
+                                        <code>intParam</code> is a ‘matcher’: it attempts to pull off the next chunk of the URL (ending in a '/'), match it and parse it as an integer. If it can do so, it passes the parsed value on to <code>memberDetail</code> as a parameter i.e. it partially applies <code>memberDetail</code> with an integer.
+                                    </p>
+                                    <p>
+                                        The beauty of this system is that nothing can go wrong any more. We still have DRY violations at the moment, but it doesn't cause a problem, because the compiler checks for consistency.
+                                    </p>
+                                    <p>
+                                        In fact, we can even remove the DRY violation. We could change the code like this:
+                                    </p>
+                                    <pre>
+<code><span>----- MyProject/Routes.hs</span><br><br><span>import</span><span> </span><span>MyProject.Views</span><br><br><span>routes = [</span><br><span>   </span><span>"members/"</span><span> &lt;+/&gt; anyParam    //-&gt;   memberDetail  $ []</span><br><span>   </span><span>-- etc...</span><br><span>]</span><br><br><span>----- MyProject/Views.hs</span><br><br><span>memberDetail memberId request = </span><span>do</span><br><span>   member &lt;- getMember memberId</span><br><span>   </span><span>-- etc...</span><br></code>
+</pre>
+                                    <p>
+                                        We've replaced <code>intParam</code> with <code>anyParam</code>, which is a polymorphic version that can match any parameter of type class <code>Param</code>. You can define your own <code>Param</code> instances, so this is completely extensible (and you can also define your own matchers, for complete power). We've also removed the type signature from <code>memberDetail</code>. So how can <code>anyParam</code> know what type of thing to match?
+                                    </p>
+                                    <p>
+                                        This is where type inference comes in. The function <code>getMember</code> will probably have a type signature, or it will use its parameter in such a way that its type signature can be inferred. From that, the type of <code>memberId</code> can be inferred. From that, the type of value that <code>anyParam</code> must return can be inferred. And from that, finally, the instance of <code>Param</code> can be chosen. <strong>The compiler is using the type system to pick which method should be used to match and parse the URL parameters based on how those parameters are eventually used.</strong>
+                                    </p>
+                                    <p>
+                                        This is very nice. (At least I think so :-). We've removed the DRY violation, or, if we choose to use type signatures or explicitly specify types in <code>routes</code>, DRY violations don't matter because the compiler will catch them for us.
+                                    </p>
+                                    <p>
+                                        Would unit or functional tests have caught any problems? Well, they might. If they checked the happy case, they will prove whether that still works. But they're unlikely to check whether the URLconf is too permissive or not. But the compiler <em>can</em> do that kind of consistency check.
+                                    </p>
+                                    <p>
+                                        The end result is that there are just fewer things that can possibly go wrong. I'm not saying that you wouldn't bother to write any tests. But in this case, if <code>memberDetail</code> was really just glue, you might decide to only test its component parts (for example, by testing the template that it relies on). Since most of the glue has been constructed so that it can't go wrong, you can focus tests on what <em>can</em> go wrong. And some sections of the code sink below the threshold at which tests provide positive value.
+                                    </p>
+                                    <p>
+                                        There are many other ways in which static type checking can make automated tests redundant. Parsers are a great example — a spec might define a syntax in BNF notation. In Haskell, you might well implement that using parsec. But if you look at the code, it will have pretty much a one-to-one correspondence with the BNF definitions. Any tests you write will simply check that a few examples happen to be parsed correctly, as you cannot begin to cover the input space. It's therefore far better to spend your time manually checking that the code matches the BNF spec than writing lots of tests. Unit tests often will not catch the type of errors that a compiler can if there is any polymorphism in the code paths.
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <h1>
+                                    Conclusion
+                                </h1>
+                                <p>
+                                    Before you flame me, don't think that I'm attacking other languages. This experience with Haskell has actually proved to me that Python is still easily my favourite language for web development, especially in combination with Django. (I could do a follow up on why that is—I have a growing list of things I dislike about Haskell, some of which are fixable). But I often hear the Python crowd saying things about static typing and testing that come from ignorance, and the way you would imagine things to be (often based on experience of Java/C++/C#), and not from experience of something like Haskell.
+                                </p>
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://lukeplant.me.uk/blog/posts/is-static-type-checking-a-redundant-testing-mechanism/">http://lukeplant.me.uk/blog/posts/is-static-type-checking-a-redundant-testing-mechanism/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

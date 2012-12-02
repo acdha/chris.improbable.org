@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            How JRuby Makes Ruby Fast
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 05 Apr 2009 03:48:25 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-04-02T11:09:00-04:00">
+                    <meta itemprop="dateModified" content="2009-04-02T11:09:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-04-02T15:09:00+00:00">Apr 02</time>
+                    <h2 itemprop="title">
+                        How JRuby Makes Ruby Fast
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/74e130432ac4a54b">
+                        <blockquote>
+                            <div>
+                                At least once a year there's a maelstrom of posts about a new Ruby implementation with stellar numbers. These numbers are usually based on very early experimental code, and they are rarely accompanied by information on compatibility. And of course we love to see crazy performance numbers, so many of us eat this stuff up.
+                            </div><br>
+                            <div>
+                                Posting numbers too early is a real disservice to any project, since they almost certainly don't represent the eventual real-world performance people will see. It encourages folks to look to the future, but it also marginalizes implementations that already provide both compatibility and performance, and ignores how much work it has taken to get there. Given how much we like to see numbers, and how thirsty the Ruby community is for "a fastest Ruby", I don't know whether this will ever change.
+                            </div><br>
+                            <div>
+                                I thought perhaps a discussion about the process of optimizing JRuby might help folks understand what's involved in building a fast, compatible Ruby implementation, so that these periodic shootouts don't get blown out of proportion. Ruby can be fast, certainly even faster than JRuby is today. But getting there while maintaining compatibility is very difficult.
+                            </div>
+                            <div>
+                                <br>
+                            </div>
+                            <div>
+                                <b>Performance Optimization, JRuby-style</b>
+                            </div><br>
+                            <div>
+                                The truth is it's actually very easy to make small snippits of Ruby code run really fast, especially if you optimize for the benchmark. But is it useful to do so? And can we extrapolate eventual production performance from these early numbers?
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    We begin our exploration by running JRuby in interpreted mode, which is the slowest way you can run JRuby. We'll be using the "tak" benchmark, since it's simple and easy to demonstrate relative performance at each optimization level.
+                                </div>
+                                <pre>
+# Takeuchi function performance, tak(24, 16, 8)<br>def tak x, y, z<br> if y &gt;= x<br>   return z<br> else<br>   return tak( tak(x-1, y, z),<br>               tak(y-1, z, x),<br>               tak(z-1, x, y))<br> end<br>end<br><br>require "benchmark"<br><br>N = (ARGV.shift || 1).to_i<br><br>Benchmark.bm do |make|<br> N.times do<br>   make.report do<br>     i = 0<br>     while i&lt;10<br>       tak(24, 16, 8)<br>       i+=1<br>     end<br>   end<br> end<br>end
+</pre><br>
+                                <div>
+                                    And here's our first set of results. I have provided Ruby 1.8.6 and Ruby 1.9.1 numbers for comparison.
+                                </div>
+                                <pre>
+Ruby 1.8.6p114:<br>➔ ruby bench/bench_tak.rb 5<br> user     system      total        real<br>17.150000   0.120000  17.270000 ( 17.585128)<br>17.170000   0.140000  17.310000 ( 17.946869)<br>17.180000   0.160000  17.340000 ( 18.234570)<br>17.180000   0.150000  17.330000 ( 17.779536)<br>18.790000   0.190000  18.980000 ( 19.560232)<br><br>Ruby 1.9.1p0:<br>➔ ruby191 bench/bench_tak.rb 5<br> user     system      total        real<br>3.570000   0.030000   3.600000 (  3.614855)<br>3.570000   0.030000   3.600000 (  3.615341)<br>3.560000   0.020000   3.580000 (  3.608843)<br>3.570000   0.020000   3.590000 (  3.591833)<br>3.570000   0.020000   3.590000 (  3.640205)<br><br>JRuby 1.3.0-dev, interpreted, client VM<br>➔ jruby -X-C bench/bench_tak.rb 5<br> user     system      total        real<br>24.981000   0.000000  24.981000 ( 24.903000)<br>24.632000   0.000000  24.632000 ( 24.633000)<br>25.459000   0.000000  25.459000 ( 25.459000)<br>29.122000   0.000000  29.122000 ( 29.122000)<br>29.935000   0.000000  29.935000 ( 29.935000)
+</pre><br>
+                                <div>
+                                    Ruby 1.9 posts some nice numbers here, and JRuby shows how slow it can be when doing no optimizations at all. The first change we look at, and which we recommend to any users seeking best-possible performance out of JRuby, is to use the JVM's "server" mode, which optimizes considerably better.
+                                </div>
+                                <pre>
+JRuby 1.3.0-dev, interpreted, server VM<br>➔ jruby --server -X-C bench/bench_tak.rb 5<br> user     system      total        real<br>8.262000   0.000000   8.262000 (  8.192000)<br>7.789000   0.000000   7.789000 (  7.789000)<br>8.012000   0.000000   8.012000 (  8.012000)<br>7.998000   0.000000   7.998000 (  7.998000)<br>8.000000   0.000000   8.000000 (  8.000000)
+</pre><br>
+                                <div>
+                                    The "server" VM differs from the default "client" VM in that it will optimistically inline code across calls and optimize the resulting code as a single unit. This obviously allows it to eliminate costly x86 CALL operations, but even more than that it allows optimizing algorithms which span multiple calls. By default, OpenJDK will attempt to inline up to 9 levels of calls, so long as they're monomorphic (only one valid target), not too big, and no early assumptions are changed by later code (like if a monomorphic call goes polymorphic later on). In this case, where we're not yet compiling Ruby code to JVM bytecode, this inlining is mostly helping JRuby's interpreter, core classes, and method-call logic. But already we're 3x faster than interpreted JRuby on the client VM.
+                                </div><br>
+                                <div>
+                                    The next optmization will be to turn on the compiler. I've modified JRuby for the next couple runs to *only* compile and not do any additional optimizations. We'll discuss those optimizations as I add them back.
+                                </div>
+                                <pre>
+JRuby 1.3.0-dev, compiled (unoptimized), server VM:<br>➔ jruby --server -J-Djruby.astInspector.enabled=false bench/bench_tak.rb 5<br> user     system      total        real<br>5.436000   0.000000   5.436000 (  5.376000)<br>3.655000   0.000000   3.655000 (  3.655000)<br>3.662000   0.000000   3.662000 (  3.662000)<br>3.683000   0.000000   3.683000 (  3.683000)<br>3.668000   0.000000   3.668000 (  3.668000)
+</pre><br>
+                                <div>
+                                    By compiling, without doing any additional optimizations, we're able to improve performance 2x again. Because we're now JITing Ruby code as JVM bytecode, and the JVM eventually JITs JVM bytecode to native code, our Ruby code actually starts to benefit from the JVM's built-in optimizations. We're making better use of the system CPU and not making nearly as many calls as we would from the interpreter (since the interpreter is basically a long chain of calls for each low-level Ruby operation.
+                                </div><br>
+                                <div>
+                                    Next, we'll turn on the simplest and oldest JRuby compiler optimization, "heap scope elimination".
+                                </div>
+                                <pre>
+JRuby 1.3.0-dev, compiled (heap scope optz), server VM:<br>➔ jruby --server bench/bench_tak.rb 5<br> user     system      total        real<br>4.014000   0.000000   4.014000 (  3.942000)<br>2.776000   0.000000   2.776000 (  2.776000)<br>2.760000   0.000000   2.760000 (  2.760000)<br>2.769000   0.000000   2.769000 (  2.769000)<br>2.768000   0.000000   2.768000 (  2.769000)
+</pre><br>
+                                <div>
+                                    The "heap scope elimination" optimization eliminates the use of an in-memory store for local variables. Instead, when there's no need for local variables to be accessible outside the context of a given method, they are compiled as Java local variables. This allows the JVM to put them into CPU registers, making them considerably faster than reading or writing them from/to main memory (via a cache, but still slower than registers). This also makes JRuby ease up on the JVM's memory heap, since it no longer has to allocate memory for those scopes on every single call. This now puts us comfortably faster than Ruby 1.9, and it represents the set of optimizations you see in JRuby 1.2.0.
+                                </div><br>
+                                <div>
+                                    Is this the best we can do? No, we can certainly do more, and some such experimental optimizations are actually already underway. Let's continue our exploration by turning on another optimization similar to the previous one: "backtrace-only frames".
+                                </div>
+                                <pre>
+JRuby 1.3.0-dev, compiled (heap scope + bracktrace frame optz), server VM:<br>➔ jruby --server -J-Djruby.compile.frameless=true bench/bench_tak.rb 5<br> user     system      total        real<br>3.609000   0.000000   3.609000 (  3.526000)<br>2.600000   0.000000   2.600000 (  2.600000)<br>2.602000   0.000000   2.602000 (  2.602000)<br>2.598000   0.000000   2.598000 (  2.598000)<br>2.602000   0.000000   2.602000 (  2.602000)
+</pre><br>
+                                <div>
+                                    Every Ruby call needs to store information above and beyond local variables. There's the current "self", the current method visibility (used for defining new methods), which class is currently the "current" one, backref and lastline values ($~ and $_), backtrace information (caller's file and line), and some other miscellany for handling long jumps (like return or break in a block). In most cases, this information is not used, and so storing it and pushing/popping it for every call wastes precious time. In fact, other than backtrace information (which needs to be present to provide Ruby-like backtrace output), we can turn most of the frame data off. This is where we start to break Ruby a bit, though there are ways around it. But you can see we get another small boost.
+                                </div><br>
+                                <div>
+                                    What if we eliminate frames entirely and just use the JVM's built-in backtrace logic? It turns out that having any pushing/popping of frames, even with only backtrace data, still costs us quite a bit of performance. So let's try "heap frame elimination":
+                                </div>
+                                <pre>
+JRuby 1.3.0-dev, compiled (heap scope + heap frame optz), server VM:<br>➔ jruby --server -J-Djruby.compile.frameless=true bench/bench_tak.rb 5<br> user     system      total        real<br>2.955000   0.000000   2.955000 (  2.890000)<br>1.904000   0.000000   1.904000 (  1.904000)<br>1.843000   0.000000   1.843000 (  1.843000)<br>1.823000   0.000000   1.823000 (  1.823000)<br>1.813000   0.000000   1.813000 (  1.813000)
+</pre><br>
+                                <div>
+                                    By eliminating frames entirely, we're a good 33% faster than the fastest "fully framed" run you'd get with stock JRuby 1.2.0. You'll notice the command line here is the same; that's because we're venturing into more and more experimental code, and in this case I've actually forced "frameless" to be "no heap frame" instead of "backtrace-only heap frame". And what do we lose with this change? We no longer would be able to produce a backtrace containing only Ruby calls, so you'd see some JRuby internals in the trace, similar to how Rubinius shows Rubinius internals. But we're getting respectably fast now.
+                                </div><br>
+                                <div>
+                                    Next up we'll turn on some optimizations for math operators.
+                                </div>
+                                <pre>
+JRuby 1.3.0-dev, compiled (heap scope, heap frame, fastops optz), server VM:<br>➔ jruby --server -J-Djruby.compile.frameless=true -J-Djruby.compile.fastops=true bench/bench_tak.rb 5<br> user     system      total        real<br>2.291000   0.000000   2.291000 (  2.225000)<br>1.335000   0.000000   1.335000 (  1.335000)<br>1.337000   0.000000   1.337000 (  1.337000)<br>1.344000   0.000000   1.344000 (  1.344000)<br>1.346000   0.000000   1.346000 (  1.346000)
+</pre><br>
+                                <div>
+                                    Most of the time, when calling + or - on an object, we do the full Ruby dynamic dispatch cycle. Dispatch involves retrieving the target object's metaclass, querying for a method (like "+" or "-"), and invoking that method with the appropriate arguments. This works fine for getting us respectable performance, but we want to take things even further. So JRuby has experimental "fast math" operations to turn most Fixnum math operators into static calls rather than dynamic ones, allowing most math operations to inline directly into the caller. And what do we lose? This version of "fast ops" makes it impossible to override Fixnum#+ and friends, since whenever we call + on a Fixnum it's going straight to the code. But it gets us another nearly 30% improvement.
+                                </div><br>
+                                <div>
+                                    Up to now we've still also been updating a lot of per-thread information. For every line, we're tweaking a per-thread field to say what line number we're on. We're also pinging a set of per-thread fields to handle the unsafe "kill" and "raise" operations on each thread...basically we're checking to see if another thread has asked the current one to die or raise an exception. Let's turn all that off:
+                                </div><br>
+                                <pre>
+JRuby 1.3.0-dev, compiled (heap scope, heap frame, fastops, threadless, positionless optz), server VM:<br>➔ jruby --server -J-Djruby.compile.frameless=true -J-Djruby.compile.fastops=true -J-Djruby.compile.positionless=true -J-Djruby.compile.threadless=true bench/bench_tak.rb 5<br> user     system      total        real<br>2.256000   0.000000   2.256000 (  2.186000)<br>1.304000   0.000000   1.304000 (  1.304000)<br>1.310000   0.000000   1.310000 (  1.310000)<br>1.307000   0.000000   1.307000 (  1.307000)<br>1.301000   0.000000   1.301000 (  1.301000)
+</pre><br>
+                                <div>
+                                    We get a small but measurable performance boost from this change as well.
+                                </div><br>
+                                <div>
+                                    The experimental optimizations up to this point (other than threadless) comprise the set of options for JRuby's --fast option, shipped in 1.2.0. The --fast option additionally tries to statically inspect code to determine whether these optimizations are safe. For example, if you're running with --fast but still access backrefs, we're going to create a frame for you anyway.
+                                </div><br>
+                                <div>
+                                    We're not done yet. I mentioned earlier the JVM gets some of its best optimizations from its ability to profile and inline code at runtime. Unfortunately in current JRuby, there's no way to inline dynamic calls. There's too much plumbing involved. The upcoming "invokedynamic" work in Java 7 will give us an easier path forward, making dynamic calls as natural to the JVM as static calls, but of course we want to support Java 5 and Java 6 for a long time. So naturally, I have been maintaining an experimental patch that eliminates most of that plumbing and makes dynamic calls inline on Java 5 and Java 6.
+                                </div>
+                                <pre>
+JRuby 1.3.0-dev, compiled ("--fast", dyncall optz), server VM:<br>➔ jruby --server --fast bench/bench_tak.rb 5<br> user     system      total        real<br>2.206000   0.000000   2.206000 (  2.066000)<br>1.259000   0.000000   1.259000 (  1.259000)<br>1.258000   0.000000   1.258000 (  1.258000)<br>1.269000   0.000000   1.269000 (  1.269000)<br>1.270000   0.000000   1.270000 (  1.270000)
+</pre><br>
+                                <div>
+                                    We improve again by a small amount, always edging the performance bar higher and higher. In this case, we don't lose compatibility, we lose stability. The inlining modification breaks method_missing and friends, since I have not yet modified the call pipeline to support both inlining and method_missing. And there's still a lot of extra overhead here that can be eliminated. But in general we're still mostly Ruby, and even with this change you can run a lot of code.
+                                </div><br>
+                                <div>
+                                    This represents the current state of JRuby. I've taken you all the way from slow, compatible execution, through fast, compatible execution, and all the way to faster, less-compatible execution. There's certainly a lot more we can do, and we're not yet as fast as some of the incomplete experimental Ruby VMs. But we run Ruby applications, and that's no small feat. We will continue making measured steps, always ensuring compatibility first so each release of JRuby is more stable and more complete than the last. If we don't immediately leap to the top of the performance heap, there's always good reasons for it.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    <b>Performance Optimization, Duby-style</b>
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    As a final illustration, I want to show the tak performance for a language that looks like Ruby, and tastes like Ruby, but boasts substantially better performance: Duby.
+                                </div>
+                                <pre>
+def tak(x =&gt; :fixnum, y =&gt; :fixnum, z =&gt; :fixnum)<br> unless y &lt; x<br>   z<br> else<br>   tak( tak(x-1, y, z),<br>        tak(y-1, z, x),<br>        tak(z-1, x, y))<br> end<br>end<br><br>puts "Running tak(24,16,8) 1000 times"<br><br>i = 0<br>while i&lt;1000<br> tak(24, 16, 8)<br> i+=1<br>end
+</pre><br>
+                                <div>
+                                    This is the Takeuchi function written in Duby. It looks basically like Ruby, except for the :fixnum type hints in the signature. Here's a timing of the above script (which calls tak the same as before but 1000 times instead of 5 times), running on the server JVM:
+                                </div>
+                                <pre>
+➔ time jruby -J-server bin/duby examples/tak.duby<br>Running tak(24,16,8) 1000 times<br><br>real 0m13.657s<br>user 0m14.529s<br>sys 0m0.450s
+</pre><br>
+                                <div>
+                                    So what you're seeing here is that Duby can run "tak(24,16,8)", the same function we tested in JRuby above, in an average of 0.013 seconds--nearly two orders of magnitude faster than the fastest JRuby optimizations above and at least an order of magnitude faster than the fastest incomplete, experimental implementations of Ruby. What does this mean? Absolutely nothing, because Duby is not Ruby. But it shows how fast a Ruby-like language can get, and it shows there's a lot of runway left for JRuby to optimize.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    <b>Be a (Supportive) Critic!</b>
+                                </div><br>
+                                <div>
+                                    So the next time someone posts an article with crazy-awesome performance numbers for a Ruby implementation, by all means applaud the developers and encourage their efforts, since they certainly deserve credit for finding new ways to optimize Ruby. But then ask yourself and the article's author how much of Ruby the implementation actually supports, because it makes a big difference.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    <b><i>Update, April 4:</i> <span style="font-weight:normal">Several people told me I didn't go quite far enough in showing that by breaking Ruby you could get performance. And after enough cajoling, I was convinced to post one last modification: recursion optimization.</span></b>
+                                </div>
+                                <pre>
+JRuby 1.3.0-dev, compiled ("--fast", dyncall optz, recursion optz), server VM:<br>➔ jruby --server --fast bench/bench_tak.rb 5<br> user     system      total        real<br>0.524000   0.000000   0.524000 (  0.524000)<br>0.338000   0.000000   0.338000 (  0.338000)<br>0.325000   0.000000   0.325000 (  0.325000)<br>0.299000   0.000000   0.299000 (  0.299000)<br>0.310000   0.000000   0.310000 (  0.310000)
+</pre><br>
+                                <div>
+                                    Woah! What the heck is going on here? In this case, JRuby's compiler has been hacked to turn recursive "functional calls", i.e. calls to an implicit "self" receiver, into direct calls. The logic behind this is that if you're calling the current method from the current method, you're going to always dispatch back to the same piece of code...so why do all the dynamic call gymnastics? This fits a last piece into the JVM inlining-optimization puzzle, allowing mostly-recursive benchmarks like Takeuchi to inline more of those recursive calls. What do we lose? Well, I'm not sure yet. I haven't done enough testing of this optimization to know whether it breaks Ruby in some subtle way. It may work for 90% of cases, but fail for an undetectable 10%. Or it may be something we can determine statically, or something for which we can add an inexpensive guard. Until I know, it won't go into a release of JRuby, at least not as a default optimization. But it's out there, and I believe we'll find a way.
+                                </div>
+                                <div>
+                                    <br>
+                                </div>
+                                <div>
+                                    It is also, incidentally, only a few times slower than a pure Java version of the same benchmark, provided Java is using all boxed numerics too.
+                                </div>
+                            </div>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/20975090-5425179292824715024?l=blog.headius.com" alt="">
+                            </div>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.headius.com/2009/04/how-jruby-makes-ruby-fast.html">http://blog.headius.com/2009/04/how-jruby-makes-ruby-fast.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

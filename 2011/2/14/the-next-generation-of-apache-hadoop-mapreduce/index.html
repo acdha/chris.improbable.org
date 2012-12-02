@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The Next Generation of Apache Hadoop MapReduce
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 14 Feb 2011 21:32:45 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-14T16:32:45-04:00">
+                    <meta itemprop="dateModified" content="2011-02-14T16:32:45-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-14T20:32:45+00:00">Feb 14</time>
+                    <h2 itemprop="title">
+                        The Next Generation of Apache Hadoop MapReduce
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/a9892b3a3190707d">
+                        <blockquote>
+                            <h2>
+                                Overview
+                            </h2>
+                            <p>
+                                In the Big Data business running fewer larger clusters is cheaper than running more small clusters. Larger clusters also process larger data sets and support more jobs and users.
+                            </p>
+                            <p>
+                                The Apache Hadoop MapReduce framework has hit a scalability limit around 4,000 machines. We are developing the next generation of Apache Hadoop MapReduce that factors the framework into a generic resource scheduler and a per-job, user-defined component that manages the application execution. Since downtime is more expensive at scale high-availability is built-in from the beginning; as are security and multi-tenancy to support many users on the larger clusters. The new architecture will also increase innovation, agility and hardware utilization.
+                            </p>
+                            <h2>
+                                Background
+                            </h2>
+                            <p>
+                                The current implementation of the Hadoop MapReduce framework is showing it’s age.
+                            </p>
+                            <p>
+                                Given observed trends in cluster sizes and workloads, the MapReduce JobTracker needs a drastic overhaul to address several deficiencies in its scalability, memory consumption, threading-model, reliability and performance. Over the last 5 years, we’ve done spot fixes, however lately these have come at an ever-growing cost as evinced by the increasing difficulty of making changes to the framework. The architectural deficiencies, and corrective measures, are both old and well understood - even as far back as late 2007, when we documented the proposed fix on MapReduce’s jira: <a href="https://issues.apache.org/jira/browse/MAPREDUCE-278">https://issues.apache.org/jira/browse/MAPREDUCE-278</a>.
+                            </p>
+                            <p>
+                                From an operational perspective, the current Hadoop MapReduce framework forces a system-wide upgrade for any minor or major changes such as bug fixes, performance improvements and features. Worse, it forces every single customer of the cluster to upgrade at the same time, regardless of his or her interests; this wastes expensive cycles of customers as they validate the new version of the Hadoop for their applications.
+                            </p>
+                            <h2>
+                                Requirements
+                            </h2>
+                            <p>
+                                As we consider ways to improve the Hadoop MapReduce framework it is important to keep in mind the high-level requirements. The most pressing requirements for the next generation of the MapReduce framework are:
+                            </p>
+                            <ul>
+                                <li>Reliability
+                                </li>
+                                <li>Availability
+                                </li>
+                                <li>Scalability - Clusters of 10,000 machines and 200,000 cores, and beyond.
+                                </li>
+                                <li>Backward (and Forward) Compatibility - Ensure customers’ MapReduce applications run unchanged in the next version of the framework.
+                                </li>
+                                <li>Evolution – Ability for customers to control upgrades to the Hadoop software stack.
+                                </li>
+                                <li>Predictable Latency – A major customer concern.
+                                </li>
+                                <li>Cluster utilization
+                                </li>
+                            </ul>
+                            <p>
+                                The second tier of requirements is:
+                            </p>
+                            <ul>
+                                <li>Support for alternate programming paradigms to MapReduce
+                                </li>
+                                <li>Support for short-lived services
+                                </li>
+                            </ul>
+                            <p>
+                                Given the above requirements, it is clear that we need a major re-think of the infrastructure used for data processing on the Hadoop. In fact, there seems to be loose consensus in the Hadoop community around the fact that the current architecture of the MapReduce framework is incapable of meeting our states goals and that a re-factor is required; see our proposal we made on jira in January, 2008: <a href="https://issues.apache.org/jira/browse/MAPREDUCE-279">https://issues.apache.org/jira/browse/MAPREDUCE-279</a>.
+                            </p>
+                            <h2>
+                                The Next Generation of MapReduce
+                            </h2>
+                            <p>
+                                The fundamental idea of the re-architecture is to divide the two major functions of the <strong>JobTracker</strong>, resource management and job scheduling/monitoring, into separate components. The new <strong>ResourceManager</strong> manages the global assignment of compute resources to applications and the per-application <strong>ApplicationMaster</strong> manages the application’s scheduling and coordination. An application is either a single job in the classic MapReduce jobs or a DAG of such jobs. The ResourceManager and per-machine NodeManager server, which manages the user processes on that machine, form the computation fabric. The per-application ApplicationMaster is, in effect, a framework specific library and is tasked with negotiating resources from the ResourceManager and working with the NodeManager(s) to execute and monitor the tasks.
+                            </p>
+                            <p>
+                                The ResourceManager supports hierarchical application queues and those queues can be guaranteed a percentage of the cluster resources. It is pure scheduler in the sense that it performs no monitoring or tracking of status for the application. Also, it offers no guarantees on restarting failed tasks either due to application failure or hardware failures.
+                            </p>
+                            <p>
+                                The ResourceManager performs its scheduling function based the resource requirements of the applications; each application has multiple resource request types that represent the resources required for containers. The resource requests include memory, CPU, disk, network etc. Note that this is a significant change from the current model of fixed-type slots in Hadoop MapReduce, which leads to significant negative impact on cluster utilization. The ResourceManager has a scheduler policy plug-in, which is responsible for partitioning the cluster resources among various queues, applications etc. Scheduler plug-ins can be based, for e.g., on the current CapacityScheduler and FairScheduler.
+                            </p>
+                            <p>
+                                The NodeManager is the per-machine framework agent who is responsible for launching the applications’ containers, monitoring their resource usage (cpu, memory, disk, network) and reporting the same to the Scheduler.
+                            </p>
+                            <p>
+                                The per-application ApplicationMaster has the responsibility of negotiating appropriate resource containers from the Scheduler, launching tasks, tracking their status &amp; monitoring for progress, and handling task-failures.
+                            </p>
+                            <h2>
+                                Architecture
+                            </h2>
+                            <p>
+                                <a href="http://ydn.zenfs.com/blogs/22/MapReduce_NextGen.jpg"><img src="http://ydn.zenfs.com/blogs/22/MapReduce_NextGen.jpg" alt="Architecture of Next Generation MapReduce" title="Architecture of Next Generation MapReduce" width="624" height="386"></a>
+                            </p>
+                            <h2>
+                                Improvements vis-à-vis current implementation of Hadoop MapReduce
+                            </h2>
+                            <h3>
+                                Scalability
+                            </h3>
+                            <p>
+                                The separation of management of resources in the cluster from management of the life cycle of applications and their component tasks results in an architecture, which scales out much better and more gracefully. The Hadoop MapReduce JobTracker spends a very significant portion of time and effort managing the life cycle of applications and that is the major cause of software mishaps – moving that to an application-specific entity is a significant win.
+                            </p>
+                            <p>
+                                Scalability is particularly important with current hardware trends – currently Hadoop MapReduce has been deployed on clusters of up to 4,000 machines. However, 4,000 commodity machines of 2009 vintage (i.e. 8 cores, 16G RAM, 4TB disk) are only half as capable of 4,000 machines of 2011 vintage (16 cores, 48G RAM, 24TB disk. Also, operational costs favor consolidation and compel us to run ever-larger clusters of 6,000 machines and beyond.
+                            </p>
+                            <h3>
+                                Availability
+                            </h3>
+                            <ul>
+                                <li>ResourceManager - The ResourceManager uses <a href="http://hadoop.apache.org/zookeeper/">Apache ZooKeeper</a> for fail-over. When the ResourceManager fails, a secondary can quickly recover via cluster state saved in ZooKeeper. The ResourceManager, on a fail-over, restarts all of the queued and running applications.
+                                </li>
+                                <li>ApplicationMaster - MapReduce NextGen supports application specific checkpoint capabilities for the ApplicationMaster. The MapReduce ApplicationMaster can recover from failures by restoring itself from state saved in HDFS.
+                                </li>
+                            </ul>
+                            <h3>
+                                Wire-compatibility
+                            </h3>
+                            <p>
+                                MapReduce NextGen uses wire-compatible protocols to allow different versions of servers and clients to communicate with each other. In future releases, this will enable rolling upgrades to the clusters – a major operability win.
+                            </p>
+                            <h3>
+                                Innovation &amp; Agility
+                            </h3>
+                            <p>
+                                A major plus of the proposed architecture is the fact that MapReduce effectively becomes a user-land library. The computation framework (ResourceManager and NodeManager) is completely generic and is free of MapReduce specificities.
+                            </p>
+                            <p>
+                                This enables end-customers to use different versions of MapReduce concurrently on the same cluster. This is trivial to support since multiple versions of MapReduce ApplicationMaster and runtime can be used for different applications. This provides significant agility for applications for bug fixes, enhancements and new features since the entire cluster does not have to be upgraded. It also allows end-customers to upgrade their applications to MapReduce versions on their own schedule and significantly enhances operability of the cluster.
+                            </p>
+                            <p>
+                                The ability to run user-defined version of the Map-Reduce fosters innovation without affecting stability of the software. It will be trivial to incorporate features such as the <a href="http://www.eecs.berkeley.edu/Pubs/TechRpts/2009/EECS-2009-136.html">Hadoop Online Prototype</a> into the user’s version of MapReduce without affecting other users.
+                            </p>
+                            <h3>
+                                Cluster Utilization
+                            </h3>
+                            <p>
+                                The MapReduce NextGen ResourceManager uses a general concept of a resource for scheduling and allocating to individual applications.
+                            </p>
+                            <p>
+                                Every machine in the cluster is conceptually comprised of resources such as memory, CPU, I/O bandwidth, etc. Each machine is fungible and will be allocated to applications as containers based on application-defined resource request types. A container is a set of processes that are logically isolated from other containers on the same machine providing strong multi-tenancy support.
+                            </p>
+                            <p>
+                                Thus it removes the current notion of fixed typed map and reduce slots in Hadoop MapReduce. The fixed typed slots have a significant negative impact on cluster utilization since, at different times in the cluster, either map or reduce slots are scarce.
+                            </p>
+                            <h3>
+                                Support for programming paradigms other than MapReduce
+                            </h3>
+                            <p>
+                                MapReduce NextGen provides a completely generic computation framework to support MapReduce and other paradigms.
+                            </p>
+                            <p>
+                                The architecture allows end-users to implement any application-specific framework by implementing a custom ApplicationMaster, which can request resources from the ResourceManager and utilize them as they see fit under familiar notions of isolation, capacity guarantees etc.
+                            </p>
+                            <p>
+                                Thus, it supports multiple programming paradigms, such as MapReduce, MPI, Master-Worker, and iterative models, on the same Hadoop cluster and allows use of the appropriate framework for each application. This is particularly important for applications (e.g. K-Means, Page-Rank) where custom frameworks out-perform MapReduce by an order of magnitude.
+                            </p>
+                            <h2>
+                                Conclusions
+                            </h2>
+                            <p>
+                                Apache Hadoop, and in particular Hadoop MapReduce, is a very successful open-source project for processing large data sets. Our proposed re-factoring of Hadoop MapReduce addresses the architecture’s current issues by providing high-availability, enhancing cluster utilization and providing support for programming paradigms; and enables rapid future evolution.
+                            </p>
+                            <p>
+                                We felt that none of the existing options such as Torque, Condor, Mesos etc. were designed to solve for MapReduce clusters at scale. Some of the options were new and immature, and others were missing key features such as ability to do fine-grained scheduling for hundreds of thousands of tasks, performance at scale, security, multi-tenancy etc.
+                            </p>
+                            <p>
+                                We will work with the Apache Hadoop community to achieve this to elevate Apache Hadoop to the next level in the big data space.
+                            </p>
+                            <hr>
+                            <p>
+                                We're presenting this work at the <a href="http://developer.yahoo.com/blogs/ydn/posts/2011/01/hadoop-india-summit-2011/">2011 Hadoop India Summit</a> in Bangalore on February 16 and at the Bay Area <a href="http://www.meetup.com/hadoop/events/16116942/">Hadoop User Group</a> on February 16 in Sunnyvale.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://developer.yahoo.com/blogs/hadoop/posts/2011/02/mapreduce-nextgen/">http://developer.yahoo.com/blogs/hadoop/posts/2011/02/mapreduce-nextgen/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

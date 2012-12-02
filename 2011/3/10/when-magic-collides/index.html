@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            When magic collides
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 10 Mar 2011 07:27:36 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-10T02:27:36-04:00">
+                    <meta itemprop="dateModified" content="2011-03-10T02:27:36-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-10T06:27:36+00:00">Mar 10</time>
+                    <h2 itemprop="title">
+                        When magic collides
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/35746b385a6bc908">
+                        <blockquote>
+                            <p>
+                                We had an interesting issue come up the other day, one that ended up being a pretty nasty bug in DTrace. It merits a detailed explanation, but first, a cautionary note: we’re headed into rough country; in <a href="http://www.catb.org/jargon/html/Y/You-are-not-expected-to-understand-this.html">the immortal words of Sixth Edition</a>, you are not expected to understand this.
+                            </p>
+                            <p>
+                                The problem we noticed was this: when running <a href="http://nodejs.org/">node</a> and instrumenting certain hot functions (<tt>memcpy:entry</tt> was noted in particular), after some period of activity, the node process would die on a strange seg fault. And looking at the core dumps, we were (usually) lost in some code path in <tt>memcpy()</tt> with registers or a stack that was self-inconsistent. In debugging this, it was noted (with DTrace, natch) that the node process was under somewhat intense signal processing activity (we’ll get to why in a bit), and that (in particular) the instrumented function activity and the signal activity seemed to be interacting “shortly” before the fatal failure.
+                            </p>
+                            <p>
+                                Before wading any deeper, it’s worth taking an aside to explain how we deal with signals in DTrace — a discussion that in turn requires some background on the way loss-less user-level tracing works in DTrace. One of the important constraints that we placed upon ourselves (albeit one that we didn’t talk about too much) is that DTrace is <em>loss-less</em>: if multiple threads on multiple CPUs hit the same point of instrumentation, no thread will see an uninstrumented code path. This may seem obvious, but it’s not the way traditional debuggers work: normally, a debugger stops a process (and all of its threads) when it hits a breakpoint — which it induces by modifying program text with a synchronous trap instruction (e.g., an “<a href="http://en.wikipedia.org/wiki/INT_(x86_instruction)">int 3</a>” in x86). Then, the program text is modified to contain the original instruction, the thread that hit the breakpoint (and <em>only</em> that thread) is single-stepped (often using hardware support) over the original instruction, and the original instruction is again replaced with a breakpoint instruction. We felt this to be unacceptable for DTrace, and imposed a constraint that tracing always be loss-less.
+                            </p>
+                            <p>
+                                For user-level instrumentation (that is, <a href="http://dtrace.org/blogs/brendan/2011/02/19/dtrace-pid-provider-links/">the pid provider</a>), magic is required: we need to execute the instrumented instruction out-of-line. For an overview of the mechanism for this, see <a href="http://dtrace.org/blogs/ahl/">Adam</a>‘s <a href="https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/intel/dtrace/fasttrap_isa.c#L42">block comment</a> in <a href="https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/intel/dtrace/fasttrap_isa.c">fasttrap_isa.c</a>. The summary is that we have a per-thread region of memory at user-level to which we copy both the instrumented instruction and a control transfer instruction that gets us back past the point of instrumentation. Then, when we hit the probe (and after we’ve done in-kernel probe processing), we point the instruction pointer to be in the per-thread region and return to user-level; back in user-land, we execute the instruction and transfer control back to the rest of the program.
+                            </p>
+                            <p>
+                                Okay, so easy, right? Well, not so fast — enter signals: if we take a signal while we’re executing this little user-level trampoline, we could corrupt program state. At first, it may not be obvious how this is the case; if we execute a signal before we execute the instruction in the trampoline we will simply execute the signal handler (whatever it may be) and return to the trampoline, finish that off, and then get back to the business of executing the program. Where’s the problem? The problem is that if the signal handler executes something that <em>itself</em> is instrumented with DTrace: if this is the case, we’ll hit <em>another</em> probe, and that probe will copy <em>its</em> instruction to the <strong>same trampoline</strong>. This is bad: it means that upon return from the signal, we will return to the trampoline and execute <strong>the wrong instruction</strong>. Only one of them, of course. Which, if you’re lucky, will induce an immediate crash. But more likely, the program will execute tens, hundreds or even thousands of instructions before dying on some “impossible” problem. Sound nasty to debug? It is — and next time you see Adam, show some respect.
+                            </p>
+                            <p>
+                                So how do we solve this problem? For this, Adam made an important observation: the kernel is in charge of signal delivery, and it knows about all of this insanity, so can’t it prevent this from happening? Adam solved this by <em>extending</em> the trampoline <em>after</em> the control transfer instruction to consist of the original instruction (again) followed by an explicit trap into the kernel. If the kernel detects that we’re about to deliver a signal while in this window (that is, with the program counter on the original instruction in the trampoline), it <em>moves</em> the program counter to the second half of the trampoline and returns to user-level with the signal otherwise unhandled. This leaves the signal pending, but only allows the program to execute the one instruction before bringing it back downtown on the explicit trap in the second half of the trampoline. There, we will see that we are in this situation, update the trapped program counter to be the instruction after the instrumented instruction (telling the program a small but necessary lie about where signal delivery actually occured), and bounce back to user-level; the kernel will see the bits set on the thread structure indicating that a signal is pending, and the Right Thing will happen.
+                            </p>
+                            <p>
+                                And it all works! Well, almost — and that brings us to the bug. After some intensive DTrace/mdb sessions and a long Jabber conversation with Adam, it became clear that while signals were involved, the basic mechanism was actually functioning as designed. More experimenting (and more DTrace, of course) revealed that the problem was even nastier than the lines along which we were thinking: yes, we were taking a signal in the trampoline — but that logic was working as designed, with the program counter being moved correctly into the second half of the trampoline. The problem was that we were taking a <em>second</em> asynchronous signal, this time in the second half of the trampoline, and this brought us to this logic in <a href="https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/i86pc/os/dtrace_subr.c#L315">dtrace_safe_defer_signal</a>:
+                            </p>
+                            <pre>
+        /*
+         * If we've executed the original instruction, but haven't performed
+         * the jmp back to t-&gt;t_dtrace_npc or the clean up of any registers
+         * used to emulate %rip-relative instructions in 64-bit mode, do that
+         * here and take the signal right away. We detect this condition by
+         * seeing if the program counter is the range [scrpc + isz, astpc).
+         */
+        if (t-&gt;t_dtrace_astpc - rp-&gt;r_pc &lt;
+            t-&gt;t_dtrace_astpc - t-&gt;t_dtrace_scrpc - isz) {
+                ...
+                rp-&gt;r_pc = t-&gt;t_dtrace_npc;
+                t-&gt;t_dtrace_ft = 0;
+                return (0);
+        }
+</pre>
+                            <p>
+                                Now, the reason for this clause (the meat of which I’ve elided) is the subject of <a href="https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/intel/dtrace/fasttrap_isa.c#L1445">its own discussion</a>, but it is not correct as written: it works (due to some implicit use of unsigned math) when the program counter is in the first half of the trampoline, but it fails if the program counter is <em>on</em> the instrumented instruction in the second half of the trampoline (denoted with <tt>t_dtrace_astpc</tt>). If we hit this case — first one signal on the first instruction of the trampoline followed by another signal on the first instruction on the second half of the trampoline — we will redirect control to be the instruction after the instrumentation (<tt>t_dtrace_npc</tt>) <strong>without having executed the instruction</strong>. This, if it needs to be said, is bad — and leads to exactly the kind of mysterious death that we’re seeing.
+                            </p>
+                            <p>
+                                Fortunately, the fix is simple — here’s <a href="http://dtrace.org/resources/bmc/dtrace-signal.patch">the patch</a>. All of this leaves just one more mystery: why are we seeing all of these signals on node, anyway? They are all <a href="http://en.wikipedia.org/wiki/SIGPROF">SIGPROF</a> signals, and when I pinged <a href="http://twitter.com/ryah">Ryan</a> about this yesterday, he was as surprised as I was that node seemed to be doing them when otherwise idle. A little digging on both of our parts revealed that the signals we were seeing are an artifact of some V8 magic: the use of SIGPROF is part of the feedback-driven optimization in the new <a href="http://blog.chromium.org/2010/12/new-crankshaft-for-v8.html">Crankshaft compilation infrastructure for V8</a>. So the signals are goodness — and that DTrace can now correctly handle them with respect to arbitrary instrumentation that much more so!
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://dtrace.org/blogs/bmc/2011/03/09/when-magic-collides/">http://dtrace.org/blogs/bmc/2011/03/09/when-magic-collides/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

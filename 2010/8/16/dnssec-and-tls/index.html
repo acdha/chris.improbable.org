@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            DNSSEC and TLS
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 16 Aug 2010 07:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-08-16T03:00:00-04:00">
+                    <meta itemprop="dateModified" content="2010-08-16T03:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-08-16T07:00:00+00:00">Aug 16</time>
+                    <h2 itemprop="title">
+                        DNSSEC and TLS
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/89a881f2b8a4dbed">
+                        <blockquote>
+                            <p>
+                                Ever since the DNS root was signed on July 15<sup>th</sup>, quite a few people have been wondering about the interaction of TLS and DNSSEC. On the one hand, trust in the CA system is lukewarm but, on the other, the deployment issues with getting DNSSEC to the client seem immense.
+                            </p>
+                            <p>
+                                Those who saw Dan Kaminsky's talk at BlackHat, which included a patched version of Chromium performing DNSSEC validation, have probably already guessed that Dan, myself and others have been working on this problem. In this blog post I'm going to try to explain the design space as I see it.
+                            </p>
+                            <h4>
+                                Objectives
+                            </h4>
+                            <p>
+                                In the long term, we want a stronger foundation of trust for the Internet. This means both pairing back the power of the <a href="http://www.eff.org/files/DefconSSLiverse.pdf">1500 root certificates</a> and making TLS easier to deploy and thus more commonly used.
+                            </p>
+                            <p>
+                                So one of the goals is to serve sites which currently don't have a CA signed certificate. We can do that by allowing them to publish fingerprints in DNS and having browsers accept those (DNSSEC secured) fingerprints.
+                            </p>
+                            <p>
+                                There might also be speed advantages to be had by avoiding OCSP and CRL lookups.
+                            </p>
+                            <p>
+                                We also want to serve those sites which currently do have CA signed certificates. For them we can provide <i>exclusion</i> of other certificates issued either mistakenly or maliciously by CAs.
+                            </p>
+                            <p>
+                                Yet it's important to note that this isn't a plan for the elimination of CAs. CAs are still a good way to link DNS names to legal entities. For that we need EV certificates and CAs to issue them.
+                            </p>
+                            <h4>
+                                The Design Space
+                            </h4>
+                            <p>
+                                Firstly we have the issues which are, in many respects, the least important. How should we encode the data?
+                            </p>
+                            <p>
+                                <b>What type of record?</b> The two major candidates are a <tt>TXT</tt> record and a new type of <tt>CERT</tt> record. It's important that we figure it out as DNS queries can only ask for one type of response (ignoring <tt>ANY</tt>, which we don't want) and each query is another chance for packet loss and a painful timeout.
+                            </p>
+                            <p>
+                                <tt>TXT</tt> records have the advantage that the crippled web interfaces, by which many people manage their DNS, often support them. They are also already common (try looking up <tt>TXT</tt> records for <tt>google.com</tt>, <tt>amazon.com</tt> etc). They are human readable. They are easily extendable given a sensible format.
+                            </p>
+                            <p>
+                                A new <tt>CERT</tt> type is the ‘cleaner’ solution. Stuffing things in TXT records is clearly a hack and working around crappy web interfaces feels like being a good man standing still.
+                            </p>
+                            <p>
+                                <b>Where to put the record?</b> If one were to use a <tt>TXT</tt> record then the temptation would be to put it on a prefix label like <tt><i>_tls</i>.www.example.com</tt>. However, if <tt>www.example.com</tt> is a CNAME then we won't get a helpful answer: probably just an <tt>NXDOMAIN</tt> and we'll have to hunt around: taking many round trips and a painful latency hit. Because of this, I like putting the record on the target domain name.
+                            </p>
+                            <p>
+                                Next we'll consider some of the deployment options because they inform some of the points to follow.
+                            </p>
+                            <p>
+                                <b>What about clients without DNSSEC resolution ability?</b> This is a big question. We don't care if your ISP's resolver is going to set the AD (Authenticated Data) bit in DNS replies: we don't trust it. We need either a local recursive resolver or we need the full DNSSEC chain so that we can check the signatures ourselves.
+                            </p>
+                            <p>
+                                (It's worth pointing out that, although we can't trust any fingerprint information without DNSSSEC, we can provide exclusion without DNSSEC. It's a bit of a weak threat model: the attacker would have to control some of your network but not your DNS resolutions: maybe you have the records cached with a long TTL.)
+                            </p>
+                            <p>
+                                One option is to put an aggressive DNSSEC resolver in the client and set DO (DNSSEC OK) and CD (Checking Disabled) bits in the requests to get the signatures themselves.
+                            </p>
+                            <p>
+                                What about clients which can't even do DNS resolution correctly? (Also known as the Hotel Network Problem.) For them we could tunnel DNS over HTTP. In fact, if you encode the request in a GET request you can set the HTTP caching headers so that HTTP caches are DNS caches too (Dan's trick).
+                            </p>
+                            <p>
+                                If we're talking over HTTP, why not get the server to give us the whole chain? In that case, what about an EDNS0 option to ask for the full chain? Both are possibilities.
+                            </p>
+                            <p>
+                                How about putting the DNSSEC chain in other protocols? What about embedding the chain in an X.509 certificate? Chain embedding can solve the needs of sites which want to use self-signed certificates.
+                            </p>
+                            <p>
+                                Now we can start to get to some of the more meaty issues:
+                            </p>
+                            <p>
+                                <b>Fingerprint in record?</b> If you only have a single certificate then you want to put the fingerprint in a record on the domain name. That way the client can start the lookup at the same time as for the <tt>A</tt> record. But if you have many fingerprints, that becomes troublesome and you want to lookup a domain named by the fingerprint. That's slower because you can only start that lookup once you have the certificate from the server. The answer looks to be that one has to handle both types of lookup.
+                            </p>
+                            <p>
+                                <b>What to hash?</b> If we are going to embed a DNSSEC chain in a certificate, then the fingerprint can't cover the whole certificate (because then the hash would have to cover itself). So that suggests hashing only the public key. However, if we do that then the attacker can change other parts of the certificate at will.
+                            </p>
+                            <p>
+                                Here we have a bit of an impedance mismatch with the X.509 world. Existing APIs are usually of the form “please validate this certificate”. Once validated, everything in the certificate is trusted because CAs are the Voice of God. However, in a DNSSEC world, authority is scoped.
+                            </p>
+                            <p>
+                                If we hash only the public key then an attacker could include things in an X.509 certificate for <tt>example.com</tt> which would appear to have the authority of <tt>example.com</tt> to an unsuspecting application. If we hash the whole certificate then <tt>example.com</tt> could put things in its certificate which might assert things which <tt>example.com</tt> shouldn't be allowed to. Applications which work on the Voice of God model could be misled.
+                            </p>
+                            <p>
+                                It's tricky. At the moment we are supporting both models.
+                            </p>
+                            <p>
+                                <b>Should we include a flag to perform CA validation in addition?</b> For performance reasons, people might want to use just DNSSEC because one can avoid OCSP and CRL lookups that way. For EV certs, we certainly want to perform CA validation in addition, but what about DV certs? Some people might like the idea of enforcing the expiry and OCSP checks.
+                            </p>
+                            <p>
+                                <b>TLS extensions?</b> Embedding a DNSSEC chain in an X.509 certificate means that you need to regenerate the certificate once a week or so (because DNSSEC signatures expire). Also, CAs aren't going to sign certificates with a random blob of binary data that they don't understand. Because of this, it's been suggested that we could carry the DNSSEC chain in a TLS extension. However, chain embedding is for those servers which don't have a CA issued certificate. Clients aren't going to be able to require DNSSEC for many years, if ever. And if we're going to accept CA certificates without DNSSEC, then an embedded chain can't provide exclusion.
+                            </p>
+                            <h4>
+                                The Code
+                            </h4>
+                            <p>
+                                The code is minimal so far. Chrome trunk already includes support for validating DNSSEC chains embedded inside an X.509 cert, although it requires a command line flag to enable. I also have code to generate the chains. However, the format of the chain is going to change so I'm not making that public yet.
+                            </p>
+                            <p>
+                                Hopefully there will be something more substantial in a couple of months.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.imperialviolet.org/2010/08/16/dnssectls.html">http://www.imperialviolet.org/2010/08/16/dnssectls.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            A Working Theory About RC4
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 11 Jun 2009 14:10:55 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-06-11T10:10:55-04:00">
+                    <meta itemprop="dateModified" content="2009-06-11T10:10:55-04:00"><time class="date" itemprop="datePublished" datetime="2009-06-11T14:10:55+00:00">Jun 11</time>
+                    <h2 itemprop="title">
+                        A Working Theory About RC4
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/bf43c507efa7129c">
+                        <p class="annotation">
+                            Fun fact- almost all banks, credit card issuers (except AMEX), and google - use RC4 as the primary SSL cipher.
+                        </p>
+                        <blockquote>
+                            <p>
+                                Via <a href="http://news.ycombinator.com/item?id=650914">News.YC</a>, a <a href="http://www.moserware.com/2009/06/first-few-milliseconds-of-https.html">deep dive on the TLS handshake</a> that’s more good than bad, and a recommended read if you’re lucky enough not to have to know this stuff. At the end of this article, and in the YC discussion, an interesting issue: why RC4 vs. AES? TLS can do both.
+                            </p>
+                            <p>
+                                RC4 is an older stream cipher. AES is a newer block cipher. Block ciphers encrypt in multi-byte chunks (AES’s block size is 16 bytes). Stream ciphers encrypt byte by byte. You might therefore assume RC4 was more convenient to use than AES. RC4 is also simpler than AES, and significantly faster on some benchmarks.
+                            </p>
+                            <p>
+                                But the practical difference between the two is that you shouldn’t be using RC4. RC4 has significant weaknesses, some of which have contributed to serious breaks in 802.11 security.
+                            </p>
+                            <p>
+                                The industry “knows” this. So why does RC4 keep popping up? Here’s a theory.
+                            </p>
+                            <center>
+                                <h3>
+                                    developers like stream ciphers
+                                </h3>
+                            </center>
+                            <p>
+                                Stream ciphers seem like what you’d want if you were building crypto into a protocol. Most protocols send variable length messages. Block ciphers force you to think about how to fit those messages into fixed-size blocks.
+                            </p>
+                            <center>
+                                <h3>
+                                    RC4 is the one stream cipher everyone knows
+                                </h3>
+                            </center>
+                            <p>
+                                RC4 is a famously simple algorithm. Extremely easy to implement.
+                            </p>
+                            <p>
+                                There are lots of other stream ciphers. The <a href="http://www.ecrypt.eu.org/stream/">eSTREAM</a> project has spent the past several years conducting Stream Cipher Thunderdome, in which seven (7) ciphers remain standing despite the best efforts of full-time academic cryptographers. One of them, <a href="http://en.wikipedia.org/wiki/Trivium_(cipher)">Trivium</a>, is comparably simple to implement in C.
+                            </p>
+                            <p>
+                                But nobody knows anything definite about these ciphers. You can still get fired for picking one of them.
+                            </p>
+                            <center>
+                                <h3>
+                                    people don’t get block cipher modes
+                                </h3>
+                            </center>
+                            <p>
+                                It seems simpler to fit RC4 into a protocol than AES. But it’s remarkably easy to make AES act like a stream cipher: run it in <a href="http://en.wikipedia.org/wiki/Counter_mode#Counter_.28CTR.29">Counter mode</a> (CTR).
+                            </p>
+                            <p>
+                                In CTR, you don’t use AES to encrypt your plaintext. You use it to encrypt a concatenated (say) 96 bit nonce and (say) 48 bit counter to generate a <em>keystream</em>, which you simply XOR into your plaintext. Every time you run out of keystream, you increment the counter and generate more of it. This is secure as long as the counter doesn’t cycle and the nonce is never reused for a new stream.
+                            </p>
+                            <p>
+                                CTR turns block ciphers into stream ciphers.
+                            </p>
+                            <p>
+                                CTR actually has practical benefits over RC4; because the keystream is generated by a counter, you can seek to an arbitrary point in the stream and start decrypting.
+                            </p>
+                            <p>
+                                This is extremely well known to practitioners, and blessed by the 4 cryptographers at NIST. But a friend of mine recently asked a room full of developers how many knew the difference between ECB and CBC (a much more basic question). Almost no hands.
+                            </p>
+                            <center>
+                                <h3>
+                                    therefore, RC4
+                                </h3>
+                            </center>
+                            <p>
+                                You need to encrypt variable length data. No modern stream cipher escapes the “exotic” stigma. Nobody wants to be the developer who picked FROG or MAGENTA instead of Rijndael before AES. Meanwhile, you don’t “get” block cipher modes. What are you left with?
+                            </p>
+                            <p>
+                                A bad algorithm that still occassionally gets used in real designs.
+                            </p>
+                            <center>
+                                <h3>
+                                    a moral of this story?
+                                </h3>
+                            </center>
+                            <p>
+                                I suppose I’d argue that if you see a bespoke crypto design, and it dates from after 2000, and it uses RC4, that’s an audit flag.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.matasano.com/log/1774/a-working-theory-about-rc4/">http://www.matasano.com/log/1774/a-working-theory-about-rc4/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

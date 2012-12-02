@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Migration to a Better Datastore
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Tue, 15 Sep 2009 00:24:54 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-09-14T17:02:00-04:00">
+                    <meta itemprop="dateModified" content="2009-09-14T17:02:00-04:00"><time class="date" itemprop="datePublished" datetime="2009-09-14T21:02:00+00:00">Sep 14</time>
+                    <h2 itemprop="title">
+                        Migration to a Better Datastore
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/179cce70f813ca60">
+                        <blockquote>
+                            <p>
+                                At Google, we've learned through experience to treat everything with healthy skepticism. We expect that servers, racks, shared <a href="http://labs.google.com/papers/gfs.html">GFS</a> cells, and even entire datacenters will occasionally go down, sometimes with little or no warning. This has led us to try as hard as possible to design our products to run on multiple servers, multiple cells, and even multiple datacenters simultaneously, so that they keep running even if any one (or more) redundant underlying parts go down. We call this multihoming. It's a term that usually applies narrowly, to networking alone, but we use it much more broadly in our internal language.
+                            </p>
+                            <p>
+                                Multihoming is straightforward for read-only products like web search, but it's more difficult for products that allow users to read and write data in real time, like GMail, Google Calendar, and App Engine. I've personally spent a while thinking about how multihoming applies to the App Engine datastore. I even gave a <a href="http://code.google.com/events/io/sessions/TransactionsAcrossDatacenters.html">talk</a> about it at this year's <a href="http://code.google.com/events/io/">Google I/O</a>.
+                            </p>
+                            <p>
+                                While I've got you captive, I'll describe how multihoming currently works in App Engine, and how we're going to improve it with a release next week. I'll wrap things up with more detail about App Engine's maintenance schedule.
+                            </p>
+                            <h4>
+                                Bigtable replication and planned datacenter moves
+                            </h4>
+                            <p>
+                                When we launched App Engine, the datastore served each application's data out of one datacenter at a time. Data was replicated to other datacenters in the background, using <a href="http://labs.google.com/papers/bigtable.html">Bigtable</a>'s built-in replication facility. For the most part, this was a big win. It gave us mature, robust, real time replication for all datastore data and metadata.
+                            </p>
+                            <p>
+                                For example, if the datastore was serving data for some apps from datacenter A, and we needed to switch to serving their data from datacenter B, we simply flipped the datastore to read only mode, waited for Bigtable replication to flush any remaining writes from A to B, then flipped the switch back and started serving in read/write mode from B. This generally works well, but it depends on the Bigtable cells in both A and B to be healthy. Of course, we wouldn't want to move to B if it was unhealthy, but we definitely would if B was healthy but A wasn't.
+                            </p><br>
+                            <b>Planning for trouble</b><br>
+                            <p>
+                                Google continuously monitors the overall health of App Engine's underlying services, like GFS and Bigtable, in all of our datacenters. However, unexpected problems can crop up from time to time. When that happens, having backup options available is crucial.
+                            </p>
+                            <p>
+                                You may remember the <a href="http://groups.google.com/group/google-appengine-downtime-notify/browse_thread/thread/f7596d1d0bd0f0f9">unplanned outage</a> we had a few months ago. We published a <a href="http://groups.google.com/group/google-appengine/msg/ba95ded980c8c179">detailed postmortem</a>; in a nutshell, the shared GFS cell we use went down hard, which took us down as well, and it took a while to get the GFS cell back up. The GFS cell is just one example of the extent to which we use shared infrastructure at Google. It's one of our greatest strengths, in my opinion, but it has its drawbacks. One of the most noticeable drawback is loss of isolation. When a piece of shared infrastructure has problems or goes down, it affects everything that uses it.
+                            </p>
+                            <p>
+                                In the example above, if the Bigtable cell in A is unhealthy, we're in trouble. Bigtable replication is fast, but it runs in the background, so it's usually at least a little behind, which is why we wait for that final flush before switching to B. If A is unhealthy, some of its data may be unavailable for extended periods of time. We can't get to it, so we can't flush it, we can't switch to B, and we're stuck in A until its Bigtable cell recovers enough to let us finish the flush. In extreme cases like this, we might not know how soon the data in A will become available. Rather than waiting indefinitely for A to recover, we'd like to have the option to cut our losses and serve out of B instead of A, even if it means a small, bounded amount of disruption to application data. Following our example, that extreme recovery scenario would go something like this:
+                            </p>
+                            <blockquote>
+                                We give up on flushing the most recent writes in A that haven't replicated to B, and switch to serving the data that is in B. Thankfully, there isn't much data in A that hasn't replicated to B, because replication is usually quite fast. It depends on the nature of the failure, but the window of unreplicated data usually only includes a small fraction of apps, and is often as small as a few thousand recent puts, deletes, and transaction commits, across all affected apps.
+                            </blockquote>
+                            <p>
+                                Naturally, when A comes back online, we can recover that unreplicated data, but if we've already started serving from B, we can't automatically copy it over from A, since there may have been conflicting writes in B to the same entities. If your app had unreplicated writes, we can at least provide you with a full dump of those writes from A, so that your data isn't lost forever. We can also provide you with tools to relatively easily apply those unreplicated writes to your current datastore serving out of B.
+                            </p>
+                            <p>
+                                Unfortunately, Bigtable replication on its own isn't quite enough for us to implement the extreme recovery scenario above. We use <a href="http://sites.google.com/site/io/under-the-covers-of-the-google-app-engine-datastore">Bigtable single-row transactions</a>, which let us do read/modify/write operations on multiple columns in a row, to make our datastore writes <a href="http://code.google.com/appengine/docs/python/datastore/transactions.html">transactional</a> and consistent. Unfortunately, Bigtable replication operates at the column value level, not the row level. This means that after a Bigtable transaction in A that updates two columns, one of the new column values could be replicated to B but not the other.
+                            </p>
+                            <p>
+                                If this happened, and we switched to B without flushing the other column value, the datastore would be internally inconsistent and difficult to recover to a consistent state without the data in A. In our July 2nd outage, it was partly this expectation of internal inconsistency that prevented us from switching to datacenter B when A became unhealthy.
+                            </p><br>
+                            <b>Megastore replication saves the day!</b><br>
+                            <p>
+                                Thankfully, there's a solution to our consistency problem: Megastore replication. <a href="http://perspectives.mvdirona.com/2008/07/10/GoogleMegastore.aspx">Megastore</a> is an internal library on top of Bigtable that supports declarative schemas, multi-row transactions, secondary indices, and recently, consistent replication across datacenters. The App Engine datastore uses Megastore liberally. We don't need all of its features - declarative schemas, for example - but we've been following the consistent replication feature closely during its development.
+                            </p>
+                            <p>
+                                Megastore replication is similar to Bigtable replication in that it replicates data across multiple datacenters, but it replicates at the level of entire entity group transactions, not individual Bigtable column values. Furthermore, transactions on a given entity group are always replicated in order. This means that if Bigtable in datacenter A becomes unhealthy, and we must take the extreme option to switch to B before all of the data in A has flushed, B will be consistent and usable. Some writes may be stuck in A and unavailable in B, but B will always be a consistent recent snapshot of the data in A. Some scattered entity groups may be stale, ie they may not reflect the most recent updates, but we'd at least be able to start serving from B immediately, as opposed waiting for A to recover.
+                            </p>
+                            <h4>
+                                To Paxos or not to Paxos
+                            </h4>
+                            <p>
+                                Megastore replication was originally intended to replicate across multiple datacenters synchronously and atomically, using <a href="http://labs.google.com/papers/paxos_made_live.html">Paxos</a>. Unfortunately, as I <a href="http://code.google.com/events/io/sessions/TransactionsAcrossDatacenters.html">described in my Google I/O talk</a>, the latency of Paxos across datacenters is simply too high for a low-level, developer facing storage system like the App Engine datastore.
+                            </p>
+                            <p>
+                                Due to that, we've been working with the Megastore team on an alternative: asynchronous, background replication similar to Bigtable's. This system maintains the write latency our developers expect, since it doesn't replicate synchronously (with Paxos or otherwise), but it's still consistent and fast enough that we can switch datacenters at a moment's notice with a minimum of unreplicated data.
+                            </p><br>
+                            <b>Onward and upward</b><br>
+                            <p>
+                                We've had a fully functional version of asynchronous Megastore replication for a while. We've been testing it heavily, working out the kinks, and stressing it to make sure it's robust as possible. We've also been using it in our internal version of App Engine for a couple months. I'm excited to announce that we'll be migrating the public App Engine datastore to use it in a couple weeks, on September 22nd.
+                            </p>
+                            <p>
+                                This migration does require some datastore downtime. First, we'll switch the datastore to read only mode for a short period, probably around 20-30 minutes, while we do our normal data replication flush, and roll forward any transactions that have been committed but not fully applied. Then, since Megastore replication uses a new transaction log format, we need to take the entire datastore down while we drop and recreate our transaction log columns in Bigtable. We expect this to only take a few minutes. After that, we'll be back up and running on Megastore replication!
+                            </p>
+                            <p>
+                                As described, Megastore replication will make App Engine much more resilient to hiccoughs and outages in individual datacenters and significantly reduce the likelihood of extended outages. It also opens the door to two new options which will give developers more control over how their data is read and written. First, we're exploring allowing reads from the non-primary datastore if the primary datastore is taking too long to respond, which could decrease the likelihood of timeouts on read operations. Second, we're exploring full Paxos for write operations on an opt-in basis, guaranteeing data is always synchronously replicated across datacenters, which would increase availability at the cost of additional write latency.
+                            </p>
+                            <p>
+                                Both of these features are speculative right now, but we're looking forward to allowing developers to make the decisions that fit their applications best!
+                            </p>
+                            <h4>
+                                Planning for scheduled maintenance
+                            </h4>
+                            <p>
+                                Finally, a word about our maintenance schedule. App Engine's scheduled maintenance periods usually correspond to shifts in primary application serving between datacenters. Our maintenance periods usually last for about an hour, during which application serving is continuous, but access to the Datastore and memcache may be read-only or completely unavailable.
+                            </p>
+                            <p>
+                                We've recently developed better visibility into when we expect to shift datacenters. This information isn't perfect, but we've heard from many developers that they'd like more advance notice from App Engine about when these maintenance periods will occur. Therefore, we're happy to announce below the preliminary maintenance schedule for the rest of 2009.
+                            </p>
+                            <ul>
+                                <li>Tuesday, September 22nd, 5:00 PM Pacific Time (migration to Megastore)
+                                </li>
+                                <li>Tuesday, November 3rd, 5:00 PM Pacific Time
+                                </li>
+                                <li>Tuesday, December 1st, 5:00 PM Pacific Time
+                                </li>
+                            </ul>
+                            <p>
+                                We don't expect this information to change, but if it does, we'll notify you (via the <a href="http://groups.google.com/group/google-appengine-downtime-notify">App Engine Downtime Notify</a> Google Group) as soon as possible. The App Engine team members are personally dedicated to keeping your applications serving without interruption, and we realize that weekday maintenance periods aren't ideal for many. However, we've selected the day of the week and time of day for maintenance to balance disruption to App Engine developers with availability of the full engineering teams of the services App Engine relies upon, like GFS and Bigtable. In the coming months, we expect features like Megastore replication to help reduce the length of our maintenance periods.
+                            </p>
+                            <p>
+                                <span>Posted by Ryan Barrett, App Engine Team</span>
+                            </p>
+                            <div>
+                                <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/8501956666581132164-6141778213716983256?l=googleappengine.blogspot.com" alt="">
+                            </div><img src="http://feeds.feedburner.com/~r/GoogleAppEngineBlog/~4/RCedz4iYE5c" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://googleappengine.blogspot.com/2009/09/migration-to-better-datastore.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+GoogleAppEngineBlog+%28Google+App+Engine+Blog%29">http://googleappengine.blogspot.com/2009/09/migration-to-better-datastore.html?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+GoogleAppEngineBlog+%28Google+App+Engine+Blog%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

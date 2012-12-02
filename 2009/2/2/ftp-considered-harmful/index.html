@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            FTP Considered Harmful
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 02 Feb 2009 20:17:46 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-02T15:17:46-04:00">
+                    <meta itemprop="dateModified" content="2009-02-02T15:17:46-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-02T19:17:46+00:00">Feb 02</time>
+                    <h2 itemprop="title">
+                        FTP Considered Harmful
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/943f9c5d91cc2067">
+                        <blockquote>
+                            <p>
+                                Suppose, for the sake of argument, that you went completely crazy one day, and decided to build a MacFUSE file system that gives you access to the files stored on an FTP server somewhere. &nbsp;
+                            </p>
+                            <p>
+                                Leaving aside the inarguable fact that anybody who took on such a project must be stark raving mad—if not before the project, then certainly afterward—it turns out that FTP has several qualities (so-called) that make it particularly unsuited to such a task. For the sake of curiosity, and possibly posterity, I would like to catalogue a few of these.
+                            </p>
+                            <p>
+                                Persons of sensitive digestion or a strong belief in moral clarity might wish to leave the room or avert their eyes. <i>Caveat lector.</i>
+                            </p>
+                            <h2>
+                                Essential Truths
+                            </h2>
+                            <p>
+                                Like a mortgage broker after the bailout, MacFUSE is going to demand all kinds of invasive personal information about each of the files and folders you are ostensibly providing access to. Of course, any program needs the <em>name</em> of each file, but MacFUSE in addition demands to know all kinds of other things as well:
+                            </p>
+                            <ul>
+                                <li>The <em>type</em> of each file (<i>e.g.,</i> file, directory, or symbolic link),
+                                </li>
+                                <li>The <em>size</em> of each file (how many bytes of storage it occupies),
+                                </li>
+                                <li>The <em>ownership</em> of the file (to whom it belongs),
+                                </li>
+                                <li>The <em>permissions</em> of the file (who is permitted to read or write the file), and
+                                </li>
+                                <li>Various <em>timestamps</em> for the file (most importantly, when it was last modified).
+                                </li>
+                            </ul>
+                            <p>
+                                Unless you can fill in all these details (and more), you don’t get to play with the other filesystems. File transfer applications like Fetch or Transmit, like the loan officers at Freddie Mac before the collapse, take a somewhat more lenient approach: They’ll use whatever personal details you provide them, but all they really need to do business is a name, and they’re good to go. As a filesystem, you have the watchful eye of the law upon you, so you have to fill in all the blanks.
+                            </p>
+                            <p>
+                                To answer these questions, the FTP server provides you with exactly one tool. It is called the <tt>LIST</tt> command, and it’s supposed to tell you what files are available on the server. Unfortunately for you, the <a href="http://tools.ietf.org/html/rfc959">FTP Protocol</a> does not say anything precise about what the <tt>LIST</tt> command should give you back: Most FTP servers run whatever program is used to generate directory listings on their particular operating system, and dump the results back over the network to you.
+                            </p>
+                            <p>
+                                Since most FTP servers run on Unix-like operating systems, this is <em>usually</em> the output from the <tt>ls</tt> command. Even then, there is considerable variation in what the <tt>ls</tt> command spits out, from one Unix-like operating system to another. Windows-based FTP servers often use the <tt>dir</tt> command, but some of them <em>emulate</em> the output of <tt>ls</tt> instead. So, you might get this (Unix):
+                            </p>
+                            <pre>
+<code>
+drwxr-sr-x   5 1            512 Jun 29  2001 admin
+lrwxrwxrwx   1 0              1 Jun 29  2001 archive -&gt; .
+drwx--s--x   2 1            512 Jun 28  2001 bin
+drwxr-xr-x   2 1            512 Jun 29  2001 cas
+-rw-r--r--   1 21         90112 Jun 29  2001 compress.tar
+drwxr-sr-x   3 1           1024 Jun 28  2001 doc
+d-wx--s--x   6 1            512 Jun 28  2001 etc
+drwxr-sr-x   2 1            512 Jun 29  2001 government
+-rw-r--r--   1 21        798720 Jun 29  2001 gzip.tar
+</code>
+</pre>
+                            <p>
+                                Or, you might get this (Windows):
+                            </p>
+                            <pre>
+<code>
+Volume in drive C has no label.
+Volume Serial Number is 987F-84C0<br>Directory of C:\Documents and Settings\Administrator<br>09/27/2008  03:23 PM    &lt;DIR&gt;          .
+09/27/2008  03:23 PM    &lt;DIR&gt;          ..
+12/22/2008  02:44 AM    &lt;DIR&gt;          Desktop
+09/24/2007  02:05 PM    &lt;DIR&gt;          Favorites
+09/28/2008  02:08 PM    &lt;DIR&gt;          My Documents
+09/05/2007  07:32 PM    &lt;DIR&gt;          Start Menu
+               0 File(s)              0 bytes
+               6 Dir(s)  21,312,827,392 bytes free
+</code>
+</pre>
+                            <p>
+                                Or, you might even get this (OpenVMS):
+                            </p>
+                            <pre>
+<code>
+Directory DISK$USR_THINGY:[TEST]<br>TCPIP$FTP_SERVER.LOG;1
+                         0/35         18-DEC-2008 14:02:31  [TEST]                 (RWED,RWED,RE,)
+ALPHA.TXT;1            582/595        20-FEB-1995 17:15:05  [TEST]                 (RWED,RWED,RE,)
+MYTOYS.DIR;1             1/35         18-DEC-2008 14:01:00  [TEST]                 (RWE,RWE,RE,E)
+X.COM;1                  1/35         20-JUN-1995 10:21:09  [TEST]                 (RWED,RWED,RE,)
+X.PS;3                   1/35         12-JUN-2007 14:29:17  [TEST]                 (RWED,RWED,RE,)
+</code>
+</pre>
+                            <p>
+                                And lest you think I’m making things up, these are excerpts from the responses given by real FTP servers. The output of the <tt>LIST</tt> command is intended to be read by human beings, not by other programs, so no effort is made to keep things consistent from one server to another.
+                            </p>
+                            <p>
+                                From this mess, you have to figure out a way to extract the name, type, size, owner, permissions, and timestamp for each file on the server. Solving this little problem occupies nearly 10% of the code that comprises the FTPFS implementation in ExpanDrive. That doesn’t even count the code that obtains the <tt>LIST</tt> output from the FTP server. And, this code has been implicated in virtually every customer-facing bug we have fixed so far with ExpanDrive’s FTP filesystem. It’s carefully written, beautiful code, and I detest every line of it personally.
+                            </p>
+                            <h2>
+                                The Worst of Times
+                            </h2>
+                            <p>
+                                So now you’ve figured out the names of your files, and their types, sizes, permissions, and ownership. But don’t sit back just yet—now you’re in for a <em>real</em> treat. Almost nothing compares to the thrilling excitement of trying to get an FTP server to answer the question, “when was this file last modified, anyway?”
+                            </p>
+                            <p>
+                                At first glance, this looks pretty easy. Each line of a typical <tt>ls</tt> output contains a modification date, something like this:
+                            </p>
+                            <pre>
+<code>Dec 15 11:45</code>
+</pre>
+                            <p>
+                                Parsing a date and time written like that is no problem; it’s basically one line of Python code. But before you get too comfortable, please consider the following simple question: December 27th of <em>what year?</em>
+                            </p>
+                            <p>
+                                If you answered anything other than “it depends,” then I find your freshly-scrubbed naïveté to be quite charming. In particular, if you assumed any date without a year must mean “this year,” you’re living in a dream world. (I lived there too, for a while—it was quite a pleasant fantasy). Because, you see, if today were December 19th, 2008, then “Dec 15 11:45″ means a quarter till noon on December 15th, 2008. But it also means that if today is February 2nd, 2009, because clearly a file cannot have been modified in December 2009 yet, right?
+                            </p>
+                            <p>
+                                So, to interpret a date without a year correctly, you can start out by assuming that it is “this year,” and then check to see if that yields a time in the future. If it does, you know it must really means “last year.” Isn’t this fun?
+                            </p>
+                            <p>
+                                Don’t relax now. There’s more!
+                            </p>
+                            <p>
+                                Because, you see, it turns out that some dates <em>do</em> have a year, such as:
+                            </p>
+                            <pre>
+<code>Apr 11  2004</code>
+</pre>
+                            <p>
+                                In this case, you don’t have to guess about the year. However, because you are extremely observant, you will have immediately noticed that while this date does include a year, it does <em>not</em> include a <em>time</em>. So, you know on what <em>day</em> the file was modified, but not the time of day. Like most file systems, MacFUSE wants modification times that are accurate to the nearest <em>second</em>, so this is a bit of a conundrum. Unfortunately, you can’t do much better than to pick some arbitrary time on that date (say, midnight), and hope it’s all right. The FTP server <em>knows</em> the real modification time, but it’s not saying.
+                            </p>
+                            <p>
+                                “That’s okay,” you say. “We’ll just say it’s midnight, and nobody will notice.” Oh, but they will. Your customers will log into the FTP server and check the timestamps manually against the values you reported, and they will file a bug against your software when the two do not match. This is perfectly fair: They don’t match, after all! But you can’t do a damned thing about it. Even the dates that <em>do</em> include a time generally only give it to the nearest minute.
+                            </p>
+                            <h2>
+                                So Let it Be Written
+                            </h2>
+                            <p>
+                                Having scaled the mountains of madness, you are now prepared to tackle the most essential tasks in a filesystem’s life—the reading and writing actual file data. Since it is, by nature, a protocol for transferring whole files, FTP provides basically two commands for this purpose: The <tt>RETR</tt> command, to retrieve a file from the server to the client, and the <tt>STOR</tt> command, to store a file from the client onto the server. By intent, these commands transfer an entire file at a time. But, since files can be very big, computers sometimes crash and networks are occasionally subject to disconnection, FTP also has a command called <tt>REST</tt> that lets you pick up a failed <tt>STOR</tt> or <tt>RETR</tt> command from where it left off.
+                            </p>
+                            <p>
+                                This model is actually pretty good for file transfer. Most filesystems, however, take a slightly different approach. The “read” operation on a file generally takes a starting starting position and a number of bytes, and fetches that many bytes starting at the given position in the file. The “write” operation, in turn, takes a starting position and a list of bytes, and writes the bytes into the file starting at that location, extending the file as necessary to accommodate them. Turning a filesystem-style “read” into a FTP <tt>RETR</tt> command is a little tricky. If the filesystem asked you for 32000 bytes starting at position 25 of a file that is 2.5 gigabytes long, and you simply start fetching from position 25, it will be a long time before you can return those bytes. Users get cranky when they have to wait so long for such a small amount of data. And other programs get cranky too—if the MacOS Finder has to wait “too long” for a read or write to be completed, it may force-quit your filesystem completely.
+                            </p>
+                            <p>
+                                To work around this, you have one more tool at your disposal. FTP also provides an <tt>ABOR</tt> command, allowing the client to “abort” a <tt>RETR</tt> that it has started but does not want to finish. To read 32000 bytes starting at position 25, you can resume from position 25, retrieve the file, and then after you have read the 32000 bytes you want, abort the transaction. Easy!
+                            </p>
+                            <p>
+                                Well, almost.
+                            </p>
+                            <p>
+                                Something you need to know about FTP is that it uses multiple separate network connections for each session. That’s part of the reason why it’s so hard to configure network firewalls for it. One connection, the “control channel,” is for sending commands like <tt>LIST</tt>, <tt>STOR</tt> and <tt>RETR</tt>; all the other connections (”data channels”) are for sending file and file-listing data back and forth. In theory, the control channel is independent from the data channels, but in practise many FTP servers do not really pay attention to the control channel while they are sending or receiving file data. As you can imagine, this makes it hard to get your <tt>ABOR</tt> command processed correctly. What’s worse, the exact response that an FTP server is supposed to give upon receiving an <tt>ABOR</tt> command is not terribly well-defined, so different servers handle it in different ways.
+                            </p>
+                            <p>
+                                What follows, therefore, is an incredibly delicate dance, evolved over many years of <i>ad hoc</i> FTP client and server design, for the handling of abort requests. The exact effect varies widely: Some servers handle the abort promptly and without complaint. Others throw up their hands in disgust that a client would dare to abort a transfer, and boot them from the server. On servers that do the latter, you may find that <em>each time</em> you read data from a file, you are forced to completely re-establish your connection to the FTP server. I’m not naming any names, but Microsoft knows who they are.
+                            </p>
+                            <h2>
+                                Keeping Up to Date
+                            </h2>
+                            <p>
+                                Take heart, you are not alone! While you are reading and writing all these files, somebody else is out there doing it too! And, if you’re especially fortunate, they’re doing it to the very same files and folders you are using.
+                            </p>
+                            <p>
+                                Now, I can hear you asking, “Michael, if that’s true, then how will I know if somebody has created a new file, or deleted an existing file, or modified one of the files I am using?” My answer to you is, “that’s an excellent question, now get me a drink.”
+                            </p>
+                            <p>
+                                The only way you can find out if files or folders have been created, destroyed, or changed, is to ask the server for up-to-date listings of files. That’s right, the <tt>LIST</tt> command again. The FTP server does not provide any way you can get updated information about <em>individual</em> files; you can only get updates if you re-load the whole directory containing the file you’re interested in. This might be time-consuming, but you have to do it, or you’ll never notice changes somebody else might have made, and wouldn’t you be confused if you tried to open a file that didn’t exist anymore?
+                            </p>
+                            <p>
+                                Don’t worry. Your customers will understand when it takes a long time to browse through their files and folders because you are using the <tt>LIST</tt> command so often. I promise.
+                            </p>
+                            <h2>
+                                Wearing your Password on Your Sleeve
+                            </h2>
+                            <p>
+                                Probably the best feature of FTP is that it avoids all the messy complications of encryption and security. When you sign in to a typical FTP server, you just send your password right over the Internet in clear, unencrypted text. What could be easier than that? There’s no need to muck about with public keys, site certificates, trust roots, or any of that other nonsense. Of course, just about any yahoo with a copy of <tt>tcpdump</tt> could read your password, but that seems a small price to pay for the convenience of software developers, doesn’t it?
+                            </p>
+                            <p>
+                                Many users were predictably unsatisfied with this excellent “zero-security” design of FTP, and became so agitated about it that many sites now implement a modified version of the FTP protocol called “FTPS”. This is supposed to stand for “FTP Secure,” but it shouldn’t be confused with SFTP, which is a completely <em>unrelated</em> protocol that is <em>actually</em> secure. FTPS comes in a couple of different incompatible varieties, the more common of which requires that you install custom FTP software that supports some extra security-related commands.
+                            </p>
+                            <p>
+                                With FTPS, you no longer get to send your password over the network in clear text. That is, provided your FTP server supports the extensions (most don’t), and that it does so correctly (most don’t), and that you are using client software that understands FTPS (most do).
+                            </p>
+                            <p>
+                                Fortunately, despite the loss of cleartext password transmission, you can still have some fun with FTPS, because once you have encrypted the FTP control channel, many network firewalls will no longer be able to handle the FTP data connections, causing your program to hang when it tries to transfer data. Some clever mensch tried to solve this problem by adding a command to <em>disable</em> encryption on the FTP control channel after you have sent your password, but fortunately for you, plenty of servers don’t implement it correctly, so you will have some wild times coping with the connection failures that result.
+                            </p>
+                            <p>
+                                Sites that still don’t support SFTP have defended their users’ right to have their passwords compromised on a public network by keeping FTP instead. Modifying their servers to support FTPS was probably a lot more work than installing SFTP would have been, but for some hosting sites, no effort is too much for their loyal customers. So, while you may have some difficulties in implementing FTPS support for your MacFUSE filesystem, you can take comfort from the fact that your own customers will appreciate your efforts to safeguard their traditional folkways.
+                            </p>
+                            <h2>
+                                Reflections and Conclusions
+                            </h2>
+                            <p>
+                                For those of you who, in open defiance of all reason, have made the stimulating choice to implement a filesystem based on FTP, I hope that my little discussions may help you along your path. If you are in need of any further assistance, I can also recommend several excellent varieties of single-malt Scotch whisky that will provide incalculable benefit to your efforts.
+                            </p>
+                            <p>
+                                Despite the sage words of <a href="http://stevenfrank.wordpress.com/2008/07/15/dont-use-ftp/">Steve Frank</a> and other upstarts, who advocate switching from FTP to SFTP, many sites continue to cling doggedly to FTP as a primary means of access to their customers’ data. Indeed, one could argue they are giving excellent access—to anyone in the world who might conceivably want it. Furthermore, these hosts break the chains of traditional patriarchalist Western rationality, which would ordinarily insist upon such details as accurate file timestamps, machine-readable status information, good performance, and the ability to play nicely with network firewalls.
+                            </p>
+                            <p>
+                                Everybody’s got their little rebellions.
+                            </p><img src="http://feeds2.feedburner.com/~r/Magnanimous/~4/ooTs41OGSYs" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.expandrive.com/2009/02/02/ftp-considered-harmful/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Magnanimous+%28ExpanDrivel%29">http://blog.expandrive.com/2009/02/02/ftp-considered-harmful/?utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Magnanimous+%28ExpanDrivel%29</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

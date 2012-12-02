@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Reverse Engineering Superbugs
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 10 Jun 2011 21:52:47 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-06-08T14:05:46-04:00">
+                    <meta itemprop="dateModified" content="2011-06-08T14:05:46-04:00"><time class="date" itemprop="datePublished" datetime="2011-06-08T18:05:46+00:00">Jun 08</time>
+                    <h2 itemprop="title">
+                        Reverse Engineering Superbugs
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/d742bada33597e40">
+                        <blockquote>
+                            <p>
+                                The outbreak of the EHEC <a href="http://en.wikipedia.org/wiki/Escherichia_coli_O104:H4">O104:H4 <em>E. coli</em></a> “superbug” in Europe has got me <a href="http://www.bunniestudios.com/blog/?p=353">thinking about biology</a> again.
+                            </p>
+                            <p>
+                                The rise of antibiotic-resistant superbugs are a product of our love of antibiotics. In the absence of antibiotics, a bug that has few resistances will grow faster and more efficiently than one that has to put on bullet-proof armor every morning and lug around heavy artillery. In other words, the biological machinery required to produce antibiotic resistance comes at a fitness cost for the bug. In antibiotic-free conditions, non-resistant strains grow faster than the resistant strains; and with as little as 20 minutes per generation, just a couple days can yield hundreds of generations. This is why, thankfully, not every bug out there has a full suite of drug resistance — a chief enemy of the superbug is the common bug.
+                            </p>
+                            <p>
+                                According to this evolutionary theory for the acquisition and loss of drug resistance genes, a hospital is an ideal breeding environment for superbugs: they are asceptic (less competition from common bugs), and full of antibiotics (plenty of selective pressure to acquire resistance genes).
+                            </p>
+                            <p>
+                                Thus it is curious to find superbugs in food. Farms are teeming with common bugs, creating a selective pressure to lose antibiotic resistance genes. While antibiotics are routinely put into farm animal feed, it’s probably not cost-effective to use broad-spectrum antibiotics on such a scale. Perhaps O104:H4 is just a spontaneous coincidence, a fluke — a bug had acquired a set of genes, got lucky and grew, and just as quickly got edged out by more competitive neighbors. This could explain why it’s been tough to find its origin.
+                            </p>
+                            <p>
+                                Fortunately, the entire sequence of the O104:H4 bug is available for download on the internet. Our friends in China — BGI, located in Shenzhen — acquired a sample and in an unusual act released the sequence for <a href="http://www.genomics.cn/en/news_show.php?type=show&amp;id=644">public download</a>. This is unusual because research organizations typically hold this kind of data close to the chest, partially for peer review to vet it before public release, and partially for competitive advantage in academic publications — proprietary access to data is a common method to reduce competition for high-profile publications, and thus ensure your academic reputation. Whatever their reasons are for sharing the data, I think it’s worth noting the contribution, because now everybody in the world can perform an analysis on the bug.
+                            </p>
+                            <p>
+                                And that’s where the fun begins! Analyzing the sequence data requires a little know-how, but fortunately, my “perlfriend” is a noted bioinformaticist. The raw sequence data provided by BGI is a set oversampled sub-sequences, which have to be assembled based on matching up overlapping regions. Once you assemble the sequence, you get a set of contiguous reads, but there are still gaps. It’s a bit like trying to compose a large picture out of a number of small photos taken at random. With enough sampling you will eventually create a complete picture, but for various technical reasons there are still ambiguities and gaps.
+                            </p>
+                            <p>
+                                After assembly, the genome of O104:H4 is stitched from over a half million short DNA samples into 513 contiguous fragments of DNA (“contigs” in bio-speak), with a total length of 5.3 million base pairs (notably, <a href="http://en.wikipedia.org/wiki/Escherichia_coli">wikipedia cites</a> <em>E. coli</em> as having only 4.6 million base pairs, so O104:H4 is probably at least 15% longer — and likewise takes more time to replicate than a non-drug resistant strain). Here’s contig 34 of the assembly:
+                            </p>
+                            <p>
+                                <code><br>
+                                AAATGGTATTCCTGTTCACGATACTATTGCCAGAGTTGTATCCTGTATCAGTCCTGC<br>
+                                AAAATTTCATGAGTGCTTTATTAACTGGATGCGTGACTGCCATTCTTCAGATGATAA<br>
+                                AGACGTCATTGCAATTGATGGAAAAACGCTCCGGCACTCTTATGACAAGAGTCGCCG<br>
+                                CAGGGGAGCGATTCATGTCATTAGTGCGTTCTCAACAATGCACAGTCTGGTCATCGG<br>
+                                ACAGATCAAGACGGATGAGAAATCTAATGA<strong>GATTACA</strong>GCTATCCCAGAACTTCTTAA<br>
+                                CATGCTGGATATTAAAGGAAAAATCATCACAACTGATGCGATGGGTTGCCAGAAAGA<br>
+                                TATTGCAGAGAAGATACAAAAACAGGGAGGTGATTATTTATTCGCGGTAAAAGGAAA<br>
+                                CCAGGGGCGGCTAAATAAAGCCTTTGAGGAAAAATTTCCGCTGAAAGAATTAAATAA<br>
+                                TCCAGAGCATGACAGTTACGCAATTAGTGAAAAGAGTCACGGCAGAGAAGAAA<br></code><br>
+                                (Fun fact: the word “<a href="http://en.wikipedia.org/wiki/Gattaca">Gattaca</a>” occurs 252 times in the genome of O104:H4)
+                            </p>
+                            <p>
+                                Aside from making gratuitous pop culture references, the raw DNA isn’t very useful to us — it’s as if we were staring at binary machine code. In order to analyze the data, you need to “decompile” the methods contained within the DNA. Fortunately, protein sequences are highly conserved. Thus, a function that has been determined through biological experiment (for example, snipping out the DNA and observing what happens to the cell, or transfecting/transforming the DNA into a new cell and seeing what new abilities are acquired) can be correlated with a sequence of DNA, which can then be pattern-matched over the entire record to determine what functions (genes) are inside the overall genome.
+                            </p>
+                            <p>
+                                The pieces needed to do this reverse-engineering are a protein database, and a tool called “blastx”. All of these tools are available free for download.
+                            </p>
+                            <p>
+                                The list of known proteins can be downloaded from <a href="http://www.uniprot.org">uniprot.org</a>. Searching for “drug resistance” restricted to <em>E. coli</em> organisms yields a nice list of proteins that have been identified by scientists over the years to confer upon <em>E. coli</em> parts of drug-resistance machinery. Overall, our query to the uniprot database returned 1,378 proteins that are described to confer drug resistance to <em>E. coli</em>.
+                            </p>
+                            <p>
+                                Have a look at <a href="http://www.uniprot.org/uniprot/P23895">Multidrug transporter emrE</a> [uniprot.org]. Inside the link, you’ll find a description of the biological mechanism for its function (it pumps antibiotics out of the cell), its secondary structure (a notion of the shape of the protein) and its 110-residue amino acid sequence.
+                            </p>
+                            <p>
+                                Here’s another example of a snippet from the database for a drug you may recognize:<br>
+                                <code><br>
+                                &gt;sp|P0AD65|<strong>PBP2_ECOLI Penicillin-binding protein 2</strong> OS=Escherichia coli (strain K12) GN=mrdA PE=3 SV=1<br>
+                                MKLQNSFRDYTAESALFVRRALVAFLGILLLTGVLIANLYNLQIVRFTDYQTRSNENRIK<br>
+                                LVPIAPSRGIIYDRNGIPLALNRTIYQIEMMPEKVDNVQQTLDALRSVVDLTDDDIAAFR<br>
+                                KERARSHRFTSIPVKTNLTEVQVARFAVNQYRFPGVEVKGYKRRYYPYGSALTHVIGYVS<br>
+                                KINDKDVERLNNDGKLANYAATHDIGKLGIERYYEDVLHGQTGYEEVEVNNRGRVIRQLK<br>
+                                EVPPQAGHDIYLTLDLKLQQYIETLLAGSRAAVVVTDPRTGGVLALVSTPSYDPNLFVDG<br>
+                                ISSKDYSALLNDPNTPLVNRATQGVYPPASTVKPYVAVSALSAGVITRNTTLFDPGWWQL<br>
+                                PGSEKRYRDWKKWGHGRLNVTRSLEESADTFFYQVAYDMGIDRLSEWMGKFGYGHYTGID<br>
+                                LAEERSGNMPTREWKQKRFKKPWYQGDTIPVGIGQGYWTATPIQMSKALMILINDGIVKV<br>
+                                PHLLMSTAEDGKQVPWVQPHEPPVGDIHSGYWELAKDGMYGVANRPNGTAHKYFASAPYK<br>
+                                IAAKSGTAQVFGLKANETYNAHKIAERLRDHKLMTAFAPYNNPQVAVAMILENGGAGPAV<br>
+                                GTLMRQILDHIMLGDNNTDLPAENPAVAAAEDH<br></code>
+                            </p>
+                            <p>
+                                (Incidentally, I find it amusing that the sequence for PBP2 is shorter than, for example, my PGP public key block)
+                            </p>
+                            <p>
+                                <a href="http://www.uniprot.org/uniprot/P0AD65">PBP2_ECOLI</a> is linked to penicillin resistance, and functions as a mutant of a gene that determines the shape of the bacteria. Reading through the bio-speak, it seems that this resistant variant is adapted to operate despite the presence of penicillin; bacteria with non-resistant forms of this gene are unable to form properly shaped cell walls and thus die. So, by browsing this database, we are getting a feel for the variety of countermeasures that bacteria has: sometimes they are active (pumping the antibiotic out of the cell) and sometimes they are passive (mutations that enable operation despite the presence of antibiotics).
+                            </p>
+                            <p>
+                                Now, you need the actual decompiler itself. The program we used is called <a href="http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=Download">blast</a>; specifically, a variant known as blastx. Blast stands for “basic local alignment search tool”. This analysis program computes all of the possible translations of the <em>E. coli</em> DNA to protein sequences (there are 6 overall: 5′-&gt;3′, 3′-&gt;5′, each multiplied by three possible framing positions of the codons), and then does a pattern-matching of the resulting amino acid sequences with the provided database of known drug-resistance sequences. The result is a sorted list of each known drug resistance protein along with the region of the <em>E. coli</em> genome that best matches the protein.
+                            </p>
+                            <p>
+                                Here’s the output for the penicillin example:
+                            </p>
+                            <p>
+                                <code><br>
+                                # BLASTX 2.2.24 [Aug-08-2010]<br>
+                                # Query: 43 87880<br>
+                                # Database: uniprot-drug-resistance-AND-organism-coli.fasta<br>
+                                # Fields: Query id, Subject id, % identity, alignment length, mismatches, gap openings, q. start, q. end, s. start, s. end, e-value\<br>
+                                , bit score<br>
+                                43 sp|P0AD65|<strong>PBP2_ECOLI 100.00</strong> 632 0 0 29076 30971 1 632 0.0 1281<br>
+                                43 sp|P0AD68|FTSI_ECOLI 25.08 650 458 21 29064 30926 6 574 2e-33 142<br>
+                                43 sp|P60752|MSBA_ECOLI 32.80 186 120 6 12144 12686 378 558 6e-17 87.0<br>
+                                43 sp|P60752|MSBA_ECOLI 27.78 216 148 5 77054 77677 361 566 8e-14 76.6<br>
+                                43 sp|P77265|MDLA_ECOLI 27.98 193 133 6 12141 12701 370 555 2e-10 65.5</code>
+                            </p>
+                            <p>
+                                etc...<br>
+                            </p>
+                            <p>
+                                Here, you can see that the gene for PBP2_ECOLI has a 100% match inside the genome of O104:H4.
+                            </p>
+                            <p>
+                                Now that we have this list, we can answer some interesting questions, such as “How many of the known drug resistance genes are inside O104:H4?” I find it fascinating that this question is answered with a shell script:
+                            </p>
+                            <p>
+                                <code><br>
+                                cat uniprot_search_m9 | awk '{if ($3 &gt; 99) { print;}}' | cut -f2 |grep -v ^# | cut -f1 -d"_" | cut -f3 -d"|" | sort | uniq | wc -l<br></code>
+                            </p>
+                            <p>
+                                My perlfriend writes these so quickly and effortlessly it’s as if she’s tying IMs to friends — I half expect to see an “lol” at the end of the script. Anyways, the above script tells us that 1,138 genes are a 100% match against the database of 1,378 genes. If you loosen the criteria up to a 99% match, allowing for one or two mutations per gene — possibly a result of sequencing errors or just evolution — the list expands to 1,224 out of 1,378.
+                            </p>
+                            <p>
+                                The inverse question is which drug-resistance genes are most definitely <strong>not</strong> in O104:H4. Maybe by looking at the resistance genes missing from O104:H4, we can gather clues as to which treatments could be effective against the bug.
+                            </p>
+                            <p>
+                                In order to rule out a drug-resistance gene, we (arbitrarily) set a criteria of any gene with less than 70% best-case matching as “most likely not” a resistance that the bug has. The result of this query reveals that there are 116 genes that are known to confer drug resistance that are less than 70% matching in O104:H4. Here is the list:
+                            </p>
+                            <p>
+                                <code><br>
+                                A0SKI3 A2I604 A3RLX9 A3RLY0 A3RLY1 A5H8A5 B0FMU1 B1A3K9 B1LGD9 B3HN85 B3HN86 B3HP88 B5AG18 B6ECG5 B7MM15 B7MUI1 B7NQ58 B7NQ59 B7TR24 <a href="http://www.uniprot.org/uniprot/P56976">BLR</a> CML D2I9F6 D5D1U9 D5D1Z3 D5KLY6 D6JAN9 D7XST0 D7Z7R4 D7Z7W9 D7ZDQ3 D7ZDQ4 D8BAY2 D8BEX8 D8BEX9 DYR21 DYR22 DYR23 E0QC79 E0QC80 E0QE33 E0QF09 E0QF10 E0QYN4 E1J2I1 E1S2P1 E1S2P2 E1S382 E3PYR0 E3UI84 E3XPK9 E3XPQ2 E4P490 E5ZP70 E6A4R5 E6A4R6 E6ASX0 E6AT17 E6B2K3 E6BS59 E7JQV0 E7JQZ4 E7U5T3 E9U1P2 E9UGM7 E9VGQ2 E9VX03 E9Y7L7 O85667 Q05172 Q08JA7 Q0PH37 Q0T948 Q0T949 Q0TI28 Q1R2Q2 Q1R2Q3 Q3HNE8 Q4HG53 Q4HG54 Q4HGV8 Q4HGV9 Q4HH67 Q4U1X2 Q4U1X5 Q50JE7 Q51348 Q56QZ5 Q56QZ8 Q5DUC3 Q5UNL3 Q6PMN4 Q6RGG1 Q6RGG2 Q75WM3 Q79CI3 Q79D79 Q79DQ2 Q79DX9 Q79IE6 Q79JG0 Q7BNC7 Q83TT7 Q83ZP7 Q8G9W6 Q8G9W7 Q8GJ08 Q8VNN1 Q93MZ2 Q99399 Q9F0D9 Q9F0S4 Q9F7C0 Q9F8W2 Q9L798<br></code>
+                            </p>
+                            <p>
+                                Again, you can plug any of these protein codes into the uniprot database and find out more about them. For example, <a href="http://www.uniprot.org/uniprot/P56976">BLR</a> is the “Beta-lactam resistance protein”:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    Has an effect on the susceptibiltiy to a number of antibiotics involved in peptidoglycan biosynthesis. Acts with beta lactams, D-cycloserine and bacitracin. Has no effect on the susceptibility to tetracycline, chloramphenicol, gentamicin, fosfomycin, vacomycin or quinolones. Might enhance drug exit by being part of multisubunit efflux pump. Might also be involved in cell wall biosynthesis.
+                                </p>
+                            </blockquote>
+                            <p>
+                                Unfortunately, a cursory inspection reveals that most of the functions that O104:H4 lacks are just small, poorly understood fragments of machines involved in drug resistance. Which is actually an interesting lesson in itself: there is a popular notion that knowing a DNA sequence is the same as knowing what diseases or traits an organism may have. Even though we know the sequence and general properties of many proteins, it’s much, much harder to link them to a specific disease or trait. At some point, someone has to get their hands dirty and do the “wet biology” that assigns a biological significance to a given protein family. Pop culture references to DNA analysis are glibly unaware of this missing link, which leads to over-inflated expectations for genetic analysis, particularly in its utility for diagnosing and curing human disease and applications in eugenics.
+                            </p>
+                            <p>
+                                While the result of this just-for-the-fun-of-it exercise isn’t a cure for the superbug, the neat thing about living here in The Future is that just a few days after an outbreak of a deadly disease halfway across the world, the sequence of the pathogen is available for download — and with free, open tools anyone can perform a simple analysis. This is a nascent, but promising, technology ecosystem.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.bunniestudios.com/blog/?p=1676">http://www.bunniestudios.com/blog/?p=1676</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Testing small upgrades with namespaces and unionfs
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 16 Feb 2009 14:45:10 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-02-16T09:45:10-04:00">
+                    <meta itemprop="dateModified" content="2009-02-16T09:45:10-04:00"><time class="date" itemprop="datePublished" datetime="2009-02-16T13:45:10+00:00">Feb 16</time>
+                    <h2 itemprop="title">
+                        Testing small upgrades with namespaces and unionfs
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/c295547721bb3643">
+                        <p class="annotation">
+                            This is how Real Manly Men do upgrades. Being a lazy slacker, I test on my dev system or do rolling upgrades on a cluster. But then I'm weird that way...
+                        </p>
+                        <blockquote>
+                            <p>
+                                If you are following this blog, you probably remember <a href="http://glandium.org/blog/?p=217">per-process namespaces</a>. Today, I’m going to tell you how I did use them in the process of preparing this server to be upgraded to Lenny.
+                            </p>
+                            <p>
+                                I must say I was not using the most recent stuff on this server, and this is why I needed such preparation. First, this server is still running with php4. And well, the following line in the <code>apt-get dist-upgrade</code> output got my full attention (emphasis mine):
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code>The following packages will be <b>REMOVED</b>:<br>
+                                    &nbsp;&nbsp;cacti <b>libapache2-mod-php4</b> libarchive-tar-perl libcurl3-openssl-dev<br>
+                                    &nbsp;&nbsp;libgssapi2 libpci2 librpm4 libssp0 linux-kernel-headers modutils <b>php4-mysql</b><br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                While this server is not important enough not to be broken for a couple hours, I do like to test procedures that could help on servers that are.
+                            </p>
+                            <p>
+                                The first thing I needed to do on this server was obviously to upgrade php. But we all know how php applications are not fully compatible with all versions of php, so I also needed to test the upgrade was not breaking anything.
+                            </p>
+                            <p>
+                                On a server you don’t care much about, you can just upgrade, test if all is okay, and be done with it. Obviously, if all is <b>not</b> okay, your visitors will see it, and you may also have a bad time downgrading.
+                            </p>
+                            <p>
+                                Another way to perform the upgrade is to have a similarly installed server on the side, test and validate the upgrade there, and replicate the upgrade on the production server if everything is fine. However, that does require additional resources, and possibly to setup them if they don’t already exist.
+                            </p>
+                            <p>
+                                A cheaper way to do the above is to do it on the production server, both in-place and on the side (you’ll see what I mean), using unionfs and per-process namespaces. Full containers could be used instead of per-process namespaces (such as openvz, vserver or lxc), but they still require much more setup, especially when you don’t use them in the first place. Chroots could work just as well as per-process namespaces, but one of the ideas here is to expose the per-process namespaces feature, and allow for improvement of this procedure with pid and network namespaces, which are not available in Etch (where I’m starting from), but are in Lenny.
+                            </p>
+                            <p>
+                                Unionfs allows to merge several directories into a single one, accessing some read-only, and others read-write. Installing unionfs is as easy as running the following command:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code>apt-get install unionfs-modules-`uname -r`</code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                I won’t describe all the kinds of setups that are possible with unionfs, but only one typical use case, which is what we will be using here:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># mkdir /tmp/root-cow<br>
+                                    # mount -t unionfs -o dirs=/tmp/root-cow:/=ro none /mnt<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                The first thing we do here is to create an empty directory. Next, we merge it with the root filesystem (<code>/</code>), that we will keep read-only (meaning unionfs won’t allow itself to write there), and mount the merged filesystem under <code>/mnt</code>. <code>none</code> could just be anything, as there is no device to be mounted.
+                            </p>
+                            <p>
+                                The result, in <code>/mnt</code>, is just something that looks like the root filesystem:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># ls /<br>
+                                    bin boot dev etc home initrd lib media mnt opt proc root sbin srv sys tmp usr var<br>
+                                    # ls /mnt<br>
+                                    bin boot dev etc home initrd lib media mnt opt proc root sbin srv sys tmp usr var<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                But creating or modifying a file will do so in <code>/tmp/root-cow</code>:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># echo a &gt; /mnt/a<br>
+                                    # cat /a<br>
+                                    cat: /a: No such file or directory<br>
+                                    # cat /tmp/root-cow/a<br>
+                                    a<br>
+                                    # echo foo.com &gt; /mnt/etc/mailname<br>
+                                    # cat /etc/mailname<br>
+                                    glandium.org<br>
+                                    # cat /tmp/root-cow/etc/mailname<br>
+                                    foo.com<br>
+                                    # find /tmp/root-cow<br>
+                                    /tmp/root-cow<br>
+                                    /tmp/root-cow/etc<br>
+                                    /tmp/root-cow/etc/mailname<br>
+                                    /tmp/root-cow/a<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                Keep in mind that it doesn’t include submounts, though:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># ls /var<br>
+                                    backups cache lib local lock log mail opt run spool tmp www<br>
+                                    # ls /mnt/var<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                This means we’ll have to also mount <code>/var</code>, <code>/proc</code>, <code>/dev</code>, and <code>/sys</code>.
+                            </p>
+                            <p>
+                                That’s enough testing for now, and we’ll first do some cleanup before going after the real job:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># umount /mnt<br>
+                                    # rm -rf /tmp/root-cow<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                Using the <code>newns</code> utility from my <a href="http://glandium.org/blog/?p=217">first post on per-process namespaces</a>, let’s create a new namespace to keep our testing private, and populate it with the necessary mount points:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># newns<br>
+                                    # umount /tmp<br>
+                                    # mount -t tmpfs tmpfs /tmp<br>
+                                    # mkdir /tmp/root-cow /tmp/var-cow<br>
+                                    # mount -t unionfs -o dirs=/tmp/root-cow:/=ro none /mnt<br>
+                                    # mount -t unionfs -o dirs=/tmp/var-cow:/var=ro none /mnt/var<br>
+                                    # cd /mnt<br>
+                                    # pivot_root . mnt<br>
+                                    # mount --move /mnt/proc /proc<br>
+                                    # mount --move /mnt/sys /sys<br>
+                                    # mount --move /mnt/lib/init/rw /lib/init/rw<br>
+                                    # mount --move /mnt/tmp /tmp<br>
+                                    # mount --move /mnt/dev /dev<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                The second and third statements are useful to avoid sharing <code>/tmp</code> with the main namespace, which means the directories we create in the fourth statement won’t be visible in <code>/tmp</code> outside this namespace.
+                            </p>
+                            <p>
+                                The fifth and sixth statements put the union filesystems in place. As my system only has a separate <code>/var</code> filesystem (no <code>/usr</code>, and I don’t care about <code>/home</code> here), I only need to setup these two. Feel free to add more union filesystems as necessary.
+                            </p>
+                            <p>
+                                The pivot_root call allows to switch to the unionfs’ed root: everything under <code>/mnt</code> (<code>/mnt</code> and <code>/mnt/var</code> in our case) will be remounted under <code>/</code>, while what was under <code>/</code> is remounter under <code>/mnt</code> under the new root.<br>
+                                This means, in our case, that we have <code>/</code> and <code>/var</code> as union filesystems, while the old <code>/</code> and <code>/var</code> are respectively in <code>/mnt</code> and <code>/mnt/var</code>.
+                            </p>
+                            <p>
+                                It also means <code>/dev</code>, <code>/proc</code>, <code>/sys</code> and other filesystems are remounted as <code>/mnt/dev</code>, <code>/mnt/proc</code>, <code>/mnt/sys</code>, etc., which is why we next <code>mount --move</code> all of them to a better place in our namespace.
+                            </p>
+                            <p>
+                                Once all this setup is done, we are ready to do our php upgrade test. As Etch doesn’t have support for neither PID namespaces nor network namespaces, we’ll still have some conflicts with the main namespace for TCP port binding and process handling, so we need to be a little careful:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># rm /var/run/apache2.pid<br>
+                                    # echo Listen 8080 &gt; /etc/apache2/ports.conf<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                With these changes, we can now safely start apache2 in this namespace, at the same time the main apache2 runs in the main namespace:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># /etc/init.d/apache2 start<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                Now, there are actually 2 problems showing up in apache in this setup.
+                            </p>
+                            <p>
+                                The first one is that displaying static files doesn’t work. At all. It appears unionfs doesn’t support sendfile(). Which is fine. But apache doesn’t check for sendfile()’s error cases and doesn’t fallback to a working solution when sendfile() doesn’t work. So we have to manually disable it:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># echo EnableSendfile off &gt; /etc/apache2/conf.d/sendfile.conf<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                The second one is that access to the mysql socket doesn’t work properly under the unionfs. I didn’t want to investigate further, so I only worked around the issue by forcing to use the socket outside the unionfs:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># mount --bind /mnt/var/run/mysqld /var/run/mysqld<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                Finally, we can test and validate our php upgrade:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <code># apt-get install php5-mysql php5-cli php5-snmp libapache2-mod-php5<br>
+                                    # /etc/init.d/apache2 restart<br>
+                                    # apt-get remove --purge php4-common<br></code>
+                                </p>
+                            </blockquote>
+                            <p>
+                                Note that installing libapache2-mod-php5 will remove libapache2-mod-php4, and apache2 gets restarted, taking into account this change. But the php modules (php5-mysql and php5-snmp) install is only going to happen after that, and no apache2 restart is triggered then, which leaves a half working php setup…<br>
+                                Also note that the cacti setup in etch supposes php4 is installed, using a <code>IfModule</code> statement against mod_php4.c and none for mod_php5.c, which means a part of its setup doesn’t work out of the box (most notably, the <code>DirectoryIndex</code>).
+                            </p>
+                            <p>
+                                Once all is validated, all we need to do is to stop apache2 and exit from the namespace. The union filesystems and temporary filesystems are then automagically cleaned-up and the namespace disappears as well as all modifications we just did, since all processes using the namespace ended. We are now free to upgrade on the production server, as we know all the side effects.
+                            </p>
+                            <p>
+                                I’ll now be able to upgrade to Lenny without php getting removed.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://glandium.org/blog/?p=224">http://glandium.org/blog/?p=224</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

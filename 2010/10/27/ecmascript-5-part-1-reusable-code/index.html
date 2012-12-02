@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            ECMAScript 5 Part 1: Reusable Code
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Thu, 28 Oct 2010 00:44:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-10-27T20:44:00-04:00">
+                    <meta itemprop="dateModified" content="2010-10-27T20:44:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-10-28T00:44:00+00:00">Oct 28</time>
+                    <h2 itemprop="title">
+                        ECMAScript 5 Part 1: Reusable Code
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/d5329b1e6e3c3f1f">
+                        <blockquote>
+                            <p>
+                                In June, we <a href="http://blogs.msdn.com/b/ie/archive/2010/06/25/enhanced-scripting-in-ie9-ecmascript-5-support-and-more.aspx">wrote</a> about IE9’s support for ECMAScript 5 (ES5) and published a <a href="http://ie.microsoft.com/testdrive/HTML5/ECMAScript5Breakout/Default.html">TestDrive</a> demo to explore some of the features. With <a href="http://www.beautyoftheweb.com/">IE9 Beta</a> available, it’s a good time to talk about how developers can use ES5 to improve their code. Many of the features in ES5 are designed to help developers working with very large code bases by making the language both more robust and easier to maintain. In this series of blog posts we’ll look specifically at how ES5 helps you write more reusable code.
+                            </p>
+                            <p>
+                                For this post, we’ll focus on how ES5 makes it easier to create and clone objects and helps you ensure that your code is robust to mistakes when it is reused – even if you’re the only developer who will be using it.
+                            </p>
+                            <p>
+                                The example we’ll use is a simple set of calendar objects, similar to the kinds of objects you see in a web mail program like Hotmail or Outlook Web Access.
+                            </p>
+                            <h4>
+                                Creating Objects: new and Object.create
+                            </h4>
+                            <p>
+                                There’s a saying that the best code is the code you don’t have to write. ES5’s object constructor methods cut down on the amount of repetitious code quite a bit. As an example, let’s start by creating an object representing an appointment. The simplest way to create a JavaScript object with some initialized properties is with an object literal:
+                            </p>
+                            <pre>
+<code>var appointment = {
+    name: "unnamed appointment",
+    startTime:  new Date(NaN),
+    endTime:  new Date(NaN), 
+    location: "unknown"
+};</code>
+</pre>
+                            <p>
+                                That object can serve as a pattern for any other appointment objects we want to create, analogous to creating a class. Prior to ES5, if we wanted to create a prototype from this object we would define a constructor function and specify the prototype to be used:
+                            </p>
+                            <pre>
+<code>function Appointment(){};
+Appointment.prototype = appointment; 
+var myAppointment = new Appointment();</code>
+</pre>
+                            <p>
+                                (Note that the Appointment function doesn’t actually do anything in this case. It just provides the place to specify the value to use as the prototype for new objects.)
+                            </p>
+                            <p>
+                                This pattern is familiar to JavaScript developers today. But with the object constructor methods in ES5, there’s a more direct way to create an object with a specific prototype:
+                            </p>
+                            <pre>
+<code> var myAppointment = Object.create(appointment);</code>
+</pre>
+                            <p>
+                                Any object created by the above call to Object.create will have the appointment object as its prototype and inherit all its properties; there’s no need to create a constructor function.
+                            </p>
+                            <pre>
+<code>var myAppointment = Object.create(appointment);
+myAppointment.name = "Dentist Appointment";
+myAppointment.startTime = new Date("10/31/2010 08:00");
+</code>
+</pre>
+                            <p>
+                                These assignments override the like-named inherited properties rather than actually modify the properties of the prototype object. The value of appointment.name remains “unnamed appointment”; the value of unassigned inherited properties like location remains “unknown.”
+                            </p>
+                            <h4>
+                                Extend and Constrain
+                            </h4>
+                            <p>
+                                Now that we’ve created a base class pattern and have leveraged the prototype to create another instance using Object.create, let’s look at how ES5 helps you extend the base class to create another reusable class. Let’s start by creating a class which can serve as a meeting prototype. The second argument of create is a property descriptor which enables us to create and set the value of properties. We’ll set conferenceCall to a default value, just in case we use it in a later operation without setting the value.
+                            </p>
+                            <pre>
+<code>var meeting = Object.create(appointment, {
+    conferenceCall: {value: "In-person meeting" }
+});</code>
+</pre>
+                            <p>
+                                Alternatively, we could do this by calling the defineProperty method, which is also new to ES5.
+                            </p>
+                            <pre>
+<code>var meeting = Object.create(appointment);
+Object.defineProperty(meeting, "conferenceCall", { value: "In-person meeting" });</code>
+</pre>
+                            <p>
+                                You might ask how the code examples above are different than the following code:
+                            </p>
+                            <pre>
+<code>var meeting = Object.create(appointment);
+meeting.conferenceCall = "In-person meeting"; </code>
+</pre>
+                            <p>
+                                The defineProperty method defaults the writable, enumerable, and configurable attributes of a new property to false. If we did not want to make the property read-only, not enumerable, and configurable then we would have used the simpler property initialization. The property definition parameters to Object.create also have the same defaults.
+                            </p>
+                            <p>
+                                For a computed field, a property which is a function of other modifiable fields, we want to ensure that the property value can’t be modified directly. We can use the getter functionality in ES5 to specify the function which computes the value. (Actual function has been simplified for illustrative purposes.)
+                            </p>
+                            <pre>
+<code>Object.defineProperty(meeting, "duration",
+    { get: function () {
+        return this.endTime.getHours() - this.startTime.getHours(); 
+    }}
+);</code>
+</pre>
+                            <p>
+                                We now create an instance of the meeting.
+                            </p>
+                            <pre>
+<code>var teamMeeting = Object.create(meeting);
+teamMeeting.name = "IE Team Meeting";
+teamMeeting.startTime = new Date("10/31/2010 08:00");
+teamMeeting.endTime = new Date("10/31/2010 09:00");
+teamMeeting.location = "Conference Room 33";</code>
+</pre>
+                            <p>
+                                With the enumerable attribute of the properties created with defineProperty being false by default, the duration and conferenceCall properties are not enumerated when looping through the members of the object. The enumeration only contains those properties that are necessary to describe the object.
+                            </p>
+                            <blockquote>
+                                <pre>
+<span style="font-style:italic">Output:</span>
+name: IE Team Meeting
+startTime: Sun Oct 31 08:00:00 PDT 2010
+endTime: Sun Oct 31 09:00:00 PDT 2010
+location: Conference Room 33
+</pre>
+                            </blockquote>
+                            <p>
+                                With the configurable attribute of the property defaulting to false, users of the class cannot write over the duration computed property.
+                            </p>
+                            <h4>
+                                Send in the Clones
+                            </h4>
+                            <p>
+                                ES5 makes it easier to implement object cloning. Object cloning is mostly a feature you see in JavaScript frameworks like jQuery or Dojo. These frameworks have to do a lot of work to make sure that the right things happen when you clone an object. With previous versions of ECMAScript, it was really easy to write a naïve clone function which only copies the members they enumerate.
+                            </p>
+                            <pre>
+<code>function naiveClone (obj) {
+  var n={};
+  for (var p in obj) {
+    n[p]=obj[p];
+    }; 
+  return n;
+}</code>
+</pre>
+                            <p>
+                                For some implementations of object cloning, when you just want to copy the data, you might end up with too many members including those that contain behavior. For other implementations of object cloning when you want a deep copy, you might end up with too few members. With the new Object methods of ES5, writing a good clone function is much easier.
+                            </p>
+                            <pre>
+<code>Object.clone = function (o) {
+  var n = Object.create(Object.getPrototypeOf(o));
+  var props = Object.getOwnPropertyNames(o);
+  var pName;
+  for (var p in props) {
+    pName = props[p];
+    Object.defineProperty(n, pName, Object.getOwnPropertyDescriptor(o, pName));  
+  };
+  return n;
+};</code>
+</pre>
+                            <p>
+                                The getOwnPropertyNames function only gets those properties that are unique to this object. So, for example, it doesn’t re-clone the inherited methods that exist on all Objects like toString and valueOf. Going back to our earlier example, using getOwnPropertyNames, we can recreate a series of team meetings over the next few months:
+                            </p>
+                            <pre>
+<code>var quarterlyTeamMeeting = Object.clone(teamMeeting);
+quarterlyTeamMeeting.startTime = new Date("12/31/2010 07:00");
+quarterlyTeamMeeting.endTime = new Date("12/31/2010 09:00");</code>
+</pre>
+                            <p>
+                                The duration property exists on this object and yet it does not show up in the enumeration. Of course, writing a robust, one-size-fits-all, clone method is not necessarily as simple as the code above; for example, you have to take into account special characteristics of some of the built-in objects such as Strings or Arrays. For this reason, the ECMAScript 5 committee left creating a cloning function to frameworks authors.
+                            </p>
+                            <h4>
+                                Getters and Setters
+                            </h4>
+                            <p>
+                                Getters and setters are among the most anticipated features in ES5. Suppose you’ve got a property which triggers an event whenever anyone sets its field. In this example, we’ll instead define the location property such that if the location is updated, we want to fire an event to allow subscribers to see if the location is available. To explore this, we’ll revisit the meeting declaration to create a new property which fires an event when set.
+                            </p>
+                            <pre>
+<code>(function () {
+    var loc = "undetermined location";
+
+    Object.defineProperty(meeting, "location", {
+        get: function () { return loc; },
+        set: function (value) {
+            loc = value;             
+            /*fire some event */
+        }
+    });
+})();</code>
+</pre>
+                            <p>
+                                In the example above, we wrapped the property declaration with a function to limit the scope of the variable loc to the property. This makes the variable serve as a backing store as opposed to an accessible field.
+                            </p>
+                            <p>
+                                During IE8, while the ES5 specification was still in the making, we introduced <a href="http://msdn.microsoft.com/en-us/library/dd229916(VS.85).aspx">accessor support for DOM objects.</a> Now that the spec is ratified, we have added full support for this feature.
+                            </p>
+                            <h4>
+                                Moving the web forward with ES5
+                            </h4>
+                            <p>
+                                These are some of the ways you can use ES5 to create more robust code that can be more easily reused. Remember, to leverage these features, the browser must be in <a href="http://blogs.msdn.com/b/ie/archive/2010/06/16/ie-s-compatibility-features-for-site-developers.aspx">IE9 Standards Document Mode</a> which is the default in IE9 for a standard document type.
+                            </p>
+                            <p>
+                                As the web evolves, JavaScript continues to be used for larger applications. As usage patterns emerge, they are incorporated into browser implementations and web standards. Some of the principles the standards working group applied to ES5 to support these demands are:
+                            </p>
+                            <ul>
+                                <li>
+                                    <b>No New Syntax.</b> When there’s a syntax error, the page stops loading. Many of the constructs explored in this blog post which are new to ES5 are designed to be simple methods on the Object constructor, thereby leveraging method calling syntax.
+                                </li>
+                                <li>
+                                    <b>Minimize construct collision</b>. Introducing new members on Object could conflict with frameworks which extend Object’s prototype. Note that the functions used above are all extensions on the Object constructor (with a capitol “O”) which is a less commonly used design pattern.
+                                </li>
+                                <li>
+                                    <b>Appropriate layering of abstractions</b>. Meta-level methods that manipulate the structure and definition of objects are clearly separated from the “business logic” methods.
+                                </li>
+                            </ul>
+                            <p>
+                                ES5 delivers on these principles and represents increased productivity for frameworks authors. We think these extensions, and others we’ll discuss in future posts, will enable developers to create richer standards-based experiences on the web. We’re excited to see how developers will use the features of ES5 with IE9; we’d like to hear how you plan to put these features to use. We’ll continue to explore the additions to ES5 in upcoming posts, stay tuned.
+                            </p>
+                            <p>
+                                Amanda Silver<br>
+                                Program Manager<br>
+                                JavaScript
+                            </p>
+                            <div style="clear:both"></div><img src="http://blogs.msdn.com/aggbug.aspx?PostID=10081805" width="1" height="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blogs.msdn.com/b/ie/archive/2010/10/27/ecmascript-5-part-1-reusable-code.aspx">http://blogs.msdn.com/b/ie/archive/2010/10/27/ecmascript-5-part-1-reusable-code.aspx</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

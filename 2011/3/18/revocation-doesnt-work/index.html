@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Revocation doesn't work
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 18 Mar 2011 07:00:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-03-18T03:00:00-04:00">
+                    <meta itemprop="dateModified" content="2011-03-18T03:00:00-04:00"><time class="date" itemprop="datePublished" datetime="2011-03-18T07:00:00+00:00">Mar 18</time>
+                    <h2 itemprop="title">
+                        Revocation doesn't work
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/92fee219ec8e5c79">
+                        <blockquote>
+                            <p>
+                                When an HTTPS certificate is issued, it's typically valid for a year or two. But what if something bad happens? What if the site loses control of its key?
+                            </p>
+                            <p>
+                                In that case you would really need a way to invalidate a certificate before it expires and that's what revocation does. Certificates contain instructions for how to find out whether they are revoked and clients should check this before accepting a certificate.
+                            </p>
+                            <p>
+                                There are basically two methods for checking if a certificate is revoked: certificate revocation lists (CRLs) and OCSP. CRLs are long lists of serial numbers that have been revoked while OCSP only deals with a single certificate. But the details are unimportant, they are both methods of getting signed and timestamped statements about the status of a certificate.
+                            </p>
+                            <p>
+                                But both methods rely on the CA being available to answer CRL or OCSP queries. If a CA went down then it could take out huge sections of the web. Because of this, clients (and I'm thinking mainly of browsers) have historically been forgiving of an unavailable CA.
+                            </p>
+                            <p>
+                                But an event this week gave me cause to wonder how well revocation actually works. So I wrote the <a href="https://gist.github.com/876829">the world's dumbest HTTP proxy</a>. It's just a convenient way to intercept network traffic from a browser. HTTPS requests involve the <tt>CONNECT</tt> method, which is implemented. All other requests (including all revocation checks) simply return a 500 error. This isn't even as advanced as Moxie's trick of <a href="http://www.thoughtcrime.org/papers/ocsp-attack.pdf">returning 3</a>.
+                            </p>
+                            <p>
+                                To be clear, the proxy is just for testing. An actual attack would intercept TCP connections. The results:
+                            </p>
+                            <p>
+                                Firstly, IE 8 on Windows 7:
+                            </p>
+                            <center>
+                                <img src="http://www.imperialviolet.org/binary/revocation/ie-close-1.png">
+                            </center>
+                            <p>
+                                No indication of a problem at all even though the revocation checks returned 500s. It's even EV.
+                            </p>
+                            <p>
+                                (<i>Aside: I used Wireshark to confirm that revocation checks weren't bypassing the proxy. It's also the case that SChannel can cache revocation information. I don't know how to clear this cache, so I simply used a site that I hadn't visited before. Also confirming that a cache wasn't in effect is the fact that Chrome uses SChannel to verify certificates and Chrome knew that there was an issue.</i>.)
+                            </p>
+                            <p>
+                                Firefox 3.6 on Windows 7, <strike>no indication</strike>:
+                            </p>
+                            <p>
+                                <b>Update</b>: George Macon pointed out that Firefox removes the EV indication from this site. I'm not a regular Firefox user so I'm afraid that I didn't notice:
+                            </p>
+                            <center>
+                                <img src="http://www.imperialviolet.org/binary/revocation/firefox-close-1.png">
+                            </center>
+                            <p>
+                                Chrome 12 on Windows 7:
+                            </p>
+                            <center>
+                                <img src="http://www.imperialviolet.org/binary/revocation/chrome-close-1.png">
+                            </center>
+                            <p>
+                                There's something at least! We can click on it...
+                            </p>
+                            <center>
+                                <img src="http://www.imperialviolet.org/binary/revocation/chrome-close-2.png">
+                            </center>
+                            <p>
+                                So Chrome has an indication but it's the same indication as mixed-content and I suspect that rather a lot of people will ignore it. There is one saving grace, Chrome implements <a href="http://dev.chromium.org/sts">HSTS</a> and <strike>for HSTS sites, revocation failure is fatal</strike>:
+                            </p>
+                            <p>
+                                <b>Update</b>: I changed this behaviour. See <a href="http://www.ietf.org/mail-archive/web/websec/current/msg00296.html">http://www.ietf.org/mail-archive/web/websec/current/msg00296.html</a>
+                            </p>
+                            <center>
+                                <img src="http://www.imperialviolet.org/binary/revocation/chrome-sts-1.png">
+                            </center>
+                            <p>
+                                On other platforms, the story is much the same. Safari doesn't indicate that anything is wrong, nor does Firefox 4 on OS X, nor Firefox 3.6 on Linux. Chrome on Mac is the same as Windows, but on Linux doesn't indicate and doesn't protect HSTS sites. (Chrome Linux's behaviour is due to a limitation in NSS as I understand it.).
+                            </p>
+                            <p>
+                                So, what's the effect? Well it depends where an attacker is. If the attacker is spoofing a site and is situated close to the site then they can attack all users, because they can get all the traffic destined for the site. However, such an attacker probably can't intercept traffic to the CA's servers, so revocation will actually work because the users will receive a firm ‘revoked’ message from the CA. If the attacker is close to the user, then they can only attack a smaller number of users, but they can intercept traffic to the CA and thus defeat revocation. Attacks in Tunisia and only open WiFi networks are the sort of attacks which can defeat revocation.
+                            </p>
+                            <p>
+                                So should browsers be stricter about revocation checking? Maybe, but it does mean that a CA outage would disable large parts of the web. Imagine if Verisign corrupted their revocation database and were down for six hours while they rebuilt it. An global outage of large parts of the HTTPS web like that would seriously damage the image of web security to the point where sites would think twice about using HTTPS at all.
+                            </p>
+                            <p>
+                                (You can configure Firefox to be strict about checking if you wish: <tt>security.OCSP.require</tt> in <tt>about:config</tt>.)
+                            </p>
+                            <p>
+                                A much better solution would be for certificates to only be valid for a few days and to forget about revocation altogether. This doesn't mean that the private key needs to change every few days, just the certificate. And the certificate is public data, so servers could just download their refreshed certificate over HTTP periodically and automatically (like OCSP stapling). Clients wouldn't have to perform revocation checks (which are very complex and slow), CAs wouldn't have to pay for massive, DDoS proof serving capacity and revocation would actually work. If the CA went down for six hours, nobody cares. Only if the CA is down for days is there a problem. If you want to “revoke” a certificate, just stop renewing it.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.imperialviolet.org/2011/03/18/revocation.html">http://www.imperialviolet.org/2011/03/18/revocation.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

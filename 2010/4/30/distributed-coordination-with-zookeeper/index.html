@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Distributed Coordination with Zookeeper
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Fri, 30 Apr 2010 18:27:32 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-04-30T14:27:32-04:00">
+                    <meta itemprop="dateModified" content="2010-04-30T14:27:32-04:00"><time class="date" itemprop="datePublished" datetime="2010-04-30T18:27:32+00:00">Apr 30</time>
+                    <h2 itemprop="title">
+                        Distributed Coordination with Zookeeper
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/acc7be303f0283fe">
+                        <blockquote>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/10/zookeeper.png">The Apache Hadoop project is an umbrella for a number of sub-projects, many of which are quite useful outside the Hadoop framework itself. Avro, for one, is a serialization framework with <a href="http://www.igvita.com/2010/02/16/data-serialization-rpc-with-avro-ruby/">great performance and an API</a> tailored for dynamic environments. Likewise, <a href="http://hadoop.apache.org/zookeeper/">Zookeeper</a> is a project incubated within the Hadoop ecosystem, but worth spending some time with due its wide applicability for building distributed systems.
+                            </p>
+                            <p>
+                                Back in 2006, Google <a href="http://labs.google.com/papers/chubby.html">published a paper on "Chubby"</a>, a distributed lock service which gained wide adoption within their data centers. Zookeeper, not surprisingly, is a close clone of Chubby designed to fulfill many of the same roles for HDFS and other Hadoop infrastructure. The original paper from Google offers a number of interesting insights, but the biggest takeaway is: Chubby and Zookeeper are both much more than a distributed lock service. In fact, it may be better to think of them as implementations of highly available, distributed metadata filesystems.
+                            </p>
+                            <h4>
+                                <strong>Zookeeper as a Metadata Filesystem</strong>
+                            </h4>
+                            <p>
+                                At its core, Zookeeper is modeled after a straightforward, tree based, file system API. A client is able to create a node, store up to 1MB of data with it, and also associate as many children nodes as they wish. However, there are no renames, soft or hard links, and no append semantics. Instead, by dropping those features, Zookeeper guarantees completely ordered updates, data versioning, conditional updates (CAS), as well as, a few more advanced features such as "ephemeral nodes", "generated names", and an async notification ("watch") API.
+                            </p>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/10/fs-zookeeper.png">Now, this may seem like a grab bag of features, but don't forget that all of this is functionality is exposed as a remote service. Meaning, any network client can create a node, update associated metadata, submit a conditional update, or request an async notification via a <em><strong>"watch"</strong></em> request, which essentially mirrors the <a href="http://en.wikipedia.org/wiki/Inotify">inotify</a> functionality exposed in the Linux kernel.
+                            </p>
+                            <p>
+                                Likewise, to make things easier, a client can request for Zookeeper to generate the node name to avoid collisions (e.g. to allow multiple concurrent clients to create nodes within same namespace without any collisions). And last but not least, what if you wanted to create a node, which only existed for the lifetime of your connection to Zookeper? That's what <em><strong>"ephemeral nodes"</strong></em> are for - essentially, they give you <a href="http://en.wikipedia.org/wiki/Presence_information">presence</a>. Now, put all of these things together, and you have a powerful toolkit to solve many problems in distributed computing.
+                            </p>
+                            <h4>
+                                <strong>Zookeeper: Distributed Architecture</strong>
+                            </h4>
+                            <p>
+                                Of course, if we are to deploy Zookeeper in a distributed environment, we have to think about both the availability and scalability of the service. At Google, Chubby runs on a minimum of five machines, to guarantee high availability, and also transparently provides a built-in master election and failover mechanisms. Not surprisingly, Zookeeper is built under the same model. Given a cluster of Zookeeper servers, only one acts as a leader, whose role is to accept and coordinate all writes (via a quorum). All other servers are direct, read-only replicas of the master. This way, if the master goes down, any other server can pick up the slack and immediately continue serving requests. As an interesting sidenote, Zookeeper allows the standby servers to serve reads, whereas Google's Chubby directs all reads and writes to the single master - apparently a single server can handle all the load!
+                            </p>
+                            <p align="center">
+                                <img src="http://www.igvita.com/posts/10/zoo-architecture.png">
+                            </p>
+                            <p>
+                                The one limitation of this design is that every node in the cluster is an exact replica - there is no sharding and hence the capacity of the service is limited by the size of an individual machine. The Google paper briefly mentions a possible logical sharding scheme, but in practice, it seems that they had no need for such a feature just yet. Now let's take a look at the applications.
+                            </p>
+                            <h4>
+                                <strong>Applications on top of Zookeeper &amp; Chubby</strong>
+                            </h4>
+                            <p>
+                                Within the Hadoop/HBase umbrella, Zookeeper is used to manage master election and store other process metadata. Hadoop/HBase competitors love to point to Zookeeper as a SPOF (single point of failure), but in reality, given the backing architecture this seems to be too often over-dramatized. Perhaps even more interestingly, as the Google paper mentions, Chubby has in effect replaced DNS within the Google infrastructure!
+                            </p>
+                            <p>
+                                <img align="left" style="margin-right:1em" src="http://www.igvita.com/posts/10/hadoop.png">By allowing any client to access and store metadata, you can imagine a simple case where a cluster of databases can share their <strong>configuration information</strong> (sharding functions, system configs, etc), within a single namespace: <em>"/app/database/config"</em>. In fact, each database could request a watch on that node, and receive <strong>real-time notifications</strong> whenever someone updates the data (for example, a data rebalancing due to adding a new database into the cluster). However, that is just the beginning. Since "ephemeral nodes" provide basic presence information, by having each worker machine register with Zookeeper, we can perform <strong>real-time group membership queries</strong> to see which nodes are online, and perhaps even figure out what they are currently doing.
+                            </p>
+                            <p>
+                                What about consensus? With a little extra work we can also leverage the data versioning and notifications APIs to build distributed primitives such as <a href="http://wiki.apache.org/hadoop/ZooKeeper/Tutorial">worker queues and barriers</a>. From there, once we have locks and consensus, we can tackle virtually any distributed problem: master election, quorum commits, and so on. In other words, it becomes your swiss army knife for coordinating distributed services.
+                            </p>
+                            <h4>
+                                <strong>Working with Zookeeper</strong>
+                            </h4>
+                            <p>
+                                Getting started with Zookeeper is <a href="http://hadoop.apache.org/zookeeper/docs/current/zookeeperStarted.html">relatively straightforward</a>: download the source, load the jar file, and you're ready to experiment in a single node mode. From there, you can try interacting with Zookeeper via a simple shell provided with the project:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    <strong># create root node for an application, with world read-write permissions</strong><br>
+                                    [zk: localhost:2181(CONNECTED) 2] create /myapp description world:anyone:cdrw<br>
+                                    Created /myapp
+                                </p>
+                                <p>
+                                    <strong># Create a sequential (-s) and ephemeral (-e) node</strong><br>
+                                    [zk: localhost:2181(CONNECTED) 6] create -s -e /myapp/server- appserver world:anyone:cdrw<br>
+                                    Created /myapp/server-0000000001
+                                </p>
+                                <p>
+                                    <strong># List current nodes</strong><br>
+                                    [zk: localhost:2181(CONNECTED) 5] ls /myapp<br>
+                                    =&gt; [server-0000000000]
+                                </p>
+                                <p>
+                                    <strong># Fetch data for one of the nodes</strong><br>
+                                    [zk: localhost:2181(CONNECTED) 8] get /myapp/server-0000000001<br>
+                                    appserver
+                                </p>
+                            </blockquote>
+                            <div>
+                                <a href="http://www.igvita.com/download.php?file=http://www.github.com/apache/zookeeper/tree/trunk/.git"><img alt="Download" src="http://www.igvita.com/wp-content/plugins/dBeautifier/icons/github.png"></a>
+                                <h4>
+                                    <a href="http://www.igvita.com/download.php?file=http://www.github.com/apache/zookeeper/tree/trunk/.git">zookeeper (Mirror of Apache Hadoop ZooKeeper)</a>
+                                </h4>
+                                <p>
+                                    Downloads: 555 File Size: 0.0 KB
+                                </p>
+                            </div>
+                            <p>
+                                Similarly, we can perform all of the same actions directly from Ruby via several libraries. The <a href="http://github.com/emaland/zookeeper_client">zookeeper_client gem</a> provides bindings against the C-based API, but unfortunately it doesn't support some of the more advanced features such as watches and asynchronous notifications. Alternatively, the <a href="http://github.com/smingins/zookeeper">zookeeper gem by Shane Mingins</a> provides a fully featured JRuby version, which seems to cover the <a href="http://gist.github.com/383140">entire API</a>.
+                            </p>
+                            <p>
+                                And if you are feeling adventurous, you could even try the experimental <a href="https://issues.apache.org/jira/browse/ZOOKEEPER-25?page=com.atlassian.jira.plugin.system.issuetabpanels:all-tabpanel">FUSE mount</a>, or the <a href="https://issues.apache.org/jira/browse/ZOOKEEPER-36">REST server</a> for Zookeeper. For some ideas, check out <a href="http://github.com/grantr/game_warden/blob/master/example/config.rb">game_warden</a> (Ruby DSL for dynamic configuration management) built around zookeeper, and a few <a href="http://highscalability.com/blog/2008/7/15/zookeeper-a-reliable-scalable-distributed-coordination-syste.html">other</a> <a href="http://www.cloudera.com/blog/2009/05/building-a-distributed-concurrent-queue-with-apache-zookeeper/">articles</a> on the project. Zookeeper is already in use in a number of projects and companies (Digg, LinkedIn, Wall Street), so you are in good company.
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=xdIGXMMlSWY:aKz85EVnOzM:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=xdIGXMMlSWY:aKz85EVnOzM:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=xdIGXMMlSWY:aKz85EVnOzM:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=xdIGXMMlSWY:aKz85EVnOzM:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=xdIGXMMlSWY:aKz85EVnOzM:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=xdIGXMMlSWY:aKz85EVnOzM:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=xdIGXMMlSWY:aKz85EVnOzM:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=xdIGXMMlSWY:aKz85EVnOzM:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=xdIGXMMlSWY:aKz85EVnOzM:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/xdIGXMMlSWY" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2010/04/30/distributed-coordination-with-zookeeper/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2010/04/30/distributed-coordination-with-zookeeper/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            The REIL language – Part I
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sun, 07 Mar 2010 08:34:18 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-03-07T03:34:18-04:00">
+                    <meta itemprop="dateModified" content="2010-03-07T03:34:18-04:00"><time class="date" itemprop="datePublished" datetime="2010-03-07T07:34:18+00:00">Mar 07</time>
+                    <h2 itemprop="title">
+                        The REIL language – Part I
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/dcc558ff8822cd6c">
+                        <blockquote>
+                            <p>
+                                If you have followed the development of BinNavi over the last two years you might know that we are making heavy use of something called REIL to provide features backed by advanced static code analysis. REIL is short for Reverse Engineering Intermediate Language and at its core it is a platform-independent pseudo-assembly language that can be used to emulate native assembly code.
+                            </p>
+                            <p>
+                                A few years ago, <a href="http://blog.zynamics.com/author/tdullien/">Thomas</a> spent some time thinking about making reverse engineering tools scale (check out <a href="http://www.blackhat.com/presentations/win-usa-04/bh-win-04-flake.pdf">the slides of his Black Hat Windows 2004 talk</a> to learn more). Software today is larger and more complex than it was in the past and there are many more interesting platforms to consider as a security researcher (just think of Mac OS, iPhone, Android, Blackberry, Cisco routers, wireless devices, …). Platform-independent automation of common reverse engineering tasks seemed like the way to go. If you manage to develop powerful tools that help you find interesting parts of binary files without manual intervention you can fight growing complexity and reduce its associated costs. We created REIL as one of the key technologies for our path towards this goal.
+                            </p>
+                            <p>
+                                We designed REIL with one thing in mind: Create a language that can model the effects of real assembly code but – unlike real assembly code – is very easy to analyze programmatically. To achieve this we carefully designed a minimal instruction set of just 17 different instructions and we made sure that the structure of the instruction operands is regular and comprehensible. We also made sure that all REIL instructions have exactly one obvious purpose because we wanted to avoid side effects like setting flags or implicitly accessing memory. Furthermore we have designed a very simple virtual machine (REIL VM) for REIL code to define the semantic behaviour of REIL code.
+                            </p>
+                            <p>
+                                In the next few posts I will show you what the instruction set of REIL looks like, how the semantic model behind REIL interpretation works, how to use REIL in BinNavi and what the future of REIL will look like.
+                            </p>
+                            <p>
+                                For now I am going to finish this post with a screenshot that shows some REIL code in BinNavi (click to enlarge). Notice the MIPS-like regularity and simplicity of the instructions. The original x86 instructions that were the source of the REIL code are shown as gray line comments.
+                            </p>
+                            <div style="width:460px">
+                                <a href="http://zynamics.files.wordpress.com/2010/02/reil_block.png"><img title="reil_block" src="http://zynamics.files.wordpress.com/2010/02/reil_block.png?w=450&amp;h=314" alt="" width="450" height="314"></a>
+                                <p>
+                                    A basic block of REIL code
+                                </p>
+                            </div>
+                            <p>
+                                If you already want to learn more about REIL you can check out the BinNavi manual. Here you can find everything that is necessary to understand the REIL language and its use in BinNavi.
+                            </p><br>
+                            <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gocomments/zynamics.wordpress.com/299/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/comments/zynamics.wordpress.com/299/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godelicious/zynamics.wordpress.com/299/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/delicious/zynamics.wordpress.com/299/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/gostumble/zynamics.wordpress.com/299/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/stumble/zynamics.wordpress.com/299/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/godigg/zynamics.wordpress.com/299/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/digg/zynamics.wordpress.com/299/"></a> <a rel="nofollow" href="http://feeds.wordpress.com/1.0/goreddit/zynamics.wordpress.com/299/"><img alt="" border="0" src="http://feeds.wordpress.com/1.0/reddit/zynamics.wordpress.com/299/"></a> <img alt="" border="0" src="http://stats.wordpress.com/b.gif?host=blog.zynamics.com&amp;blog=11242489&amp;post=299&amp;subd=zynamics&amp;ref=&amp;feed=1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://blog.zynamics.com/2010/03/07/the-reil-language-part-i/">http://blog.zynamics.com/2010/03/07/the-reil-language-part-i/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

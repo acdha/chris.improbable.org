@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Easy Map-Reduce With Hadoop Streaming
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Mon, 01 Jun 2009 15:05:01 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2009-06-01T11:05:01-04:00">
+                    <meta itemprop="dateModified" content="2009-06-01T11:05:01-04:00"><time class="date" itemprop="datePublished" datetime="2009-06-01T15:05:01+00:00">Jun 01</time>
+                    <h2 itemprop="title">
+                        Easy Map-Reduce With Hadoop Streaming
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/67d6c8a24d92b003">
+                        <blockquote>
+                            <p>
+                                <img align="left" src="http://www.igvita.com/posts/09/hadoop.png" style="margin-right:1em">If you're considering doing large scale analysis of structured data (access logs, for example), there are dozens of enterprise-level solutions ranging from specialized streaming databases, to the more mundane data warehousing solutions with star topologies and column store semantics. Google, facing the same problem, developed a system called <a href="http://labs.google.com/papers/sawzall.html">Sawzall</a>, which leverages their existing Map-Reduce clusters for large scale parallel data analysis by adding a DSL for easy manipulation of data.
+                            </p>
+                            <p>
+                                Undoubtedly inspired by Google's work, the guys at NY Times recently <a href="http://open.blogs.nytimes.com/2009/05/11/announcing-the-mapreduce-toolkit/">released MRToolkit</a>, a Ruby framework for setting up and running Apache Hadoop jobs with a heavy Sawzall flavor. Short of a great community contribution, and a great <a href="http://code.google.com/p/mrtoolkit/source/browse/trunk">source tree</a> to get familiar with, perhaps the most interesting part of the project is the great showcase of <a href="http://hadoop.apache.org/core/docs/r0.15.2/streaming.html">Hadoop Streaming</a> at work - an interface worth getting familiar with.
+                            </p>
+                            <h4>
+                                <strong>Hadoop Streaming: Simple Map-Reduce</strong>
+                            </h4>
+                            <p>
+                                Writing a Map/Reduce job in Hadoop usually entails writing two Java functions: a map which splits the dataset into independent chunks, and a reduce which combines the results to perform some useful analysis. The framework takes care of the sorting, coordination and scheduling, and thus provides the underlying abstraction for distributed computing. However, although the framework is implemented in Java, Hadoop's Streaming interface is an important, and an often overlooked feature, which allows us to write Map/Reduce applications in any language that is capable of working with STDIN and STDOUT!
+                            </p>
+                            <p>
+                                In fact, we can create a simple Map/Reduce word count application with nothing but standard *nix tools available on any machine: <a href="http://linux.die.net/man/1/cat">cat</a>, and <a href="http://linux.die.net/man/1/wc">wc</a>. Assuming your data is already loaded into an HDFS cluster, we can kick-off our job:
+                            </p>
+                            <blockquote>
+                                <p>
+                                    $HADOOP_HOME/bin/hadoop jar $HADOOP_HOME/hadoop-streaming.jar \<br>
+                                    -input myInputDirs \<br>
+                                    -output myOutputDir \<br>
+                                    -mapper /bin/cat \<br>
+                                    -reducer /bin/wc
+                                </p>
+                            </blockquote>
+                            <p>
+                                As the example shows, our map and reduce scripts can be any executable that reads input from STDIN (line by line) and emit output to STDOUT. Have a Ruby/Python/Bash script that is capable of both? Congratulations, you can write a Map/Reduce job on Hadoop!
+                            </p>
+                            <h4>
+                                <strong>MRToolkit: Hadoop + Ruby = Sawzall</strong>
+                            </h4>
+                            <p>
+                                <a href="http://code.google.com/p/mrtoolkit/">Map/Reduce Toolkit</a> by NY Times engineers is a great example of a Ruby DSL on top of the Hadoop Streaming interface. Specifically aimed at simplifying their internal log processing jobs, it exposes just the necessary bits for handling the access log inputs and provides a number of predefined reduce steps: unique, counter, etc. For example, to get a list of all unique visitor IP's, the entire program consists of:
+                            </p>
+                            <p>
+                                <a href="javascript:void(0);"><b>&gt; mr-unique-ip.rb</b></a>
+                            </p>
+                            <div style="background:white">
+                                <pre>
+<span style="color:#CC0066;font-weight:bold">require</span> <span style="color:#996600">'mrtoolkit'</span>
+ 
+<span style="color:#9966CC;font-weight:bold">class</span> MainMap &lt; MapBase
+  <span style="color:#9966CC;font-weight:bold">def</span> declare
+    <span style="color:#008000;font-style:italic"># declare log fields</span>
+    field <span style="color:#ff3333;font-weight:bold">:ip</span>
+    field <span style="color:#ff3333;font-weight:bold">:request</span>
+    field <span style="color:#ff3333;font-weight:bold">:status</span>
+ 
+    emit <span style="color:#ff3333;font-weight:bold">:ip_ua</span>
+    emit <span style="color:#ff3333;font-weight:bold">:ip</span>
+    emit <span style="color:#ff3333;font-weight:bold">:ua</span>
+  <span style="color:#9966CC;font-weight:bold">end</span>
+ 
+  <span style="color:#9966CC;font-weight:bold">def</span> process<span style="color:#006600;font-weight:bold">(</span>input, output<span style="color:#006600;font-weight:bold">)</span>
+    ua = input.<span style="color:#9900CC">ua</span>.<span style="color:#CC0066;font-weight:bold">split</span><span style="color:#006600;font-weight:bold">(</span>/\\s/<span style="color:#006600;font-weight:bold">)</span><span style="color:#006600;font-weight:bold">[</span><span style="color:#006666">0</span><span style="color:#006600;font-weight:bold">]</span>
+    output.<span style="color:#9900CC">ip_ua</span> = <span style="color:#996600">"#{input.ip}|#{ua}"</span>
+    output.<span style="color:#9900CC">ip</span> = input.<span style="color:#9900CC">ip</span>
+    output.<span style="color:#9900CC">ua</span> = ua
+    output
+  <span style="color:#9966CC;font-weight:bold">end</span>
+<span style="color:#9966CC;font-weight:bold">end</span>
+ 
+<span style="color:#9966CC;font-weight:bold">class</span> MainJob &lt; JobBase
+  <span style="color:#9966CC;font-weight:bold">def</span> job
+    mapper MainMap
+    reducer UniqueCountReduce, <span style="color:#006666">2</span>
+    indir <span style="color:#996600">"logs"</span>
+    outdir <span style="color:#996600">"ip-ua"</span>
+  <span style="color:#9966CC;font-weight:bold">end</span>
+<span style="color:#9966CC;font-weight:bold">end</span>
+</pre>
+                            </div>
+                            <p>
+                                Take a <a href="http://code.google.com/p/mrtoolkit/source/browse/trunk/lib/stream_runner.rb">closer look at the execution logic</a>, as that's where all the magic happens for spooling up Hadoop jobs and invoking the Ruby interpreter. This pattern can be easily adapted for any language and offers a very powerful way to leverage Hadoop instead of trying to build your own distributed processing layer.
+                            </p>
+                            <p>
+                                In fact, we should think of other higher-order frameworks we can build on top of this pattern: data mining &amp; machine learning, video &amp; audio processing, etc., it's all fair game!
+                            </p>
+                            <div>
+                                <a href="http://feeds.feedburner.com/~ff/igvita?a=0D9r7R_1Kcg:0pBlGxK9Yls:yIl2AUoC8zA"><img src="http://feeds.feedburner.com/~ff/igvita?d=yIl2AUoC8zA" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=0D9r7R_1Kcg:0pBlGxK9Yls:D7DqB2pKExk"><img src="http://feeds.feedburner.com/~ff/igvita?i=0D9r7R_1Kcg:0pBlGxK9Yls:D7DqB2pKExk" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=0D9r7R_1Kcg:0pBlGxK9Yls:F7zBnMyn0Lo"><img src="http://feeds.feedburner.com/~ff/igvita?i=0D9r7R_1Kcg:0pBlGxK9Yls:F7zBnMyn0Lo" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=0D9r7R_1Kcg:0pBlGxK9Yls:V_sGLiPBpWU"><img src="http://feeds.feedburner.com/~ff/igvita?i=0D9r7R_1Kcg:0pBlGxK9Yls:V_sGLiPBpWU" border="0"></a> <a href="http://feeds.feedburner.com/~ff/igvita?a=0D9r7R_1Kcg:0pBlGxK9Yls:gIN9vFwOqvQ"><img src="http://feeds.feedburner.com/~ff/igvita?i=0D9r7R_1Kcg:0pBlGxK9Yls:gIN9vFwOqvQ" border="0"></a>
+                            </div><img src="http://feeds.feedburner.com/~r/igvita/~4/0D9r7R_1Kcg" height="1" width="1">
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.igvita.com/2009/06/01/easy-map-reduce-with-hadoop-streaming/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed">http://www.igvita.com/2009/06/01/easy-map-reduce-with-hadoop-streaming/?utm_source=feedburner&amp;utm_campaign=Feed%3A+igvita+%28igvita.com%29&amp;utm_content=feed</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

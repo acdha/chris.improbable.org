@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Measuring password re-use empirically
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Wed, 09 Feb 2011 19:11:16 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2011-02-09T14:11:16-04:00">
+                    <meta itemprop="dateModified" content="2011-02-09T14:11:16-04:00"><time class="date" itemprop="datePublished" datetime="2011-02-09T18:11:16+00:00">Feb 09</time>
+                    <h2 itemprop="title">
+                        Measuring password re-use empirically
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/3f546af7fc28aec5">
+                        <blockquote>
+                            <p>
+                                In the aftermath of Anonymous’&nbsp;<a href="http://www.guardian.co.uk/technology/2011/feb/07/anonymous-attacks-us-security-company-hbgary">revenge hacking</a> of&nbsp;<a href="http://hbgary.com/">HBGary</a> over the weekend, some enterprising hackers <a href="http://esploit.blogspot.com/2011/02/how-to-get-root-on-rootkitcom.html">used one of the stolen credentials</a> and some social engineering to gain root access at <a href="http://www.rootkit.com/">rootkit.com</a>, which has been down for a few days since. There isn’t much novel about the hack but the dump of rootkit.com’s SQL databases provides another password dataset for research, though an order of magnitude smaller than <a href="http://www.lightbluetouchpaper.org/2010/12/15/the-gawker-hack-how-a-million-passwords-were-lost/">the Gawker dataset</a> with just 81,000 hashed passwords.
+                            </p>
+                            <p>
+                                More interestingly, due to the close proximity of the hacks, we can compare the passwords associated with email addresses registered at both Gawker and rootkit.com. This gives an interesting data point on the&nbsp;<a href="http://xkcd.com/792/">widely known</a> problem of&nbsp;password re-use. This new data seems to indicate a significantly higher re-use rate than the few previously published estimates.
+                            </p>
+                            <p>
+                                A simple intersection yielded 522 email addresses registered at both sites. This is about a 1% overlap, small but reasonable given the very different niches of the two websites.&nbsp;Eliminating throwaway addresses from sites like&nbsp;<a href="http://mailinator.com/">Mailinator</a> and dubious addresses like spam@spam.com (it’s not clear that either site properly checked the validity of enrolled emails) left 456 pairs.
+                            </p>
+                            <p>
+                                Analysing password re-use requires inverting the hashed passwords since the sites used different hash algorithms (and Gawker minimally salted their hashes). Rootkit.com’s password implementation is worse than&nbsp;<a href="http://www.lightbluetouchpaper.org/2010/12/15/the-gawker-hack-how-a-million-passwords-were-lost/">Gawker’s</a>,&nbsp;with no salts at all and just a single iteration of MD5, meaning it’s quick to test a huge dictionary of known passwords. I cracked 44% of the accounts using a dictionary of about 10 M entries in less than 5 minutes. I previously used the same dictionary on the Gawker dataset and cracked 54% of the accounts (despite this, the passwords at rootkit.com were generally weaker, with many more being from a smaller list of common passwords).
+                            </p>
+                            <p>
+                                Of the 456 common users, 161 had their password cracked in both datasets, 46 only had their rootkit.com password cracked and 77 only had their Gawker password cracked, leaving 172 with neither password cracked.&nbsp;Of the accounts for which passwords were cracked at both sites, 76% used the exact same password. A further 6% used passwords differing by only capitalisation or a small suffix (e.g. ‘password’ and ‘password1′). Some of these were due to the use of crypt() at Gawker, which truncated longer passwords to 8 characters. The remainder appeared to use unrelated passwords and I saw no site-specific password tailoring such as ‘gawker-password’ and ‘rootkit-password’.
+                            </p>
+                            <p>
+                                This isn’t an accurate estimate, however, because none of the users whose password was cracked at only one site could have reused the same password (since the same dictionary was used). Including these numbers, the apparent re-use rate is only 43%. If we include the similar passwords, and assume that 6% of the passwords cracked at one site but not the other were also similar but one variation was not in our dictionary, we would estimate 49% of users employed very similar passwords between the two sites.
+                            </p>
+                            <p>
+                                This still isn’t quite a complete comparison because we’ve ignore the 172 users with neither password cracked. We might assume that a roughly similar proportion of these users reused their passwords. It’s likely though that these more security-conscious users had a lower re-use rate, meaning 49% is an over-estimate. Still, we have to estimate at least a 31% re-use rate even if none of this last group of users reused the same password.
+                            </p>
+                            <p>
+                                Either rate is much higher than what we would estimate based on the best published studies –&nbsp;<a href="http://portal.acm.org/citation.cfm?id=1242572.1242661">Fl﻿﻿﻿ôrencio and Herley’s empirical study</a> (about 12%) or <a href="http://portal.acm.org/citation.cfm?id=1143127">Gaw and Felten’s user survey</a> (about 20%). Sampling error due to random chance shouldn’t be more than about ﻿±5%, which can’t explain the difference. It could be that users are much more likely to reuse a password between Gawker and rootkit.com, since both protect access to forums and are of relatively low value. It could also indicate that password re-use has risen significantly in the past 5 years (which Gaw and Felten specifically predicted based on their survey).
+                            </p>
+                            <p>
+                                More data is clearly needed because the difference between a 10% re-use rate and a 50% re-use rate would change the economics of large-scale attacks. It would also be very interesting to study the password overlap between higher-value accounts, such as those with a large email provider or an online bank, with low-security accounts like Gawker and rootkit.com which are more likely to be compromised.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://www.lightbluetouchpaper.org/2011/02/09/measuring-password-re-use-empirically/">http://www.lightbluetouchpaper.org/2011/02/09/measuring-password-re-use-empirically/</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>

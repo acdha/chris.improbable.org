@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Thread restrictions: preventing unintentional IO
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta http-equiv="last-modified" content="Sat, 20 Nov 2010 03:14:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2010-11-19T22:14:00-04:00">
+                    <meta itemprop="dateModified" content="2010-11-19T22:14:00-04:00"><time class="date" itemprop="datePublished" datetime="2010-11-20T02:14:00+00:00">Nov 20</time>
+                    <h2 itemprop="title">
+                        Thread restrictions: preventing unintentional IO
+                    </h2>
+                </header>
+                <div class="body" itemprop="articleBody">
+                    <div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/63cae2e26c140ec5">
+                        <blockquote>
+                            <p>
+                                I've written before <a href="http://code.google.com/p/chromium/issues/list?can=2&amp;q=label:Jank">about UI jank</a>, the problem of blocking your user interface on slow operations. In Chrome we have two critical threads which should never block; in both cases, if they hang even for even milliseconds the UI can feel "skippy". To remain responsive, these threads must never perform disk accesses. Whenever they need to interact with the disk, they pass the job off to a helper thread and asynchronously complete the task once the disk access completes.
+                            </p>
+                            <p>
+                                Historically, from a software engineering perspective, we've kept these threads from blocking by just being careful -- by trying to write the code correctly, by having reviewers verify new changes don't introduce blocking, and finally by QA (and regular usage by developers) noticing when things get janky. This approach hasn't scaled well with the size of the project, as demonstrated recently by the recent <a href="http://neugierig.org/software/chromium/notes/2010/11/plugin-loading-regression.html">regression where we accidentally started querying plugin metadata on the UI thread</a>.
+                            </p>
+                            <p>
+                                I don't blame the author of that bug; the consequences of a function call really can be hard to keep track of. Some simple operation you might want to perform that doesn't involve the disk might end up touching it anyway; for example, computing a checksum may cause us to lazy-init our crypto library which then attempts to initialize a SQLite database.
+                            </p>
+                            <p>
+                                To help improve this state of affairs, recently I introduced a simple bit of per-thread state -- a boolean -- that declares whether it's OK to block the current thread. Lower-level functions that do block (by making calls like <code>fopen</code> or <code>dlopen</code>) can assert that the current thread is allowed to make the call.
+                            </p>
+                            <p>
+                                So far this assertion has dug up <a href="http://code.google.com/p/chromium/issues/detail?id=60211">over 30 other places</a> where we're unintentionally blocking on the disk. One good example is that when loading a <code>file:///</code> URL for some reason we <code>stat()</code> the file on the wrong thread (despite doing opening and reading of files on a background thread). There are also plenty of not so useful examples, like in unit tests where we don't much care about jank; in those, I suppress the assertion.
+                            </p>
+                            <p>
+                                For the remainder of this post I'm going to meander around discussing various aspects of this problem.
+                            </p>
+                            <p>
+                                <em>API surface</em>. Above I glossed over how we can tell whether a lower-level function touches the disk. The short answer is that we can't. Especially on platforms where we don't have source code, you can never know if a hypothetical <code>GetDisplayDimensions()</code> call counts as a blocking one or not. In practice there is a lot of lower-level API that deals with files where we already had wrapper classes in place due to making the code work on multiple operating systems, so we can insert checks there. Hopefully the "you must be careful" problem of adding checks is smaller than the "you must be careful" problem it's trying to solve! But I also know this approach misses a lot; I recall one bug we've had is that when you drag a downloaded file off the "shelf" to your desktop on Windows, the resulting file copy will actually block the thread involved in the drag and drop.
+                            </p>
+                            <p>
+                                <em>Dynamic state</em>. This approach relies on a run-time check of a thread-local variable. This means that we only discover instances of the problem when a test exercises the problematic codepath or a developer hits an assertion while looking at something else (all of this code is compiled out of the builds we release to users). On the positive side, it means that no matter how you end up blocking -- virtual method call, function pointer -- we still catch you. And it gives us an escape hatch so we can turn the checks on while incrementally annotating code that we know is wrong -- you can just temporarily flip the "this thread is OK to make disk accesses" bit and file a bug on a problematic call.
+                            </p>
+                            <p>
+                                <em>Programming language support</em>. Conceptually though, you'd think the compiler could check this correctness property at compile time. In Haskell, you annotate a function as to whether it has effects at all (including disk accesses), so you could imagine jiggering up some sort of disk-access monad. With that perspective I observe the underlying problem that from a program's perspective, slow operations behave almost like an effect and a lot of the craft of programming is about encapsulating an effect locally.
+                            </p>
+                            <p>
+                                <em>Mock interfaces</em>. In another (unrelated) project I've done a consistent job of creating mock interfaces for disk accesses to make testing easier and I've found that needing to pass in an extra <code>DiskInterface*</code> to a function is a great way of the compiler helping you know whether a given call may touch the disk or not. (It also means the tests are blazing fast -- they only touch memory.) But see above about API surface; my other project is primarily computational so it's easy to enumerate the interesting calls.
+                            </p>
+                            <p>
+                                <em>More than just the disk</em>. When worrying about blocking, you're normally concerned with disk access, which is glacially slow when compared to most other operations a computer can do. But there are many ways an app can block. One that affected many people I know is that <a href="http://brad.livejournal.com/2008/03/24/">Firefox used to do blocking DNS resolution from the UI thread</a> under some circumstances (which happened to be the standard setup within the Google corporate network). DNS is generally <a href="http://www.quora.com/What-are-the-numbers-that-every-computer-engineer-should-know-according-to-Jeff-Dean">significantly slower than the disk</a>. At the other extreme, even exclusively computational operations can consume enough time to be perceivable, though it's relatively rare.
+                            </p>
+                            <p>
+                                <em>You can't really win</em>. In a world with virtual memory, you never know whether a given page you're about to access has been swapped out. (Well, I mean, you can query for it, but there's not a lot you can do when the upcoming page of code is swapped out.) That means sometimes you will pause.
+                            </p>
+                            <p>
+                                But that doesn't mean you should give up but rather that you should improve what you can. The best tool we currently have for end-to-end analysis is our jankometer (I keep intending to write it up, but briefly it checks whether a given iteration through the event loop takes more than an absolute amount of time -- if you're running Chrome you can see its logged values by visiting <code>about:histograms/Chrome</code> and looking at the entries with <code>Msg</code> in their names). In Chrome's case, <a href="http://code.google.com/p/chromium/issues/list?can=2&amp;q=label:Jank">many bugs tagged "jank"</a> remain.
+                            </p>
+                        </blockquote>
+                    </div>
+                    <p class="bookmark-source">
+                        Source: <a href="http://neugierig.org/software/chromium/notes/2010/11/thread-restrictions.html">http://neugierig.org/software/chromium/notes/2010/11/thread-restrictions.html</a>
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>
