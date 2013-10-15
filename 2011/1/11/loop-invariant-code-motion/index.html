@@ -117,25 +117,25 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
                                 Looking at the preamble, it starts by making sure that it is not currently being profiled, the guard on <tt>i5</tt>, and that the function object have not been changed since the trace was made, the guard on <tt>p3</tt>. Somewhat intermixed with that, the integer variable <tt>n</tt> is unboxed, by making sure <tt>p11</tt> points to an integer object and reading out the integer value from that object. These operations are not needed in the loop (and have been removed from it) as emitting the same guards again would be redundant and <tt>n</tt> becomes a virtual before the end of the preamble.
                             </p>
                             <pre>
-        guard_value(i5, 0, descr=&lt;Guard6&gt;) 
-        guard_nonnull_class(p11, ConstClass(W_IntObject), descr=&lt;Guard7&gt;) 
-        guard_value(p3, ConstPtr(ptr15), descr=&lt;Guard8&gt;) 
+        guard_value(i5, 0, descr=&lt;Guard6&gt;)
+        guard_nonnull_class(p11, ConstClass(W_IntObject), descr=&lt;Guard7&gt;)
+        guard_value(p3, ConstPtr(ptr15), descr=&lt;Guard8&gt;)
         i16 = getfield_gc_pure(p11, descr=&lt;W_IntObject.inst_intval&gt;)
 </pre>Next comes a test and a guard implementing the while statement followed by the decrementing of <tt>n</tt>. These operation appear both in the preamble and in the loop
                             <pre>
         i18 = int_gt(i16, 0)
-        guard_true(i18, descr=&lt;Guard9&gt;) 
+        guard_true(i18, descr=&lt;Guard9&gt;)
         i20 = int_sub(i16, 1)
 </pre>After that the two floating point variables <tt>x</tt> and <tt>y</tt> are unboxed. Again this is only needed in the preamble. Note how the unboxed value of <tt>y</tt>, called <tt>f23</tt>, is passed unchanged from the preamble to the loop in arguments of the jump to allow it to be reused. It will not become a virtual since it is never changed within the loop.
                             <pre>
-        guard_nonnull_class(p12, 17652552, descr=&lt;Guard10&gt;) 
-        guard_nonnull_class(p10, 17652552, descr=&lt;Guard11&gt;) 
+        guard_nonnull_class(p12, 17652552, descr=&lt;Guard10&gt;)
+        guard_nonnull_class(p10, 17652552, descr=&lt;Guard11&gt;)
         f23 = getfield_gc_pure(p10, descr=&lt;W_FloatObject.inst_floatval&gt;)
         f24 = getfield_gc_pure(p12, descr=&lt;W_FloatObject.inst_floatval&gt;)
 </pre>Following that is the actual calculations performed in the loop in form of floating point operations (since the function was called with a float argument). These appear in both the loop and the preamble.
                             <pre>
         i26 = float_eq(f24, 0.000000)
-        guard_false(i26, descr=&lt;Guard12&gt;) 
+        guard_false(i26, descr=&lt;Guard12&gt;)
         f27 = float_truediv(f23, f24)
         f28 = float_add(f24, f27)
         f30 = float_truediv(f28, 2.000000)
@@ -145,7 +145,7 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
         i34 = int_sub(i32, 2)
         setfield_raw(32479328, i34, descr=&lt;pypysig_long_struct.c_value&gt;)
         i36 = int_lt(i34, 0)
-        guard_false(i36, descr=&lt;Guard13&gt;) 
+        guard_false(i36, descr=&lt;Guard13&gt;)
         jump(p0, p1, p2, p4, p10, i20, f30, f23, descr=&lt;Loop0&gt;)
 </pre>
                             <h2>
@@ -168,10 +168,10 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
     i7 = force_token()
     setfield_gc(p1, i7, descr=&lt;PyFrame.vable_token&gt;)
     call_may_force(ConstClass(action_dispatcher), p0, p1, descr=&lt;VoidCallDescr&gt;)
-    guard_not_forced(, descr=&lt;Guard19&gt;) 
-    guard_no_exception(, descr=&lt;Guard20&gt;) 
+    guard_not_forced(, descr=&lt;Guard19&gt;)
+    guard_no_exception(, descr=&lt;Guard20&gt;)
 
-    guard_nonnull_class(p4, 17674024, descr=&lt;Guard21&gt;) 
+    guard_nonnull_class(p4, 17674024, descr=&lt;Guard21&gt;)
     f52 = getfield_gc_pure(p4, descr=&lt;W_FloatObject.inst_floatval&gt;)
     jump(p1, p0, p2, p3, p4, i38, f53, f52, descr=&lt;Loop0&gt;)
 </pre>Here the first paragraph comes from the traced bridge and the second is what remains of the short preamble after optimization. The box <tt>p4</tt> is not a virtual (it contains a pointer to <tt>y</tt> which is never changed), and it is only virtuals that the bridge inherit from it's parents. This is why the last two operations currently cannot be removed.
@@ -191,7 +191,7 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
                                 Consider the case when <tt>sqrt</tt> is first called with a float argument (but with <tt>n</tt> small enough not to generate the bridge). Then the trace shown above will be generated. If <tt>sqrt</tt> is now called with an int argument, the guard in the preamble testing that the type of the input object is float will fail:
                             </p>
                             <pre>
-        guard_nonnull_class(p12, 17652552, descr=&lt;Guard10&gt;) 
+        guard_nonnull_class(p12, 17652552, descr=&lt;Guard10&gt;)
 </pre>It will fail every iteration, so soon enough a bridge will be generated from this guard in the preamble. This guard will end with a jump to the same loop, and the optimizer will try to inline the short preamble at the end of it. This will however fail since now there are two guards on <tt>p12</tt>. One that makes sure it is an int and and one that makes sure it is a float. The optimizer will detect that the second guard will always fail and mark the bridge as invalid. Invalid loops are not passed on to the backend for compilation.
                             <p>
                                 If a loop is detected to be invalid while inlining the short preamble, the metainterpreter will continue to trace for yet another iteration of the loop. This new trace can be compiled as above and will produce a new loop with a new preamble that are now specialized for int arguments instead of float arguments. The bridge that previously became invalid will now be tried again. This time inlining the short preamble of the new loop instead. This will produce a set of traces connected like this
@@ -481,7 +481,7 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
                             </h2>Even though we are seeing speedups in a variety of different small benchmarks, more complicated examples are not affected much by these optimizations. It might partly be because larger examples have longer and more complicated loops, and thus allowing optimizations to operate across loop boundary will have a smaller relative effect. Another problem is that with more complicated examples there will be more bridges, and bridges are currently not handled very well (most of the time all virtuals are forced at the end of the bridge as explained above). But moving those forcings into the mini bridges should fix that.
                             <div>
                                 <img width="1" height="1" src="https://blogger.googleusercontent.com/tracker/3971202189709462152-1998392217676829154?l=morepypy.blogspot.com" alt="">
-                            </div><img src="http://feeds.feedburner.com/~r/PyPyStatusBlog/~4/yiNcn_7_ang" height="1" width="1">
+                            </div>
                         </blockquote>
                     </div>
                     <p class="bookmark-source">
