@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Content search on a budget using Tesseract and Solr
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta name="description" content="Automating bulk OCR and full-text search using Tesseract and Solr">
+        <meta http-equiv="last-modified" content="Mon, 17 Mar 2014 20:03:00 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2014-03-17T20:03:00.073141+00:00">
+                    <meta itemprop="dateModified" content="2014-03-17T20:03:00.073141+00:00"><time class="date" itemprop="datePublished" datetime="2014-03-17T20:03:00.073141+00:00">Mar 17</time>
+                    <h2 itemprop="title">
+                        Content search on a budget
+                    </h2>
+                </header>
+                <p class="summary">
+                    Automatic bulk OCR and full-text search for digital collections using Tesseract and Solr
+                </p>
+                <div class="body" itemprop="articleBody">
+                    <p>
+                        Digitizing printed material has become an industrial process for large collections. Modern scanning equipment makes it easy to process millions of pages and concerted engineering effort has even produced options at the high-end for <a href="http://www.flickr.com/photos/acdha/7404633950/in/set-72157628000441127/">fragile rare items</a> while innovative open-source projects like <a href="http://projectgado.org/our-technology/">Project Gado</a> make continual progress reducing the cost of reliable, batch scanning to fit almost any organization's budget.
+                    </p>
+                    <p>
+                        Such efficiencies are great for our goals of preserving history and making it available but they start making painfully obvious the degree to which digitization capacity outstrips our ability to create metadata. This is a big problem because most of the ways we find information involves searching for text and a large TIFF file is effectively invisible to a full-text search engine. The classic library solution to this challenge has been cataloging but the required labor is well beyond most budgets and runs into philosophical challenges when users want to search on something which wasn't considered noteworthy at the time an item was cataloged.
+                    </p>
+                    <p>
+                        In the spirit of finding <a href="http://www.artima.com/intv/simplest.html">the simplest thing that could possibly work</a> I've been experimenting with a completely automated approach to perform <a href="http://en.wikipedia.org/wiki/OCR" title="Optical Character Recognition">OCR</a> on new items and offering combined full-text search over both the available metadata and OCR text, as can be seen in this example:
+                    </p>
+                    <figure>
+                        <img src="Screenshot%202014-03-17%2018.26.21.png">
+                        <figcaption>
+                            <a href="http://www.wdl.org/en/search/?q=whales&amp;qla=en">Searching for “whales” on the World Digital Library</a>
+                        </figcaption>
+                    </figure>
+                    <h3>
+                        The Process
+                    </h3>
+                    <h4>
+                        Generating OCR text
+                    </h4>
+                    <p>
+                        As we receive new items, anything which is matches our criteria (currently books, journals and newspapers created after 1800 — see below) is automatically placed into a <a href="http://www.celeryproject.org/">Celery task queue</a> as a low-priority task. Workers on multiple servers accept OCR tasks from the queue and process the master image using <a href="https://code.google.com/p/tesseract-ocr/">Tesseract</a> using a simple shell command to generate text and HTML with embedded <a href="http://en.wikipedia.org/wiki/HOCR">hOCR metadata</a>.
+                    </p>
+                    <p>
+                        Once we have the OCR text, it's transformed to solve two different needs: a full-text search engine like <a href="https://lucene.apache.org/solr/">Apache Solr</a> or <a href="http://www.elasticsearch.org/">ElasticSearch</a> does not understand HTML so we save the pure-text output to be indexed. Because we also want to be able to easily highlight specific words within an image on a web-page, the task also <a href="https://gist.github.com/acdha/9610005">processes hOCR in a word coordinates JSON file</a> for ease of access later.
+                    </p>
+                    <h4>
+                        Indexing the text for search
+                    </h4>
+                    <p>
+                        Most people expect a combined search these days where relevant terms are selected from both descriptive metadata and the text contents. Simply combining all of the text into a single document to be indexed is unsuitable, however, because we want to be able to offer the ability to only search metadata in certain cases and we want to be able to return specific pages rather than telling someone to visually scan through a 700 page book. As a practical matter, the default document size limits in some search engines would also be smaller than the larger books.
+                    </p>
+                    <p>
+                        The answer to all of these problems is Solr's <a href="https://wiki.apache.org/solr/FieldCollapsing">Field Collapsing</a> (the ElasticSearch team is <a href="https://github.com/elasticsearch/elasticsearch/issues/256">working on a similar feature</a>). When you perform a query normally Solr builds a flat list of relevant documents but with field collapsing, Solr will group all of the documents on a specified field (item ID in our case), compute the aggregate score for each <em>group</em> of documents and use that to return a list of groups with a few documents in each group. This means that we can store the metadata and each page individually in the search index, group them for searching and still know exactly where each specific hit was found.
+                    </p>
+                    <aside>
+                        I have released an experimental <a href="http://haystacksearch.org">django-haystack</a> <a href="https://gist.github.com/acdha/3750774">Solr grouped search backend</a> which adds support for Field Collapsing.
+                    </aside>
+                    <h4>
+                        Highlighting Results
+                    </h4>
+                    <p>
+                        Search results are returned as simple HTML with the embedded microdata we'll need to provide the original image segments. Here's what happens when someone <a href="http://www.wdl.org/en/search/?q=guine%C3%A9&amp;qla=fr">searches for guineé</a>:
+                    </p>
+                    <ol>
+                        <li>Solr performs its normal <a href="https://wiki.apache.org/solr/LanguageAnalysis">language analysis</a> and selects relevant documents
+                        </li>
+                        <li>All of the documents are grouped by item ID and each group is ranked for relevance
+                        </li>
+                        <li>Solr <a href="http://wiki.apache.org/solr/HighlightingParameters">highlights</a> the matched terms in the response
+                        </li>
+                        <li>The web site formats all of the results into an HTML document and adds some metadata indicating the type of document which contained each match so it can be enhanced by JavaScript later
+                        </li>
+                    </ol>
+                    <figure>
+                        <img src="Screenshot%202014-03-17%2019.20.06.png">
+                        <figcaption>
+                            The raw search results before JavaScript runs
+                        </figcaption>
+                    </figure>
+                    <p>
+                        At this point we have quickly returned search results and can link directly to individual pages but we're showing frequently ugly OCR text directly and not providing as much context as we'd like. The next step is to replace that raw text with an image slice from the scanned page:
+                    </p>
+                    <ol>
+                        <li>JavaScript looks for highlighted results from OCR text and uses the embedded microdata to determine the source volume and page
+                        </li>
+                        <li>An <a href="http://en.wikipedia.org/wiki/XMLHttpRequest" title="XMLHttpRequest - Wikipedia, the free encyclopedia">XHR request</a> is made to retrieve the word coordinates for every word on each returned page
+                        </li>
+                        <li>The word coordinate list is scanned for each highlighted word and the coordinates are selected. Since we often find words in multiple places on the same page and we want to display an easily readable section of text, the list of word coordinates is coalesced starting from the top of the page and no more than the first third of the page will be returned. For this display, we always use the full width of the page but the same process could be used to generate smaller slices if desired.
+                        </li>
+                        <li>A separate request is made to load the relevant image slice. When the image has loaded, we replace the raw OCR text with the image. This way the raw text is visible for as long as it takes to load the image so we avoid showing empty areas until everything has transferred.
+                        </li>
+                        <li>Finally, a partially-transparent overlay is displayed over the image for each word coordinate to highlight the matches (see e.g. <a href="http://css-tricks.com/text-blocks-over-image/">css-tricks.com</a> if you're not familiar with this form of CSS positioning). Since the OCRed word coordinates aren't consistently tightly cropped around the letters in the word a minor <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow">CSS box-shadow</a> is used to make the edges softer and more like a highlighter.
+                        </li>
+                    </ol>
+                    <h4>
+                        Notes
+                    </h4>
+                    <ul>
+                        <li>From a workflow perspective, I highly recommend recording the source of your OCR text and whether it's been reviewed. Since this is a fully automated process it is extremely handy to be able to reprocess items in the future if your software improves without accidentally clobbering any items which have been hand-corrected by humans.
+                        </li>
+                        <li>The word coordinates are pixel level coordinates based on the input file but our requests are made using calculated percentages since it's often the case that the scans are much higher resolution than we would want to display in a web-browser and our users wouldn't want to wait for a 600-dpi image to download in any case
+                        </li>
+                        <li>You might be wondering why all of this word is performed on the client side rather than having the server return highlighted images. In addition to reducing server load, this approach is friendlier for caches because a given image segment can be reused for multiple words (rounding the coordinates improves the cache hit ratio significantly) and both the image and word coordinates can thus be cached by <a href="http://en.wikipedia.org/wiki/Content_delivery_network" title="Content delivery network - Wikipedia, the free encyclopedia">CDN edge servers</a> rather than requiring a full round-trip back to the server.<br>
+                            One common example of the cache-ability benefit is when you <a href="http://www.wdl.org/en/item/7309/view/1/491/#q=whales">open a result and start reading it</a>: in the viewer, we display full page images rather than the trimmed slices so we must fetch new images but those are likely to be cached because they haven't been customized with the search text and we can reuse the locally-cached word coordinates to immediately display the highlighting. If you change your search text within an item, we can again immediately update the display while the revised page list is retrieved.
+                        </li>
+                    </ul>
+                    <h3>
+                        Challenges &amp; Future Directions
+                    </h3>
+                    <p>
+                        This was supposed to be the simplest thing which could possibly work and it turned out not to be that simple. As you might imagine, this leaves a number of open questions for where to go next:
+                    </p>
+                    <ul>
+                        <li>OCR results vary considerably based on the quality of the input image. Accuracy can be improved considerably by preprocessing the image to remove borders, noise or use a more sophisticated algorithm to convert a full-color scan into the black-and-white image which Tesseract operates on. The trick is either coming up with good presets for your data, perhaps integrated with an image processing tool like <a href="http://scantailor.sourceforge.net/">ScanTailor</a>, or developing smarter code which can select filters based on the characteristics of the image.
+                        </li>
+                        <li>For older items, the OCR process is complicated by the condition of the materials, more primitive printing technology and stylistic choices like the <a href="http://en.wikipedia.org/wiki/Long_s">long s (ſ)</a> or ligatures which are no longer in common usage and thus not well supported by common OCR programs. One of my future goals is looking into the tools produced by the <a href="http://emop.tamu.edu/">Early Modern OCR Project</a> and seeing whether there's a production-ready path for this.
+                        </li>
+                        <li>It would be interesting combine the results of OCR with my earlier <a href="http://chris.improbable.org/2013/8/31/extracting-images-from-scanned-pages/" title="Extracting images from scanned book pages">figure extraction project</a> for innovative displays like the <a href="http://mechanicalcurator.tumblr.com/">Mechanical Curator</a> or, with more work, trying to extract full figures with captions.
+                        </li>
+                        <li>Finally, there's considerable room for integrating crowd-sourcing approaches like the direct text correction as epitomized by the <a href="http://trove.nla.gov.au/newspaper">National Library of Australia's wonderful Trove project</a> and promising improvements on that concept like the UMD-MITH's <a href="http://mith.umd.edu/research/project/active-ocr/" title="Active OCR">ActiveOCR</a> project.<br>
+                            <br>
+                            This seems like an area for research which any organization with large digitized collections should be supporting, particularly with an eye towards easier reuse. <a href="http://inkdroid.org">Ed Summers</a> and I have idly discussed the idea for a generic web application which would display hOCR with the corresponding images for correction with all of the data stored somewhere like Github for full change tracking and review. It seems like something along those lines would be particularly valuable as a public service to avoid the expensive of everyone reinventing large parts of this process customized for their particular workflow.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+            <nav id="post-nav">
+                <a class="previous" href="/2013/10/4/dear-eff/">Dear EFF: please don't pick the wrong fight</a>
+            </nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script> <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer" class="nocontent">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script> <script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>
