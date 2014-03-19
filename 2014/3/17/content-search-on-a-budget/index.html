@@ -11,7 +11,7 @@
             <script src="/static/js/html5shiv.js"></script>
         <![endif]-->
         <meta name="description" content="Automating bulk OCR and full-text search using Tesseract and Solr">
-        <meta http-equiv="last-modified" content="Mon, 17 Mar 2014 20:03:00 GMT">
+        <meta http-equiv="last-modified" content="Wed, 19 Mar 2014 00:22:46 GMT">
         <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
         <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
         <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
@@ -73,7 +73,7 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
             <article class="post">
                 <header>
                     <meta itemprop="dateCreated" content="2014-03-17T20:03:00.073141+00:00">
-                    <meta itemprop="dateModified" content="2014-03-17T20:03:00.073141+00:00"><time class="date" itemprop="datePublished" datetime="2014-03-17T20:03:00.073141+00:00">Mar 17</time>
+                    <meta itemprop="dateModified" content="2014-03-19T00:22:46.608059+00:00"><time class="date" itemprop="datePublished" datetime="2014-03-19T00:22:46.608059+00:00">Mar 17</time>
                     <h2 itemprop="title">
                         Content search on a budget
                     </h2>
@@ -97,10 +97,10 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
                             <a href="http://www.wdl.org/en/search/?q=whales&amp;qla=en">Searching for “whales” on the World Digital Library</a>
                         </figcaption>
                     </figure>
-                    <h3>
+                    <h3 id="process-overview">
                         The Process
                     </h3>
-                    <h4>
+                    <h4 id="generating-ocr">
                         Generating OCR text
                     </h4>
                     <p>
@@ -109,23 +109,28 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
                     <p>
                         Once we have the OCR text, it's transformed to solve two different needs: a full-text search engine like <a href="https://lucene.apache.org/solr/">Apache Solr</a> or <a href="http://www.elasticsearch.org/">ElasticSearch</a> works with the pure text output but because we want to be able to highlight specific words the task also <a href="https://gist.github.com/acdha/9610005">converts the hOCR into a word coordinates JSON file</a> with the pixel coordinates for every word on the page.
                     </p>
-                    <h4>
+                    <h4 id="search-indexing">
                         Indexing the text for search
                     </h4>
                     <p>
-                        Most people expect a combined search these days where relevant terms are selected from both descriptive metadata and the text contents. Simply combining all of the text into a single document to be indexed is unsuitable, however, because we want to be able to offer the ability to only search metadata in certain cases and we want to be able to return specific pages rather than telling someone to visually scan through a 700 page book. As a practical matter, the default document size limits in some search engines would also be smaller than the larger books.
+                        Most people expect a combined search these days where relevant terms are selected from both descriptive metadata and the text contents. Simply combining all of the text into a single document to be indexed is unsuitable, however, because we want to be able to offer the ability to only search metadata in certain cases and we want to be able to return specific pages rather than telling someone to visually scan through a 700 page book. Unfortunately, this approach is incompatible with the normal way search engines determine the most relevant results for a query:
                     </p>
+                    <aside style="margin: .3em 1em; float: right; width: 20em;">
+                        <h5 style="margin: 0">
+                            Background: how search engines work
+                        </h5>Most search engines use an <a href="http://en.wikipedia.org/wiki/Inverted_index" title="Inverted index - Wikipedia, the free encyclopedia">inverted index</a>, which is essentially a list of words and the documents which contain them. When you search for “whales”, the search engine simply looks for that entry in the index and retrieves the document list. The search engine next sorts the results by calculating a relevancy score for each document (see the <a href="http://lucene.apache.org/core/3_5_0/scoring.html" title="Apache Lucene - Scoring">Lucene scoring guide</a> for the exact details about how <a href="http://en.wikipedia.org/wiki/Tf%E2%80%93idf" title="tf–idf - Wikipedia, the free encyclopedia">TD-IDF</a> works) and returns the top scores first.
+                    </aside>
                     <p>
-                        The answer to all of these problems is Solr's <a href="https://wiki.apache.org/solr/FieldCollapsing">Field Collapsing</a> (the ElasticSearch team is <a href="https://github.com/elasticsearch/elasticsearch/issues/256">working on a similar feature</a>). When you perform a query normally Solr builds a flat list of relevant documents but with field collapsing, Solr will group all of the documents on a specified field (item ID in our case), compute the aggregate score for each <em>group</em> of documents and use that to return a list of groups with a few documents in each group. This means that we can store the metadata and each page individually in the search index, group them for searching and still know exactly where each specific hit was found.
+                        Storing each page separately means that the search score will be determined independently rather than for the entire item. This would prevent books from scoring highly unless all of the words were mentioned on a single page and, far worse, many queries would return pages from a single book mixed throughout the results based on their individual scores! The solution this final problem is a technique which Solr calls <a href="https://wiki.apache.org/solr/FieldCollapsing">Field Collapsing</a> (the ElasticSearch team is <a href="https://github.com/elasticsearch/elasticsearch/issues/256">working on a similar feature</a>). With field collapsing enabled, Solr will first group all of the matching documents using a specified fieldand then compute the scores for each combined <em>group</em>. This means that we can group our results by the item ID and receive a list of groups (i.e. items) with one or more documents (i.e. pages or metadata) which we can use to build exact links into a large book.
                     </p>
                     <aside>
-                        I have released an experimental <a href="http://haystacksearch.org">django-haystack</a> <a href="https://gist.github.com/acdha/3750774">Solr grouped search backend</a> which adds support for Field Collapsing.
+                        (I have released an experimental <a href="http://haystacksearch.org">django-haystack</a> <a href="https://gist.github.com/acdha/3750774">Solr grouped search backend</a> which adds support for Field Collapsing.)
                     </aside>
-                    <h4>
+                    <h4 id="highlighting-results">
                         Highlighting Results
                     </h4>
                     <p>
-                        Search results are returned as simple HTML with the embedded microdata we'll need to provide the original image segments. Here's what happens when someone <a href="http://www.wdl.org/en/search/?q=guine%C3%A9&amp;qla=fr">searches for guineé</a>:
+                        Search results are returned as simple HTML with the embedded data which we'll need to provide the original image segments. Here's what happens when someone <a href="http://www.wdl.org/en/search/?q=guine%C3%A9&amp;qla=fr">searches for guineé</a>:
                     </p>
                     <ol>
                         <li>Solr performs its normal <a href="https://wiki.apache.org/solr/LanguageAnalysis">language analysis</a> and selects relevant documents
@@ -158,7 +163,7 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
                         <li>Finally, a partially-transparent overlay is displayed over the image for each word coordinate to highlight the matches (see e.g. <a href="http://css-tricks.com/text-blocks-over-image/">css-tricks.com</a> if you're not familiar with this form of CSS positioning). Since the OCRed word coordinates aren't consistently tightly cropped around the letters in the word a minor <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow">CSS box-shadow</a> is used to make the edges softer and more like a highlighter.
                         </li>
                     </ol>
-                    <h4>
+                    <h4 id="notes">
                         Notes
                     </h4>
                     <ul>
@@ -170,7 +175,7 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
                             One common example of the cache-ability benefit is when you <a href="http://www.wdl.org/en/item/7309/view/1/491/#q=whales">open a result and start reading it</a>: in the viewer, we display full page images rather than the trimmed slices so we must fetch new images but those are likely to be cached because they haven't been customized with the search text and we can reuse the locally-cached word coordinates to immediately display the highlighting. If you change your search text within an item, we can again immediately update the display while the revised page list is retrieved.
                         </li>
                     </ul>
-                    <h3>
+                    <h3 id="future-directions">
                         Challenges &amp; Future Directions
                     </h3>
                     <p>
