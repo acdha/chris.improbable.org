@@ -8,7 +8,125 @@
     <name>Chris Adams</name>
     <email>chris@improbable.org</email>
   </author>
-  <updated>2013-10-24T13:44:00+00:00</updated>
+  <updated>2014-03-19T00:22:46.608059+00:00</updated>
+  <entry>
+    <title>Content search on a budget</title>
+    <id>http://chris.improbable.org/2014/3/17/content-search-on-a-budget/</id>
+    <link href="http://chris.improbable.org/2014/3/17/content-search-on-a-budget/"/>
+    <summary>Automating bulk OCR and full-text search using Tesseract and Solr</summary>
+    <content type="html">&lt;p&gt;
+                        Digitizing printed material has become an industrial process for large collections. Modern scanning equipment makes it easy to process millions of pages and concerted engineering effort has even produced options at the high-end for &lt;a href="http://www.flickr.com/photos/acdha/7404633950/in/set-72157628000441127/"&gt;fragile rare items&lt;/a&gt; while innovative open-source projects like &lt;a href="http://projectgado.org/our-technology/"&gt;Project Gado&lt;/a&gt; make continual progress reducing the cost of reliable, batch scanning to fit almost any organization's budget.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        Such efficiencies are great for our goals of preserving history and making it available but they start making painfully obvious the degree to which digitization capacity outstrips our ability to create metadata. This is a big problem because most of the ways we find information involves searching for text and a large TIFF file is effectively invisible to a full-text search engine. The classic library solution to this challenge has been cataloging but the required labor is well beyond most budgets and runs into philosophical challenges when users want to search on something which wasn't considered noteworthy at the time an item was cataloged.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        In the spirit of finding &lt;a href="http://www.artima.com/intv/simplest.html"&gt;the simplest thing that could possibly work&lt;/a&gt; I've been experimenting with a completely automated approach to perform &lt;a href="http://en.wikipedia.org/wiki/OCR" title="Optical Character Recognition"&gt;OCR&lt;/a&gt; on new items and offering combined full-text search over both the available metadata and OCR text, as can be seen in this example:
+                    &lt;/p&gt;
+                    &lt;figure&gt;
+                        &lt;img src="Screenshot%202014-03-17%2018.26.21.png"&gt;
+                        &lt;figcaption&gt;
+                            &lt;a href="http://www.wdl.org/en/search/?q=whales&amp;amp;qla=en"&gt;Searching for “whales” on the World Digital Library&lt;/a&gt;
+                        &lt;/figcaption&gt;
+                    &lt;/figure&gt;
+                    &lt;h3 id="process-overview"&gt;
+                        The Process
+                    &lt;/h3&gt;
+                    &lt;h4 id="generating-ocr"&gt;
+                        Generating OCR text
+                    &lt;/h4&gt;
+                    &lt;p&gt;
+                        As we receive new items, anything which matches our criteria (books, journals and newspapers created after 1800 — see below) is automatically placed into a &lt;a href="http://www.celeryproject.org/"&gt;Celery task queue&lt;/a&gt; as a low-priority task. Workers on multiple servers accept OCR tasks from the queue and process the master image using &lt;a href="https://code.google.com/p/tesseract-ocr/"&gt;Tesseract&lt;/a&gt; using a simple shell command to generate text and HTML with embedded &lt;a href="http://en.wikipedia.org/wiki/HOCR"&gt;hOCR metadata&lt;/a&gt;.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        Once we have the OCR text, it's transformed to solve two different needs: a full-text search engine like &lt;a href="https://lucene.apache.org/solr/"&gt;Apache Solr&lt;/a&gt; or &lt;a href="http://www.elasticsearch.org/"&gt;ElasticSearch&lt;/a&gt; works with the pure text output but because we want to be able to highlight specific words the task also &lt;a href="https://gist.github.com/acdha/9610005"&gt;converts the hOCR into a word coordinates JSON file&lt;/a&gt; with the pixel coordinates for every word on the page.
+                    &lt;/p&gt;
+                    &lt;h4 id="search-indexing"&gt;
+                        Indexing the text for search
+                    &lt;/h4&gt;
+                    &lt;p&gt;
+                        Most people expect a combined search these days where relevant terms are selected from both descriptive metadata and the text contents. Simply combining all of the text into a single document to be indexed is unsuitable, however, because we want to be able to offer the ability to only search metadata in certain cases and we want to be able to return specific pages rather than telling someone to visually scan through a 700 page book. Unfortunately, this approach is incompatible with the normal way search engines determine the most relevant results for a query:
+                    &lt;/p&gt;
+                    &lt;aside style="margin: .3em 1em; float: right; width: 20em;"&gt;
+                        &lt;h5 style="margin: 0"&gt;
+                            Background: how search engines work
+                        &lt;/h5&gt;Most search engines use an &lt;a href="http://en.wikipedia.org/wiki/Inverted_index" title="Inverted index - Wikipedia, the free encyclopedia"&gt;inverted index&lt;/a&gt;, which is essentially a list of words and the documents which contain them. When you search for “whales”, the search engine simply looks for that entry in the index and retrieves the document list. The search engine next sorts the results by calculating a relevancy score for each document (see the &lt;a href="http://lucene.apache.org/core/3_5_0/scoring.html" title="Apache Lucene - Scoring"&gt;Lucene scoring guide&lt;/a&gt; for the exact details about how &lt;a href="http://en.wikipedia.org/wiki/Tf%E2%80%93idf" title="tf–idf - Wikipedia, the free encyclopedia"&gt;TD-IDF&lt;/a&gt; works) and returns the top scores first.
+                    &lt;/aside&gt;
+                    &lt;p&gt;
+                        Storing each page separately means that the search score will be determined independently rather than for the entire item. This would prevent books from scoring highly unless all of the words were mentioned on a single page and, far worse, many queries would return pages from a single book mixed throughout the results based on their individual scores! The solution this final problem is a technique which Solr calls &lt;a href="https://wiki.apache.org/solr/FieldCollapsing"&gt;Field Collapsing&lt;/a&gt; (the ElasticSearch team is &lt;a href="https://github.com/elasticsearch/elasticsearch/issues/256"&gt;working on a similar feature&lt;/a&gt;). With field collapsing enabled, Solr will first group all of the matching documents using a specified fieldand then compute the scores for each combined &lt;em&gt;group&lt;/em&gt;. This means that we can group our results by the item ID and receive a list of groups (i.e. items) with one or more documents (i.e. pages or metadata) which we can use to build exact links into a large book.
+                    &lt;/p&gt;
+                    &lt;aside&gt;
+                        (I have released an experimental &lt;a href="http://haystacksearch.org"&gt;django-haystack&lt;/a&gt; &lt;a href="https://gist.github.com/acdha/3750774"&gt;Solr grouped search backend&lt;/a&gt; which adds support for Field Collapsing.)
+                    &lt;/aside&gt;
+                    &lt;h4 id="highlighting-results"&gt;
+                        Highlighting Results
+                    &lt;/h4&gt;
+                    &lt;p&gt;
+                        Search results are returned as simple HTML with the embedded data which we'll need to provide the original image segments. Here's what happens when someone &lt;a href="http://www.wdl.org/en/search/?q=guine%C3%A9&amp;amp;qla=fr"&gt;searches for guineé&lt;/a&gt;:
+                    &lt;/p&gt;
+                    &lt;ol&gt;
+                        &lt;li&gt;Solr performs its normal &lt;a href="https://wiki.apache.org/solr/LanguageAnalysis"&gt;language analysis&lt;/a&gt; and selects relevant documents
+                        &lt;/li&gt;
+                        &lt;li&gt;All of the documents are grouped by item ID and each group is ranked for relevance
+                        &lt;/li&gt;
+                        &lt;li&gt;Solr &lt;a href="http://wiki.apache.org/solr/HighlightingParameters"&gt;highlights&lt;/a&gt; the matched terms in the response
+                        &lt;/li&gt;
+                        &lt;li&gt;The web site formats all of the results into an HTML document and adds some metadata indicating the type of document which contained each match so it can be enhanced by JavaScript later
+                        &lt;/li&gt;
+                    &lt;/ol&gt;
+                    &lt;figure&gt;
+                        &lt;img src="Screenshot%202014-03-17%2019.20.06.png"&gt;
+                        &lt;figcaption&gt;
+                            The raw search results before JavaScript runs
+                        &lt;/figcaption&gt;
+                    &lt;/figure&gt;
+                    &lt;p&gt;
+                        At this point we have quickly returned search results and can link directly to individual pages but we're showing frequently ugly OCR text directly and not providing as much context as we'd like. The next step is to replace that raw text with an image slice from the scanned page:
+                    &lt;/p&gt;
+                    &lt;ol&gt;
+                        &lt;li&gt;JavaScript looks for highlighted results from OCR text and uses the embedded microdata to determine the source volume and page
+                        &lt;/li&gt;
+                        &lt;li&gt;An &lt;a href="http://en.wikipedia.org/wiki/XMLHttpRequest" title="XMLHttpRequest - Wikipedia, the free encyclopedia"&gt;XHR request&lt;/a&gt; is made to retrieve the word coordinates for every word on each returned page
+                        &lt;/li&gt;
+                        &lt;li&gt;The word coordinate list is scanned for each highlighted word and the coordinates are selected. Since we often find words in multiple places on the same page and we want to display an easily readable section of text, the list of word coordinates is coalesced starting from the top of the page and no more than the first third of the page will be returned. For this display, we always use the full width of the page but the same process could be used to generate smaller slices if desired.
+                        &lt;/li&gt;
+                        &lt;li&gt;A separate request is made to load the relevant image slice. When the image has loaded, we replace the raw OCR text with the image. This way the raw text is visible for as long as it takes to load the image so we avoid showing empty areas until everything has transferred.
+                        &lt;/li&gt;
+                        &lt;li&gt;Finally, a partially-transparent overlay is displayed over the image for each word coordinate to highlight the matches (see e.g. &lt;a href="http://css-tricks.com/text-blocks-over-image/"&gt;css-tricks.com&lt;/a&gt; if you're not familiar with this form of CSS positioning). Since the OCRed word coordinates aren't consistently tightly cropped around the letters in the word a minor &lt;a href="https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow"&gt;CSS box-shadow&lt;/a&gt; is used to make the edges softer and more like a highlighter.
+                        &lt;/li&gt;
+                    &lt;/ol&gt;
+                    &lt;h4 id="notes"&gt;
+                        Notes
+                    &lt;/h4&gt;
+                    &lt;ul&gt;
+                        &lt;li&gt;From a workflow perspective, I highly recommend recording the source of your OCR text and whether it's been reviewed. Since this is a fully automated process it is extremely handy to be able to reprocess items in the future if your software improves without accidentally clobbering any items which have been hand-corrected by humans.
+                        &lt;/li&gt;
+                        &lt;li&gt;The word coordinates are pixel level coordinates based on the input file but our requests are made using calculated percentages since it's often the case that the scans are much higher resolution than we would want to display in a web-browser and our users wouldn't want to wait for a 600-dpi image to download in any case
+                        &lt;/li&gt;
+                        &lt;li&gt;You might be wondering why all of this work is performed on the client side rather than having the server return highlighted images. In addition to reducing server load, this approach is friendlier for caches because a given image segment can be reused for multiple words (rounding the coordinates improves the cache hit ratio significantly) and both the image and word coordinates can thus be cached by &lt;a href="http://en.wikipedia.org/wiki/Content_delivery_network" title="Content delivery network - Wikipedia, the free encyclopedia"&gt;CDN edge servers&lt;/a&gt; rather than requiring a full round-trip back to the server.&lt;br&gt;
+                            One common example of the cache-ability benefit is when you &lt;a href="http://www.wdl.org/en/item/7309/view/1/491/#q=whales"&gt;open a result and start reading it&lt;/a&gt;: in the viewer, we display full page images rather than the trimmed slices so we must fetch new images but those are likely to be cached because they haven't been customized with the search text and we can reuse the locally-cached word coordinates to immediately display the highlighting. If you change your search text within an item, we can again immediately update the display while the revised page list is retrieved.
+                        &lt;/li&gt;
+                    &lt;/ul&gt;
+                    &lt;h3 id="future-directions"&gt;
+                        Challenges &amp;amp; Future Directions
+                    &lt;/h3&gt;
+                    &lt;p&gt;
+                        This was supposed to be the simplest thing which could possibly work and it turned out not to be that simple. As you might imagine, this leaves a number of open questions for where to go next:
+                    &lt;/p&gt;
+                    &lt;ul&gt;
+                        &lt;li&gt;OCR results vary considerably based on the quality of the input image. Accuracy can be improved considerably by preprocessing the image to remove borders, noise or use a more sophisticated algorithm to convert a full-color scan into the black-and-white image which Tesseract operates on. The trick is either coming up with good presets for your data, perhaps integrated with an image processing tool like &lt;a href="http://scantailor.sourceforge.net/"&gt;ScanTailor&lt;/a&gt;, or developing smarter code which can select filters based on the characteristics of the image.
+                        &lt;/li&gt;
+                        &lt;li&gt;For older items, the OCR process is complicated by the condition of the materials, more primitive printing technology and stylistic choices like the &lt;a href="http://en.wikipedia.org/wiki/Long_s"&gt;long s (ſ)&lt;/a&gt; or ligatures which are no longer in common usage and thus not well supported by common OCR programs. One of my future goals is looking into the tools produced by the &lt;a href="http://emop.tamu.edu/"&gt;Early Modern OCR Project&lt;/a&gt; and seeing whether there's a production-ready path for this.
+                        &lt;/li&gt;
+                        &lt;li&gt;It would be interesting combine the results of OCR with my earlier &lt;a href="http://chris.improbable.org/2013/8/31/extracting-images-from-scanned-pages/" title="Extracting images from scanned book pages"&gt;figure extraction project&lt;/a&gt; for innovative displays like the &lt;a href="http://mechanicalcurator.tumblr.com/"&gt;Mechanical Curator&lt;/a&gt; or, with more work, trying to extract full figures with captions.
+                        &lt;/li&gt;
+                        &lt;li&gt;Finally, there's considerable room for integrating crowd-sourcing approaches like the direct text correction as epitomized by the &lt;a href="http://trove.nla.gov.au/newspaper"&gt;National Library of Australia's wonderful Trove project&lt;/a&gt; and promising improvements on that concept like the UMD-MITH's &lt;a href="http://mith.umd.edu/research/project/active-ocr/" title="Active OCR"&gt;ActiveOCR&lt;/a&gt; project.&lt;br&gt;
+                            &lt;br&gt;
+                            This seems like an area for research which any organization with large digitized collections should be supporting, particularly with an eye towards easier reuse. &lt;a href="http://inkdroid.org"&gt;Ed Summers&lt;/a&gt; and I have idly discussed the idea for a generic web application which would display hOCR with the corresponding images for correction with all of the data stored somewhere like Github for full change tracking and review. It seems like something along those lines would be particularly valuable as a public service to avoid the expense of everyone reinventing large parts of this process customized for their particular workflow.
+                        &lt;/li&gt;
+                    &lt;/ul&gt;</content>
+    <updated>2014-03-19T00:22:46.608059+00:00</updated>
+  </entry>
   <entry>
     <title>Dear EFF: please don't pick the wrong fight</title>
     <id>http://chris.improbable.org/2013/10/4/dear-eff/</id>
@@ -625,29 +743,5 @@ INFO locate_thumbnail: Attempting to locate 2.jpg within 2.png
                         &lt;/li&gt;
                     &lt;/ol&gt;</content>
     <updated>2011-12-13T20:01:15+00:00</updated>
-  </entry>
-  <entry>
-    <title>The Movie Set That Ate Itself</title>
-    <id>http://chris.improbable.org/2011/10/31/the-movie-set-that-ate-itself/</id>
-    <link href="http://chris.improbable.org/2011/10/31/the-movie-set-that-ate-itself/"/>
-    <content type="html">&lt;div class="googlereader description" data-google-id="tag:google.com,2005:reader/item/5ba4673d932c4eb5"&gt;
-                        &lt;p class="annotation"&gt;
-                            “Seventy years of quotidian misery held with one waistband.”
-                        &lt;/p&gt;
-                        &lt;blockquote&gt;
-                            &lt;blockquote&gt;
-                                &lt;p&gt;
-                                    Five years ago, a relatively unknown (and unhinged) director began one of the wildest experiments in film history. Armed with total creative control, he invaded a Ukrainian city, marshaled a cast of thousands and thousands, and constructed a totalitarian society in which the cameras are always rolling and the actors never go home
-                                &lt;/p&gt;
-                            &lt;/blockquote&gt;
-                            &lt;p&gt;
-                                &lt;a href="http://givemesomethingtoread.com/post/12158637111/the-movie-set-that-ate-itself"&gt;#&lt;/a&gt;
-                            &lt;/p&gt;
-                        &lt;/blockquote&gt;
-                    &lt;/div&gt;
-                    &lt;p class="bookmark-source"&gt;
-                        Source: &lt;a href="http://www.gq.com/entertainment/movies-and-tv/201111/movie-set-that-ate-itself-dau-ilya-khrzhanovsky?printable=true&amp;amp;currentPage=all"&gt;http://www.gq.com/entertainment/movies-and-tv/201111/movie-set-that-ate-itself-dau-ilya-khrzhanovsky?printable=true&amp;amp;currentPage=all&lt;/a&gt;
-                    &lt;/p&gt;</content>
-    <updated>2011-10-31T13:24:21+00:00</updated>
   </entry>
 </feed>

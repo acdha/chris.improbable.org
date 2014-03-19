@@ -75,6 +75,130 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
             <section class="content post-list">
                 <article class="post">
                     <header>
+                        <time class="date" datetime="2014-03-19T00:22:46.608059+00:00">Mar 19</time>
+                        <h2>
+                            <a class="title" href="/2014/3/17/content-search-on-a-budget/">Content search on a budget</a>
+                        </h2>
+                    </header>
+                    <p class="summary">
+                        Automatic bulk OCR and full-text search for digital collections using Tesseract and Solr
+                    </p>
+                    <div class="body">
+                        <p>
+                            Digitizing printed material has become an industrial process for large collections. Modern scanning equipment makes it easy to process millions of pages and concerted engineering effort has even produced options at the high-end for <a href="http://www.flickr.com/photos/acdha/7404633950/in/set-72157628000441127/">fragile rare items</a> while innovative open-source projects like <a href="http://projectgado.org/our-technology/">Project Gado</a> make continual progress reducing the cost of reliable, batch scanning to fit almost any organization's budget.
+                        </p>
+                        <p>
+                            Such efficiencies are great for our goals of preserving history and making it available but they start making painfully obvious the degree to which digitization capacity outstrips our ability to create metadata. This is a big problem because most of the ways we find information involves searching for text and a large TIFF file is effectively invisible to a full-text search engine. The classic library solution to this challenge has been cataloging but the required labor is well beyond most budgets and runs into philosophical challenges when users want to search on something which wasn't considered noteworthy at the time an item was cataloged.
+                        </p>
+                        <p>
+                            In the spirit of finding <a href="http://www.artima.com/intv/simplest.html">the simplest thing that could possibly work</a> I've been experimenting with a completely automated approach to perform <a href="http://en.wikipedia.org/wiki/OCR" title="Optical Character Recognition">OCR</a> on new items and offering combined full-text search over both the available metadata and OCR text, as can be seen in this example:
+                        </p>
+                        <figure>
+                            <img src="/2014/3/17/content-search-on-a-budget/Screenshot%202014-03-17%2018.26.21.png">
+                            <figcaption>
+                                <a href="http://www.wdl.org/en/search/?q=whales&amp;qla=en">Searching for “whales” on the World Digital Library</a>
+                            </figcaption>
+                        </figure>
+                        <h3 id="process-overview">
+                            The Process
+                        </h3>
+                        <h4 id="generating-ocr">
+                            Generating OCR text
+                        </h4>
+                        <p>
+                            As we receive new items, anything which matches our criteria (books, journals and newspapers created after 1800 — see below) is automatically placed into a <a href="http://www.celeryproject.org/">Celery task queue</a> as a low-priority task. Workers on multiple servers accept OCR tasks from the queue and process the master image using <a href="https://code.google.com/p/tesseract-ocr/">Tesseract</a> using a simple shell command to generate text and HTML with embedded <a href="http://en.wikipedia.org/wiki/HOCR">hOCR metadata</a>.
+                        </p>
+                        <p>
+                            Once we have the OCR text, it's transformed to solve two different needs: a full-text search engine like <a href="https://lucene.apache.org/solr/">Apache Solr</a> or <a href="http://www.elasticsearch.org/">ElasticSearch</a> works with the pure text output but because we want to be able to highlight specific words the task also <a href="https://gist.github.com/acdha/9610005">converts the hOCR into a word coordinates JSON file</a> with the pixel coordinates for every word on the page.
+                        </p>
+                        <h4 id="search-indexing">
+                            Indexing the text for search
+                        </h4>
+                        <p>
+                            Most people expect a combined search these days where relevant terms are selected from both descriptive metadata and the text contents. Simply combining all of the text into a single document to be indexed is unsuitable, however, because we want to be able to offer the ability to only search metadata in certain cases and we want to be able to return specific pages rather than telling someone to visually scan through a 700 page book. Unfortunately, this approach is incompatible with the normal way search engines determine the most relevant results for a query:
+                        </p>
+                        <aside style="margin: .3em 1em; float: right; width: 20em;">
+                            <h5 style="margin: 0">
+                                Background: how search engines work
+                            </h5>Most search engines use an <a href="http://en.wikipedia.org/wiki/Inverted_index" title="Inverted index - Wikipedia, the free encyclopedia">inverted index</a>, which is essentially a list of words and the documents which contain them. When you search for “whales”, the search engine simply looks for that entry in the index and retrieves the document list. The search engine next sorts the results by calculating a relevancy score for each document (see the <a href="http://lucene.apache.org/core/3_5_0/scoring.html" title="Apache Lucene - Scoring">Lucene scoring guide</a> for the exact details about how <a href="http://en.wikipedia.org/wiki/Tf%E2%80%93idf" title="tf–idf - Wikipedia, the free encyclopedia">TD-IDF</a> works) and returns the top scores first.
+                        </aside>
+                        <p>
+                            Storing each page separately means that the search score will be determined independently rather than for the entire item. This would prevent books from scoring highly unless all of the words were mentioned on a single page and, far worse, many queries would return pages from a single book mixed throughout the results based on their individual scores! The solution this final problem is a technique which Solr calls <a href="https://wiki.apache.org/solr/FieldCollapsing">Field Collapsing</a> (the ElasticSearch team is <a href="https://github.com/elasticsearch/elasticsearch/issues/256">working on a similar feature</a>). With field collapsing enabled, Solr will first group all of the matching documents using a specified fieldand then compute the scores for each combined <em>group</em>. This means that we can group our results by the item ID and receive a list of groups (i.e. items) with one or more documents (i.e. pages or metadata) which we can use to build exact links into a large book.
+                        </p>
+                        <aside>
+                            (I have released an experimental <a href="http://haystacksearch.org">django-haystack</a> <a href="https://gist.github.com/acdha/3750774">Solr grouped search backend</a> which adds support for Field Collapsing.)
+                        </aside>
+                        <h4 id="highlighting-results">
+                            Highlighting Results
+                        </h4>
+                        <p>
+                            Search results are returned as simple HTML with the embedded data which we'll need to provide the original image segments. Here's what happens when someone <a href="http://www.wdl.org/en/search/?q=guine%C3%A9&amp;qla=fr">searches for guineé</a>:
+                        </p>
+                        <ol>
+                            <li>Solr performs its normal <a href="https://wiki.apache.org/solr/LanguageAnalysis">language analysis</a> and selects relevant documents
+                            </li>
+                            <li>All of the documents are grouped by item ID and each group is ranked for relevance
+                            </li>
+                            <li>Solr <a href="http://wiki.apache.org/solr/HighlightingParameters">highlights</a> the matched terms in the response
+                            </li>
+                            <li>The web site formats all of the results into an HTML document and adds some metadata indicating the type of document which contained each match so it can be enhanced by JavaScript later
+                            </li>
+                        </ol>
+                        <figure>
+                            <img src="/2014/3/17/content-search-on-a-budget/Screenshot%202014-03-17%2019.20.06.png">
+                            <figcaption>
+                                The raw search results before JavaScript runs
+                            </figcaption>
+                        </figure>
+                        <p>
+                            At this point we have quickly returned search results and can link directly to individual pages but we're showing frequently ugly OCR text directly and not providing as much context as we'd like. The next step is to replace that raw text with an image slice from the scanned page:
+                        </p>
+                        <ol>
+                            <li>JavaScript looks for highlighted results from OCR text and uses the embedded microdata to determine the source volume and page
+                            </li>
+                            <li>An <a href="http://en.wikipedia.org/wiki/XMLHttpRequest" title="XMLHttpRequest - Wikipedia, the free encyclopedia">XHR request</a> is made to retrieve the word coordinates for every word on each returned page
+                            </li>
+                            <li>The word coordinate list is scanned for each highlighted word and the coordinates are selected. Since we often find words in multiple places on the same page and we want to display an easily readable section of text, the list of word coordinates is coalesced starting from the top of the page and no more than the first third of the page will be returned. For this display, we always use the full width of the page but the same process could be used to generate smaller slices if desired.
+                            </li>
+                            <li>A separate request is made to load the relevant image slice. When the image has loaded, we replace the raw OCR text with the image. This way the raw text is visible for as long as it takes to load the image so we avoid showing empty areas until everything has transferred.
+                            </li>
+                            <li>Finally, a partially-transparent overlay is displayed over the image for each word coordinate to highlight the matches (see e.g. <a href="http://css-tricks.com/text-blocks-over-image/">css-tricks.com</a> if you're not familiar with this form of CSS positioning). Since the OCRed word coordinates aren't consistently tightly cropped around the letters in the word a minor <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow">CSS box-shadow</a> is used to make the edges softer and more like a highlighter.
+                            </li>
+                        </ol>
+                        <h4 id="notes">
+                            Notes
+                        </h4>
+                        <ul>
+                            <li>From a workflow perspective, I highly recommend recording the source of your OCR text and whether it's been reviewed. Since this is a fully automated process it is extremely handy to be able to reprocess items in the future if your software improves without accidentally clobbering any items which have been hand-corrected by humans.
+                            </li>
+                            <li>The word coordinates are pixel level coordinates based on the input file but our requests are made using calculated percentages since it's often the case that the scans are much higher resolution than we would want to display in a web-browser and our users wouldn't want to wait for a 600-dpi image to download in any case
+                            </li>
+                            <li>You might be wondering why all of this work is performed on the client side rather than having the server return highlighted images. In addition to reducing server load, this approach is friendlier for caches because a given image segment can be reused for multiple words (rounding the coordinates improves the cache hit ratio significantly) and both the image and word coordinates can thus be cached by <a href="http://en.wikipedia.org/wiki/Content_delivery_network" title="Content delivery network - Wikipedia, the free encyclopedia">CDN edge servers</a> rather than requiring a full round-trip back to the server.<br>
+                                One common example of the cache-ability benefit is when you <a href="http://www.wdl.org/en/item/7309/view/1/491/#q=whales">open a result and start reading it</a>: in the viewer, we display full page images rather than the trimmed slices so we must fetch new images but those are likely to be cached because they haven't been customized with the search text and we can reuse the locally-cached word coordinates to immediately display the highlighting. If you change your search text within an item, we can again immediately update the display while the revised page list is retrieved.
+                            </li>
+                        </ul>
+                        <h3 id="future-directions">
+                            Challenges &amp; Future Directions
+                        </h3>
+                        <p>
+                            This was supposed to be the simplest thing which could possibly work and it turned out not to be that simple. As you might imagine, this leaves a number of open questions for where to go next:
+                        </p>
+                        <ul>
+                            <li>OCR results vary considerably based on the quality of the input image. Accuracy can be improved considerably by preprocessing the image to remove borders, noise or use a more sophisticated algorithm to convert a full-color scan into the black-and-white image which Tesseract operates on. The trick is either coming up with good presets for your data, perhaps integrated with an image processing tool like <a href="http://scantailor.sourceforge.net/">ScanTailor</a>, or developing smarter code which can select filters based on the characteristics of the image.
+                            </li>
+                            <li>For older items, the OCR process is complicated by the condition of the materials, more primitive printing technology and stylistic choices like the <a href="http://en.wikipedia.org/wiki/Long_s">long s (ſ)</a> or ligatures which are no longer in common usage and thus not well supported by common OCR programs. One of my future goals is looking into the tools produced by the <a href="http://emop.tamu.edu/">Early Modern OCR Project</a> and seeing whether there's a production-ready path for this.
+                            </li>
+                            <li>It would be interesting combine the results of OCR with my earlier <a href="http://chris.improbable.org/2013/8/31/extracting-images-from-scanned-pages/" title="Extracting images from scanned book pages">figure extraction project</a> for innovative displays like the <a href="http://mechanicalcurator.tumblr.com/">Mechanical Curator</a> or, with more work, trying to extract full figures with captions.
+                            </li>
+                            <li>Finally, there's considerable room for integrating crowd-sourcing approaches like the direct text correction as epitomized by the <a href="http://trove.nla.gov.au/newspaper">National Library of Australia's wonderful Trove project</a> and promising improvements on that concept like the UMD-MITH's <a href="http://mith.umd.edu/research/project/active-ocr/" title="Active OCR">ActiveOCR</a> project.<br>
+                                <br>
+                                This seems like an area for research which any organization with large digitized collections should be supporting, particularly with an eye towards easier reuse. <a href="http://inkdroid.org">Ed Summers</a> and I have idly discussed the idea for a generic web application which would display hOCR with the corresponding images for correction with all of the data stored somewhere like Github for full change tracking and review. It seems like something along those lines would be particularly valuable as a public service to avoid the expense of everyone reinventing large parts of this process customized for their particular workflow.
+                            </li>
+                        </ul>
+                    </div>
+                </article>
+                <article class="post">
+                    <header>
                         <time class="date" datetime="2013-10-24T13:44:00+00:00">Oct 24</time>
                         <h2>
                             <a class="title" href="/2013/10/4/dear-eff/">Dear EFF: please don't pick the wrong fight</a>
@@ -341,78 +465,6 @@ var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PR
                         <p>
                             Cool ideas? Deep experience with image processing? <a href="mailto:chris@improbable.org">I'd love to hear what you think</a>.
                         </p>
-                    </div>
-                </article>
-                <article class="post">
-                    <header>
-                        <time class="date" datetime="2013-08-29T08:42:00+00:00">Aug 29</time>
-                        <h2>
-                            <a class="title" href="/2013/8/29/how-simple-web-kiosks-have-become/">How simple web kiosks have become thanks to Webconverger</a>
-                        </h2>
-                    </header>
-                    <p class="summary">
-                        Creating a fullscreen web app kiosk has never been easier thanks to Webconverger
-                    </p>
-                    <div class="body">
-                        <p>
-                            Recently I decided it was time to get around to creating a dashboard for the <a href="http://www.wdl.org/">World Digital Library</a>. We'd talked about it for years but there was always the hassle of maintaining another system acting as a deterrent for a side project. Since browsers have become more capable, however, I decided yesterday to see how far I could get with a pure static HTML page and a static boot-to-browser system.
-                        </p>
-                        <p>
-                            I quickly found <a href="http://webconverger.org/">Webconverger</a>, which is a Debian derivative intended for kiosks, schools &amp; libraries, etc. A quick look at the <a href="http://webconverger.org/API/">API documentation</a> showed that all of the configuration I needed was possible simply by editing the boot-loader config. I tossed together a quick HTML page which loaded various things from Twitter, <a href="https://graphite.readthedocs.org">Graphite</a>, Atom feeds, etc. and tossed it into an S3 bucket.
-                        </p>
-                        <h2>
-                            Building the bootable USB key
-                        </h2>
-                        <ol>
-                            <li>I downloaded the <a href="http://dl.webconverger.com/latest.iso">ISO image</a> and used dd to transfer it to a spare USB key (thanks conference vendors!) and booted to confirm that my hardware was supported and that the page looked great after typing the URL into the browser.
-                            </li>
-                            <li>
-                                <p>
-                                    As per the documentation, everything worked automatically once I added a few boot parameters at startup: <code>noblank chrome=webcfullscreen homepage=http://example.org</code>
-                                </p>
-                                <p>
-                                    Unfortunately, on OS X there's no easy way to mount an ISO image read-write so it's not as simple as editing the file in your favorite editor…
-                                </p>
-                            </li>
-                            <li>
-                                <p>
-                                    Now for the applied laziness: there's a paid configuration service and full developer instructions, and for that matter there are generic ISO editing tools, but I really just wanted to edit a text file which lives in <code>/boot/live.cfg</code> and it felt somewhat excessive to setup a full toolchain to change a few bytes of ASCII text
-                                </p>
-                                <p>
-                                    Solution: make a copy of the ISO file, open up <a href="http://ridiculousfish.com/hexfiend/">Hex Fiend</a> and search for a string which would only appear in the target file, as determined by looking in <code>/boot/live.cfg</code> after mounting the ISO read-only:<br>
-                                    <code>append initrd=/live/initrd2.img boot=live skipconfig quiet splash</code>
-                                </p>
-                                <aside>
-                                    (Did I really just describe hex-editing a binary file as the easy option? Well, yes — it's a standard system search dialog, a click to move the cursor, pasting, a click to change panes and holding down the 0 key for a few seconds. If you've ever tried to get Word to format a large document consistently, this is a piece of cake…)
-                                </aside>
-                            </li>
-                            <li>It's not quite simple as simply inserting text because I don't want to corrupt the ISO image by changing the size but fortunately there's a ton of boilerplate which I don't need for a simple dashboard. Like most C programs, the bootloader is almost certain to stop reading once it finds null bytes and indeed a quick glance shows a block of 00 bytes starting after the final character in the file.
-                            </li>
-                            <li>
-                                <p>
-                                    A quick pass through an editor and I have the following trimmed down config with the customizations on the end of the append line:
-                                </p>
-                                <pre style="white-space: pre; word-wrap: normal; overflow-x: scroll">
-DEFAULT live-686-pae
-
-label live-686-pae
-        menu label 686-pae: Live
-        kernel /live/vmlinuz2
-        append initrd=/live/initrd2.img boot=live skipconfig quiet splash bootfrom=removable <strong>noblank chrome=webcfullscreen homepage=http://example.org</strong>
-</pre>
-                                <p>
-                                    Past it in at the start of live.cfg, switch to the hex pane and pad out the file with NULLs until the original text is completely replaced.
-                                </p>
-                            </li>
-                            <li>Use dd to write the modified ISO to your USB key and reboot
-                            </li>
-                        </ol>
-                        <figure>
-                            <img src="/2013/8/29/how-simple-web-kiosks-have-become/dashboard.jpg" width="1360" height="768">
-                            <figcaption>
-                                Screenshot of the final dashboard
-                            </figcaption>
-                        </figure>
                     </div>
                 </article>
             </section>
