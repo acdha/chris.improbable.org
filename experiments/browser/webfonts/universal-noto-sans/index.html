@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Universal Noto Sans</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                max-width: 50em;
+                margin: auto;
+            }
+
+            * {
+                vertical-align: top;
+                box-sizing: border-box;
+            }
+
+            table {
+                border-collapse: collapse;
+            }
+
+            th {
+                white-space: nowrap;
+                padding: .3em 1em;
+            }
+
+            td {
+                padding: .3em;
+            }
+
+            thead tr {
+                color: white;
+                background-color: #66f;
+            }
+
+            td ul {
+                margin: 0 1em;
+                padding: 0;
+            }
+
+            td[rowspan] {
+                text-align: center;
+                font-size: xx-large;
+                vertical-align: baseline;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Combined Noto Sans CSS Experiment</h1>
+
+        <p>
+            Exploring different ways of creating a universal stylesheet which will load webfonts on-demand
+            for various languages but only when the relevant characters are present on the page.
+        </p>
+
+        <h2>Results (June 2013)</h2>
+
+        <p>
+            The dream of a simple, single <code>font-family</code> to rule them all does not appear to be
+            possible (see below) without every fonts being downloaded regardless of whether it's needed to
+            display the page. Using per-language selectors works nicely as long as you can rely on your HTML
+            markup to use the lang attribute correctly.
+        </p>
+
+        <h3>Update: June 14</h3>
+
+        <ul>
+            <li>
+                The Chromium issue I opened last year has been fixed and is apparently scheduled to ship in
+                Chrome 36:
+                <a href="http://crbug.com/247920" title="Issue 247920 - CSS unicode-range should be used to prevent unnecessary downloads">
+                    http://crbug.com/247920
+                </a>.
+            </li>
+            <li>
+                <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=881021">My Firefox issue</a> was deemed
+                in-scope for <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=475891">
+                    https://bugzilla.mozilla.org/show_bug.cgi?id=475891
+                </a>
+                which has not made any progress.
+            </li>
+            <li>
+                I plan to test the
+                <a href="https://github.com/infojunkie/jquery-unicode-range">jquery-unicode-range</a> polyfill
+                soon.
+            </li>
+            <li>
+                Microsoft does not consider this a problem and closed the issue as
+                <a href="http://connect.microsoft.com/IE/feedback/ViewFeedback.aspx?FeedbackID=789754" title="CSS @font-face unicode-range should be used to avoid unnecessary downloads | Microsoft Connect">Won't Fix</a>.
+            </li>
+        </ul>
+
+        <h2>Tests</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Test Name</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th rowspan="2"><a href="all-in-one.html">All-in-One</a></th>
+                    <td rowspan="2">⚠</td>
+                    <td>font-family listing all fonts individually in order</td>
+                </tr>
+                <tr>
+                    <td>
+                        <ul>
+                            <li>
+                                <a href="https://code.google.com/p/chromium/issues/detail?id=247920">Chrome: all files are always downloaded</a>
+                                <a href="http://www.webpagetest.org/result/130608_38_WEF/">WebPageTest</a>
+                            </li>
+                            <li>
+                                <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=881021">Firefox: all files are always downloaded</a>
+                                <a href="http://www.webpagetest.org/result/130608_ZY_WEG/">WebPageTest</a>
+                            </li>
+                            <li>
+                                <a href="http://connect.microsoft.com/IE/feedback/ViewFeedback.aspx?FeedbackID=789754" title="CSS @font-face unicode-range should be used to avoid unnecessary downloads | Microsoft Connect">IE10: all files are always downloaded</a>
+                                <a href="http://www.webpagetest.org/result/130608_6T_WEP/">WebPageTest</a>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <th rowspan="2"><a href="single-name.html">Combined Font</a></th>
+                    <td rowspan="2">⚠</td>
+                    <td>
+                        Multiple @font-face declarations using the same font-family with unicode-range
+                        following the
+                        <a href="http://dev.w3.org/csswg/css-fonts/#composite-fonts">composite fonts example</a>
+                        in the W3C CSS Fonts specification.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <ul>
+                            <li>
+                                <a href="https://code.google.com/p/chromium/issues/detail?id=247920">Chrome: all files are always downloaded</a>
+                                <a href="http://www.webpagetest.org/result/130608_W4_WEV/">WebPageTest</a>
+                            </li>
+                            <li>
+                                <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=475891">Firefox: only the last @font-face will be used</a>
+                                <a href="http://www.webpagetest.org/result/130608_1M_WEX/">WebPageTest</a>
+                            </li>
+                            <li>
+                                <a href="http://connect.microsoft.com/IE/feedback/ViewFeedback.aspx?FeedbackID=789754" title="CSS @font-face unicode-range should be used to avoid unnecessary downloads | Microsoft Connect">IE10: all files are always downloaded</a>
+                                <a href="http://www.webpagetest.org/result/130608_AN_WET/">WebPageTest</a>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <th rowspan="2"><a href="lang-selectors.html"><code>:lang()</code> selectors</a></th>
+                    <td rowspan="2">☺</td>
+                    <td>
+                        Individual fonts applied using <code>:lang()</code> selectors, requiring markup to
+                        specify lang attributes
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <ul>
+                            <li>Firefox: works <a href="http://www.webpagetest.org/result/130608_KP_WTD/">WebPageTest</a></li>
+                            <li>Chrome: works <a href="http://www.webpagetest.org/result/130608_37_WTB/">WebPageTest</a></li>
+                            <li>IE10: works <a href="http://www.webpagetest.org/result/130608_SX_WT9/">WebPageTest</a></li>
+                        </ul>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Notes</h2>
+
+        <ul>
+            <li>
+                Install the SIL
+                <a href="http://scripts.sil.org/cms/scripts/page.php?item_id=UnicodeBMPFallbackFont">Unicode BMP Fallback</a>
+                font to make it blindingly obvious when the browser needed to substitute unavailable glyphs
+            </li>
+            <li>
+                For testing, the <a href="https://code.google.com/p/noto/">noto sans fonts</a> were processed
+                with <a href="http://www.fontforge.org">FontForge</a> using a simple Python script to
+                <a href="https://github.com/acdha/webfont-experiments/blob/master/bin/font-unicode-inventory.py">
+                    generate CSS @font-face declarations based on the glyphs present in a WOFF file
+                </a>
+            </li>
+            <li>
+                The W3C CSS validator does not correctly display parsed unicode-range declarations which have
+                more than one component:
+                <a href="https://www.w3.org/Bugs/Public/show_bug.cgi?id=22313">
+                    the first value will be repeated for each value present in the source list!
+                </a>
+            </li>
+        </ul>
+    </body>
+</html>

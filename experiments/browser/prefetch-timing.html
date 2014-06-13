@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta http-equiv="Cache-Control" content="private, must-revalidate" />
+        <title>Browser prefetch test</title>
+        <link rel="prerender" href="http://httpbin.org/response-headers?Cache-Control=max-age%3D60&amp;Access-Control-Allow-Origin=*&amp;X-Rel=prerender" />
+        <link rel="prefetch" href="http://httpbin.org/response-headers?Cache-Control=max-age%3D60&amp;Access-Control-Allow-Origin=*&amp;X-Rel=prefetch" />
+        <link rel="prefetch prerender" href="http://httpbin.org/response-headers?Cache-Control=max-age%3D60&amp;Access-Control-Allow-Origin=*&amp;X-Rel=prefetch-prerender" />
+        <link rel="subresource" href="http://httpbin.org/response-headers?Cache-Control=max-age%3D60&amp;Access-Control-Allow-Origin=*&amp;X-Rel=subresource" />
+        <link rel="subresource prefetch" href="http://httpbin.org/response-headers?Cache-Control=max-age%3D60&amp;Access-Control-Allow-Origin=*&amp;X-Rel=subresource-prefetch" />
+        <link rel="prefetch subresource" href="http://httpbin.org/response-headers?Cache-Control=max-age%3D60&amp;Access-Control-Allow-Origin=*&amp;X-Rel=prefetch-subresource" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <style>
+            table {
+                width: 100%;
+            }
+
+            caption {
+                font-weight: bold;
+                font-size: larger;
+            }
+
+            .time, .elapsed, #results tbody td, .history tbody td {
+                font-family: monospace;
+            }
+            .elapsed, .history tbody td {
+                text-align: right;
+            }
+            .history thead th {
+                padding: 2px 1em;
+                padding-right: 0;
+                text-align: right;
+            }
+            .history thead th:first-child {
+                text-align: center;
+            }
+            #results tbody td:first-child {
+                white-space: nowrap;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Browser prefetch test</h1>
+
+        <p>
+            This page loads 5 external resources from <a href="http://httpbin.org/">http://httpbin.org/</a>
+            making it easy to compare the effects of variations of <code>&lt;link&gt;</code>-based prefetching.
+            See Ilya Grigorik's <a href="http://www.igvita.com/posa/high-performance-networking-in-google-chrome/#prefetching">Optimizing resource loading with prefetch hints</a>
+            for background information.
+        </p>
+
+        <table class="history">
+            <caption>Measured Results</caption>
+            <thead>
+                <tr>
+                    <th>Browser</th>
+                    <th>baseline</th>
+                    <th>prefetch</th>
+                    <th>subresource</th>
+                    <th>prefetch subresource</th>
+                    <th>subresource prefetch</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th><a href="http://www.webpagetest.org/screen_shot.php?test=130318_F3_381921b5bcfa1ffa69d69f15daed8691&run=1&cached=0">Chrome</a></th>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>6</td>
+                    <td>8</td>
+                    <td>7</td>
+                </tr>
+                <tr>
+                    <th><a href="http://www.webpagetest.org/screen_shot.php?test=130318_A3_fc799afe62c25fbc51295e08537fcf6b&run=1&cached=0">Firefox</a></th>
+                    <td>169</td>
+                    <td>60</td>
+                    <td>94</td>
+                    <td>62</td>
+                    <td>164</td>
+                </tr>
+                <tr>
+                    <th><a href="http://www.webpagetest.org/screen_shot.php?test=130318_3A_a27191988e4a7763d437c78b7dd58392&run=1&cached=0">IE10</a></th>
+                    <td>120</td>
+                    <td>50</td>
+                    <td>103</td>
+                    <td>62</td>
+                    <td>117</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table id="results">
+            <caption>Results for your browser</caption>
+            <thead>
+                <tr>
+                    <th>rel</th>
+                    <th>href</th>
+                    <th>Request Start</th>
+                    <th>Request End</th>
+                    <th>Elapsed (ms)</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <script>
+            var $results = $("#results"),
+                tests = [{id: "plain", title: "NONE", href: "http://httpbin.org/response-headers?Cache-Control=max-age%3D60&Access-Control-Allow-Origin=*"}];
+
+            $('link[rel]').each(function () {
+                var $link = $(this);
+                tests.push({
+                    id: $link.attr("rel").replace(" ", "-"),
+                    title: $link.attr('rel'),
+                    href: $link.attr('href')
+                });
+            });
+
+            // We'll do the simplest cases first:
+            tests.reverse();
+
+            function loadNextTest() {
+                var startTime = new Date(),
+                    test = tests.pop();
+
+                $.ajax({
+                    url: test.href,
+                    dataType: "json",
+                    cache: true
+                }).complete(function () {
+                    var endTime = new Date();
+                    $('#' + test.id)
+                        .find(".time.end").text(endTime).end()
+                        .find(".time.elapsed").text(endTime.getTime() - startTime.getTime());
+                    if (tests.length > 0) {
+                        loadNextTest();
+                    }
+                });
+
+                $('<tr>')
+                    .attr('id', test.id)
+                    .append($('<td>').text(test.title))
+                    .append($('<td>').append($('<a>').attr('href', test.href).text(test.href)))
+                    .append($('<td class="time start">').text(startTime))
+                    .append($('<td class="time end">'))
+                    .append($('<td class="time elapsed">'))
+                    .appendTo($results.children('tbody'));
+            }
+
+            loadNextTest();
+        </script>
+    </body>
+</html>
