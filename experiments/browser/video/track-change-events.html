@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test of HTML5 Video Track events</title>
+        <style>
+            #demo-container {
+                margin: auto;
+                max-width: 40em;
+            }
+
+            video {
+                display: block;
+                margin: auto;
+            }
+
+            #cite {
+                text-align: right;
+                font-size: smaller;
+            }
+
+            #log {
+                font-family: monospace;
+
+                margin: auto;
+                max-width: 80vw;
+                max-height: 30em;
+
+                overflow: scroll;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="demo-container">
+            <h1>Test of HTML5 Video Track events</h1>
+
+            <video id="player" itemprop="video" crossorigin="anonymous" autoplay controls preload="auto" poster="4050.jpg">
+                <source type="video/mp4" src="CA077_Florida_Moonport_USA.mp4">
+                <track label="Subtitles" kind="subtitles" type="text/vtt" src="4050.vtt">
+            </video>
+
+            <button id="toggle-track-mode">
+                Change Track Mode
+            </button>
+
+            <button id="toggle-track-src">
+                Change Track Source
+            </button>
+
+            <p id="cite">
+                Source: <a href="http://www.wdl.org/en/item/4050/">WDL #4050: Florida Moonport USA</a>
+            </p>
+        </div>
+
+        <ul id="log">
+        </ul>
+
+        <script>
+            var logList = document.getElementById('log');
+
+            function logMessage() {
+                var msg = Array.prototype.join.call(arguments, " "),
+                    li = document.createElement('li');
+
+                li.appendChild(document.createTextNode(msg));
+                logList.insertBefore(li, logList.firstChild);
+
+                console.log.apply(console, arguments);
+            }
+
+            function addEventHandler(i, eventName, textLabel) {
+                i.addEventListener(eventName, function (evt) {
+                    logMessage(eventName, textLabel, evt);
+                });
+
+                logMessage(eventName, 'handler registered for', textLabel);
+            }
+
+            var player = document.querySelector('video'),
+                trackElement = document.querySelector('track');
+
+            addEventHandler(player.textTracks, 'change', player.textTracks);
+            addEventHandler(player.textTracks, 'addtrack', player.textTracks);
+            addEventHandler(player.textTracks, 'removetrack', player.textTracks);
+
+            Array.prototype.forEach.call(document.querySelectorAll('video,source,track'), function (i) {
+                addEventHandler(i, 'change', i.tagName);
+                addEventHandler(i, 'load', i.tagName);
+
+                i.addEventListener('error', function () {
+                    var extra = {
+                        currentSrc: player.currentSrc,
+                        readyState: player.readyState,
+                        networkState: player.networkState,
+                        currentTime: player.currentTime,
+                        duration: player.duration
+                    };
+
+                    if (player.error !== null) {
+                        extra.errorCode = player.error.code;
+                    }
+
+                    logMessage('error triggered:', i.tagName, JSON.stringify(extra));
+                });
+
+                logMessage('error handler registered for', i.tagName);
+            });
+
+            addEventHandler(trackElement, 'cuechange', trackElement.tagName);
+            addEventHandler(trackElement.track, 'cuechange', trackElement.track);
+            addEventHandler(trackElement.track, 'change', trackElement.track);
+
+            document.getElementById('toggle-track-mode').addEventListener('click', function () {
+                var oldMode = trackElement.track.mode;
+
+                if (oldMode == 'showing') {
+                    trackElement.track.mode = 'hidden';
+                } else {
+                    trackElement.track.mode = 'showing';
+                }
+
+                logMessage(trackElement.tagName, 'mode changed from', oldMode, 'to', trackElement.track.mode);
+            });
+
+            document.getElementById('toggle-track-src').addEventListener('click', function () {
+                trackElement.src += "#";
+
+                logMessage(trackElement.tagName, 'src changed to', trackElement.src);
+            });
+        </script>
+    </body>
+</html>
