@@ -18,6 +18,8 @@
             h1 {
                 display: block;
                 z-index: 100;
+                -webkit-transform: translateZ(5px);
+                transform: translateZ(5px);
 
                 width: 30em;
                 min-width: 30em;
@@ -43,13 +45,15 @@
             }
 
             div {
-                -webkit-transition: all 8s linear;
-                -moz-transition: all 8s linear;
-                transition: all 8s linear;
+                -webkit-transition: all 20s linear;
+                -moz-transition: all 20s linear;
+                transition: all 20s linear;
 
                 position: absolute;
                 display: block;
                 z-index: -5;
+                -webkit-transform: translateZ(-5px);
+                transform: translateZ(-5px);
 
                 top: 0px;
                 right: 0px;
@@ -57,9 +61,13 @@
                 width: 308px;
                 height: 255px;
 
+                max-width: 40vw;
+
                 border: solid #666 1px;
 
                 text-align: center;
+
+                cursor: pointer;
             }
         </style>
     </head>
@@ -70,27 +78,34 @@
         </h1>
 
         <script type="text/javascript">
-            var maxWidth = window.innerWidth - 308,
-                images = [];
+            if (!('requestAnimationFrame' in window)) {
+                window.requestAnimationFrame = window.mozRequestAnimationFrame ||
+                                               window.webkitRequestAnimationFrame ||
+                                               window.msRequestAnimationFrame ||
+                                               function (callback) {
+                                                   window.setTimeout(callback, 20);
+                                               };
+            }
+
+            var maxWidth = window.innerWidth - 616,
+                images = [],
+                imagesToAdd = [];
 
             function addBlock(evt) {
                 var e = document.createElement('div');
 
                 e.style.backgroundImage = 'url(' + evt.target.src + ')';
+                e.style.top = "0%";
                 e.style.right = Math.round(Math.random() * maxWidth) + "px";
+                e.style.height = evt.target.height + "px";
+                e.style.width = evt.target.width + "px";
 
-                document.body.appendChild(e);
-
-                // We have to wait before changing anything to trigger the transition effect:
-                window.setTimeout(function () {
-                    e.style.right = Math.round(Math.random() * maxWidth) + "px";
-                    e.style.top = "100%";
-                }, 1);
+                imagesToAdd.push(e);
             }
 
             function fetchImage() {
-                var randomId = Math.round(Math.random() * 10000),
-                    url = 'http://content.wdl.org/' + randomId + '/thumbnail/308x255.jpg';
+                var randomId = Math.round(Math.random() * 16000),
+                    url = 'http://content.wdl.org/' + randomId + '/thumbnail/616x510.jpg';
 
                 var img = new Image();
                 img.addEventListener("load", addBlock, false);
@@ -107,7 +122,24 @@
             document.body.addEventListener("MSTransitiontionEnd", cleanup, true);
             document.body.addEventListener("otransitionend", cleanup, true);
 
-            window.setInterval(fetchImage, 1 * 1000);
+            window.setInterval(fetchImage, 2 * 1000);
+
+            window.setInterval(function () {
+                if (imagesToAdd.length < 1) {
+                    return;
+                }
+
+                var e = imagesToAdd.shift();
+
+                document.body.appendChild(e);
+
+                // We have to wait before changing anything to trigger the transition effect:
+                window.requestAnimationFrame(function () {
+                    e.style.right = Math.round(Math.random() * maxWidth) + "px";
+                    e.style.top = "100%";
+                }, 500);
+
+            }, 1000);
 
             document.body.addEventListener("click", function (e) {
                 if (e.target.tagName != 'DIV') {

@@ -19,6 +19,9 @@
                 display: block;
                 z-index: 100;
 
+                -webkit-transform: translateZ(5px);
+                transform: translateZ(5px);
+
                 width: 30em;
                 width: 50vw;
                 margin: 1em auto;
@@ -42,8 +45,8 @@
             }
 
             div {
-                -webkit-animation-duration: 8s;
-                animation-duration: 8s;
+                -webkit-animation-duration: 20s;
+                animation-duration: 20s;
 
                 -webkit-animation-name: slidedown;
                 -moz-animation-name: slidedown;
@@ -58,13 +61,21 @@
                 display: block;
                 z-index: -5;
 
+                -webkit-transform: translateZ(-5px);
+                transform: translateZ(-5px);
+
                 right: 40px;
+
                 width: 308px;
                 height: 255px;
+
+                max-width: 40vw;
 
                 border: solid #666 1px;
 
                 text-align: center;
+
+                cursor: pointer;
             }
 
             @keyframes "slidedown" {
@@ -111,21 +122,24 @@
         </h1>
 
         <script type="text/javascript">
-            var maxWidth = window.innerWidth - 308,
-                images = [];
+            var maxWidth = window.innerWidth - 616,
+                images = [],
+                imagesToAdd = [];
 
             function addBlock(evt) {
                 var e = document.createElement('div');
 
                 e.style.right = Math.round(Math.random() * maxWidth) + "px";
                 e.style.backgroundImage = 'url(' + evt.target.src + ')';
+                e.style.height = evt.target.height + "px";
+                e.style.width = evt.target.width + "px";
 
-                document.body.appendChild(e);
+                imagesToAdd.push(e);
             }
 
             function fetchImage() {
-                var randomId = Math.round(Math.random() * 10000),
-                    url = 'http://content.wdl.org/' + randomId + '/thumbnail/308x255.jpg';
+                var randomId = Math.round(Math.random() * 16000),
+                    url = 'http://content.wdl.org/' + randomId + '/thumbnail/616x510.jpg';
 
                 var img = new Image();
                 img.addEventListener("load", addBlock, false);
@@ -142,7 +156,16 @@
             document.body.addEventListener("MSAnimationEnd", cleanup, true);
             document.body.addEventListener("oanimationend", cleanup, true);
 
-            window.setInterval(fetchImage, 2 * 1000);
+            window.setInterval(fetchImage, 4 * 1000);
+
+            window.setInterval(function () {
+                if (imagesToAdd.length < 1) {
+                    return;
+                }
+
+                var e = imagesToAdd.shift();
+                document.body.appendChild(e);
+            }, 4000);
 
             document.body.addEventListener("click", function (e) {
                 if (e.target.tagName != 'DIV') {
