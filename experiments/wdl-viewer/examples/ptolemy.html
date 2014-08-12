@@ -8,7 +8,7 @@
             <meta http-equiv="imagetoolbar" content="no">
         <![endif]-->
         <title>
-            WDL Viewer example:
+            WDL Viewer example: Epytoma Ioa[n]nis de Mo[n]te Regio in Almagestu[m] Ptolomei
         </title>
         <link rel="stylesheet" href="../build/wdl-viewer.css" type="text/css">
         <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
@@ -25,7 +25,9 @@
             </header>
             <div id="viewport">
                 <div id="pages">
-                    <div class="current"><img alt="" src="http://lcweb2.loc.gov/service/rbc/rbc0001/2013/2013vollb40724/0000q.jpg"></div>
+                    <div class="page current">
+                        <img src="http://lcweb2.loc.gov/service/rbc/rbc0001/2013/2013vollb40724/0000q.jpg">
+                    </div>
                 </div>
             </div>
             <footer>
@@ -159,6 +161,8 @@
         <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-throttle-debounce/1.1/jquery.ba-throttle-debounce.min.js"></script>
         <script src="../src/js/wdl-viewer.js"></script>
         <script>
+            Modernizr.addTest('fullscreen', !!(Modernizr.prefixed('exitFullscreen', document, false) || Modernizr.prefixed('cancelFullScreen', document, false)));
+
             Modernizr.load([
                 {
                     test: Modernizr.inputtypes.range && Modernizr.history,
@@ -179,9 +183,19 @@
                         // Slightly wonky double check but callback: won't fire if you don't load anything
                         // and this keeps polyfills in one place:
                         if (!Modernizr.history) {
-                            window.history.pushState = function (state, title, url) {
-                                document.location.href = url;
+                            window.history.replaceState = function (state, title, url) {
+                                if (document.location.href == url || document.location.pathname == url) {
+                                    return;
+                                } else {
+                                    document.location.href = url;
+                                }
                             }
+
+                            // Force page navigation rather than simply updating the current anchor:
+                            $('.next.page, .previous.page').on('click', function (evt) {
+                                document.location.href = this.href;
+                                document.location.reload();
+                            })
                         } else {
                             $(".next.page").on("click", function () {
                                 $viewer.trigger("goto-next-page"); return false;
@@ -203,34 +217,44 @@
 
                             var lastTimeoutId;
 
-                            $("#pages").hammer()
-                                .on("tap", function (evt) {
-                                    if (evt.gesture.center.pageX < 50) {
-                                        $viewer.trigger("goto-previous-page");
-                                    } else if ($(window).width() - evt.gesture.center.pageX < 50) {
-                                        $viewer.trigger("goto-next-page");
-                                    } else {
-                                        $viewer.trigger("toggle-chrome");
-                                    }
+                        var viewer = document.getElementById("viewer");
+                        // By default, touchmove events as fired when attempting rotation can cause Mobile
+                        // Safari to "bounce" the viewport, displaying the standard gray background, which is
+                        // quite unpleasant in the middle of a rotation:
+                        document.ontouchmove = function(evt) {
+                            if (viewer.dataset.activeView != "grid") {
+                                evt.preventDefault();
+                            }
+                        }
+
+                        $("#pages").hammer()
+                            .on("tap", function (evt) {
+                                if (evt.gesture.center.pageX < 50) {
+                                    $viewer.trigger("goto-previous-page");
+                                } else if ($(window).width() - evt.gesture.center.pageX < 50) {
+                                    $viewer.trigger("goto-next-page");
+                                } else {
+                                    $viewer.trigger("toggle-chrome");
+                                }
 
                                     if (lastTimeoutId) {
                                         window.clearTimeout(lastTimeoutId);
                                     }
 
-                                    lastTimeoutId = window.setTimeout(function () {
-                                        $viewer.trigger("hide-chrome");
-                                    }, 6000);
-                                })
-                                .on("pinchout", function (evt) {
-                                    if (Math.abs(evt.gesture.rotation) < 15 && (evt.gesture.distance * evt.gesture.scale) > 1) {
-                                        $viewer.trigger("open-seadragon");
-                                    }
+                                lastTimeoutId = window.setTimeout(function () {
+                                    $viewer.trigger("hide-chrome");
+                                }, 6000);
+                            })
+                            .on("pinchout", function (evt) {
+                                if (Math.abs(evt.gesture.rotation) < 20 && evt.gesture.scale > 3.0) {
+                                    $viewer.trigger("open-seadragon");
                                     evt.preventDefault();
-                                })
-                                .on("rotate", function (evt) {
-                                    $viewer.trigger("set-rotation", evt.gesture.rotation);
-                                    evt.preventDefault();
-                                });
+                                }
+                            })
+                            .on("rotate", function (evt) {
+                                $viewer.trigger("set-rotation", evt.gesture.rotation);
+                                evt.preventDefault();
+                            });
 
                             $viewer.on("page-changed", function () {
                                 $viewer.trigger("hide-chrome");
@@ -239,13 +263,6 @@
                     }
                 },
             ]);
-
-            if (navigator.userAgent.match(/Chrome/)) {
-                // Suppress fullscreen mode on Chrome until they close
-                // https://code.google.com/p/chromium/issues/detail?id=138324
-                $('html').removeClass("fullscreen").addClass("no-fullscreen");
-                Modernizr.fullscreen = false;
-            }
 
             function generateImageUrl(group, index, maxEdge) {
                 // These URLs need to be zero-padded:

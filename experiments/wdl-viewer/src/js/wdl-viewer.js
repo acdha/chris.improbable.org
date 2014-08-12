@@ -1,4 +1,4 @@
-/*global window: true, Modernizr:true, jQuery: true, Image: true, OpenSeadragon:true */
+/*global navigator, window, document, Element, Modernizr, jQuery, Image, OpenSeadragon */
 
 (function ($) {
     "use strict";
@@ -8,9 +8,7 @@
     var gettext = window.gettext;
     if (typeof(gettext) == "undefined") {
         // intentionally does nothing but avoids breaking if JS I18N dict fails to load
-        /* jshint -W020 */
         gettext = function (i) { return i; };
-        /* jshint -W020 */
     }
 
     function isFullScreen() {
@@ -96,15 +94,6 @@
             $groupControl.parent().hide();
         }
 
-        this.pageView = new PageView(this, $pages, config);
-
-        if (config.dziUrlTemplate) {
-            this.seadragonView = new SeadragonView(this, $seadragon, config);
-        }
-
-        this.gridView = new GridView(this, $grid, config);
-        this.activeView = this.pageView;
-
         if ($.isFunction(config.imageUrlTemplate)) {
             this.generateImageUrl = config.imageUrlTemplate;
         }
@@ -117,18 +106,26 @@
             this.generateDziUrl = config.dziUrlTemplate;
         }
 
-        // Add toolbar features which only work with JavaScript:
+        this.pageView = new PageView(this, $pages, config);
 
+        if (config.dziUrlTemplate) {
+            this.seadragonView = new SeadragonView(this, $seadragon, config);
+        }
+
+        this.gridView = new GridView(this, $grid, config);
+        this.activeView = this.pageView;
+
+        // Add toolbar features which only work with JavaScript:
         if (Modernizr.canvas || Modernizr.csstransforms) {
-            $('<button class="requires-rotation" type="button">↺</button>')
-                .attr("title", gettext('Rotate Left'))
+            $('<button id="rotate-left" class="requires-rotation" type="button"></button>')
+                .text(gettext("Rotate Left"))
                 .appendTo("footer .toolbar .controls")
                 .on("click", $.proxy(function () {
                     this.rotate(true);
                 }, this));
 
-            $('<button class="requires-rotation" type="button">↻</button>')
-                .attr("title", gettext('Rotate Right'))
+            $('<button id="rotate-right" class="requires-rotation" type="button"></button>')
+                .text(gettext("Rotate Right"))
                 .appendTo("footer .toolbar .controls")
                 .on("click", $.proxy(function () {
                     this.rotate();
@@ -290,9 +287,9 @@
         $viewer.on("page-changed", $.proxy(function () {
             $groupControl.val(this.currentGroup);
             $indexControl.val(this.currentIndex);
-            $viewer.find("input.current-index").val(this.currentIndex);
-            $viewer.find(".max-index").text(this.maxIndex);
-            $indexControl.attr("max", this.maxIndex);
+            $viewer.find('input.current-index').attr('max', this.maxIndex).val(this.currentIndex);
+            $viewer.find('.max-index').text(this.maxIndex);
+            $indexControl.attr('max', this.maxIndex);
         }, this));
 
         $viewer.on("prefetch-adjacent-pages", $.proxy(function () {
@@ -341,15 +338,11 @@
 
         var headerHeight = $header.height();
         $viewer.on("mousemove", function (evt) {
-            if (evt.pageY > headerHeight) {
-                return;
-            } else if (headerHidden) {
+            if (evt.pageY < headerHeight * 2) {
                 $viewer.trigger("show-header");
+            } else if (evt.pageY > headerHeight * 3) {
+                $viewer.trigger("hide-header");
             }
-        });
-
-        $header.on("mouseout", function () {
-            $viewer.trigger("hide-header");
         });
 
         $viewer.on("hide-chrome", function () {
@@ -434,26 +427,28 @@
         updateViewer: function () {
             // Update next / previous links:
             if (this.currentIndex < this.maxIndex) {
-                $(".page.next")
+                $(".toolbar .page.next")
                     .removeClass("disabled")
                     .attr("href", this.generatePageUrl(this.currentGroup, this.currentIndex + 1));
             } else {
-                $(".page.next")
+                $(".toolbar .page.next")
                     .addClass("disabled")
                     .removeAttr("href");
             }
 
             if (this.currentIndex > 1) {
-                $(".page.previous")
+                $(".toolbar .page.previous")
                     .removeClass("disabled")
                     .attr("href", this.generatePageUrl(this.currentGroup, this.currentIndex - 1));
             } else {
-                $(".page.previous")
+                $(".toolbar .page.previous")
                     .addClass("disabled")
                     .removeAttr("href");
             }
 
-            window.history.pushState(
+            this.viewer.data({group: this.currentGroup, index: this.currentIndex});
+
+            window.history.replaceState(
                 {
                     group: this.currentGroup,
                     index: this.currentIndex
@@ -535,11 +530,13 @@
 
         var $pages = $("#pages"),
             $currentPage = $pages.find(".current img").first(),
-            $nextPage = $('<img>').hide(),
+            $nextPage = $('<img>'),
             previousImages = [new Image(), new Image(), new Image()],
             nextImages = [new Image(), new Image(), new Image()];
 
-        $('<div class="page">').addClass("next").append($nextPage).appendTo($pages);
+        $currentPage.parent().clone().empty().removeClass("current").addClass("next")
+            .appendTo($pages)
+            .append($nextPage);
 
         this.hide = function () {
             $container.hide();
@@ -607,9 +604,9 @@
 
             // CSS transforms rotate display but not the DOM element's height/width:
             if (this.controller.rotation % 180 === 0) {
-                overflow = ($nextPage.outerWidth() + $currentPage.outerWidth() + 10 >= $window.width());
+                overflow = ($nextPage.outerWidth() + $currentPage.outerWidth() + 20 >= $window.width());
             } else {
-                overflow = ($nextPage.outerHeight() + $currentPage.outerHeight() + 10 >= $window.height());
+                overflow = ($nextPage.outerHeight() + $currentPage.outerHeight() + 20 >= $window.height());
             }
 
             if (lastPage || overflow) {
@@ -895,12 +892,15 @@
         };
 
         this.update = function () {
-            // Note switch from page number to zero-based index:
-            var $currentPage = $container.scrollTop(0).children("div").eq(controller.currentIndex - 1);
+            var $pages = $container.scrollTop(0).children("div"),
+                // Note switch from page number to zero-based index:
+                $currentPage = $pages.eq(controller.currentIndex - 1);
+
             /* jshint -W101 */
             $container.scrollTop($currentPage.offset().top - ($window.height() / 2) + ($currentPage.height() / 2));
             /* jshint +W101 */
 
+            $pages.not($currentPage).filter(".current").removeClass("current");
             $currentPage.addClass("current");
 
             $container.on("scroll", gridScrollHandler);
