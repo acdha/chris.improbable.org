@@ -8,7 +8,88 @@
     <name>Chris Adams</name>
     <email>chris@improbable.org</email>
   </author>
-  <updated>2014-03-19T00:22:46.608059+00:00</updated>
+  <updated>2014-08-25T16:05:28+00:00</updated>
+  <entry>
+    <title>So you think you know what a number is…</title>
+    <id>http://chris.improbable.org/2014/8/25/adventures-in-unicode-digits/</id>
+    <link href="http://chris.improbable.org/2014/8/25/adventures-in-unicode-digits/"/>
+    <summary>So you think you know what a number is or why Python's idea of a digit is probably wider than you think</summary>
+    <content type="html">&lt;p&gt;
+                        I was recently surprised by a 404 which I noticed in &lt;a href="https://www.google.com/webmasters/tools"&gt;Google's Webmaster Tools&lt;/a&gt;,
+                        which pointed to a truncated URL (&lt;code&gt;http://www.wdl.org/en/item/&lt;/code&gt;) which is
+                        never actually linked to. This happens frequently but in this case the failure was
+                        interesting because the source link was an unlinked URL on a Persian blog and the
+                        source link actually worked:
+
+                        &lt;a href="http://www.wdl.org/en/item/%DB%B2%DB%B6%DB%B7%DB%B9/" title="Map of Persia and Adjacent Countries, for Sir John Malcolm's History of Persia - World Digital Library"&gt;http://www.wdl.org/en/item/۲۶۷۹/&lt;/a&gt;.&lt;br&gt;
+
+                        The canonical URL for that page is
+
+                        &lt;a href="http://www.wdl.org/en/item/2679/" title="Map of Persia and Adjacent Countries, for Sir John Malcolm's History of Persia - World Digital Library"&gt;http://www.wdl.org/en/item/2679/&lt;/a&gt;
+                        and the author had presumably pasted the URL into a page where their software had
+                        helpfully converted the latin digits (e.g. &lt;code&gt;0123456789&lt;/code&gt;) into what are
+                        known as
+
+                        &lt;a href="http://en.wikipedia.org/wiki/Eastern_Arabic_numerals" title="Eastern Arabic numerals - Wikipedia, the free encyclopedia"&gt;Eastern Arabic, Hindi or Indic-Arabic numerals&lt;/a&gt;:
+                        &lt;code&gt;٠١٢٣٤٥٦٧٨٩&lt;/code&gt; (a closer look shows that this is the Persian variant as the
+                        6 is actually &lt;abbr title="EXTENDED ARABIC-INDIC DIGIT SIX"&gt;۶&lt;/abbr&gt; instead of
+                        &lt;abbr title="ARABIC-INDIC DIGIT SIX"&gt;٦&lt;/abbr&gt;).
+                    &lt;/p&gt;
+
+                    &lt;p&gt;
+                        Presumably Googlebot scans HTML for text which look like URLs but uses a limited
+                        parser which breaks as soon as it finds a character which isn't in a limited set of
+                        characters, presumably only ISO-8859-1, causing it to break the URL while other services
+                        (e.g. Facebook, Google+, Github, etc.) extract the full URL.
+                    &lt;/p&gt;
+
+                    &lt;p&gt;
+                        So … mystery solved, we're done, right?
+                    &lt;/p&gt;
+
+                    &lt;p&gt;
+                        Wait, why does that URL work in the first place? We never added that as a supported
+                        feature and, being security-aware, all of our URLs are carefully validated to ensure
+                        that the IDs are valid numeric values – both as part of
+                        &lt;a href="https://docs.djangoproject.com/en/dev/topics/http/urls/"&gt;Django's URL dispatching&lt;/a&gt;
+                        and when the item is retrieved from the database. Besides, since the item IDs aren't
+                        assigned using Eastern-Arabic digits how does it actually match the record?
+                    &lt;/p&gt;
+
+                    &lt;p&gt;
+                        Python's documentation for &lt;code&gt;int()&lt;/code&gt; doesn't mention anything about this but
+                        &lt;a href="https://docs.python.org/2/library/stdtypes.html#unicode.isdecimal"&gt;&lt;code&gt;isdecimal()&lt;/code&gt;&lt;/a&gt;
+                        gives us a clue:
+                    &lt;/p&gt;
+
+                    &lt;blockquote&gt;
+                        Decimal characters include digit characters, and all characters that can be used to form decimal-radix numbers, e.g. U+0660, ARABIC-INDIC DIGIT ZERO.
+                    &lt;/blockquote&gt;
+
+                    &lt;p&gt;
+                        What's happening here is that Python uses the &lt;a href="http://www.unicode.org/"&gt;Unicode&lt;/a&gt; definition of “digit”, which is actually a fairly long list.
+                        The specification uses the
+                        &lt;a href="http://www.unicode.org/versions/Unicode6.0.0/ch04.pdf"&gt;“Nd = Number, decimal digit” classification&lt;/a&gt;
+                        and a quick look at the
+                        &lt;a href="http://www.unicode.org/Public/UNIDATA/ScriptExtensions.txt"&gt;Unidata script extensions list&lt;/a&gt;
+                        shows quite a few different characters flagged with Nd. Python should treat all of those
+                        as valid digits for the purposes of calling &lt;code&gt;int()&lt;/code&gt;, &lt;code&gt;isdecimal()&lt;/code&gt;,
+                        and even the regular expressions used to validate our URLs. ۲۶۷۹ will match &lt;code&gt;\d+&lt;/code&gt;
+                        and will have been converted to the number &lt;code&gt;2679&lt;/code&gt; by the time the database
+                        sees it.
+                    &lt;/p&gt;
+
+                    &lt;p&gt;
+                        If you want to see this in action, I created a quick &lt;a href="https://gist.github.com/acdha/e9d22a7c37961d043f58"&gt;test script which allows you to test numeric characters&lt;/a&gt; from &lt;a href="http://www.fileformat.info/info/unicode/category/Nd/list.htm" title="Unicode Characters in the 'Number, Decimal Digit' Category"&gt;the full list&lt;/a&gt;.
+                        Try it interactively in your browser: &lt;a target="_blank" href="http://repl.it/X3G"&gt;http://repl.it/X3G&lt;/a&gt;.
+                    &lt;/p&gt;
+
+                    &lt;p&gt;
+                        Left as an exercise for the reader is building a tool which will translate URLs to a specific script, such as this Burmese variant for the Ramayana:
+                        &lt;a href="http://www.wdl.org/en/item/%E1%81%81%E1%81%84%E1%81%82%E1%81%88%E1%81%85/" title="Ramayana - World Digital Library"&gt;http://www.wdl.org/en/item/၁၄၂၈၅/&lt;/a&gt;
+                    &lt;/p&gt;</content>
+    <updated>2014-08-25T16:05:28+00:00</updated>
+  </entry>
   <entry>
     <title>Content search on a budget</title>
     <id>http://chris.improbable.org/2014/3/17/content-search-on-a-budget/</id>
@@ -122,7 +203,7 @@
                         &lt;/li&gt;
                         &lt;li&gt;Finally, there's considerable room for integrating crowd-sourcing approaches like the direct text correction as epitomized by the &lt;a href="http://trove.nla.gov.au/newspaper"&gt;National Library of Australia's wonderful Trove project&lt;/a&gt; and promising improvements on that concept like the UMD-MITH's &lt;a href="http://mith.umd.edu/research/project/active-ocr/" title="Active OCR"&gt;ActiveOCR&lt;/a&gt; project.&lt;br&gt;
                             &lt;br&gt;
-                            This seems like an area for research which any organization with large digitized collections should be supporting, particularly with an eye towards easier reuse. &lt;a href="http://inkdroid.org"&gt;Ed Summers&lt;/a&gt; and I have idly discussed the idea for a generic web application which would display hOCR with the corresponding images for correction with all of the data stored somewhere like Github for full change tracking and review. It seems like something along those lines would be particularly valuable as a public service to avoid the expense of everyone reinventing large parts of this process customized for their particular workflow.
+                            This seems like an area for research which any organization with large digitized collections should be supporting, particularly with an eye towards easier reuse. &lt;a href="http://inkdroid.org"&gt;Ed Summers&lt;/a&gt; and I have idly discussed the idea for a generic web application which would display hOCR with the corresponding images for correction with all of the data stored somewhere like Github for full change tracking and review. It seems like something along those lines would be particularly valuable as a public service to avoid the expensive of everyone reinventing large parts of this process customized for their particular workflow.
                         &lt;/li&gt;
                     &lt;/ul&gt;</content>
     <updated>2014-03-19T00:22:46.608059+00:00</updated>
@@ -717,31 +798,5 @@ INFO locate_thumbnail: Attempting to locate 2.jpg within 2.png
                         In summary: 3 data points out of 213,000 are enough to skew the average by a factor of 10 or more. When using Google Analytics pretend the summary page doesn't exist and look at the performance distribution.
                     &lt;/p&gt;</content>
     <updated>2012-05-18T14:08:56+00:00</updated>
-  </entry>
-  <entry>
-    <title>Google Analytics performance monitoring details</title>
-    <id>http://chris.improbable.org/2011/12/13/google-analytics-performance-monitoring-details/</id>
-    <link href="http://chris.improbable.org/2011/12/13/google-analytics-performance-monitoring-details/"/>
-    <summary>The first rule of benchmarking: make sure you know what you actually measured</summary>
-    <content type="html">&lt;p&gt;
-                        Google Analytics has a very handy "Site Speed" report which measures the average load time for your pages as seen by your users. Unfortunately, there are two implementation details which are important to keep in mind:
-                    &lt;/p&gt;
-                    &lt;ol&gt;
-                        &lt;li&gt;The reports are heavily based on the average load time, which can skew the results pretty heavily: one multi-minute load time from someone in Haiti on a satellite connection outweighs quite a few users with .8 second load times. There is a bucket report but it's a bit clunky and there's no easy way to get the data out to run your own stats. Even a simple switch to using the median would make this report less ominous at first glance and it'd be a really good use for some sort of distribution graphic.
-                        &lt;/li&gt;
-                        &lt;li&gt;
-                            &lt;p&gt;
-                                The more interesting problem is that Google Analytics uses the &lt;a href="https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/NavigationTiming/Overview.html"&gt;W3C Navigation Timing API&lt;/a&gt; and reports only the value of &lt;code class="language-javascript"&gt;window.performance.timing.loadEventStart - window.performance.timing.navigationStart&lt;/code&gt;. The browser won't fire the &lt;a href="https://developer.mozilla.org/en/DOM/window.onload"&gt;load event&lt;/a&gt; until all resources on the page have been loaded including external services like Google Analytics. Unfortunately, you will find situations where http://google-analytics.com/ga.js takes a considerable amount of time to respond (yesterday I had 40 second response in a &lt;a href="http://webpagetest.org"&gt;webpagetest.org&lt;/a&gt; session) and this will be reflected in your stats even if the page loaded considerably faster from the user's perspective.
-                            &lt;/p&gt;
-                            &lt;p&gt;
-                                I'm currently experimenting with deferring loading Google Analytics until after the load event using this code. Initial testing appears promising and the elapsed time to load everything else is definitely more accurate:
-                            &lt;/p&gt;&lt;script src="https://gist.github.com/1473932.js?file=deferred-ga.js"&gt;
-&lt;/script&gt;
-                            &lt;details&gt;
-                                Relying on NavigationTiming does mean that you won't receive any information from older versions of Internet Explorer unless they have the Google Toolbar installed, which means some of your worst-performing clients will be invisible. &lt;a href="http://code.google.com/chrome/chromeframe/"&gt;Chrome Frame&lt;/a&gt; would be my preferred response…
-                            &lt;/details&gt;
-                        &lt;/li&gt;
-                    &lt;/ol&gt;</content>
-    <updated>2011-12-13T20:01:15+00:00</updated>
   </entry>
 </feed>
