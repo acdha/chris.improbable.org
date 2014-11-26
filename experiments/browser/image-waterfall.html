@@ -123,6 +123,7 @@
 
         <script type="text/javascript">
             var maxWidth = window.innerWidth - 616,
+                itemIDs = [],
                 images = [],
                 imagesToAdd = [];
 
@@ -138,11 +139,11 @@
             }
 
             function fetchImage() {
-                var randomId = Math.round(Math.random() * 16000),
+                var randomId = itemIDs[Math.floor(Math.random() * itemIDs.length)],
                     url = 'http://content.wdl.org/' + randomId + '/thumbnail/616x510.jpg';
 
                 var img = new Image();
-                img.addEventListener("load", addBlock, false);
+                img.addEventListener('load', addBlock, false);
                 img.src = url;
             }
 
@@ -151,12 +152,10 @@
             }
 
             // Yay, standards:
-            document.body.addEventListener("animationend", cleanup, true);
-            document.body.addEventListener("webkitAnimationEnd", cleanup, true);
-            document.body.addEventListener("MSAnimationEnd", cleanup, true);
-            document.body.addEventListener("oanimationend", cleanup, true);
-
-            window.setInterval(fetchImage, 4 * 1000);
+            document.body.addEventListener('animationend', cleanup, true);
+            document.body.addEventListener('webkitAnimationEnd', cleanup, true);
+            document.body.addEventListener('MSAnimationEnd', cleanup, true);
+            document.body.addEventListener('oanimationend', cleanup, true);
 
             window.setInterval(function () {
                 if (imagesToAdd.length < 1) {
@@ -167,7 +166,7 @@
                 document.body.appendChild(e);
             }, 4000);
 
-            document.body.addEventListener("click", function (e) {
+            document.body.addEventListener('click', function (e) {
                 if (e.target.tagName != 'DIV') {
                     return;
                 }
@@ -177,6 +176,22 @@
                     window.open('http://www.wdl.org/en/item/' + m[1] + '/');
                 }
             }, true);
+
+            function sitemapLoader() {
+                var urls = this.responseXML.querySelectorAll('loc');
+                for (var i = 0; i < urls.length; i++) {
+                    var url = urls[i].textContent;
+                    if (!!url) {
+                        itemIDs.push(url.replace(/^.*\/item\/([0-9]+)\/.*$/, '$1'));
+                    }
+                }
+                window.setInterval(fetchImage, 4 * 1000);
+            }
+
+            var req = new XMLHttpRequest();
+            req.onload = sitemapLoader;
+            req.open('get', 'http://www.wdl.org/en/sitemap.xml', true);
+            req.send();
         </script>
     </body>
 </html>
