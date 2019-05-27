@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Reconstructing thumbnails using OpenCV
+        </title>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/main.min.css" type="text/css" media="all"><!--[if lte IE 8]>
+            <link rel="stylesheet" href="/static/css/ie-fixes.css" type="text/css" media="all">
+            <script src="/static/js/html5shiv.js"></script>
+        <![endif]-->
+        <meta name="description" content="Building higher-resolution thumbnails given the original master file and a lot of CPU time">
+        <meta http-equiv="last-modified" content="Sun, 30 Jun 2013 20:25:23 GMT">
+        <link rel="alternate" type="application/atom+xml" title="All Posts (Atom)" href="/feeds/all.atom">
+        <link rel="alternate" type="application/rss+xml" title="All Posts (RSS)" href="/feeds/all.rss">
+        <link rel="icon" type="image/jpeg" sizes="287x287" href="/static/img/favicon-287x287.jpg">
+        <link rel="icon" type="image/jpeg" sizes="128x128" href="/static/img/favicon-128x128.jpg">
+        <script type="application/javascript">
+var _prum={id:"5166be01e6e53d1007000001"};var PRUM_EPISODES=PRUM_EPISODES||{};PRUM_EPISODES.q=[];PRUM_EPISODES.mark=function(b,a){PRUM_EPISODES.q.push(["mark",b,a||new Date().getTime()])};PRUM_EPISODES.measure=function(b,a,b){PRUM_EPISODES.q.push(["measure",b,a,b||new Date().getTime()])};PRUM_EPISODES.done=function(a){PRUM_EPISODES.q.push(["done",a])};PRUM_EPISODES.mark("firstbyte");(function(){var b=document.getElementsByTagName("script")[0];var a=document.createElement("script");a.type="text/javascript";a.async=true;a.charset="UTF-8";a.src="//rum-static.pingdom.net/prum.min.js";b.parentNode.insertBefore(a,b)})();
+        </script>
+    </head>
+    <body class="blog post_detail" itemscope itemtype="http://schema.org/BlogPosting">
+        <nav id="site-nav">
+            <header id="about">
+                <h1>
+                    <a href="/about/">Chris Adams</a>
+                </h1>
+                <h2>
+                    Programmer, cyclist, photographer
+                </h2>
+            </header>
+            <ul class="links">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/about/">About</a>
+                </li>
+                <li>
+                    <a href="/feeds/all.atom" title="Site Feed">Site Feed</a>
+                </li>
+            </ul>
+            <ul class="social-networks">
+                <li>
+                    <a href="https://github.com/acdha" rel="me">Github</a>
+                </li>
+                <li>
+                    <a href="http://bitbucket.org/acdha" rel="me">Bitbucket</a>
+                </li>
+                <li>
+                    <a href="http://delicious.com/acdha" rel="me">del.icio.us</a>
+                </li>
+                <li>
+                    <a href="http://twitter.com/acdha" rel="me">Twitter</a>
+                </li>
+                <li>
+                    <a href="https://plus.google.com/116562742092842686896?rel=author" rel="me">Google+</a>
+                </li>
+                <li>
+                    <a href="http://www.flickr.com/photos/acdha" rel="me">Flickr</a>
+                </li>
+                <li>
+                    <a href="http://www.linkedin.com/in/acdha" rel="me">LinkedIn</a>
+                </li>
+                <li>
+                    <a href="http://connect.garmin.com/explore?owner=acdha" rel="me">Garmin Connect</a>
+                </li>
+            </ul>
+            <div id="site-search"></div>
+        </nav>
+        <section id="main">
+            <article class="post">
+                <header>
+                    <meta itemprop="dateCreated" content="2013-06-30T20:25:23.108473Z">
+                    <meta itemprop="dateModified" content="2013-06-30T20:25:23.108473Z"><time class="date" itemprop="datePublished" datetime="2013-06-30T20:25:23.108473+00:00">Jun 30</time>
+                    <h2 itemprop="title">
+                        Reconstructing thumbnails using OpenCV
+                    </h2>
+                </header>
+                <p class="summary">
+                    Building higher-resolution thumbnails given the original master file and a lot of CPU time
+                </p>
+                <div class="body" itemprop="articleBody">
+                    <h3>
+                        Background
+                    </h3>
+                    <p>
+                        I work with collections of scanned images which have been on the web for awhile. Each one has a hand-selected thumbnail as well as full-image files at various resolutions. Over the years, our default image display size has increased and we're approaching the point where our original thumbnail or reference image size is unpleasantly small. Unfortunately we don't have the data for the various image processing steps which were used to generate these thousands of thumbnails.
+                    </p>
+                    <p>
+                        I recently decided to experiment with <a href="http://www.opencv.org">OpenCV</a> to see whether it would be reasonable to locate the original location within the source files so we can extract new versions at arbitrary resolutions.
+                    </p>
+                    <h3>
+                        Techniques
+                    </h3>
+                    <p>
+                        At first glance, the <a href="http://docs.opencv.org/doc/tutorials/imgproc/histograms/template_matching/template_matching.html">OpenCV template matching tutorial</a> appears to be perfect for the job: give it a source image and a template image and it will attempt to locate the latter in the former. Unfortunately, this falls apart when the template image has been scaled or rotated, which is the often the case for our collections: all the template matching code is doing is sliding the template image around the source image one pixel at a time and measuring the difference!
+                    </p>
+                    <p>
+                        Fortunately, there are far more advanced techniques in the modern arsenal for building what are known as scale and rotation invariant feature descriptors. Unless you're a CS grad student, you'll want to start with OpenCV's extensive <a href="http://en.wikipedia.org/wiki/Feature_detection_(computer_vision)">Feature Detection</a> suite. This example shows an even harder variant of our problem: <a href="http://docs.opencv.org/doc/tutorials/features2d/feature_homography/feature_homography.html#feature-homography">using feature homography to locate a significantly distorted image in a photograph</a> .
+                    </p>
+                    <p>
+                        For a first pass I'm using <a href="http://en.wikipedia.org/wiki/SURF"><abbr title="Speeded Up Robust Features">SURF</abbr></a> with the brute-force matcher, although that will likely change once I take time to compare the other options. This has yielded great results, although the actual match calculation could be faster.
+                    </p>
+                    <h3>
+                        The Results
+                    </h3>
+                    <p>
+                        <a href="https://github.com/acdha/image-mining/blob/master/bin/locate-thumbnail.py">locate-thumbnail.py</a> has a pretty simple interface which allows you to supply a list of file pairs. It will attempt to reconstruct the original thumbnail from the master image and save the result in the same location. Since the assumption is that you are starting with thumbnails which were originally derived from the master image, it will automatically skip an image if an insufficient number of matching points are detected and since my goal was to get consistently sized output thumbnails the output is coerced to be perfectly rectangular, although it will be rotated by multiples of 90º to match the original orientation as you can see in several examples below.
+                    </p>
+                    <p>
+                        A basic session looks like this:
+                    </p>
+                    <pre class="prettyprint lang-sh">
+$ for i in `seq 1 10`; do echo $i; curl -sko $i.jpg http://content.wdl.org/$i/thumbnail/308x255.jpg -O http://content.wdl.org/$i.png;  done
+1
+2
+…
+$ locate-thumbnail.py --display --save-visualization {1..10}.{jpg,png}
+INFO locate_thumbnail: Attempting to locate 1.jpg within 1.png
+INFO locate_thumbnail: Found 147 matches
+INFO find_homography: 130 inliers, 147 matched features
+INFO reconstruct_thumbnail: Reconstructing thumbnail from source image
+INFO reconstruct_thumbnail: Thumbnail bounds within source image: [[190, 407], [870, 407], [868, 969], [191, 970]]
+INFO reconstruct_thumbnail: Resizing from (563, 680) to (308, 255)
+Master dimensions: 1271x1024
+Thumbnail dimensions: 255x308
+Reconstructed thumb dimensions: 255x308
+INFO locate_thumbnail: Saved reconstructed thumbnail 1.reconstructed.jpg
+INFO locate_thumbnail: Saved match visualization 1.visualized.jpg
+INFO locate_thumbnail: Attempting to locate 2.jpg within 2.png
+</pre>
+                    <h4>
+                        Examples
+                    </h4>
+                    <figure>
+                        <img src="http://content.wdl.org/10/thumbnail/308x255.jpg"><img src="examples/10.reconstructed.jpg"><br>
+                        <a href="examples/10.visualized.jpg"><img src="examples/10.visualized.jpg"></a>
+                        <figcaption>
+                            Reconstructed thumbnail using the <a href="http://www.wdl.org/media/10.png">PNG</a> for <a href="http://www.wdl.org/10">An Actor in the Role of Sato Norikiyo who Becomes Saigyo: An Actor in the Role of Yoshinaka</a> from the <a href="http://www.wdl.org">World Digital Library</a>
+                        </figcaption>
+                    </figure>
+                    <figure>
+                        <img src="http://content.wdl.org/3/thumbnail/308x255.jpg"><img src="examples/3.reconstructed.jpg"><br>
+                        <a href="examples/3.visualized.jpg"><img src="examples/3.visualized.jpg"></a>
+                        <figcaption>
+                            Reconstructed thumbnail using the <a href="http://www.wdl.org/media/3.png">PNG</a> for <a href="http://www.wdl.org/3">Maps of Ezo, Sakhalin, and Kuril Islands</a> from the <a href="http://www.wdl.org">World Digital Library</a>
+                        </figcaption>
+                    </figure>
+                    <figure>
+                        <img src="http://content.wdl.org/1/thumbnail/308x255.jpg"><img src="examples/1.reconstructed.jpg"><br>
+                        <a href="examples/1.visualized.jpg"><img src="examples/1.visualized.jpg"></a>
+                        <figcaption>
+                            Reconstructed thumbnail using the <a href="http://www.wdl.org/media/1.png">PNG</a> for <a href="http://www.wdl.org/1">Antietam, Maryland. Allan Pinkerton, President Lincoln, and Major General John A. McClernand: Another View</a> from the <a href="http://www.wdl.org">World Digital Library</a>
+                        </figcaption>
+                    </figure>
+                    <figure>
+                        <img src="http://content.wdl.org/22/thumbnail/308x255.jpg"><img src="examples/22.reconstructed.jpg"><br>
+                        <a href="examples/22.visualized.jpg"><img src="examples/22.visualized.jpg"></a>
+                        <figcaption>
+                            Reconstructed thumbnail using the <a href="http://www.wdl.org/media/22.png">PNG</a> for <a href="http://www.wdl.org/22">The Island and City of Metropolitan Goa of India</a> from the <a href="http://www.wdl.org">World Digital Library</a>
+                        </figcaption>
+                    </figure>
+                    <h4>
+                        Quite Possibly Working Code
+                    </h4>
+                    <p>
+                        All of the code above is available on Github and should run anywhere OpenCV is available: <a href="https://github.com/acdha/image-mining">https://github.com/acdha/image-mining</a>. To the extent allowed by law, it has been released into the public domain.
+                    </p>
+                </div>
+            </article>
+            <nav id="post-nav"></nav><script id="discus-javascript">
+    var disqus_shortname = 'improbable';
+
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                    document.getElementsByTagName('body')[0].appendChild(dsq);
+                })();
+            </script><a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            <div id="disqus_thread"></div>
+        </section>
+        <footer id="site-footer">
+            <p>
+                This site is purely my personal work and does not reflect the views of my employer.
+            </p>
+            <p class="license">
+                <a class="icon" rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+            </p>
+        </footer><script async="" defer src="/static/js/common.js">
+</script><script id="google-analytics">
+    var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-2097834-1']);
+            _gaq.push(['_setDomainName', 'improbable.org']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+        </script>
+    </body>
+</html>
