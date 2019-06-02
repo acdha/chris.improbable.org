@@ -351,9 +351,140 @@
     <updated>2013-09-20T00:31:26.093447+00:00</updated>
   </entry>
   <entry>
+    <title>The NSA’s recklessness poses a risk to US business</title>
+    <id>http://chris.improbable.org/2013/09/19/nsa-risks-to-us-businesses/</id>
+    <link href="http://chris.improbable.org/2013/09/19/nsa-risks-to-us-businesses/"/>
+    <summary>The NSA’s recklessness poses a risk to US business. IT is one of the bright spots in the US economy – perhaps our government should be more cautious about helping the competition…</summary>
+    <content type="html">&lt;p&gt;
+                        This is a great example of how the NSA's rogue actions are going to be endangering US IT companies for years: RSA has a security advisory out for several products, including a widely-used cryptography library, which defaulted to using the Dual EC DRBG random number generator, which we now know was released by the NSA with a backdoor to make it easier to spy on people.
+                    &lt;/p&gt;
+                    &lt;blockquote cite="http://www.wired.com/threatlevel/2013/09/rsa-advisory-nsa-algorithm/"&gt;
+                        &lt;p&gt;
+                            Amidst all of the confusion and concern over an encryption algorithm that may contain an NSA backdoor, RSA Security released an advisory to developer customers today noting that the algorithm is the default algorithm in one of its toolkits and strongly advises them to stop using the algorithm.
+                        &lt;/p&gt;&lt;cite&gt;&lt;a href="http://www.wired.com/threatlevel/2013/09/rsa-advisory-nsa-algorithm/"&gt;RSA Tells Its Developer Customers: Stop Using NSA-Linked Algorithm&lt;/a&gt;, Kim Zetter, Wired&lt;/cite&gt;
+                    &lt;/blockquote&gt;
+                    &lt;p&gt;
+                        This likely makes things weaker in a way which others could exploit – and given the high odds that people in e.g. China and Russia are racing to test that, it's likely that the NSA's actions exposed millions of people to unnecessary additional risk by weakening important software.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        It's likely even more damaging, however, to the US IT industry's future. We can ship updates to software relatively quickly but the question of trust is going to be much thornier: almost every RSA customer – and especially foreign ones – must be asking whether RSA was innocently dupe or actively collaborating. Given how much business they do with the US government, they're probably never going to be able to convincingly disprove that theory. Every other major security vendor in the US and certain allied countries is going to face a similar question: “How do we know you won't be in the news next?”
+                    &lt;/p&gt;</content>
+    <updated>2013-09-20T00:31:26.093447+00:00</updated>
+  </entry>
+  <entry>
     <title>Extracting images from scanned book pages</title>
     <id>http://chris.improbable.org/2013/8/31/extracting-images-from-scanned-pages/</id>
     <link href="http://chris.improbable.org/2013/8/31/extracting-images-from-scanned-pages/"/>
+    <summary>A first step toward building a visual index for books automatically</summary>
+    <content type="html">&lt;p&gt;
+                        I work on a project which has placed &lt;a title="List of books available from the World Digital Library" href="http://www.wdl.org/en/search/?item_type=book"&gt;a number of books&lt;/a&gt; online. Over the years we've improved server performance and worked on a &lt;a href="https://github.com/LibraryOfCongress/wdl-viewer/"&gt;fast, responsive viewer for scanned books&lt;/a&gt; to make our books as accessible as possible but it's still challenging to help visitors find something of interest out of hundreds of thousands of scanned pages.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        &lt;a href="http://www.trevorowens.org"&gt;Trevor&lt;/a&gt; and I have discussed various ways to improve the situation and one idea which seemed promising was seeing how hard it would be to extract the images from digitized pages so we could present a visual index of an item. Trevor’s THATCamp CHNM post on &lt;a href="http://chnm2013.thatcamp.org/06/03/freeing-images-from-inside-digitized-books-and-newspapers/"&gt;Freeing Images from Inside Digitized Books and Newspapers&lt;/a&gt; got a favorable reception and since it kept coming up at work I decided to see how far I could get using &lt;a href="http://www.opencv.org/"&gt;OpenCV&lt;/a&gt;.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        Everything you see below is open-source and &lt;a href="mailto:chris@improbable.org"&gt;comments are highly welcome&lt;/a&gt;. I created a &lt;a href="https://github.com/acdha/image-mining/tree/book-illustration-detection"&gt;book-illustration-detection&lt;/a&gt; branch in my &lt;a href="https://github.com/acdha/image-mining/"&gt;image mining&lt;/a&gt; project (see my previous &lt;a href="http://chris.improbable.org/2013/06/30/reconstructing-thumbnails-using-opencv/"&gt;experiment reconstructing higher-resolution thumbnails from the masters&lt;/a&gt;) so feel free to fork it or open issues.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        The &lt;a href="https://github.com/acdha/image-mining/blob/914b5c2c2d83508826933ca0b5b92ab28c6f97b8/bin/locate-figures.py"&gt;current process (locate-figures.py)&lt;/a&gt; is rather primitive:
+                    &lt;/p&gt;
+                    &lt;ol&gt;
+                        &lt;li&gt;
+                            &lt;a href="https://github.com/acdha/image-mining/blob/914b5c2c2d83508826933ca0b5b92ab28c6f97b8/bin/locate-figures.py#L30"&gt;convert the image to grayscale&lt;/a&gt;, which is both necessary for some of the algorithms
+                        &lt;/li&gt;
+                        &lt;li&gt;
+                            &lt;a href="https://github.com/acdha/image-mining/blob/914b5c2c2d83508826933ca0b5b92ab28c6f97b8/bin/locate-figures.py#L34"&gt;apply a binary filter converting image to black and white&lt;/a&gt;
+                        &lt;/li&gt;
+                        &lt;li&gt;Optionally, apply an &lt;a href="https://github.com/acdha/image-mining/blob/914b5c2c2d83508826933ca0b5b92ab28c6f97b8/bin/locate-figures.py#L61-L67"&gt;erode&lt;/a&gt; or &lt;a href="https://github.com/acdha/image-mining/blob/914b5c2c2d83508826933ca0b5b92ab28c6f97b8/bin/locate-figures.py#L70-L76"&gt;dilate&lt;/a&gt; filter (see the &lt;a href="http://docs.opencv.org/doc/tutorials/imgproc/erosion_dilatation/erosion_dilatation.html"&gt;OpenCV erosion and dilation tutorial&lt;/a&gt;)
+                        &lt;/li&gt;
+                        &lt;li&gt;Optionally, apply &lt;a href="https://github.com/acdha/image-mining/blob/914b5c2c2d83508826933ca0b5b92ab28c6f97b8/bin/locate-figures.py#L80"&gt;Canny edge detection&lt;/a&gt; (&lt;a href="http://docs.opencv.org/doc/tutorials/imgproc/imgtrans/canny_detector/canny_detector.html"&gt;OpenCV tutorial&lt;/a&gt;)
+                        &lt;/li&gt;
+                        &lt;li&gt;
+                            &lt;a href="https://github.com/acdha/image-mining/blob/914b5c2c2d83508826933ca0b5b92ab28c6f97b8/bin/locate-figures.py#L83"&gt;find contours&lt;/a&gt; (i.e. what appear to be lines) (&lt;a href="http://docs.opencv.org/doc/tutorials/imgproc/shapedescriptors/find_contours/find_contours.html"&gt;OpenCV tutorial&lt;/a&gt;)
+                        &lt;/li&gt;
+                        &lt;li&gt;
+                            &lt;a href="https://github.com/acdha/image-mining/blob/914b5c2c2d83508826933ca0b5b92ab28c6f97b8/bin/locate-figures.py#L95-L122"&gt;Filter contours which are very small or very large&lt;/a&gt;, to avoid extracting small things like defects, letters, etc. or large artifacts like borders from the scanning process which span an entire edge
+                        &lt;/li&gt;
+                    &lt;/ol&gt;
+                    &lt;p&gt;
+                        The program requires Python, &lt;a href="http://www.opencv.org"&gt;OpenCV&lt;/a&gt; and &lt;a href="http://numpy.org/"&gt;numpy&lt;/a&gt;, all of which should be easy to install on Ubuntu/Debian Linux or using &lt;a href="http://brew.sh/"&gt;Homebrew&lt;/a&gt; on OS X. When the prerequisites are installed, the program can be run like this:
+                    &lt;/p&gt;
+                    &lt;figure&gt;
+                        &lt;img style="max-width: 60%" src="applying-filters-2.jpg"&gt;
+                        &lt;figcaption&gt;
+                            Applying filters interactively, with contours and their bounding boxes displayed
+                            &lt;pre&gt;
+&lt;code&gt;locate-figures.py --interactive 211_1_82.png sn99021999_1913-08-31_1_1.png&lt;/code&gt;
+&lt;/pre&gt;
+                        &lt;/figcaption&gt;
+                    &lt;/figure&gt;
+                    &lt;h3&gt;
+                        Results
+                    &lt;/h3&gt;
+                    &lt;p&gt;
+                        The results are quite promising:
+                    &lt;/p&gt;&lt;!-- TODO: finish migrating to sane CSS for figures --&gt;
+                    &lt;div style="text-align: center"&gt;
+                        &lt;figure&gt;
+                            &lt;a href="http://chroniclingamerica.loc.gov/lccn/sn99021999/1913-08-31/ed-1/seq-1/"&gt;&lt;img style="border: solid blue 1px" width="291" height="309" src="/experiments/opencv/page-image-extraction/sn99021999_1913-08-31_1_1%20extract%205489.jpg"&gt;&lt;/a&gt;
+                            &lt;figcaption&gt;
+                                Extracted cartoon from the &lt;a href="http://chroniclingamerica.loc.gov/lccn/sn99021999/1913-08-31/ed-1/seq-1/"&gt;Omaha Daily Bee front page for August 31st, 1913&lt;/a&gt; &lt;a href="http://chroniclingamerica.loc.gov/lccn/sn99021999/1913-08-31/ed-1/seq-1.jp2"&gt;JPEG-2000 Master&lt;/a&gt; (courtesy of &lt;a href="http://chroniclingamerica.loc.gov/"&gt;Chronicling America&lt;/a&gt;)
+                            &lt;/figcaption&gt;
+                        &lt;/figure&gt;
+                        &lt;figure&gt;
+                            &lt;a href="http://www.wdl.org/en/item/211/view/1/77/"&gt;&lt;img style="border: solid blue 1px" src="/experiments/opencv/page-image-extraction/211/211_1_77%20extract%201622.jpg"&gt;&lt;/a&gt;
+                            &lt;figcaption&gt;
+                                Extracted illustration from &lt;a href="http://www.wdl.org/en/item/211/"&gt;The Amazon and Madeira Rivers: Sketches and Descriptions from the Note-Book of an Explorer&lt;/a&gt;
+                            &lt;/figcaption&gt;
+                        &lt;/figure&gt;
+                        &lt;figure&gt;
+                            &lt;a href="http://www.wdl.org/en/item/211/view/1/246/"&gt;&lt;img style="border: solid blue 1px" src="/experiments/opencv/page-image-extraction/211/211_1_246%20extract%201654.jpg"&gt;&lt;/a&gt;
+                            &lt;figcaption&gt;
+                                Extracted illustration from &lt;a href="http://www.wdl.org/en/item/211/"&gt;The Amazon and Madeira Rivers: Sketches and Descriptions from the Note-Book of an Explorer&lt;/a&gt;
+                            &lt;/figcaption&gt;
+                        &lt;/figure&gt;
+                        &lt;figure&gt;
+                            &lt;a href="http://www.wdl.org/en/item/101/view/1/26/"&gt;&lt;img style="border: solid blue 1px" src="/experiments/opencv/page-image-extraction/101/101_1_26%20extract%201267.jpg"&gt;&lt;/a&gt;
+                            &lt;figcaption&gt;
+                                Extracted print from &lt;a href="http://www.wdl.org/en/item/101/"&gt;Guide to the Great Siberian Railway&lt;/a&gt;
+                            &lt;/figcaption&gt;
+                        &lt;/figure&gt;
+                    &lt;/div&gt;
+                    &lt;p&gt;
+                        There are, of course, some problems:
+                    &lt;/p&gt;
+                    &lt;figure style="text-align: center"&gt;
+                        &lt;a href="http://www.wdl.org/en/item/211/view/1/253/"&gt;&lt;img style="border: solid blue 1px" src="/experiments/opencv/page-image-extraction/211/211_1_253%20extract%20805.jpg"&gt;&lt;/a&gt; &lt;a href="http://www.wdl.org/en/item/211/view/1/253/"&gt;&lt;img style="border: solid blue 1px" src="/experiments/opencv/page-image-extraction/211/211_1_253%20extract%2010415.jpg"&gt;&lt;/a&gt;
+                        &lt;figcaption&gt;
+                            Multiple contours were detected in multiple points of this illustration but unfortunately they weren't seen as contiguous and both were large enough to be extracted
+                            &lt;aside&gt;
+                                (Source: &lt;a href="http://www.wdl.org/en/item/211/"&gt;The Amazon and Madeira Rivers: Sketches and Descriptions from the Note-Book of an Explorer&lt;/a&gt;)
+                            &lt;/aside&gt;
+                        &lt;/figcaption&gt;
+                    &lt;/figure&gt;
+                    &lt;p&gt;
+                        The full results are worth reviewing – I was surprised at the quality from the initial pass:
+                    &lt;/p&gt;
+                    &lt;ul&gt;
+                        &lt;li&gt;
+                            &lt;a href="/experiments/opencv/page-image-extraction/211/"&gt;The Amazon and Madeira Rivers: Sketches and Descriptions from the Note-Book of an Explorer&lt;/a&gt;
+                        &lt;/li&gt;
+                        &lt;li&gt;
+                            &lt;a href="/experiments/opencv/page-image-extraction/101/"&gt;Guide to the Great Siberian Railway&lt;/a&gt;
+                        &lt;/li&gt;
+                    &lt;/ul&gt;
+                    &lt;p&gt;
+                        There are some obvious areas for improvement such as attempting to prevent the above problem by filtering boxes which are entirely contained within other boxes. It would also be interesting to attempt to examine the surrounding area to see whether there appears to be a caption.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        Cool ideas? Deep experience with image processing? &lt;a href="mailto:chris@improbable.org"&gt;I'd love to hear what you think&lt;/a&gt;.
+                    &lt;/p&gt;</content>
+    <updated>2013-08-31T22:15:00+00:00</updated>
+  </entry>
+  <entry>
+    <title>Extracting images from scanned book pages</title>
+    <id>http://chris.improbable.org/2013/08/31/extracting-images-from-scanned-pages/</id>
+    <link href="http://chris.improbable.org/2013/08/31/extracting-images-from-scanned-pages/"/>
     <summary>A first step toward building a visual index for books automatically</summary>
     <content type="html">&lt;p&gt;
                         I work on a project which has placed &lt;a title="List of books available from the World Digital Library" href="http://www.wdl.org/en/search/?item_type=book"&gt;a number of books&lt;/a&gt; online. Over the years we've improved server performance and worked on a &lt;a href="https://github.com/LibraryOfCongress/wdl-viewer/"&gt;fast, responsive viewer for scanned books&lt;/a&gt; to make our books as accessible as possible but it's still challenging to help visitors find something of interest out of hundreds of thousands of scanned pages.
@@ -527,6 +658,72 @@ label live-686-pae
     <updated>2013-08-29T08:42:00+00:00</updated>
   </entry>
   <entry>
+    <title>How simple web kiosks have become thanks to Webconverger</title>
+    <id>http://chris.improbable.org/2013/08/29/how-simple-web-kiosks-have-become/</id>
+    <link href="http://chris.improbable.org/2013/08/29/how-simple-web-kiosks-have-become/"/>
+    <summary>Creating a fullscreen web app kiosk has never been easier thanks to Webconverger</summary>
+    <content type="html">&lt;p&gt;
+                        Recently I decided it was time to get around to creating a dashboard for the &lt;a href="http://www.wdl.org/"&gt;World Digital Library&lt;/a&gt;. We'd talked about it for years but there was always the hassle of maintaining another system acting as a deterrent for a side project. Since browsers have become more capable, however, I decided yesterday to see how far I could get with a pure static HTML page and a static boot-to-browser system.
+                    &lt;/p&gt;
+                    &lt;p&gt;
+                        I quickly found &lt;a href="http://webconverger.org/"&gt;Webconverger&lt;/a&gt;, which is a Debian derivative intended for kiosks, schools &amp;amp; libraries, etc. A quick look at the &lt;a href="http://webconverger.org/API/"&gt;API documentation&lt;/a&gt; showed that all of the configuration I needed was possible simply by editing the boot-loader config. I tossed together a quick HTML page which loaded various things from Twitter, &lt;a href="https://graphite.readthedocs.org"&gt;Graphite&lt;/a&gt;, Atom feeds, etc. and tossed it into an S3 bucket.
+                    &lt;/p&gt;
+                    &lt;h2&gt;
+                        Building the bootable USB key
+                    &lt;/h2&gt;
+                    &lt;ol&gt;
+                        &lt;li&gt;I downloaded the &lt;a href="http://dl.webconverger.com/latest.iso"&gt;ISO image&lt;/a&gt; and used dd to transfer it to a spare USB key (thanks conference vendors!) and booted to confirm that my hardware was supported and that the page looked great after typing the URL into the browser.
+                        &lt;/li&gt;
+                        &lt;li&gt;
+                            &lt;p&gt;
+                                As per the documentation, everything worked automatically once I added a few boot parameters at startup: &lt;code&gt;noblank chrome=webcfullscreen homepage=http://example.org&lt;/code&gt;
+                            &lt;/p&gt;
+                            &lt;p&gt;
+                                Unfortunately, on OS X there's no easy way to mount an ISO image read-write so it's not as simple as editing the file in your favorite editor…
+                            &lt;/p&gt;
+                        &lt;/li&gt;
+                        &lt;li&gt;
+                            &lt;p&gt;
+                                Now for the applied laziness: there's a paid configuration service and full developer instructions, and for that matter there are generic ISO editing tools, but I really just wanted to edit a text file which lives in &lt;code&gt;/boot/live.cfg&lt;/code&gt; and it felt somewhat excessive to setup a full toolchain to change a few bytes of ASCII text
+                            &lt;/p&gt;
+                            &lt;p&gt;
+                                Solution: make a copy of the ISO file, open up &lt;a href="http://ridiculousfish.com/hexfiend/"&gt;Hex Fiend&lt;/a&gt; and search for a string which would only appear in the target file, as determined by looking in &lt;code&gt;/boot/live.cfg&lt;/code&gt; after mounting the ISO read-only:&lt;br&gt;
+                                &lt;code&gt;append initrd=/live/initrd2.img boot=live skipconfig quiet splash&lt;/code&gt;
+                            &lt;/p&gt;
+                            &lt;aside&gt;
+                                (Did I really just describe hex-editing a binary file as the easy option? Well, yes — it's a standard system search dialog, a click to move the cursor, pasting, a click to change panes and holding down the 0 key for a few seconds. If you've ever tried to get Word to format a large document consistently, this is a piece of cake…)
+                            &lt;/aside&gt;
+                        &lt;/li&gt;
+                        &lt;li&gt;It's not quite simple as simply inserting text because I don't want to corrupt the ISO image by changing the size but fortunately there's a ton of boilerplate which I don't need for a simple dashboard. Like most C programs, the bootloader is almost certain to stop reading once it finds null bytes and indeed a quick glance shows a block of 00 bytes starting after the final character in the file.
+                        &lt;/li&gt;
+                        &lt;li&gt;
+                            &lt;p&gt;
+                                A quick pass through an editor and I have the following trimmed down config with the customizations on the end of the append line:
+                            &lt;/p&gt;
+                            &lt;pre style="white-space: pre; word-wrap: normal; overflow-x: scroll"&gt;
+DEFAULT live-686-pae
+
+label live-686-pae
+        menu label 686-pae: Live
+        kernel /live/vmlinuz2
+        append initrd=/live/initrd2.img boot=live skipconfig quiet splash bootfrom=removable &lt;strong&gt;noblank chrome=webcfullscreen homepage=http://example.org&lt;/strong&gt;
+&lt;/pre&gt;
+                            &lt;p&gt;
+                                Past it in at the start of live.cfg, switch to the hex pane and pad out the file with NULLs until the original text is completely replaced.
+                            &lt;/p&gt;
+                        &lt;/li&gt;
+                        &lt;li&gt;Use dd to write the modified ISO to your USB key and reboot
+                        &lt;/li&gt;
+                    &lt;/ol&gt;
+                    &lt;figure&gt;
+                        &lt;img src="dashboard.jpg" width="1360" height="768"&gt;
+                        &lt;figcaption&gt;
+                            Screenshot of the final dashboard
+                        &lt;/figcaption&gt;
+                    &lt;/figure&gt;</content>
+    <updated>2013-08-29T08:42:00+00:00</updated>
+  </entry>
+  <entry>
     <title>Reconstructing thumbnails using OpenCV</title>
     <id>http://chris.improbable.org/2013/6/30/reconstructing-thumbnails-using-opencv/</id>
     <link href="http://chris.improbable.org/2013/6/30/reconstructing-thumbnails-using-opencv/"/>
@@ -618,185 +815,5 @@ INFO locate_thumbnail: Attempting to locate 2.jpg within 2.png
                         All of the code above is available on Github and should run anywhere OpenCV is available: &lt;a href="https://github.com/acdha/image-mining"&gt;https://github.com/acdha/image-mining&lt;/a&gt;. To the extent allowed by law, it has been released into the public domain.
                     &lt;/p&gt;</content>
     <updated>2013-06-30T20:25:23.108473+00:00</updated>
-  </entry>
-  <entry>
-    <title>Reconsidering modernizr.js performance defaults</title>
-    <id>http://chris.improbable.org/2013/4/17/reconsidering-modernizr-defaults/</id>
-    <link href="http://chris.improbable.org/2013/4/17/reconsidering-modernizr-defaults/"/>
-    <summary>HTML5 won, let's reconsider the defaults for a post-IE8 world</summary>
-    <content type="html">&lt;p&gt;
-                        &lt;a href="http://modernizr.com"&gt;Modernizr&lt;/a&gt; is an incredibly useful tool for detecting browser capabilities and dealing with old browsers — it played a key role in the explosion of HTML5 feature adoption and quite rightly shows up all over the web.
-                    &lt;/p&gt;
-                    &lt;p&gt;
-                        However, it's 2013 and web performance is critical for many sites but unfortunately the place where modernizr.js shows up on most sites is in the &lt;code&gt;&amp;lt;head&amp;gt;&lt;/code&gt;, violating one of the most important rules of web performance: &lt;a href="http://developer.yahoo.com/blogs/ydn/high-performance-sites-rule-6-move-scripts-bottom-7200.html"&gt;move scripts to the bottom of the page&lt;/a&gt; . This is unsurprising as the &lt;a href="http://modernizr.com/docs/#installing"&gt;installation instructions&lt;/a&gt; suggest exactly this:
-                    &lt;/p&gt;
-                    &lt;blockquote cite="http://modernizr.com/docs/#installing"&gt;
-                        Drop the script tags in the &amp;lt;head&amp;gt; of your HTML. For best performance, you should have them follow after your stylesheet references. The reason we recommend placing Modernizr in the head is two-fold: the HTML5 Shiv (that enables HTML5 elements in IE) must execute before the &amp;lt;body&amp;gt;, and if you’re using any of the CSS classes that Modernizr adds, you’ll want to prevent a FOUC.&lt;br&gt;
-                        If you don't support IE8 and don't need to worry about FOUC, feel free to include modernizr.js whereever.
-                    &lt;/blockquote&gt;
-                    &lt;p&gt;
-                        That last part is the key: the only thing which Modernizr *needs* to run in the head is the &lt;a href="https://code.google.com/p/html5shiv/"&gt;html5shiv&lt;/a&gt;, which is only needed for Internet Explorer 8 and earlier — less than 10% of my main project's traffic.
-                    &lt;/p&gt;
-                    &lt;p&gt;
-                        The performance impact will vary depending on your site, how well optimized everything else is and how well connected your users are but it's important to remember that a script in the &lt;code&gt;&amp;lt;head&amp;gt;&lt;/code&gt; will block rendering &lt;strong&gt;and&lt;/strong&gt; further script execution until it completes so you're looking at at least one full server round-trip, including the time to download ~5KB of Modernizr code, before the browser can continue. Modern browsers often scan ahead looking for additional resources to start transferring but in some quick &lt;a href="http://webpagetest.org"&gt;webpagetest.org&lt;/a&gt; runs I found this was adding a solid 100ms (or ~15%) to the time IE9 took my page to start rendering for a well-connected machine in a major datacenter — for those of us with a global audience, the impact is likely to be much worse unless you have great CDN coverage and high enough traffic to keep the caches warm everywhere.
-                    &lt;/p&gt;
-                    &lt;p&gt;
-                        Since the html5shiv is only needed for IE8, reclaiming that extra speed for everyone else seems like an easy win – and one which avoids making the web slower in order to subsidize people who haven't upgraded yet. Here's what it looks like:
-                    &lt;/p&gt;
-                    &lt;pre&gt;
-&lt;code class="html"&gt;&amp;lt;html&amp;gt;
-    &amp;lt;head&amp;gt;
-        …
-        &amp;lt;!--[if lt IE 9]&amp;gt;
-            &amp;lt;script src="html5shiv.min.js"&amp;gt;&amp;lt;/script&amp;gt;
-        &amp;lt;![endif]--&amp;gt;
-    &amp;lt;/head&amp;gt;
-    &amp;lt;body&amp;gt;
-        …
-        &amp;lt;script src="modernizr.custom.min.js"&amp;gt;&amp;lt;/script&amp;gt;
-    &amp;lt;/body&amp;gt;
-&amp;lt;/html&amp;gt;&lt;/code&gt;
-&lt;/pre&gt;
-                    &lt;p&gt;
-                        As IE8 continues to fade into the sunset, now might be a good time to start moving old shims and polyfills into the slow-lane so we're optimizing for the future, not the past.
-                    &lt;/p&gt;</content>
-    <updated>2013-04-17T19:00:56+00:00</updated>
-  </entry>
-  <entry>
-    <title>On PDF preservation risks</title>
-    <id>http://chris.improbable.org/2012/7/27/pdf-preservation-risks/</id>
-    <link href="http://chris.improbable.org/2012/7/27/pdf-preservation-risks/"/>
-    <summary>On the risks facing long-term preservation of PDF files</summary>
-    <content type="html">&lt;aside&gt;
-                        &lt;i&gt;(In a staggering, entirely–appropriate display of irony, this comment was rescued from the now defunct &lt;a href="http://libraries.stackexchange.com"&gt;Libraries &amp;amp; Information Science StackExchange&lt;/a&gt;: &lt;a href="http://libraries.stackexchange.com/questions/964/what-preservation-risks-are-associated-with-the-pdf-file-format"&gt;What preservation risks are associated with the PDF file format?&lt;/a&gt; — Chris)&lt;/i&gt;
-                    &lt;/aside&gt;
-                    &lt;blockquote cite="%20http://libraries.stackexchange.com/questions/964/what-preservation-risks-are-associated-with-the-pdf-file-format"&gt;
-                        &lt;p&gt;
-                            This started out as a comment on @dsalo's excellent answer above but rather quickly expanded beyond 500 characters:
-                        &lt;/p&gt;
-                        &lt;p&gt;
-                            &lt;a href="http://en.wikipedia.org/wiki/PDF"&gt;PDF&lt;/a&gt; is a &lt;a href="http://en.wikipedia.org/wiki/Container_format_%28digital%29"&gt;container format&lt;/a&gt;: a single PDF file has metadata and one or more content streams, conceptually similar to a ZIP archive containing multiple files. The core PDF format is based on a subset of &lt;a href="http://en.wikipedia.org/wiki/PostScript"&gt;PostScript&lt;/a&gt;, which is a programming language designed to produce graphics, and common graphics formats, but over time the format was expanded to allow streams to contain any type of data.
-                        &lt;/p&gt;
-                        &lt;ol&gt;
-                            &lt;li&gt;
-                                &lt;p&gt;
-                                    The PDF format is very complicated and pulls in several other complex specifications. In practice, the vast majority of PDF files were only validated by testing whether Adobe Acrobat can display them as intended and it is quite common to have PDF encoders generate output which breaks the standard in ways which Acrobat tolerates, leaving the problem to be detected only when the file is first used with other tools.
-                                &lt;/p&gt;
-                            &lt;/li&gt;
-                            &lt;li&gt;
-                                &lt;p&gt;
-                                    While the subset of PostScript supported in PDF is not as capable as full PostScript (fortunately, as the latter which is &lt;a href="http://en.wikipedia.org/wiki/Turing_completeness"&gt;Turing Complete&lt;/a&gt;), it is still the case that what you actually have is executable program code and thus the only way to display PDF content is to execute each PostScript command in order:
-                                &lt;/p&gt;
-                                &lt;pre&gt;
-&lt;code&gt;/Times findfont 100 scalefont setfont
-                        10 10 moveto
-                        .5 .5 .5 setrgbcolor
-                        (Hello World) true charpath fill
-                        showpage
-                        &lt;/code&gt;
-&lt;/pre&gt;
-                                &lt;p&gt;
-                                    This fragment uses only a subset of the language exposes the key areas of concern for simple PDF display:
-                                &lt;/p&gt;
-                                &lt;ol&gt;
-                                    &lt;li&gt;
-                                        &lt;p&gt;
-                                            Since this is program code, implementation details can affect the output. As a simple, hopefully purely hypothetical example, consider how processor or compiler-specific differences in &lt;a href="http://en.wikipedia.org/wiki/Floating_point#Accuracy_problems"&gt;floating-point rounding&lt;/a&gt; could affect a complex document after many operations cause display problems such as lines which are supposed to appear joined to have visible space.
-                                        &lt;/p&gt;
-                                        &lt;p&gt;
-                                            As the full language is far more complicated than the subset above, there are many variations on this theme. Fortunately the mainstream implementations have generally converged on reliable inter-operability but you are still likely to need a copy of Acrobat if you receive content from a wide range of sources.
-                                        &lt;/p&gt;
-                                        &lt;p&gt;
-                                            This was particularly a problem in the past with older “print to PDF” drivers which simply took the raw PostScript which they would have sent directly to a printer and wrapped in a PDF container.
-                                        &lt;/p&gt;
-                                    &lt;/li&gt;
-                                    &lt;li&gt;
-                                        &lt;p&gt;
-                                            Font choices are specified by name. The corresponding font file may be embedded within the PDF file but as system fonts are also supported, it's quite easy for authors to use special fonts and forget to embed them until the first time the PDF is opened on a system which does not have those fonts installed.
-                                        &lt;/p&gt;
-                                        &lt;p&gt;
-                                            We've seen this somewhat frequently with academic journal articles which were created using &lt;a href="http://en.wikipedia.org/wiki/LaTeX"&gt;LaTex&lt;/a&gt; and use its fonts to display mathematical symbols. A Google search confirms that this is not an uncommon mistake as it will only be a problem when documents circulate outside the significant portion of scientific users who have the LaTeX fonts installed: &lt;a href="https://www.google.com/search?q=%2B%22Cannot+find+or+create+the+font%22"&gt;https://www.google.com/search?q=%2B%22Cannot+find+or+create+the+font%22&lt;/a&gt;
-                                        &lt;/p&gt;
-                                        &lt;p&gt;
-                                            Additionally, the &lt;a href="http://en.wikipedia.org/wiki/TrueType"&gt;TrueType&lt;/a&gt; and particularly &lt;a href="http://en.wikipedia.org/wiki/OpenType"&gt;OpenType&lt;/a&gt; font formats are by necessity quite complex to deal with the range of human writing systems. Again, this is an area of potentially significant difference between implementations and, particularly for &lt;a href="http://en.wikipedia.org/wiki/Complex_script"&gt;complex scripts&lt;/a&gt; like &lt;a href="http://en.wikipedia.org/wiki/Arabic"&gt;Arabic&lt;/a&gt; or &lt;a href="http://en.wikipedia.org/wiki/Devanagari"&gt;Devangari&lt;/a&gt;, the failures can potentially lead to the text being incorrect. Fonts are versioned, so it's possible to have text which would be displayed correctly if the operating system's version of a font is used instead of the embedded version or vice versa. The more obscure the languages you work with, the more you need to have some sort of system to check for correctness.
-                                        &lt;/p&gt;
-                                    &lt;/li&gt;
-                                &lt;/ol&gt;
-                            &lt;/li&gt;
-                            &lt;li&gt;
-                                &lt;p&gt;
-                                    For simple images, PDF writers are allowed to use &lt;a href="http://en.wikipedia.org/wiki/PDF#Raster_images"&gt;a number of encodings&lt;/a&gt; and over the years various image formats have been added, all of which have require full software support:
-                                &lt;/p&gt;
-                                &lt;p&gt;
-                                    &lt;a href="http://en.wikipedia.org/wiki/PDF#Adobe.27s_versions"&gt;http://en.wikipedia.org/wiki/PDF#Adobe.27s_versions&lt;/a&gt;
-                                &lt;/p&gt;
-                            &lt;/li&gt;
-                            &lt;li&gt;
-                                &lt;p&gt;
-                                    Over the years, Adobe has also added many other types of rich content: audio, video, 3D imagery, etc. All of these include the full set of challenges for preserving their respective formats.
-                                &lt;/p&gt;
-                            &lt;/li&gt;
-                            &lt;li&gt;
-                                &lt;p&gt;
-                                    Primarily for business users, Adobe has added several types of &lt;a href="http://en.wikipedia.org/wiki/PDF#Interactive_elements"&gt;interactive forms&lt;/a&gt;, which rely on several complicated specifications and have in my experience been far less supported by third-party implementations, particularly the open-source community.
-                                &lt;/p&gt;
-                            &lt;/li&gt;
-                            &lt;li&gt;
-                                &lt;p&gt;
-                                    In PDF 1.2, support was added for &lt;a href="http://en.wikipedia.org/wiki/JavaScript"&gt;JavaScript&lt;/a&gt; as part of the forms specification. Since JavaScript is a full programming language, this means that the only way to process those actions is requires executing code in a manner consistent with the original implementation. Fortunately, this is likely to be uncommon in most preservation scenarios.
-                                &lt;/p&gt;
-                            &lt;/li&gt;
-                            &lt;li&gt;
-                                &lt;p&gt;
-                                    The specification includes varying levels of encryption. It is possible to &lt;a href="http://en.wikipedia.org/wiki/Brute-force_attack"&gt;brute-force&lt;/a&gt; weak passwords and the older encryption algorithms but that might be possible and the software to do so might be difficult or illegal to obtain.
-                                &lt;/p&gt;
-                            &lt;/li&gt;
-                        &lt;/ol&gt;
-                        &lt;p&gt;
-                            In practice, many of the concerns are manageable with several precautions. If your content is not supposed to include the various rich media features the best place to start is by requiring the restricted subsets of PDF which have been developed to avoid many of these issues: &lt;a href="http://en.wikipedia.org/wiki/PDF/A"&gt;PDF/A&lt;/a&gt;, intended for preservation, and &lt;a href="http://en.wikipedia.org/wiki/PDF/X"&gt;PDF/X&lt;/a&gt;, intended for reliable graphics exchange, which do not allow the more complex features and dramatically simplify the problem. If your goal is to archive general PDFs, however, you'll need to develop a more nuanced approach to audit the various complex features to check that a document does not include content which you are unprepared for (e.g. if your content includes embedded video, your auditing script could verify that the video stream uses a long-term viable &lt;a href="http://en.wikipedia.org/wiki/Codec"&gt;codec&lt;/a&gt;).
-                        &lt;/p&gt;
-                        &lt;p&gt;
-                            Here are some features which you might want to audit:
-                        &lt;/p&gt;
-                        &lt;ol&gt;
-                            &lt;li&gt;All fonts in the file are the standard core PDF fonts or embedded within the file.
-                            &lt;/li&gt;
-                            &lt;li&gt;All images are in the subset of formats which you are prepared to support and decode without errors.
-                            &lt;/li&gt;
-                            &lt;li&gt;All content streams are checked against a whitelist of supported types
-                            &lt;/li&gt;
-                            &lt;li&gt;The PDF is unencrypted or at least that the password is known and the file decrypts successfully
-                            &lt;/li&gt;
-                        &lt;/ol&gt;
-                    &lt;/blockquote&gt;</content>
-    <updated>2012-07-27T00:22:41.763000+00:00</updated>
-  </entry>
-  <entry>
-    <title>Google Analytics Site Speed considered misleading</title>
-    <id>http://chris.improbable.org/2012/5/18/google-analytics-deceptive-site-speed-report/</id>
-    <link href="http://chris.improbable.org/2012/5/18/google-analytics-deceptive-site-speed-report/"/>
-    <summary>… maybe one of their mathematicians can explain the difference between mean and median to the marketing folks?</summary>
-    <content type="html">&lt;p&gt;
-                        Google Analytics has a very handy site speed feature tracking the time your users' browsers took to load the page. Unfortunately, all of the timing reports make a novice statistical mistake by reporting the &lt;a href="http://en.wikipedia.org/wiki/Average"&gt;average&lt;/a&gt; rather than more robust metrics like &lt;a href="http://en.wikipedia.org/wiki/Percentile"&gt;90th percentile&lt;/a&gt;. Many people have heard that averages are prone to &lt;a href="http://en.wikipedia.org/wiki/Outlier"&gt;outliers&lt;/a&gt; but it's easy to forget the degree to which a reported average can misrepresent something as variable as Internet traffic. Here are two pictures showing why &lt;em&gt;it's not even worth looking at the Site Speed value&lt;/em&gt;:
-                    &lt;/p&gt;
-                    &lt;figure&gt;
-                        &lt;img width="651" height="419" src="GA_Hazard_-_World_Map.png"&gt;
-                        &lt;figcaption&gt;
-                            World map of load times for a single AJAX request: note the United States at 5.9 &lt;em&gt;seconds&lt;/em&gt;!
-                        &lt;/figcaption&gt;
-                    &lt;/figure&gt;
-                    &lt;figure&gt;
-                        &lt;img width="687" height="359" src="GA_Hazard_-_somethings_strange_is_afoot_in_New_Jersey.png"&gt;
-                        &lt;figcaption&gt;
-                            Drilling down revealed the US average around .3 seconds for every state except New Jersey and even there the high average was limited to one small town with the shockingly-high average of 47 seconds! Fortunately, the data we actually need is available: the performance tab displays the distribution of timings, allowing us to see that even when considering only traffic from the same town, the vast majority (97%) of requests were loaded in a tenth of a second or less and 99% were loaded in under one second.
-                        &lt;/figcaption&gt;
-                    &lt;/figure&gt;
-                    &lt;p&gt;
-                        Since these values occurred only a single-digit number of times globally and are extremely high – does anyone really wait an hour for a web-page to load? – it's almost certain that they reflect some sort of measurement error in the browser. This is to be expected on the Internet — Flickr famously observed a reported load time which pre-dated that page being added to the site — and it's why you need to use something like a 95th percentile or histogram for any kind of real-world performance reporting so you can measure and act on values which are representative of what most of your users experience rather than wasting time chasing chimeras.
-                    &lt;/p&gt;
-                    &lt;p&gt;
-                        In summary: 3 data points out of 213,000 are enough to skew the average by a factor of 10 or more. When using Google Analytics pretend the summary page doesn't exist and look at the performance distribution.
-                    &lt;/p&gt;</content>
-    <updated>2012-05-18T14:08:56+00:00</updated>
   </entry>
 </feed>
