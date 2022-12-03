@@ -81,218 +81,213 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @version  <%= pkg.name %> <%= pkg.version %>
+ *
+ * @fileOverview
+ * <h2>
+ * <strong>
+ * OpenSeadragon - Javascript Deep Zooming
+ * </strong>
+ * </h2>
+ * <p>
+ * OpenSeadragon is provides an html interface for creating
+ * deep zoom user interfaces.  The simplest examples include deep
+ * zoom for large resolution images, and complex examples include
+ * zoomable map interfaces driven by SVG files.
+ * </p>
+ */
 
+/**
+ * The root namespace for OpenSeadragon, this function also serves as a single
+ * point of instantiation for an {@link OpenSeadragon.Viewer}, including all
+ * combinations of out-of-the-box configurable features.  All utility methods
+ * and classes are defined on or below this namespace.
+ *
+ * @namespace
+ * @function
+ * @name OpenSeadragon
+ * @exports $ as OpenSeadragon
+ *
+ * @param {Object} options All required and optional settings for instantiating
+ *     a new instance of an OpenSeadragon image viewer.
+ *
+ * @param {String} options.xmlPath
+ *     DEPRECATED. A relative path to load a DZI file from the server.
+ *     Prefer the newer options.tileSources.
+ *
+ * @param {Array|String|Function|Object[]|Array[]|String[]|Function[]} options.tileSources
+ *     As an Array, the tileSource can hold either be all Objects or mixed
+ *     types of Arrays of Objects, String, Function. When a value is a String,
+ *     the tileSource is used to create a {@link OpenSeadragon.DziTileSource}.
+ *     When a value is a Function, the function is used to create a new
+ *     {@link OpenSeadragon.TileSource} whose abstract method
+ *     getUrl( level, x, y ) is implemented by the function. Finally, when it
+ *     is an Array of objects, it is used to create a
+ *     {@link OpenSeadragon.LegacyTileSource}.
+ *
+ * @param {Boolean} [options.debugMode=true]
+ *     Currently does nothing. TODO: provide an in-screen panel providing event
+ *     detail feedback.
+ *
+ * @param {Number} [options.animationTime=1.5]
+ *     Specifies the animation duration per each {@link OpenSeadragon.Spring}
+ *     which occur when the image is dragged or zoomed.
+ *
+ * @param {Number} [options.blendTime=0.5]
+ *     Specifies the duration of animation as higher or lower level tiles are
+ *     replacing the existing tile.
+ *
+ * @param {Boolean} [options.alwaysBlend=false]
+ *     Forces the tile to always blend.  By default the tiles skip blending
+ *     when the blendTime is surpassed and the current animation frame would
+ *     not complete the blend.
+ *
+ * @param {Boolean} [options.autoHideControls=true]
+ *     If the user stops interacting with the viewport, fade the navigation
+ *     controls.  Useful for presentation since the controls are by default
+ *     floated on top of the image the user is viewing.
+ *
+ * @param {Boolean} [options.immediateRender=false]
+ *     Render the best closest level first, ignoring the lowering levels which
+ *     provide the effect of very blurry to sharp. It is recommended to change
+ *     setting to true for mobile devices.
+ *
+ * @param {Boolean} [options.wrapHorizontal=false]
+ *     Set to true to force the image to wrap horizontally within the viewport.
+ *     Useful for maps or images representing the surface of a sphere or cylinder.
+ *
+ * @param {Boolean} [options.wrapVertical=false]
+ *     Set to true to force the image to wrap vertically within the viewport.
+ *     Useful for maps or images representing the surface of a sphere or cylinder.
+ *
+ * @param {Number} [options.minZoomImageRatio=0.8]
+ *     The minimum percentage ( expressed as a number between 0 and 1 ) of
+ *     the viewport height or width at which the zoom out will be constrained.
+ *     Setting it to 0, for example will allow you to zoom out infinitly.
+ *
+ * @param {Number} [options.maxZoomPixelRatio=2]
+ *     The maximum ratio to allow a zoom-in to affect the highest level pixel
+ *     ratio. This can be set to Infinity to allow 'infinite' zooming into the
+ *     image though it is less effective visually if the HTML5 Canvas is not
+ *     availble on the viewing device.
+ *
+ * @param {Number} [options.visibilityRatio=0.5]
+ *     The percentage ( as a number from 0 to 1 ) of the source image which
+ *     must be kept within the viewport.  If the image is dragged beyond that
+ *     limit, it will 'bounce' back until the minimum visibility ration is
+ *     achieved.  Setting this to 0 and wrapHorizontal ( or wrapVertical ) to
+ *     true will provide the effect of an infinitely scrolling viewport.
+ *
+ * @param {Number} [options.springStiffness=5.0]
+ *
+ * @param {Number} [options.imageLoaderLimit=0]
+ *     The maximum number of image requests to make concurrently.  By default
+ *     it is set to 0 allowing the browser to make the maximum number of
+ *     image requests in parallel as allowed by the browsers policy.
+ *
+ * @param {Number} [options.clickTimeThreshold=200]
+ *     If multiple mouse clicks occurs within less than this number of
+ *     milliseconds, treat them as a single click.
+ *
+ * @param {Number} [options.clickDistThreshold=5]
+ *     If a mouse or touch drag occurs and the distance to the starting drag
+ *     point is less than this many pixels, ignore the drag event.
+ *
+ * @param {Number} [options.zoomPerClick=2.0]
+ *     The "zoom distance" per mouse click or touch tap.
+ *
+ * @param {Number} [options.zoomPerScroll=1.2]
+ *     The "zoom distance" per mouse scroll or touch pinch.
+ *
+ * @param {Number} [options.zoomPerSecond=2.0]
+ *     The number of seconds to animate a single zoom event over.
+ *
+ * @param {Boolean} [options.showNavigationControl=true]
+ *     Set to false to prevent the appearance of the default navigation controls.
+ *
+ * @param {Boolean} [options.showNavigator=false]
+ *     Set to true to make the navigator minimap appear.
+ *
+ * @param {Boolean} [options.navigatorId=navigator-GENERATED DATE]
+ *     Set the ID of a div to hold the navigator minimap.  If one is not specified,
+ *     one will be generated and placed on top of the main image
+ *
+ * @param {Number} [options.controlsFadeDelay=2000]
+ *     The number of milliseconds to wait once the user has stopped interacting
+ *     with the interface before begining to fade the controls. Assumes
+ *     showNavigationControl and autoHideControls are both true.
+ *
+ * @param {Number} [options.controlsFadeLength=1500]
+ *     The number of milliseconds to animate the controls fading out.
+ *
+ * @param {Number} [options.maxImageCacheCount=100]
+ *     The max number of images we should keep in memory (per drawer).
+ *
+ * @param {Number} [options.minPixelRatio=0.5]
+ *     The higher the minPixelRatio, the lower the quality of the image that
+ *     is considered sufficient to stop rendering a given zoom level.  For
+ *     example, if you are targeting mobile devices with less bandwith you may
+ *     try setting this to 1.5 or higher.
+ *
+ * @param {Boolean} [options.mouseNavEnabled=true]
+ *     Is the user able to interact with the image via mouse or touch. Default
+ *     interactions include draging the image in a plane, and zooming in toward
+ *     and away from the image.
+ *
+ * @param {Boolean} [options.preserveViewport=false]
+ *     If the viewer has been configured with a sequence of tile sources, then
+ *     normally navigating to through each image resets the viewport to 'home'
+ *     position.  If preserveViewport is set to true, then the viewport position
+ *     is preserved when navigating between images in the sequence.
+ *
+ * @param {String} [options.prefixUrl='/images/']
+ *     Prepends the prefixUrl to navImages paths, which is very useful
+ *     since the default paths are rarely useful for production
+ *     environments.
+ *
+ * @param {Object} [options.navImages=]
+ *     An object with a property for each button or other built-in navigation
+ *     control, eg the current 'zoomIn', 'zoomOut', 'home', and 'fullpage'.
+ *     Each of those in turn provides an image path for each state of the botton
+ *     or navigation control, eg 'REST', 'GROUP', 'HOVER', 'PRESS'. Finally the
+ *     image paths, by default assume there is a folder on the servers root path
+ *     called '/images', eg '/images/zoomin_rest.png'.  If you need to adjust
+ *     these paths, prefer setting the option.prefixUrl rather than overriding
+ *     every image path directly through this setting.
+ *
+ * @param {Boolean} [options.navPrevNextWrap=false]
+ *     If the 'previous' button will wrap to the last image when viewing the first
+ *     image and if the 'next' button will wrap to the first image when viewing
+ *     the last image.
+ *
+ * @returns {OpenSeadragon.Viewer}
+ */
+window.OpenSeadragon =
+    window.OpenSeadragon ||
+    function(options) {
+        return new OpenSeadragon.Viewer(options);
+    };
 
- /**
-  * @version  <%= pkg.name %> <%= pkg.version %>
-  *
-  * @fileOverview
-  * <h2>
-  * <strong>
-  * OpenSeadragon - Javascript Deep Zooming
-  * </strong>
-  * </h2>
-  * <p>
-  * OpenSeadragon is provides an html interface for creating
-  * deep zoom user interfaces.  The simplest examples include deep
-  * zoom for large resolution images, and complex examples include
-  * zoomable map interfaces driven by SVG files.
-  * </p>
-  */
-
- /**
-  * The root namespace for OpenSeadragon, this function also serves as a single
-  * point of instantiation for an {@link OpenSeadragon.Viewer}, including all
-  * combinations of out-of-the-box configurable features.  All utility methods
-  * and classes are defined on or below this namespace.
-  *
-  * @namespace
-  * @function
-  * @name OpenSeadragon
-  * @exports $ as OpenSeadragon
-  *
-  * @param {Object} options All required and optional settings for instantiating
-  *     a new instance of an OpenSeadragon image viewer.
-  *
-  * @param {String} options.xmlPath
-  *     DEPRECATED. A relative path to load a DZI file from the server.
-  *     Prefer the newer options.tileSources.
-  *
-  * @param {Array|String|Function|Object[]|Array[]|String[]|Function[]} options.tileSources
-  *     As an Array, the tileSource can hold either be all Objects or mixed
-  *     types of Arrays of Objects, String, Function. When a value is a String,
-  *     the tileSource is used to create a {@link OpenSeadragon.DziTileSource}.
-  *     When a value is a Function, the function is used to create a new
-  *     {@link OpenSeadragon.TileSource} whose abstract method
-  *     getUrl( level, x, y ) is implemented by the function. Finally, when it
-  *     is an Array of objects, it is used to create a
-  *     {@link OpenSeadragon.LegacyTileSource}.
-  *
-  * @param {Boolean} [options.debugMode=true]
-  *     Currently does nothing. TODO: provide an in-screen panel providing event
-  *     detail feedback.
-  *
-  * @param {Number} [options.animationTime=1.5]
-  *     Specifies the animation duration per each {@link OpenSeadragon.Spring}
-  *     which occur when the image is dragged or zoomed.
-  *
-  * @param {Number} [options.blendTime=0.5]
-  *     Specifies the duration of animation as higher or lower level tiles are
-  *     replacing the existing tile.
-  *
-  * @param {Boolean} [options.alwaysBlend=false]
-  *     Forces the tile to always blend.  By default the tiles skip blending
-  *     when the blendTime is surpassed and the current animation frame would
-  *     not complete the blend.
-  *
-  * @param {Boolean} [options.autoHideControls=true]
-  *     If the user stops interacting with the viewport, fade the navigation
-  *     controls.  Useful for presentation since the controls are by default
-  *     floated on top of the image the user is viewing.
-  *
-  * @param {Boolean} [options.immediateRender=false]
-  *     Render the best closest level first, ignoring the lowering levels which
-  *     provide the effect of very blurry to sharp. It is recommended to change
-  *     setting to true for mobile devices.
-  *
-  * @param {Boolean} [options.wrapHorizontal=false]
-  *     Set to true to force the image to wrap horizontally within the viewport.
-  *     Useful for maps or images representing the surface of a sphere or cylinder.
-  *
-  * @param {Boolean} [options.wrapVertical=false]
-  *     Set to true to force the image to wrap vertically within the viewport.
-  *     Useful for maps or images representing the surface of a sphere or cylinder.
-  *
-  * @param {Number} [options.minZoomImageRatio=0.8]
-  *     The minimum percentage ( expressed as a number between 0 and 1 ) of
-  *     the viewport height or width at which the zoom out will be constrained.
-  *     Setting it to 0, for example will allow you to zoom out infinitly.
-  *
-  * @param {Number} [options.maxZoomPixelRatio=2]
-  *     The maximum ratio to allow a zoom-in to affect the highest level pixel
-  *     ratio. This can be set to Infinity to allow 'infinite' zooming into the
-  *     image though it is less effective visually if the HTML5 Canvas is not
-  *     availble on the viewing device.
-  *
-  * @param {Number} [options.visibilityRatio=0.5]
-  *     The percentage ( as a number from 0 to 1 ) of the source image which
-  *     must be kept within the viewport.  If the image is dragged beyond that
-  *     limit, it will 'bounce' back until the minimum visibility ration is
-  *     achieved.  Setting this to 0 and wrapHorizontal ( or wrapVertical ) to
-  *     true will provide the effect of an infinitely scrolling viewport.
-  *
-  * @param {Number} [options.springStiffness=5.0]
-  *
-  * @param {Number} [options.imageLoaderLimit=0]
-  *     The maximum number of image requests to make concurrently.  By default
-  *     it is set to 0 allowing the browser to make the maximum number of
-  *     image requests in parallel as allowed by the browsers policy.
-  *
-  * @param {Number} [options.clickTimeThreshold=200]
-  *     If multiple mouse clicks occurs within less than this number of
-  *     milliseconds, treat them as a single click.
-  *
-  * @param {Number} [options.clickDistThreshold=5]
-  *     If a mouse or touch drag occurs and the distance to the starting drag
-  *     point is less than this many pixels, ignore the drag event.
-  *
-  * @param {Number} [options.zoomPerClick=2.0]
-  *     The "zoom distance" per mouse click or touch tap.
-  *
-  * @param {Number} [options.zoomPerScroll=1.2]
-  *     The "zoom distance" per mouse scroll or touch pinch.
-  *
-  * @param {Number} [options.zoomPerSecond=2.0]
-  *     The number of seconds to animate a single zoom event over.
-  *
-  * @param {Boolean} [options.showNavigationControl=true]
-  *     Set to false to prevent the appearance of the default navigation controls.
-  *
-  * @param {Boolean} [options.showNavigator=false]
-  *     Set to true to make the navigator minimap appear.
-  *
-  * @param {Boolean} [options.navigatorId=navigator-GENERATED DATE]
-  *     Set the ID of a div to hold the navigator minimap.  If one is not specified,
-  *     one will be generated and placed on top of the main image
-  *
-  * @param {Number} [options.controlsFadeDelay=2000]
-  *     The number of milliseconds to wait once the user has stopped interacting
-  *     with the interface before begining to fade the controls. Assumes
-  *     showNavigationControl and autoHideControls are both true.
-  *
-  * @param {Number} [options.controlsFadeLength=1500]
-  *     The number of milliseconds to animate the controls fading out.
-  *
-  * @param {Number} [options.maxImageCacheCount=100]
-  *     The max number of images we should keep in memory (per drawer).
-  *
-  * @param {Number} [options.minPixelRatio=0.5]
-  *     The higher the minPixelRatio, the lower the quality of the image that
-  *     is considered sufficient to stop rendering a given zoom level.  For
-  *     example, if you are targeting mobile devices with less bandwith you may
-  *     try setting this to 1.5 or higher.
-  *
-  * @param {Boolean} [options.mouseNavEnabled=true]
-  *     Is the user able to interact with the image via mouse or touch. Default
-  *     interactions include draging the image in a plane, and zooming in toward
-  *     and away from the image.
-  *
-  * @param {Boolean} [options.preserveViewport=false]
-  *     If the viewer has been configured with a sequence of tile sources, then
-  *     normally navigating to through each image resets the viewport to 'home'
-  *     position.  If preserveViewport is set to true, then the viewport position
-  *     is preserved when navigating between images in the sequence.
-  *
-  * @param {String} [options.prefixUrl='/images/']
-  *     Prepends the prefixUrl to navImages paths, which is very useful
-  *     since the default paths are rarely useful for production
-  *     environments.
-  *
-  * @param {Object} [options.navImages=]
-  *     An object with a property for each button or other built-in navigation
-  *     control, eg the current 'zoomIn', 'zoomOut', 'home', and 'fullpage'.
-  *     Each of those in turn provides an image path for each state of the botton
-  *     or navigation control, eg 'REST', 'GROUP', 'HOVER', 'PRESS'. Finally the
-  *     image paths, by default assume there is a folder on the servers root path
-  *     called '/images', eg '/images/zoomin_rest.png'.  If you need to adjust
-  *     these paths, prefer setting the option.prefixUrl rather than overriding
-  *     every image path directly through this setting.
-  *
-  * @param {Boolean} [options.navPrevNextWrap=false]
-  *     If the 'previous' button will wrap to the last image when viewing the first
-  *     image and if the 'next' button will wrap to the first image when viewing
-  *     the last image.
-  *
-  * @returns {OpenSeadragon.Viewer}
-  */
-window.OpenSeadragon = window.OpenSeadragon || function( options ){
-
-    return new OpenSeadragon.Viewer( options );
-
-};
-
-(function( $ ){
-
-
+(function($) {
     /**
      * Taken from jquery 1.6.1
      * [[Class]] -> type pairs
      * @private
      */
     var class2type = {
-        '[object Boolean]':     'boolean',
-        '[object Number]':      'number',
-        '[object String]':      'string',
-        '[object Function]':    'function',
-        '[object Array]':       'array',
-        '[object Date]':        'date',
-        '[object RegExp]':      'regexp',
-        '[object Object]':      'object'
-    },
-    // Save a reference to some core methods
-    toString    = Object.prototype.toString,
-    hasOwn      = Object.prototype.hasOwnProperty;
-
+            "[object Boolean]": "boolean",
+            "[object Number]": "number",
+            "[object String]": "string",
+            "[object Function]": "function",
+            "[object Array]": "array",
+            "[object Date]": "date",
+            "[object RegExp]": "regexp",
+            "[object Object]": "object"
+        },
+        // Save a reference to some core methods
+        toString = Object.prototype.toString,
+        hasOwn = Object.prototype.hasOwnProperty;
 
     /**
      * Taken from jQuery 1.6.1
@@ -300,10 +295,9 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isFunction = function( obj ) {
+    $.isFunction = function(obj) {
         return $.type(obj) === "function";
     };
-
 
     /**
      * Taken from jQuery 1.6.1
@@ -311,10 +305,11 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isArray = Array.isArray || function( obj ) {
-        return $.type(obj) === "array";
-    };
-
+    $.isArray =
+        Array.isArray ||
+        function(obj) {
+            return $.type(obj) === "array";
+        };
 
     /**
      * A crude way of determining if an object is a window.
@@ -323,10 +318,9 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isWindow = function( obj ) {
+    $.isWindow = function(obj) {
         return obj && typeof obj === "object" && "setInterval" in obj;
     };
-
 
     /**
      * Taken from jQuery 1.6.1
@@ -334,12 +328,11 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.type = function( obj ) {
-        return ( obj === null ) || ( obj === undefined ) ?
-            String( obj ) :
-            class2type[ toString.call(obj) ] || "object";
+    $.type = function(obj) {
+        return obj === null || obj === undefined
+            ? String(obj)
+            : class2type[toString.call(obj)] || "object";
     };
-
 
     /**
      * Taken from jQuery 1.6.1
@@ -347,18 +340,25 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isPlainObject = function( obj ) {
+    $.isPlainObject = function(obj) {
         // Must be an Object.
         // Because of IE, we also have to check the presence of the constructor property.
         // Make sure that DOM nodes and window objects don't pass through, as well
-        if ( !obj || OpenSeadragon.type(obj) !== "object" || obj.nodeType || $.isWindow( obj ) ) {
+        if (
+            !obj ||
+            OpenSeadragon.type(obj) !== "object" ||
+            obj.nodeType ||
+            $.isWindow(obj)
+        ) {
             return false;
         }
 
         // Not own constructor property must be Object
-        if ( obj.constructor &&
+        if (
+            obj.constructor &&
             !hasOwn.call(obj, "constructor") &&
-            !hasOwn.call(obj.constructor.prototype, "isPrototypeOf") ) {
+            !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")
+        ) {
             return false;
         }
 
@@ -366,11 +366,11 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
         // if last one is own, then all properties are own.
 
         var key;
-        for ( key in obj ) {}
+        for (key in obj) {
+        }
 
-        return key === undefined || hasOwn.call( obj, key );
+        return key === undefined || hasOwn.call(obj, key);
     };
-
 
     /**
      * Taken from jQuery 1.6.1
@@ -378,15 +378,13 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isEmptyObject = function( obj ) {
-        for ( var name in obj ) {
+    $.isEmptyObject = function(obj) {
+        for (var name in obj) {
             return false;
         }
         return true;
     };
-
-
-}( OpenSeadragon ));
+})(OpenSeadragon);
 
 /**
  *  This closure defines all static methods available to the OpenSeadragon
@@ -400,8 +398,7 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
  *  Some static methods have also been refactored from the original OpenSeadragon
  *  project.
  */
-(function( $ ){
-
+(function($) {
     /**
      * Taken from jQuery 1.6.1
      * @see <a href='http://www.jquery.com/'>jQuery</a>
@@ -413,60 +410,68 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
             copy,
             copyIsArray,
             clone,
-            target  = arguments[ 0 ] || {},
-            length  = arguments.length,
-            deep    = false,
-            i       = 1;
+            target = arguments[0] || {},
+            length = arguments.length,
+            deep = false,
+            i = 1;
 
         // Handle a deep copy situation
-        if ( typeof target === "boolean" ) {
-            deep    = target;
-            target  = arguments[ 1 ] || {};
+        if (typeof target === "boolean") {
+            deep = target;
+            target = arguments[1] || {};
             // skip the boolean and the target
             i = 2;
         }
 
         // Handle case when target is a string or something (possible in deep copy)
-        if ( typeof target !== "object" && !OpenSeadragon.isFunction( target ) ) {
+        if (typeof target !== "object" && !OpenSeadragon.isFunction(target)) {
             target = {};
         }
 
         // extend jQuery itself if only one argument is passed
-        if ( length === i ) {
+        if (length === i) {
             target = this;
             --i;
         }
 
-        for ( ; i < length; i++ ) {
+        for (; i < length; i++) {
             // Only deal with non-null/undefined values
-            options = arguments[ i ];
-            if ( options !== null || options !== undefined ) {
+            options = arguments[i];
+            if (options !== null || options !== undefined) {
                 // Extend the base object
-                for ( name in options ) {
-                    src = target[ name ];
-                    copy = options[ name ];
+                for (name in options) {
+                    src = target[name];
+                    copy = options[name];
 
                     // Prevent never-ending loop
-                    if ( target === copy ) {
+                    if (target === copy) {
                         continue;
                     }
 
                     // Recurse if we're merging plain objects or arrays
-                    if ( deep && copy && ( OpenSeadragon.isPlainObject( copy ) || ( copyIsArray = OpenSeadragon.isArray( copy ) ) ) ) {
-                        if ( copyIsArray ) {
+                    if (
+                        deep &&
+                        copy &&
+                        (OpenSeadragon.isPlainObject(copy) ||
+                            (copyIsArray = OpenSeadragon.isArray(copy)))
+                    ) {
+                        if (copyIsArray) {
                             copyIsArray = false;
-                            clone = src && OpenSeadragon.isArray( src ) ? src : [];
-
+                            clone =
+                                src && OpenSeadragon.isArray(src) ? src : [];
                         } else {
-                            clone = src && OpenSeadragon.isPlainObject( src ) ? src : {};
+                            clone =
+                                src && OpenSeadragon.isPlainObject(src)
+                                    ? src
+                                    : {};
                         }
 
                         // Never move original objects, clone them
-                        target[ name ] = OpenSeadragon.extend( deep, clone, copy );
+                        target[name] = OpenSeadragon.extend(deep, clone, copy);
 
-                    // Don't bring in undefined values
-                    } else if ( copy !== undefined ) {
-                        target[ name ] = copy;
+                        // Don't bring in undefined values
+                    } else if (copy !== undefined) {
+                        target[name] = copy;
                     }
                 }
             }
@@ -476,8 +481,7 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
         return target;
     };
 
-
-    $.extend( $, {
+    $.extend($, {
         /**
          * These are the default values for the optional settings documented
          * in the {@link OpenSeadragon} constructor detail.
@@ -486,126 +490,125 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          */
         DEFAULT_SETTINGS: {
             //DATA SOURCE DETAILS
-            xmlPath:                null,
-            tileSources:            null,
-            tileHost:               null,
+            xmlPath: null,
+            tileSources: null,
+            tileHost: null,
 
             //PAN AND ZOOM SETTINGS AND CONSTRAINTS
-            panHorizontal:          true,
-            panVertical:            true,
-            constrainDuringPan:     false,
-            wrapHorizontal:         false,
-            wrapVertical:           false,
-            visibilityRatio:        0.5, //-> how much of the viewer can be negative space
-            minPixelRatio:          0.5, //->closer to 0 draws tiles meant for a higher zoom at this zoom
-            defaultZoomLevel:       0,
-            minZoomLevel:           null,
-            maxZoomLevel:           null,
+            panHorizontal: true,
+            panVertical: true,
+            constrainDuringPan: false,
+            wrapHorizontal: false,
+            wrapVertical: false,
+            visibilityRatio: 0.5, //-> how much of the viewer can be negative space
+            minPixelRatio: 0.5, //->closer to 0 draws tiles meant for a higher zoom at this zoom
+            defaultZoomLevel: 0,
+            minZoomLevel: null,
+            maxZoomLevel: null,
 
             //UI RESPONSIVENESS AND FEEL
-            springStiffness:        7.0,
-            clickTimeThreshold:     300,
-            clickDistThreshold:     5,
-            zoomPerClick:           2,
-            zoomPerScroll:          1.2,
-            zoomPerSecond:          1.0,
-            animationTime:          1.2,
-            blendTime:              0,
-            alwaysBlend:            false,
-            autoHideControls:       true,
-            immediateRender:        false,
-            minZoomImageRatio:      0.9, //-> closer to 0 allows zoom out to infinity
-            maxZoomPixelRatio:      1.1, //-> higher allows 'over zoom' into pixels
+            springStiffness: 7.0,
+            clickTimeThreshold: 300,
+            clickDistThreshold: 5,
+            zoomPerClick: 2,
+            zoomPerScroll: 1.2,
+            zoomPerSecond: 1.0,
+            animationTime: 1.2,
+            blendTime: 0,
+            alwaysBlend: false,
+            autoHideControls: true,
+            immediateRender: false,
+            minZoomImageRatio: 0.9, //-> closer to 0 allows zoom out to infinity
+            maxZoomPixelRatio: 1.1, //-> higher allows 'over zoom' into pixels
 
             //DEFAULT CONTROL SETTINGS
-            showSequenceControl:    true,  //SEQUENCE
-            preserveViewport:       false, //SEQUENCE
-            showNavigationControl:  true,  //ZOOM/HOME/FULL/SEQUENCE
-            controlsFadeDelay:      2000,  //ZOOM/HOME/FULL/SEQUENCE
-            controlsFadeLength:     1500,  //ZOOM/HOME/FULL/SEQUENCE
-            mouseNavEnabled:        true,  //GENERAL MOUSE INTERACTIVITY
+            showSequenceControl: true, //SEQUENCE
+            preserveViewport: false, //SEQUENCE
+            showNavigationControl: true, //ZOOM/HOME/FULL/SEQUENCE
+            controlsFadeDelay: 2000, //ZOOM/HOME/FULL/SEQUENCE
+            controlsFadeLength: 1500, //ZOOM/HOME/FULL/SEQUENCE
+            mouseNavEnabled: true, //GENERAL MOUSE INTERACTIVITY
 
             //VIEWPORT NAVIGATOR SETTINGS
-            showNavigator:          false,
-            navigatorId:            null,
-            navigatorHeight:        null,
-            navigatorWidth:         null,
-            navigatorPosition:      null,
-            navigatorSizeRatio:     0.2,
+            showNavigator: false,
+            navigatorId: null,
+            navigatorHeight: null,
+            navigatorWidth: null,
+            navigatorPosition: null,
+            navigatorSizeRatio: 0.2,
 
             // INITIAL ROTATION
-            degrees:                0,
+            degrees: 0,
 
             //REFERENCE STRIP SETTINGS
-            showReferenceStrip:          false,
-            referenceStripScroll:       'horizontal',
-            referenceStripElement:       null,
-            referenceStripHeight:        null,
-            referenceStripWidth:         null,
-            referenceStripPosition:      'BOTTOM_LEFT',
-            referenceStripSizeRatio:     0.2,
+            showReferenceStrip: false,
+            referenceStripScroll: "horizontal",
+            referenceStripElement: null,
+            referenceStripHeight: null,
+            referenceStripWidth: null,
+            referenceStripPosition: "BOTTOM_LEFT",
+            referenceStripSizeRatio: 0.2,
 
             //COLLECTION VISUALIZATION SETTINGS
-            collectionRows:         3, //or columns depending on layout
-            collectionLayout:       'horizontal', //vertical
-            collectionMode:         false,
-            collectionTileSize:     800,
+            collectionRows: 3, //or columns depending on layout
+            collectionLayout: "horizontal", //vertical
+            collectionMode: false,
+            collectionTileSize: 800,
 
             //EVENT RELATED CALLBACKS
-            onPageChange:           null,
+            onPageChange: null,
 
             //PERFORMANCE SETTINGS
-            imageLoaderLimit:       0,
-            maxImageCacheCount:     200,
-            timeout:                30000,
+            imageLoaderLimit: 0,
+            maxImageCacheCount: 200,
+            timeout: 30000,
 
             //INTERFACE RESOURCE SETTINGS
-            prefixUrl:              "/images/",
+            prefixUrl: "/images/",
             navImages: {
                 zoomIn: {
-                    REST:   'zoomin_rest.png',
-                    GROUP:  'zoomin_grouphover.png',
-                    HOVER:  'zoomin_hover.png',
-                    DOWN:   'zoomin_pressed.png'
+                    REST: "zoomin_rest.png",
+                    GROUP: "zoomin_grouphover.png",
+                    HOVER: "zoomin_hover.png",
+                    DOWN: "zoomin_pressed.png"
                 },
                 zoomOut: {
-                    REST:   'zoomout_rest.png',
-                    GROUP:  'zoomout_grouphover.png',
-                    HOVER:  'zoomout_hover.png',
-                    DOWN:   'zoomout_pressed.png'
+                    REST: "zoomout_rest.png",
+                    GROUP: "zoomout_grouphover.png",
+                    HOVER: "zoomout_hover.png",
+                    DOWN: "zoomout_pressed.png"
                 },
                 home: {
-                    REST:   'home_rest.png',
-                    GROUP:  'home_grouphover.png',
-                    HOVER:  'home_hover.png',
-                    DOWN:   'home_pressed.png'
+                    REST: "home_rest.png",
+                    GROUP: "home_grouphover.png",
+                    HOVER: "home_hover.png",
+                    DOWN: "home_pressed.png"
                 },
                 fullpage: {
-                    REST:   'fullpage_rest.png',
-                    GROUP:  'fullpage_grouphover.png',
-                    HOVER:  'fullpage_hover.png',
-                    DOWN:   'fullpage_pressed.png'
+                    REST: "fullpage_rest.png",
+                    GROUP: "fullpage_grouphover.png",
+                    HOVER: "fullpage_hover.png",
+                    DOWN: "fullpage_pressed.png"
                 },
                 previous: {
-                    REST:   'previous_rest.png',
-                    GROUP:  'previous_grouphover.png',
-                    HOVER:  'previous_hover.png',
-                    DOWN:   'previous_pressed.png'
+                    REST: "previous_rest.png",
+                    GROUP: "previous_grouphover.png",
+                    HOVER: "previous_hover.png",
+                    DOWN: "previous_pressed.png"
                 },
                 next: {
-                    REST:   'next_rest.png',
-                    GROUP:  'next_grouphover.png',
-                    HOVER:  'next_hover.png',
-                    DOWN:   'next_pressed.png'
+                    REST: "next_rest.png",
+                    GROUP: "next_grouphover.png",
+                    HOVER: "next_hover.png",
+                    DOWN: "next_pressed.png"
                 }
             },
-            navPrevNextWrap:        false,
+            navPrevNextWrap: false,
 
             //DEVELOPER SETTINGS
-            debugMode:              false,
-            debugGridColor:         '#437AB2'
+            debugMode: false,
+            debugGridColor: "#437AB2"
         },
-
 
         /**
          * TODO: get rid of this.  I can't see how it's required at all.  Looks
@@ -615,7 +618,6 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          */
         SIGNAL: "----seadragon----",
 
-
         /**
          * Invokes the the method as if it where a method belonging to the object.
          * @name $.delegate
@@ -623,16 +625,15 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Object} object
          * @param {Function} method
          */
-        delegate: function( object, method ) {
-            return function(){
+        delegate: function(object, method) {
+            return function() {
                 var args = arguments;
-                if ( args === undefined ){
+                if (args === undefined) {
                     args = [];
                 }
-                return method.apply( object, args );
+                return method.apply(object, args);
             };
         },
-
 
         /**
          * An enumeration of Browser vendors including UNKNOWN, IE, FIREFOX,
@@ -641,14 +642,13 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @static
          */
         BROWSERS: {
-            UNKNOWN:    0,
-            IE:         1,
-            FIREFOX:    2,
-            SAFARI:     3,
-            CHROME:     4,
-            OPERA:      5
+            UNKNOWN: 0,
+            IE: 1,
+            FIREFOX: 2,
+            SAFARI: 3,
+            CHROME: 4,
+            OPERA: 5
         },
-
 
         /**
          * Returns a DOM Element for the given id or element.
@@ -657,13 +657,12 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String|Element} element Accepts an id or element.
          * @returns {Element} The element with the given id, null, or the element itself.
          */
-        getElement: function( element ) {
-            if ( typeof ( element ) == "string" ) {
-                element = document.getElementById( element );
+        getElement: function(element) {
+            if (typeof element == "string") {
+                element = document.getElementById(element);
             }
             return element;
         },
-
 
         /**
          * Determines the position of the upper-left corner of the element.
@@ -672,32 +671,30 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Element|String} element - the elemenet we want the position for.
          * @returns {Point} - the position of the upper left corner of the element.
          */
-        getElementPosition: function( element ) {
+        getElementPosition: function(element) {
             var result = new $.Point(),
                 isFixed,
                 offsetParent;
 
-            element      = $.getElement( element );
-            isFixed      = $.getElementStyle( element ).position == "fixed";
-            offsetParent = getOffsetParent( element, isFixed );
+            element = $.getElement(element);
+            isFixed = $.getElementStyle(element).position == "fixed";
+            offsetParent = getOffsetParent(element, isFixed);
 
-            while ( offsetParent ) {
-
+            while (offsetParent) {
                 result.x += element.offsetLeft;
                 result.y += element.offsetTop;
 
-                if ( isFixed ) {
-                    result = result.plus( $.getPageScroll() );
+                if (isFixed) {
+                    result = result.plus($.getPageScroll());
                 }
 
                 element = offsetParent;
-                isFixed = $.getElementStyle( element ).position == "fixed";
-                offsetParent = getOffsetParent( element, isFixed );
+                isFixed = $.getElementStyle(element).position == "fixed";
+                offsetParent = getOffsetParent(element, isFixed);
             }
 
             return result;
         },
-
 
         /**
          * Determines the height and width of the given element.
@@ -706,15 +703,11 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Element|String} element
          * @returns {Point}
          */
-        getElementSize: function( element ) {
-            element = $.getElement( element );
+        getElementSize: function(element) {
+            element = $.getElement(element);
 
-            return new $.Point(
-                element.clientWidth,
-                element.clientHeight
-            );
+            return new $.Point(element.clientWidth, element.clientHeight);
         },
-
 
         /**
          * Returns the CSSStyle object for the given element.
@@ -723,17 +716,15 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Element|String} element
          * @returns {CSSStyle}
          */
-        getElementStyle:
-            document.documentElement.currentStyle ?
-            function( element ) {
-                element = $.getElement( element );
-                return element.currentStyle;
-            } :
-            function( element ) {
-                element = $.getElement( element );
-                return window.getComputedStyle( element, "" );
-            },
-
+        getElementStyle: document.documentElement.currentStyle
+            ? function(element) {
+                  element = $.getElement(element);
+                  return element.currentStyle;
+              }
+            : function(element) {
+                  element = $.getElement(element);
+                  return window.getComputedStyle(element, "");
+              },
 
         /**
          * Gets the latest event, really only useful internally since its
@@ -744,9 +735,9 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Event} [event]
          * @returns {Event}
          */
-        getEvent: function( event ) {
-            if( event ){
-                $.getEvent = function( event ) {
+        getEvent: function(event) {
+            if (event) {
+                $.getEvent = function(event) {
                     return event;
                 };
             } else {
@@ -754,9 +745,8 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                     return window.event;
                 };
             }
-            return $.getEvent( event );
+            return $.getEvent(event);
         },
-
 
         /**
          * Gets the position of the mouse on the screen for a given event.
@@ -765,23 +755,22 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Event} [event]
          * @returns {Point}
          */
-        getMousePosition: function( event ) {
-
-            if ( typeof( event.pageX ) == "number" ) {
-                $.getMousePosition = function( event ){
+        getMousePosition: function(event) {
+            if (typeof event.pageX == "number") {
+                $.getMousePosition = function(event) {
                     var result = new $.Point();
 
-                    event = $.getEvent( event );
+                    event = $.getEvent(event);
                     result.x = event.pageX;
                     result.y = event.pageY;
 
                     return result;
                 };
-            } else if ( typeof( event.clientX ) == "number" ) {
-                $.getMousePosition = function( event ){
+            } else if (typeof event.clientX == "number") {
+                $.getMousePosition = function(event) {
                     var result = new $.Point();
 
-                    event = $.getEvent( event );
+                    event = $.getEvent(event);
                     result.x =
                         event.clientX +
                         document.body.scrollLeft +
@@ -799,9 +788,8 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                 );
             }
 
-            return $.getMousePosition( event );
+            return $.getMousePosition(event);
         },
-
 
         /**
          * Determines the pages current scroll position.
@@ -810,39 +798,35 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @returns {Point}
          */
         getPageScroll: function() {
-            var docElement  = document.documentElement || {},
-                body        = document.body || {};
+            var docElement = document.documentElement || {},
+                body = document.body || {};
 
-            if ( typeof( window.pageXOffset ) == "number" ) {
-                $.getPageScroll = function(){
-                    return new $.Point(
-                        window.pageXOffset,
-                        window.pageYOffset
-                    );
+            if (typeof window.pageXOffset == "number") {
+                $.getPageScroll = function() {
+                    return new $.Point(window.pageXOffset, window.pageYOffset);
                 };
-            } else if ( body.scrollLeft || body.scrollTop ) {
-                $.getPageScroll = function(){
+            } else if (body.scrollLeft || body.scrollTop) {
+                $.getPageScroll = function() {
                     return new $.Point(
                         document.body.scrollLeft,
                         document.body.scrollTop
                     );
                 };
-            } else if ( docElement.scrollLeft || docElement.scrollTop ) {
-                $.getPageScroll = function(){
+            } else if (docElement.scrollLeft || docElement.scrollTop) {
+                $.getPageScroll = function() {
                     return new $.Point(
                         document.documentElement.scrollLeft,
                         document.documentElement.scrollTop
                     );
                 };
             } else {
-                $.getPageScroll = function(){
-                    return new $.Point(0,0);
+                $.getPageScroll = function() {
+                    return new $.Point(0, 0);
                 };
             }
 
             return $.getPageScroll();
         },
-
 
         /**
          * Determines the size of the browsers window.
@@ -852,24 +836,21 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          */
         getWindowSize: function() {
             var docElement = document.documentElement || {},
-                body    = document.body || {};
+                body = document.body || {};
 
-            if ( typeof( window.innerWidth ) == 'number' ) {
-                $.getWindowSize = function(){
-                    return new $.Point(
-                        window.innerWidth,
-                        window.innerHeight
-                    );
+            if (typeof window.innerWidth == "number") {
+                $.getWindowSize = function() {
+                    return new $.Point(window.innerWidth, window.innerHeight);
                 };
-            } else if ( docElement.clientWidth || docElement.clientHeight ) {
-                $.getWindowSize = function(){
+            } else if (docElement.clientWidth || docElement.clientHeight) {
+                $.getWindowSize = function() {
                     return new $.Point(
                         document.documentElement.clientWidth,
                         document.documentElement.clientHeight
                     );
                 };
-            } else if ( body.clientWidth || body.clientHeight ) {
-                $.getWindowSize = function(){
+            } else if (body.clientWidth || body.clientHeight) {
+                $.getWindowSize = function() {
                     return new $.Point(
                         document.body.clientWidth,
                         document.body.clientHeight
@@ -882,7 +863,6 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
             return $.getWindowSize();
         },
 
-
         /**
          * Wraps the given element in a nest of divs so that the element can
          * be easily centered using CSS tables
@@ -891,9 +871,9 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Element|String} element
          * @returns {Element} outermost wrapper element
          */
-        makeCenteredNode: function( element ) {
+        makeCenteredNode: function(element) {
             // Convert a possible ID to an actual HTMLElement
-            element = $.getElement( element );
+            element = $.getElement(element);
 
             /*
                 CSS tables require you to have a display:table/row/cell hierarchy so we need to create
@@ -901,9 +881,9 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
              */
 
             var wrappers = [
-                $.makeNeutralElement( 'div' ),
-                $.makeNeutralElement( 'div' ),
-                $.makeNeutralElement( 'div' )
+                $.makeNeutralElement("div"),
+                $.makeNeutralElement("div"),
+                $.makeNeutralElement("div")
             ];
 
             // It feels like we should be able to pass style dicts to makeNeutralElement:
@@ -930,7 +910,6 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
             return wrappers[0];
         },
 
-
         /**
          * Creates an easily positionable element of the given type that therefor
          * serves as an excellent container element.
@@ -939,35 +918,35 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String} tagName
          * @returns {Element}
          */
-        makeNeutralElement: function( tagName ) {
-            var element = document.createElement( tagName ),
-                style   = element.style;
+        makeNeutralElement: function(tagName) {
+            var element = document.createElement(tagName),
+                style = element.style;
 
             style.background = "transparent none";
-            style.border     = "none";
-            style.margin     = "0px";
-            style.padding    = "0px";
-            style.position   = "static";
+            style.border = "none";
+            style.margin = "0px";
+            style.padding = "0px";
+            style.position = "static";
 
             return element;
         },
-
 
         /**
          * Returns the current milliseconds, using Date.now() if available
          * @name $.now
          * @function
          */
-        now: function( ) {
-          if (Date.now) {
-            $.now = Date.now;
-          } else {
-            $.now = function() { return new Date().getTime(); };
-          }
+        now: function() {
+            if (Date.now) {
+                $.now = Date.now;
+            } else {
+                $.now = function() {
+                    return new Date().getTime();
+                };
+            }
 
-          return $.now();
+            return $.now();
         },
-
 
         /**
          * Ensures an image is loaded correctly to support alpha transparency.
@@ -978,31 +957,31 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String} src
          * @returns {Element}
          */
-        makeTransparentImage: function( src ) {
-
-            $.makeTransparentImage = function( src ){
-                var img = $.makeNeutralElement( "img" );
+        makeTransparentImage: function(src) {
+            $.makeTransparentImage = function(src) {
+                var img = $.makeNeutralElement("img");
 
                 img.src = src;
 
                 return img;
             };
 
-            if ( $.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 7 ) {
-
-                $.makeTransparentImage = function( src ){
-                    var img     = $.makeNeutralElement( "img" ),
+            if ($.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 7) {
+                $.makeTransparentImage = function(src) {
+                    var img = $.makeNeutralElement("img"),
                         element = null;
 
                     element = $.makeNeutralElement("span");
                     element.style.display = "inline-block";
 
                     img.onload = function() {
-                        element.style.width  = element.style.width || img.width + "px";
-                        element.style.height = element.style.height || img.height + "px";
+                        element.style.width =
+                            element.style.width || img.width + "px";
+                        element.style.height =
+                            element.style.height || img.height + "px";
 
                         img.onload = null;
-                        img = null;     // to prevent memory leaks in IE
+                        img = null; // to prevent memory leaks in IE
                     };
 
                     img.src = src;
@@ -1013,12 +992,10 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
 
                     return element;
                 };
-
             }
 
-            return $.makeTransparentImage( src );
+            return $.makeTransparentImage(src);
         },
-
 
         /**
          * Sets the opacity of the specified element.
@@ -1028,30 +1005,27 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Number} opacity
          * @param {Boolean} [usesAlpha]
          */
-        setElementOpacity: function( element, opacity, usesAlpha ) {
+        setElementOpacity: function(element, opacity, usesAlpha) {
+            var ieOpacity, ieFilter;
 
-            var ieOpacity,
-                ieFilter;
+            element = $.getElement(element);
 
-            element = $.getElement( element );
-
-            if ( usesAlpha && !$.Browser.alpha ) {
-                opacity = Math.round( opacity );
+            if (usesAlpha && !$.Browser.alpha) {
+                opacity = Math.round(opacity);
             }
 
-            if ( $.Browser.opacity ) {
+            if ($.Browser.opacity) {
                 element.style.opacity = opacity < 1 ? opacity : "";
             } else {
-                if ( opacity < 1 ) {
-                    ieOpacity = Math.round( 100 * opacity );
-                    ieFilter  = "alpha(opacity=" + ieOpacity + ")";
+                if (opacity < 1) {
+                    ieOpacity = Math.round(100 * opacity);
+                    ieFilter = "alpha(opacity=" + ieOpacity + ")";
                     element.style.filter = ieFilter;
                 } else {
                     element.style.filter = "";
                 }
             }
         },
-
 
         /**
          * Add the specified CSS class to the element if not present.
@@ -1060,17 +1034,19 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Element|String} element
          * @param {String} className
          */
-        addClass: function( element, className ) {
-            element = $.getElement( element );
+        addClass: function(element, className) {
+            element = $.getElement(element);
 
-            if ( ! element.className ) {
+            if (!element.className) {
                 element.className = className;
-            } else if ( ( ' ' + element.className + ' ' ).
-                indexOf( ' ' + className + ' ' ) === -1 ) {
-                element.className += ' ' + className;
+            } else if (
+                (" " + element.className + " ").indexOf(
+                    " " + className + " "
+                ) === -1
+            ) {
+                element.className += " " + className;
             }
         },
-
 
         /**
          * Remove the specified CSS class from the element.
@@ -1079,21 +1055,20 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Element|String} element
          * @param {String} className
          */
-        removeClass: function( element, className ) {
+        removeClass: function(element, className) {
             var oldClasses,
                 newClasses = [],
                 i;
 
-            element = $.getElement( element );
-            oldClasses = element.className.split( /\s+/ );
-            for ( i = 0; i < oldClasses.length; i++ ) {
-                if ( oldClasses[ i ] && oldClasses[ i ] !== className ) {
-                    newClasses.push( oldClasses[ i ] );
+            element = $.getElement(element);
+            oldClasses = element.className.split(/\s+/);
+            for (i = 0; i < oldClasses.length; i++) {
+                if (oldClasses[i] && oldClasses[i] !== className) {
+                    newClasses.push(oldClasses[i]);
                 }
             }
-            element.className = newClasses.join(' ');
+            element.className = newClasses.join(" ");
         },
-
 
         /**
          * Adds an event listener for the given element, eventName and handler.
@@ -1105,21 +1080,21 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Boolean} [useCapture]
          * @throws {Error}
          */
-        addEvent: function( element, eventName, handler, useCapture ) {
-            element = $.getElement( element );
+        addEvent: function(element, eventName, handler, useCapture) {
+            element = $.getElement(element);
 
             //TODO: Why do this if/else on every method call instead of just
             //      defining this function once based on the same logic
-            if ( element.addEventListener ) {
-                $.addEvent = function( element, eventName, handler, useCapture ){
-                    element = $.getElement( element );
-                    element.addEventListener( eventName, handler, useCapture );
+            if (element.addEventListener) {
+                $.addEvent = function(element, eventName, handler, useCapture) {
+                    element = $.getElement(element);
+                    element.addEventListener(eventName, handler, useCapture);
                 };
-            } else if ( element.attachEvent ) {
-                $.addEvent = function( element, eventName, handler, useCapture ){
-                    element = $.getElement( element );
-                    element.attachEvent( "on" + eventName, handler );
-                    if ( useCapture && element.setCapture ) {
+            } else if (element.attachEvent) {
+                $.addEvent = function(element, eventName, handler, useCapture) {
+                    element = $.getElement(element);
+                    element.attachEvent("on" + eventName, handler);
+                    if (useCapture && element.setCapture) {
                         element.setCapture();
                     }
                 };
@@ -1129,9 +1104,8 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                 );
             }
 
-            return $.addEvent( element, eventName, handler, useCapture );
+            return $.addEvent(element, eventName, handler, useCapture);
         },
-
 
         /**
          * Remove a given event listener for the given element, event type and
@@ -1144,21 +1118,31 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Boolean} [useCapture]
          * @throws {Error}
          */
-        removeEvent: function( element, eventName, handler, useCapture ) {
-            element = $.getElement( element );
+        removeEvent: function(element, eventName, handler, useCapture) {
+            element = $.getElement(element);
 
             //TODO: Why do this if/else on every method call instead of just
             //      defining this function once based on the same logic
-            if ( element.removeEventListener ) {
-                $.removeEvent = function( element, eventName, handler, useCapture ) {
-                    element = $.getElement( element );
-                    element.removeEventListener( eventName, handler, useCapture );
+            if (element.removeEventListener) {
+                $.removeEvent = function(
+                    element,
+                    eventName,
+                    handler,
+                    useCapture
+                ) {
+                    element = $.getElement(element);
+                    element.removeEventListener(eventName, handler, useCapture);
                 };
-            } else if ( element.detachEvent ) {
-                $.removeEvent = function( element, eventName, handler, useCapture ) {
-                    element = $.getElement( element );
+            } else if (element.detachEvent) {
+                $.removeEvent = function(
+                    element,
+                    eventName,
+                    handler,
+                    useCapture
+                ) {
+                    element = $.getElement(element);
                     element.detachEvent("on" + eventName, handler);
-                    if ( useCapture && element.releaseCapture ) {
+                    if (useCapture && element.releaseCapture) {
                         element.releaseCapture();
                     }
                 };
@@ -1167,9 +1151,8 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                     "Unable to detach event handler, no known technique."
                 );
             }
-            return $.removeEvent( element, eventName, handler, useCapture );
+            return $.removeEvent(element, eventName, handler, useCapture);
         },
-
 
         /**
          * Cancels the default browser behavior had the event propagated all
@@ -1178,26 +1161,25 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @name OpenSeadragon.cancelEvent
          * @param {Event} [event]
          */
-        cancelEvent: function( event ) {
-            event = $.getEvent( event );
+        cancelEvent: function(event) {
+            event = $.getEvent(event);
 
-            if ( event.preventDefault ) {
-                $.cancelEvent = function( event ){
+            if (event.preventDefault) {
+                $.cancelEvent = function(event) {
                     // W3C for preventing default
                     event.preventDefault();
                 };
             } else {
-                $.cancelEvent = function( event ){
-                    event = $.getEvent( event );
+                $.cancelEvent = function(event) {
+                    event = $.getEvent(event);
                     // legacy for preventing default
                     event.cancel = true;
                     // IE for preventing default
                     event.returnValue = false;
                 };
             }
-            $.cancelEvent( event );
+            $.cancelEvent(event);
         },
-
 
         /**
          * Stops the propagation of the event up the DOM.
@@ -1205,26 +1187,24 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @name OpenSeadragon.stopEvent
          * @param {Event} [event]
          */
-        stopEvent: function( event ) {
-            event = $.getEvent( event );
+        stopEvent: function(event) {
+            event = $.getEvent(event);
 
-            if ( event.stopPropagation ) {
+            if (event.stopPropagation) {
                 // W3C for stopping propagation
-                $.stopEvent = function( event ){
+                $.stopEvent = function(event) {
                     event.stopPropagation();
                 };
             } else {
                 // IE for stopping propagation
-                $.stopEvent = function( event ){
-                    event = $.getEvent( event );
+                $.stopEvent = function(event) {
+                    event = $.getEvent(event);
                     event.cancelBubble = true;
                 };
-
             }
 
-            $.stopEvent( event );
+            $.stopEvent(event);
         },
-
 
         /**
          * Similar to OpenSeadragon.delegate, but it does not immediately call
@@ -1241,27 +1221,26 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          *  created callback
          * @returns {Function}
          */
-        createCallback: function( object, method ) {
+        createCallback: function(object, method) {
             //TODO: This pattern is painful to use and debug.  It's much cleaner
             //      to use pinning plus anonymous functions.  Get rid of this
             //      pattern!
             var initialArgs = [],
                 i;
-            for ( i = 2; i < arguments.length; i++ ) {
-                initialArgs.push( arguments[ i ] );
+            for (i = 2; i < arguments.length; i++) {
+                initialArgs.push(arguments[i]);
             }
 
             return function() {
-                var args = initialArgs.concat( [] ),
+                var args = initialArgs.concat([]),
                     i;
-                for ( i = 0; i < arguments.length; i++ ) {
-                    args.push( arguments[ i ] );
+                for (i = 0; i < arguments.length; i++) {
+                    args.push(arguments[i]);
                 }
 
-                return method.apply( object, args );
+                return method.apply(object, args);
             };
         },
-
 
         /**
          * Retreives the value of a url parameter from the window.location string.
@@ -1270,28 +1249,27 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String} key
          * @returns {String} The value of the url parameter or null if no param matches.
          */
-        getUrlParameter: function( key ) {
-            var value = URLPARAMS[ key ];
+        getUrlParameter: function(key) {
+            var value = URLPARAMS[key];
             return value ? value : null;
         },
 
-
-        createAjaxRequest: function(){
+        createAjaxRequest: function() {
             var request;
 
-            if ( window.XMLHttpRequest ) {
-                $.createAjaxRequest = function( ){
+            if (window.XMLHttpRequest) {
+                $.createAjaxRequest = function() {
                     return new XMLHttpRequest();
                 };
                 request = new XMLHttpRequest();
-            } else if ( window.ActiveXObject ) {
+            } else if (window.ActiveXObject) {
                 /*jshint loopfunc:true*/
                 /* global ActiveXObject:true */
-                for ( var i = 0; i < ACTIVEX.length; i++ ) {
+                for (var i = 0; i < ACTIVEX.length; i++) {
                     try {
-                        request = new ActiveXObject( ACTIVEX[ i ] );
-                        $.createAjaxRequest = function( ){
-                            return new ActiveXObject( ACTIVEX[ i ] );
+                        request = new ActiveXObject(ACTIVEX[i]);
+                        $.createAjaxRequest = function() {
+                            return new ActiveXObject(ACTIVEX[i]);
                         };
                         break;
                     } catch (e) {
@@ -1300,13 +1278,12 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                 }
             }
 
-            if ( !request ) {
-                throw new Error( "Browser doesn't support XMLHttpRequest." );
+            if (!request) {
+                throw new Error("Browser doesn't support XMLHttpRequest.");
             }
 
             return request;
         },
-
 
         /**
          * Makes an AJAX request.
@@ -1317,40 +1294,48 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {Function} onError - a function to call on when an error occurs
          * @throws {Error}
          */
-        makeAjaxRequest: function( url, onSuccess, onError ) {
+        makeAjaxRequest: function(url, onSuccess, onError) {
             var request = $.createAjaxRequest();
 
-            if ( !$.isFunction( onSuccess ) ) {
-                throw new Error( "makeAjaxRequest requires a success callback" );
+            if (!$.isFunction(onSuccess)) {
+                throw new Error("makeAjaxRequest requires a success callback");
             }
 
             request.onreadystatechange = function() {
                 // 4 = DONE (https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#Properties)
-                if ( request.readyState == 4 ) {
-                    request.onreadystatechange = function(){};
+                if (request.readyState == 4) {
+                    request.onreadystatechange = function() {};
 
-                    if ( request.status == 200 ) {
-                        onSuccess( request );
+                    if (request.status == 200) {
+                        onSuccess(request);
                     } else {
-                        $.console.log( "AJAX request returned %s: %s", request.status, url );
+                        $.console.log(
+                            "AJAX request returned %s: %s",
+                            request.status,
+                            url
+                        );
 
-                        if ( $.isFunction( onError ) ) {
-                            onError( request );
+                        if ($.isFunction(onError)) {
+                            onError(request);
                         }
                     }
                 }
             };
 
             try {
-                request.open( "GET", url, true );
-                request.send( null );
+                request.open("GET", url, true);
+                request.send(null);
             } catch (e) {
-                $.console.log( "%s while making AJAX request: %s", e.name, e.message );
+                $.console.log(
+                    "%s while making AJAX request: %s",
+                    e.name,
+                    e.message
+                );
 
-                request.onreadystatechange = function(){};
+                request.onreadystatechange = function() {};
 
-                if ( $.isFunction( onError ) ) {
-                    onError( request, e );
+                if ($.isFunction(onError)) {
+                    onError(request, e);
                 }
             }
         },
@@ -1367,62 +1352,70 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String} [options.callbackName=] The name of the callback to
          *      request the jsonp provider with.
          */
-        jsonp: function( options ){
+        jsonp: function(options) {
             var script,
-                url     = options.url,
-                head    = document.head ||
-                    document.getElementsByTagName( "head" )[ 0 ] ||
+                url = options.url,
+                head =
+                    document.head ||
+                    document.getElementsByTagName("head")[0] ||
                     document.documentElement,
-                jsonpCallback = options.callbackName || 'openseadragon' + $.now(),
-                previous      = window[ jsonpCallback ],
-                replace       = "$1" + jsonpCallback + "$2",
-                callbackParam = options.param || 'callback',
-                callback      = options.callback;
+                jsonpCallback =
+                    options.callbackName || "openseadragon" + $.now(),
+                previous = window[jsonpCallback],
+                replace = "$1" + jsonpCallback + "$2",
+                callbackParam = options.param || "callback",
+                callback = options.callback;
 
-            url = url.replace( /(\=)\?(&|$)|\?\?/i, replace );
+            url = url.replace(/(\=)\?(&|$)|\?\?/i, replace);
             // Add callback manually
-            url += (/\?/.test( url ) ? "&" : "?") + callbackParam + "=" + jsonpCallback;
+            url +=
+                (/\?/.test(url) ? "&" : "?") +
+                callbackParam +
+                "=" +
+                jsonpCallback;
 
             // Install callback
-            window[ jsonpCallback ] = function( response ) {
-                if ( !previous ){
-                    try{
-                        delete window[ jsonpCallback ];
-                    }catch(e){
+            window[jsonpCallback] = function(response) {
+                if (!previous) {
+                    try {
+                        delete window[jsonpCallback];
+                    } catch (e) {
                         //swallow
                     }
                 } else {
-                    window[ jsonpCallback ] = previous;
+                    window[jsonpCallback] = previous;
                 }
-                if( callback && $.isFunction( callback ) ){
-                    callback( response );
+                if (callback && $.isFunction(callback)) {
+                    callback(response);
                 }
             };
 
-            script = document.createElement( "script" );
+            script = document.createElement("script");
 
             //TODO: having an issue with async info requests
-            if( undefined !== options.async || false !== options.async ){
+            if (undefined !== options.async || false !== options.async) {
                 script.async = "async";
             }
 
-            if ( options.scriptCharset ) {
+            if (options.scriptCharset) {
                 script.charset = options.scriptCharset;
             }
 
             script.src = url;
 
             // Attach handlers for all browsers
-            script.onload = script.onreadystatechange = function( _, isAbort ) {
-
-                if ( isAbort || !script.readyState || /loaded|complete/.test( script.readyState ) ) {
-
+            script.onload = script.onreadystatechange = function(_, isAbort) {
+                if (
+                    isAbort ||
+                    !script.readyState ||
+                    /loaded|complete/.test(script.readyState)
+                ) {
                     // Handle memory leak in IE
                     script.onload = script.onreadystatechange = null;
 
                     // Remove the script
-                    if ( head && script.parentNode ) {
-                        head.removeChild( script );
+                    if (head && script.parentNode) {
+                        head.removeChild(script);
                     }
 
                     // Dereference the script
@@ -1431,10 +1424,8 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
             };
             // Use insertBefore instead of appendChild  to circumvent an IE6 bug.
             // This arises when a base node is used (#2709 and #4378).
-            head.insertBefore( script, head.firstChild );
-
+            head.insertBefore(script, head.firstChild);
         },
-
 
         /**
          * Fully deprecated. Will throw an error.
@@ -1453,39 +1444,34 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String} string
          * @returns {Document}
          */
-        parseXml: function( string ) {
+        parseXml: function(string) {
             //TODO: yet another example where we can determine the correct
             //      implementation once at start-up instead of everytime we use
             //      the function. DONE.
-            if ( window.ActiveXObject ) {
-
-                $.parseXml = function( string ){
+            if (window.ActiveXObject) {
+                $.parseXml = function(string) {
                     var xmlDoc = null;
 
-                    xmlDoc = new ActiveXObject( "Microsoft.XMLDOM" );
+                    xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
                     xmlDoc.async = false;
-                    xmlDoc.loadXML( string );
+                    xmlDoc.loadXML(string);
                     return xmlDoc;
                 };
-
-            } else if ( window.DOMParser ) {
-
-                $.parseXml = function( string ){
+            } else if (window.DOMParser) {
+                $.parseXml = function(string) {
                     var xmlDoc = null,
                         parser;
 
                     parser = new DOMParser();
-                    xmlDoc = parser.parseFromString( string, "text/xml" );
+                    xmlDoc = parser.parseFromString(string, "text/xml");
                     return xmlDoc;
                 };
-
             } else {
-                throw new Error( "Browser doesn't support XML DOM." );
+                throw new Error("Browser doesn't support XML DOM.");
             }
 
-            return $.parseXml( string );
+            return $.parseXml(string);
         },
-
 
         /**
          * Reports whether the image format is supported for tiling in this
@@ -1495,13 +1481,11 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
          * @param {String} [extension]
          * @returns {Boolean}
          */
-        imageFormatSupported: function( extension ) {
+        imageFormatSupported: function(extension) {
             extension = extension ? extension : "";
-            return !!FILEFORMATS[ extension.toLowerCase() ];
+            return !!FILEFORMATS[extension.toLowerCase()];
         }
-
     });
-
 
     /**
      * The current browser vendor, version, and related information regarding
@@ -1512,24 +1496,19 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @static
      */
     $.Browser = {
-        vendor:     $.BROWSERS.UNKNOWN,
-        version:    0,
-        alpha:      true
+        vendor: $.BROWSERS.UNKNOWN,
+        version: 0,
+        alpha: true
     };
 
-
-    var ACTIVEX = [
-            "Msxml2.XMLHTTP",
-            "Msxml3.XMLHTTP",
-            "Microsoft.XMLHTTP"
-        ],
+    var ACTIVEX = ["Msxml2.XMLHTTP", "Msxml3.XMLHTTP", "Microsoft.XMLHTTP"],
         FILEFORMATS = {
-            "bmp":  false,
-            "jpeg": true,
-            "jpg":  true,
-            "png":  true,
-            "tif":  false,
-            "wdp":  false
+            bmp: false,
+            jpeg: true,
+            jpg: true,
+            png: true,
+            tif: false,
+            wdp: false
         },
         URLPARAMS = {};
 
@@ -1538,40 +1517,42 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
         //version and supporting feature sets.
         var app = navigator.appName,
             ver = navigator.appVersion,
-            ua  = navigator.userAgent;
+            ua = navigator.userAgent;
 
         //console.error( 'appName: ' + navigator.appName );
         //console.error( 'appVersion: ' + navigator.appVersion );
         //console.error( 'userAgent: ' + navigator.userAgent );
 
-        switch( navigator.appName ){
+        switch (navigator.appName) {
             case "Microsoft Internet Explorer":
-                if( !!window.attachEvent &&
-                    !!window.ActiveXObject ) {
-
+                if (!!window.attachEvent && !!window.ActiveXObject) {
                     $.Browser.vendor = $.BROWSERS.IE;
                     $.Browser.version = parseFloat(
                         ua.substring(
-                            ua.indexOf( "MSIE" ) + 5,
-                            ua.indexOf( ";", ua.indexOf( "MSIE" ) ) )
-                        );
+                            ua.indexOf("MSIE") + 5,
+                            ua.indexOf(";", ua.indexOf("MSIE"))
+                        )
+                    );
                 }
                 break;
             case "Netscape":
-                if( !!window.addEventListener ){
-                    if ( ua.indexOf( "Firefox" ) >= 0 ) {
+                if (!!window.addEventListener) {
+                    if (ua.indexOf("Firefox") >= 0) {
                         $.Browser.vendor = $.BROWSERS.FIREFOX;
                         $.Browser.version = parseFloat(
-                            ua.substring( ua.indexOf( "Firefox" ) + 8 )
+                            ua.substring(ua.indexOf("Firefox") + 8)
                         );
-                    } else if ( ua.indexOf( "Safari" ) >= 0 ) {
-                        $.Browser.vendor = ua.indexOf( "Chrome" ) >= 0 ?
-                            $.BROWSERS.CHROME :
-                            $.BROWSERS.SAFARI;
+                    } else if (ua.indexOf("Safari") >= 0) {
+                        $.Browser.vendor =
+                            ua.indexOf("Chrome") >= 0
+                                ? $.BROWSERS.CHROME
+                                : $.BROWSERS.SAFARI;
                         $.Browser.version = parseFloat(
                             ua.substring(
-                                ua.substring( 0, ua.indexOf( "Safari" ) ).lastIndexOf( "/" ) + 1,
-                                ua.indexOf( "Safari" )
+                                ua
+                                    .substring(0, ua.indexOf("Safari"))
+                                    .lastIndexOf("/") + 1,
+                                ua.indexOf("Safari")
                             )
                         );
                     }
@@ -1579,46 +1560,39 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                 break;
             case "Opera":
                 $.Browser.vendor = $.BROWSERS.OPERA;
-                $.Browser.version = parseFloat( ver );
+                $.Browser.version = parseFloat(ver);
                 break;
         }
 
-            // ignore '?' portion of query string
-        var query = window.location.search.substring( 1 ),
-            parts = query.split('&'),
+        // ignore '?' portion of query string
+        var query = window.location.search.substring(1),
+            parts = query.split("&"),
             part,
             sep,
             i;
 
-        for ( i = 0; i < parts.length; i++ ) {
-            part = parts[ i ];
-            sep  = part.indexOf( '=' );
+        for (i = 0; i < parts.length; i++) {
+            part = parts[i];
+            sep = part.indexOf("=");
 
-            if ( sep > 0 ) {
-                URLPARAMS[ part.substring( 0, sep ) ] =
-                    decodeURIComponent( part.substring( sep + 1 ) );
+            if (sep > 0) {
+                URLPARAMS[part.substring(0, sep)] = decodeURIComponent(
+                    part.substring(sep + 1)
+                );
             }
         }
 
         //determine if this browser supports image alpha transparency
         $.Browser.alpha = !(
-            (
-                $.Browser.vendor == $.BROWSERS.IE &&
-                $.Browser.version < 9
-            ) || (
-                $.Browser.vendor == $.BROWSERS.CHROME &&
-                $.Browser.version < 2
-            )
+            ($.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 9) ||
+            ($.Browser.vendor == $.BROWSERS.CHROME && $.Browser.version < 2)
         );
 
         //determine if this browser supports element.style.opacity
         $.Browser.opacity = !(
-            $.Browser.vendor == $.BROWSERS.IE &&
-            $.Browser.version < 9
+            $.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 9
         );
-
     })();
-
 
     //TODO: $.console is often used inside a try/catch block which generally
     //      prevents allowings errors to occur with detection until a debugger
@@ -1631,44 +1605,44 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @static
      * @private
      */
-    var nullfunction = function( msg ){
-            //document.location.hash = msg;
-        };
-
-    $.console = window.console || {
-        log:    nullfunction,
-        debug:  nullfunction,
-        info:   nullfunction,
-        warn:   nullfunction,
-        error:  nullfunction
+    var nullfunction = function(msg) {
+        //document.location.hash = msg;
     };
 
+    $.console = window.console || {
+        log: nullfunction,
+        debug: nullfunction,
+        info: nullfunction,
+        warn: nullfunction,
+        error: nullfunction
+    };
 
     // Adding support for HTML5's requestAnimationFrame as suggested by acdha.
     // Implementation taken from matt synder's post here:
     // http://mattsnider.com/cross-browser-and-legacy-supported-requestframeanimation/
-    (function( w ) {
-
+    (function(w) {
         // most browsers have an implementation
-        var requestAnimationFrame = w.requestAnimationFrame ||
+        var requestAnimationFrame =
+            w.requestAnimationFrame ||
             w.mozRequestAnimationFrame ||
             w.webkitRequestAnimationFrame ||
             w.msRequestAnimationFrame;
 
-        var cancelAnimationFrame = w.cancelAnimationFrame ||
+        var cancelAnimationFrame =
+            w.cancelAnimationFrame ||
             w.mozCancelAnimationFrame ||
             w.webkitCancelAnimationFrame ||
             w.msCancelAnimationFrame;
 
         // polyfill, when necessary
-        if ( requestAnimationFrame && cancelAnimationFrame ) {
+        if (requestAnimationFrame && cancelAnimationFrame) {
             // We can't assign these window methods directly to $ because they
             // expect their "this" to be "window", so we call them in wrappers.
-            $.requestAnimationFrame = function(){
-                return requestAnimationFrame.apply( w, arguments );
+            $.requestAnimationFrame = function() {
+                return requestAnimationFrame.apply(w, arguments);
             };
-            $.cancelAnimationFrame = function(){
-                return cancelAnimationFrame.apply( w, arguments );
+            $.cancelAnimationFrame = function() {
+                return cancelAnimationFrame.apply(w, arguments);
             };
         } else {
             var aAnimQueue = [],
@@ -1677,12 +1651,12 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                 iIntervalId;
 
             // create a mock requestAnimationFrame function
-            $.requestAnimationFrame = function( callback ) {
-                aAnimQueue.push( [ ++iRequestId, callback ] );
+            $.requestAnimationFrame = function(callback) {
+                aAnimQueue.push([++iRequestId, callback]);
 
-                if ( !iIntervalId ) {
-                    iIntervalId = setInterval( function() {
-                        if ( aAnimQueue.length ) {
+                if (!iIntervalId) {
+                    iIntervalId = setInterval(function() {
+                        if (aAnimQueue.length) {
                             var time = $.now();
                             // Process all of the currently outstanding frame
                             // requests, but none that get added during the
@@ -1692,27 +1666,27 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                             var temp = processing;
                             processing = aAnimQueue;
                             aAnimQueue = temp;
-                            while ( processing.length ) {
-                                processing.shift()[ 1 ]( time );
+                            while (processing.length) {
+                                processing.shift()[1](time);
                             }
                         } else {
                             // don't continue the interval, if unnecessary
-                            clearInterval( iIntervalId );
+                            clearInterval(iIntervalId);
                             iIntervalId = undefined;
                         }
-                    }, 1000 / 50);  // estimating support for 50 frames per second
+                    }, 1000 / 50); // estimating support for 50 frames per second
                 }
 
                 return iRequestId;
             };
 
             // create a mock cancelAnimationFrame function
-            $.cancelAnimationFrame = function( requestId ) {
+            $.cancelAnimationFrame = function(requestId) {
                 // find the request ID and remove it
                 var i, j;
-                for ( i = 0, j = aAnimQueue.length; i < j; i += 1 ) {
-                    if ( aAnimQueue[ i ][ 0 ] === requestId ) {
-                        aAnimQueue.splice( i, 1 );
+                for (i = 0, j = aAnimQueue.length; i < j; i += 1) {
+                    if (aAnimQueue[i][0] === requestId) {
+                        aAnimQueue.splice(i, 1);
                         return;
                     }
                 }
@@ -1720,15 +1694,15 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
                 // If it's not in the queue, it may be in the set we're currently
                 // processing (if cancelAnimationFrame is called from within a
                 // requestAnimationFrame callback).
-                for ( i = 0, j = processing.length; i < j; i += 1 ) {
-                    if ( processing[ i ][ 0 ] === requestId ) {
-                        processing.splice( i, 1 );
+                for (i = 0, j = processing.length; i < j; i += 1) {
+                    if (processing[i][0] === requestId) {
+                        processing.splice(i, 1);
                         return;
                     }
                 }
             };
         }
-    })( window );
+    })(window);
 
     /**
      * @private
@@ -1738,8 +1712,8 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @param {Boolean} [isFixed]
      * @returns {Element}
      */
-    function getOffsetParent( element, isFixed ) {
-        if ( isFixed && element != document.body ) {
+    function getOffsetParent(element, isFixed) {
+        if (isFixed && element != document.body) {
             return document.body;
         } else {
             return element.offsetParent;
@@ -1754,28 +1728,26 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @param {String} tilesUrl
      * @deprecated
      */
-    function processDZIResponse( xhr, tilesUrl ) {
+    function processDZIResponse(xhr, tilesUrl) {
         var status,
             statusText,
             doc = null;
 
-        if ( !xhr ) {
-            throw new Error( $.getString( "Errors.Security" ) );
-        } else if ( xhr.status !== 200 && xhr.status !== 0 ) {
-            status     = xhr.status;
-            statusText = ( status == 404 ) ?
-                "Not Found" :
-                xhr.statusText;
-            throw new Error( $.getString( "Errors.Status", status, statusText ) );
+        if (!xhr) {
+            throw new Error($.getString("Errors.Security"));
+        } else if (xhr.status !== 200 && xhr.status !== 0) {
+            status = xhr.status;
+            statusText = status == 404 ? "Not Found" : xhr.statusText;
+            throw new Error($.getString("Errors.Status", status, statusText));
         }
 
-        if ( xhr.responseXML && xhr.responseXML.documentElement ) {
+        if (xhr.responseXML && xhr.responseXML.documentElement) {
             doc = xhr.responseXML;
-        } else if ( xhr.responseText ) {
-            doc = $.parseXml( xhr.responseText );
+        } else if (xhr.responseText) {
+            doc = $.parseXml(xhr.responseText);
         }
 
-        return processDZIXml( doc, tilesUrl );
+        return processDZIXml(doc, tilesUrl);
     }
 
     /**
@@ -1786,30 +1758,29 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @param {String} tilesUrl
      * @deprecated
      */
-    function processDZIXml( xmlDoc, tilesUrl ) {
-
-        if ( !xmlDoc || !xmlDoc.documentElement ) {
-            throw new Error( $.getString( "Errors.Xml" ) );
+    function processDZIXml(xmlDoc, tilesUrl) {
+        if (!xmlDoc || !xmlDoc.documentElement) {
+            throw new Error($.getString("Errors.Xml"));
         }
 
-        var root     = xmlDoc.documentElement,
+        var root = xmlDoc.documentElement,
             rootName = root.tagName;
 
-        if ( rootName == "Image" ) {
+        if (rootName == "Image") {
             try {
-                return processDZI( root, tilesUrl );
-            } catch ( e ) {
-                throw (e instanceof Error) ?
-                    e :
-                    new Error( $.getString("Errors.Dzi") );
+                return processDZI(root, tilesUrl);
+            } catch (e) {
+                throw e instanceof Error
+                    ? e
+                    : new Error($.getString("Errors.Dzi"));
             }
-        } else if ( rootName == "Collection" ) {
-            throw new Error( $.getString( "Errors.Dzc" ) );
-        } else if ( rootName == "Error" ) {
-            return $._processDZIError( root );
+        } else if (rootName == "Collection") {
+            throw new Error($.getString("Errors.Dzc"));
+        } else if (rootName == "Error") {
+            return $._processDZIError(root);
         }
 
-        throw new Error( $.getString( "Errors.Dzi" ) );
+        throw new Error($.getString("Errors.Dzi"));
     }
 
     /**
@@ -1820,37 +1791,39 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @param {String} tilesUrl
      * @deprecated
      */
-    function processDZI( imageNode, tilesUrl ) {
-        var fileFormat    = imageNode.getAttribute( "Format" ),
-            sizeNode      = imageNode.getElementsByTagName( "Size" )[ 0 ],
-            dispRectNodes = imageNode.getElementsByTagName( "DisplayRect" ),
-            width         = parseInt( sizeNode.getAttribute( "Width" ), 10 ),
-            height        = parseInt( sizeNode.getAttribute( "Height" ), 10 ),
-            tileSize      = parseInt( imageNode.getAttribute( "TileSize" ), 10 ),
-            tileOverlap   = parseInt( imageNode.getAttribute( "Overlap" ), 10 ),
-            dispRects     = [],
+    function processDZI(imageNode, tilesUrl) {
+        var fileFormat = imageNode.getAttribute("Format"),
+            sizeNode = imageNode.getElementsByTagName("Size")[0],
+            dispRectNodes = imageNode.getElementsByTagName("DisplayRect"),
+            width = parseInt(sizeNode.getAttribute("Width"), 10),
+            height = parseInt(sizeNode.getAttribute("Height"), 10),
+            tileSize = parseInt(imageNode.getAttribute("TileSize"), 10),
+            tileOverlap = parseInt(imageNode.getAttribute("Overlap"), 10),
+            dispRects = [],
             dispRectNode,
             rectNode,
             i;
 
-        if ( !$.imageFormatSupported( fileFormat ) ) {
+        if (!$.imageFormatSupported(fileFormat)) {
             throw new Error(
-                $.getString( "Errors.ImageFormat", fileFormat.toUpperCase() )
+                $.getString("Errors.ImageFormat", fileFormat.toUpperCase())
             );
         }
 
-        for ( i = 0; i < dispRectNodes.length; i++ ) {
-            dispRectNode = dispRectNodes[ i ];
-            rectNode     = dispRectNode.getElementsByTagName( "Rect" )[ 0 ];
+        for (i = 0; i < dispRectNodes.length; i++) {
+            dispRectNode = dispRectNodes[i];
+            rectNode = dispRectNode.getElementsByTagName("Rect")[0];
 
-            dispRects.push( new $.DisplayRect(
-                parseInt( rectNode.getAttribute( "X" ), 10 ),
-                parseInt( rectNode.getAttribute( "Y" ), 10 ),
-                parseInt( rectNode.getAttribute( "Width" ), 10 ),
-                parseInt( rectNode.getAttribute( "Height" ), 10 ),
-                0,  // ignore MinLevel attribute, bug in Deep Zoom Composer
-                parseInt( dispRectNode.getAttribute( "MaxLevel" ), 10 )
-            ));
+            dispRects.push(
+                new $.DisplayRect(
+                    parseInt(rectNode.getAttribute("X"), 10),
+                    parseInt(rectNode.getAttribute("Y"), 10),
+                    parseInt(rectNode.getAttribute("Width"), 10),
+                    parseInt(rectNode.getAttribute("Height"), 10),
+                    0, // ignore MinLevel attribute, bug in Deep Zoom Composer
+                    parseInt(dispRectNode.getAttribute("MaxLevel"), 10)
+                )
+            );
         }
         return new $.DziTileSource(
             width,
@@ -1871,35 +1844,37 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @param {String} tilesUrl
      * @deprecated
      */
-    function processDZIJSON( imageData, tilesUrl ) {
-        var fileFormat    = imageData.Format,
-            sizeData      = imageData.Size,
-            dispRectData  = imageData.DisplayRect || [],
-            width         = parseInt( sizeData.Width, 10 ),
-            height        = parseInt( sizeData.Height, 10 ),
-            tileSize      = parseInt( imageData.TileSize, 10 ),
-            tileOverlap   = parseInt( imageData.Overlap, 10 ),
-            dispRects     = [],
+    function processDZIJSON(imageData, tilesUrl) {
+        var fileFormat = imageData.Format,
+            sizeData = imageData.Size,
+            dispRectData = imageData.DisplayRect || [],
+            width = parseInt(sizeData.Width, 10),
+            height = parseInt(sizeData.Height, 10),
+            tileSize = parseInt(imageData.TileSize, 10),
+            tileOverlap = parseInt(imageData.Overlap, 10),
+            dispRects = [],
             rectData,
             i;
 
-        if ( !$.imageFormatSupported( fileFormat ) ) {
+        if (!$.imageFormatSupported(fileFormat)) {
             throw new Error(
-                $.getString( "Errors.ImageFormat", fileFormat.toUpperCase() )
+                $.getString("Errors.ImageFormat", fileFormat.toUpperCase())
             );
         }
 
-        for ( i = 0; i < dispRectData.length; i++ ) {
-            rectData     = dispRectData[ i ].Rect;
+        for (i = 0; i < dispRectData.length; i++) {
+            rectData = dispRectData[i].Rect;
 
-            dispRects.push( new $.DisplayRect(
-                parseInt( rectData.X, 10 ),
-                parseInt( rectData.Y, 10 ),
-                parseInt( rectData.Width, 10 ),
-                parseInt( rectData.Height, 10 ),
-                0,  // ignore MinLevel attribute, bug in Deep Zoom Composer
-                parseInt( rectData.MaxLevel, 10 )
-            ));
+            dispRects.push(
+                new $.DisplayRect(
+                    parseInt(rectData.X, 10),
+                    parseInt(rectData.Y, 10),
+                    parseInt(rectData.Width, 10),
+                    parseInt(rectData.Height, 10),
+                    0, // ignore MinLevel attribute, bug in Deep Zoom Composer
+                    parseInt(rectData.MaxLevel, 10)
+                )
+            );
         }
         return new $.DziTileSource(
             width,
@@ -1920,11 +1895,10 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
      * @throws {Error}
      * @deprecated
      */
-    $._processDZIError = function ( errorNode ) {
-        var messageNode = errorNode.getElementsByTagName( "Message" )[ 0 ],
-            message     = messageNode.firstChild.nodeValue;
+    $._processDZIError = function(errorNode) {
+        var messageNode = errorNode.getElementsByTagName("Message")[0],
+            message = messageNode.firstChild.nodeValue;
 
         throw new Error(message);
     };
-
-}( OpenSeadragon ));
+})(OpenSeadragon);
