@@ -1,19 +1,25 @@
 /*global navigator, window, document, Element, Modernizr, jQuery, Image, OpenSeadragon */
 
-(function ($) {
+(function($) {
     "use strict";
     var $window = $(window),
-        placeholderImage = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        placeholderImage =
+            "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
     var gettext = window.gettext;
-    if (typeof(gettext) == "undefined") {
+    if (typeof gettext == "undefined") {
         // intentionally does nothing but avoids breaking if JS I18N dict fails to load
-        gettext = function (i) { return i; };
+        gettext = function(i) {
+            return i;
+        };
     }
 
     function isFullScreen() {
-        return ((document.fullScreenElement && document.fullScreenElement !== null) ||
-                (!document.mozFullScreen && !document.webkitIsFullScreen));
+        return (
+            (document.fullScreenElement &&
+                document.fullScreenElement !== null) ||
+            (!document.mozFullScreen && !document.webkitIsFullScreen)
+        );
     }
 
     function enterFullscreen() {
@@ -47,12 +53,15 @@
         }
     }
 
-    $window.on("fullscreenchange mozfullscreenchange webkitfullscreenchange msfullscreenchange", function () {
-        $window.trigger("resize");
-    });
+    $window.on(
+        "fullscreenchange mozfullscreenchange webkitfullscreenchange msfullscreenchange",
+        function() {
+            $window.trigger("resize");
+        }
+    );
 
     // TODO: Finish refactoring this out of being a jQuery plugin
-    $.fn.wdlViewer = function (config) {
+    $.fn.wdlViewer = function(config) {
         return this.each(function View(idx, elm) {
             return new ViewController(elm, config);
         });
@@ -65,8 +74,12 @@
             $footer = $viewer.find("footer"),
             $help = $("#help"),
             $pages = $("#pages"),
-            $grid = $('<div id="grid"></div>').hide().insertAfter($pages),
-            $seadragon = $('<div id="seadragon"></div>').hide().insertAfter($pages),
+            $grid = $('<div id="grid"></div>')
+                .hide()
+                .insertAfter($pages),
+            $seadragon = $('<div id="seadragon"></div>')
+                .hide()
+                .insertAfter($pages),
             $groupControl = $("#group"),
             $indexControl = $("#index");
 
@@ -117,54 +130,86 @@
 
         // Add toolbar features which only work with JavaScript:
         if (Modernizr.canvas || Modernizr.csstransforms) {
-            $('<button id="rotate-left" class="requires-rotation" type="button"></button>')
+            $(
+                '<button id="rotate-left" class="requires-rotation" type="button"></button>'
+            )
                 .text(gettext("Rotate Left"))
                 .appendTo("footer .toolbar .controls")
-                .on("click", $.proxy(function () {
-                    this.rotate(true);
-                }, this));
+                .on(
+                    "click",
+                    $.proxy(function() {
+                        this.rotate(true);
+                    }, this)
+                );
 
-            $('<button id="rotate-right" class="requires-rotation" type="button"></button>')
+            $(
+                '<button id="rotate-right" class="requires-rotation" type="button"></button>'
+            )
                 .text(gettext("Rotate Right"))
                 .appendTo("footer .toolbar .controls")
-                .on("click", $.proxy(function () {
-                    this.rotate();
-                }, this));
+                .on(
+                    "click",
+                    $.proxy(function() {
+                        this.rotate();
+                    }, this)
+                );
         }
 
         if (this.seadragonView) {
-            $('<button id="toggle-seadragon" type="button">' + gettext('Zoom') + '</button>')
+            $(
+                '<button id="toggle-seadragon" type="button">' +
+                    gettext("Zoom") +
+                    "</button>"
+            )
                 .appendTo("footer .toolbar .controls")
-                .on("click", $.proxy(function () {
-                    if (this.activeView == this.seadragonView) {
-                        this.openPageView();
-                    } else {
-                        this.openSeadragonView();
-                    }
-                }, this));
+                .on(
+                    "click",
+                    $.proxy(function() {
+                        if (this.activeView == this.seadragonView) {
+                            this.openPageView();
+                        } else {
+                            this.openSeadragonView();
+                        }
+                    }, this)
+                );
         }
 
-        $('<button id="toggle-grid" type="button">' + gettext('Grid') + '</button>')
+        $(
+            '<button id="toggle-grid" type="button">' +
+                gettext("Grid") +
+                "</button>"
+        )
             .appendTo("footer .toolbar .controls")
-            .on("click", $.proxy(function () {
-                if (this.activeView == this.gridView) {
-                    this.openPageView();
-                } else {
-                    this.openGridView();
-                }
-            }, this));
+            .on(
+                "click",
+                $.proxy(function() {
+                    if (this.activeView == this.gridView) {
+                        this.openPageView();
+                    } else {
+                        this.openGridView();
+                    }
+                }, this)
+            );
 
         if ($("html").hasClass("fullscreen")) {
-            $('<button id="toggle-fullscreen" type="button">' + gettext('Full Screen') + '</button>')
+            $(
+                '<button id="toggle-fullscreen" type="button">' +
+                    gettext("Full Screen") +
+                    "</button>"
+            )
                 .appendTo("footer .toolbar .controls")
-                .on("click", function () {
+                .on("click", function() {
                     toggleFullscreen();
                 });
         }
 
-        $('<button id="toggle-help" type="button">' + gettext('Help') + '</button>')
+        $(
+            '<button id="toggle-help" type="button">' +
+                gettext("Help") +
+                "</button>"
+        )
             .appendTo("footer .toolbar .controls")
-            .on("click", function () {
+            .on("click", function() {
                 $("#help").toggle();
             });
 
@@ -179,7 +224,12 @@
         $viewer.find("input.current-index").on("change", function() {
             // This is actually less painful than trying to get <input type=number> to work cross-browser…
             var val = parseInt(this.value, 10);
-            if (val == controller.currentIndex || isNaN(val) || val < 0 || val > controller.maxIndex) {
+            if (
+                val == controller.currentIndex ||
+                isNaN(val) ||
+                val < 0 ||
+                val > controller.maxIndex
+            ) {
                 this.value = controller.currentIndex;
                 return false;
             }
@@ -187,86 +237,89 @@
             controller.setIndex(val);
         });
 
-        $(document).on("keydown", $.proxy(function (evt) {
-            if ($help.is(':visible')) {
-                $help.hide();
-                return false;
-            }
-
-            // Allow views to override:
-            if (this.activeView.onKeydown) {
-                var res = this.activeView.onKeydown(evt);
-                if (typeof(res) != "undefined") {
-                    return res;
+        $(document).on(
+            "keydown",
+            $.proxy(function(evt) {
+                if ($help.is(":visible")) {
+                    $help.hide();
+                    return false;
                 }
-            }
 
-            if (evt.metaKey || evt.altKey) {
-                if (evt.which == 37 || evt.which == 39) {
-                    this.rotate(evt.which == 37);
-                    return false;
-                } else {
-                    // Allow normal handling to avoid interfering with normal browser controls:
-                    return true;
-                }
-            }
-
-            // Global state changes:
-            switch (evt.which) {
-                case 71: // g
-                    $("#toggle-grid").trigger("click");
-                    return false;
-                case 191: // ?
-                    $help.show();
-                    return false;
-                case 90: // z
-                    $("#toggle-seadragon").trigger("click");
-                    return false;
-                case 70: // f
-                    $("#toggle-fullscreen").trigger("click");
-                    return false;
-                case 27: // esc
-                    leaveFullscreen();
-                    return false;
-                case 32: // Space bar
-                    if (evt.shiftKey) {
-                        this.goToPreviousPage();
-                    } else {
-                        this.goToNextPage();
+                // Allow views to override:
+                if (this.activeView.onKeydown) {
+                    var res = this.activeView.onKeydown(evt);
+                    if (typeof res != "undefined") {
+                        return res;
                     }
-                    return false;
+                }
 
-                case 74: // j
-                case 34: // Page Down
-                    this.goToNextPage();
-                    return false;
+                if (evt.metaKey || evt.altKey) {
+                    if (evt.which == 37 || evt.which == 39) {
+                        this.rotate(evt.which == 37);
+                        return false;
+                    } else {
+                        // Allow normal handling to avoid interfering with normal browser controls:
+                        return true;
+                    }
+                }
 
-                case 75: // k
-                case 33: // Page Up
-                    this.goToPreviousPage();
-                    return false;
+                // Global state changes:
+                switch (evt.which) {
+                    case 71: // g
+                        $("#toggle-grid").trigger("click");
+                        return false;
+                    case 191: // ?
+                        $help.show();
+                        return false;
+                    case 90: // z
+                        $("#toggle-seadragon").trigger("click");
+                        return false;
+                    case 70: // f
+                        $("#toggle-fullscreen").trigger("click");
+                        return false;
+                    case 27: // esc
+                        leaveFullscreen();
+                        return false;
+                    case 32: // Space bar
+                        if (evt.shiftKey) {
+                            this.goToPreviousPage();
+                        } else {
+                            this.goToNextPage();
+                        }
+                        return false;
 
-                case 37: // left arrow
-                    this.goToPreviousPage();
-                    return false;
+                    case 74: // j
+                    case 34: // Page Down
+                        this.goToNextPage();
+                        return false;
 
-                case 39: // right arrow
-                    this.goToNextPage();
-                    return false;
-            }
+                    case 75: // k
+                    case 33: // Page Up
+                        this.goToPreviousPage();
+                        return false;
 
-            // Fall through to normal browser default handling:
-            return true;
-        }, this));
+                    case 37: // left arrow
+                        this.goToPreviousPage();
+                        return false;
 
-        $help.on("click", function () {
+                    case 39: // right arrow
+                        this.goToNextPage();
+                        return false;
+                }
+
+                // Fall through to normal browser default handling:
+                return true;
+            }, this)
+        );
+
+        $help.on("click", function() {
             $help.hide();
         });
 
         $viewer.on("goto-next-page", $.proxy(this.goToNextPage, this));
         $viewer.on("goto-previous-page", $.proxy(this.goToPreviousPage, this));
 
-        $viewer.on("goto-page", function (evt, newGroup, newIndex) {
+        $viewer.on("goto-page", function(evt, newGroup, newIndex) {
             controller.setGroup(parseInt(newGroup, 10), parseInt(newIndex, 10));
         });
 
@@ -274,45 +327,62 @@
             We offer two convenience functions for event handlers which increment the current rotation as
             well as a way to set the current rotation directly:
         */
-        $viewer.on("rotate-left", function () {
+        $viewer.on("rotate-left", function() {
             controller.rotate(true);
         });
-        $viewer.on("rotate-right", function () {
+        $viewer.on("rotate-right", function() {
             controller.rotate();
         });
-        $viewer.on("set-rotation", function (evt, degrees) {
+        $viewer.on("set-rotation", function(evt, degrees) {
             controller.setRotation(degrees);
         });
 
-        $viewer.on("page-changed", $.proxy(function () {
-            $groupControl.val(this.currentGroup);
-            $indexControl.val(this.currentIndex);
-            $viewer.find('input.current-index').attr('max', this.maxIndex).val(this.currentIndex);
-            $viewer.find('.max-index').text(this.maxIndex);
-            $indexControl.attr('max', this.maxIndex);
-        }, this));
+        $viewer.on(
+            "page-changed",
+            $.proxy(function() {
+                $groupControl.val(this.currentGroup);
+                $indexControl.val(this.currentIndex);
+                $viewer
+                    .find("input.current-index")
+                    .attr("max", this.maxIndex)
+                    .val(this.currentIndex);
+                $viewer.find(".max-index").text(this.maxIndex);
+                $indexControl.attr("max", this.maxIndex);
+            }, this)
+        );
 
-        $viewer.on("prefetch-adjacent-pages", $.proxy(function () {
-            this.activeView.prefetch();
-        }, this));
+        $viewer.on(
+            "prefetch-adjacent-pages",
+            $.proxy(function() {
+                this.activeView.prefetch();
+            }, this)
+        );
 
-        $window.on("resize", $.proxy(function () {
-            this.activeView.onResize();
-        }, this));
+        $window.on(
+            "resize",
+            $.proxy(function() {
+                this.activeView.onResize();
+            }, this)
+        );
 
-        $viewer.on("open-seadragon", $.proxy(function () { this.openSeadragonView(); }, this));
+        $viewer.on(
+            "open-seadragon",
+            $.proxy(function() {
+                this.openSeadragonView();
+            }, this)
+        );
 
         // For efficiency we'll expose a variable which event handlers can use to decide whether to make an
         // expensive jQuery call:
 
         var headerHidden = false;
-        $viewer.on("hide-header", function () {
+        $viewer.on("hide-header", function() {
             if (!headerHidden) {
                 headerHidden = true;
                 $header.stop(true, true).slideUp();
             }
         });
-        $viewer.on("show-header", function () {
+        $viewer.on("show-header", function() {
             if (headerHidden) {
                 headerHidden = false;
                 $header.stop(true, true).slideDown();
@@ -320,16 +390,19 @@
         });
 
         var footerHidden = false;
-        $viewer.on("hide-footer", $.proxy(function () {
-            // Don't hide the footer when the seadragon view is active as there's no way to restore it
-            // without using keyboard shortcuts:
-            if (!footerHidden && (this.activeView != this.seadragonView)) {
-                footerHidden = true;
-                $footer.stop(true, true).slideUp();
-            }
-        }, this));
+        $viewer.on(
+            "hide-footer",
+            $.proxy(function() {
+                // Don't hide the footer when the seadragon view is active as there's no way to restore it
+                // without using keyboard shortcuts:
+                if (!footerHidden && this.activeView != this.seadragonView) {
+                    footerHidden = true;
+                    $footer.stop(true, true).slideUp();
+                }
+            }, this)
+        );
 
-        $viewer.on("show-footer", function () {
+        $viewer.on("show-footer", function() {
             if (footerHidden) {
                 footerHidden = false;
                 $footer.stop(true, true).slideDown();
@@ -337,7 +410,7 @@
         });
 
         var headerHeight = $header.height();
-        $viewer.on("mousemove", function (evt) {
+        $viewer.on("mousemove", function(evt) {
             if (evt.pageY < headerHeight * 2) {
                 $viewer.trigger("show-header");
             } else if (evt.pageY > headerHeight * 3) {
@@ -345,17 +418,17 @@
             }
         });
 
-        $viewer.on("hide-chrome", function () {
+        $viewer.on("hide-chrome", function() {
             $viewer.trigger("hide-header");
             $viewer.trigger("hide-footer");
         });
 
-        $viewer.on("show-chrome", function () {
+        $viewer.on("show-chrome", function() {
             $viewer.trigger("show-header");
             $viewer.trigger("show-footer");
         });
 
-        $viewer.on("toggle-chrome", function () {
+        $viewer.on("toggle-chrome", function() {
             if (headerHidden || footerHidden) {
                 $viewer.trigger("show-chrome");
             } else {
@@ -363,7 +436,7 @@
             }
         });
 
-        $viewer.on("page-changed", function () {
+        $viewer.on("page-changed", function() {
             $viewer.trigger("hide-header");
         });
 
@@ -379,26 +452,33 @@
     }
 
     ViewController.prototype = {
-        generatePageUrl: function (group, index) {
-            return this.config.pageUrlTemplate.replace('{group}', group).replace('{index}', index);
+        generatePageUrl: function(group, index) {
+            return this.config.pageUrlTemplate
+                .replace("{group}", group)
+                .replace("{index}", index);
         },
-        generateImageUrl: function (group, index, maxEdge) {
-            return this.config.imageUrlTemplate.replace(/\{([^}]+)\}/g, function(match, name) {
-                switch (name) {
-                    case "group":
-                        return group;
-                    case "index":
-                        return index;
-                    case "height":
-                    case "width":
-                        return maxEdge;
+        generateImageUrl: function(group, index, maxEdge) {
+            return this.config.imageUrlTemplate.replace(
+                /\{([^}]+)\}/g,
+                function(match, name) {
+                    switch (name) {
+                        case "group":
+                            return group;
+                        case "index":
+                            return index;
+                        case "height":
+                        case "width":
+                            return maxEdge;
+                    }
                 }
-            });
+            );
         },
-        generateDziUrl: function (group, index) {
-            return this.config.dziUrlTemplate.replace("{group}", group).replace("{index}", index);
+        generateDziUrl: function(group, index) {
+            return this.config.dziUrlTemplate
+                .replace("{group}", group)
+                .replace("{index}", index);
         },
-        setIndex: function (newIndex) {
+        setIndex: function(newIndex) {
             if (newIndex < 1) {
                 newIndex = 1;
             } else if (newIndex > this.maxIndex) {
@@ -413,8 +493,11 @@
 
             this.updateViewer();
         },
-        setGroup: function (newGroup, newIndex) {
-            if (newGroup == this.currentGroup && (!newIndex || newIndex == this.currentIndex)) {
+        setGroup: function(newGroup, newIndex) {
+            if (
+                newGroup == this.currentGroup &&
+                (!newIndex || newIndex == this.currentIndex)
+            ) {
                 return;
             }
 
@@ -424,12 +507,18 @@
 
             this.updateViewer();
         },
-        updateViewer: function () {
+        updateViewer: function() {
             // Update next / previous links:
             if (this.currentIndex < this.maxIndex) {
                 $(".toolbar .page.next")
                     .removeClass("disabled")
-                    .attr("href", this.generatePageUrl(this.currentGroup, this.currentIndex + 1));
+                    .attr(
+                        "href",
+                        this.generatePageUrl(
+                            this.currentGroup,
+                            this.currentIndex + 1
+                        )
+                    );
             } else {
                 $(".toolbar .page.next")
                     .addClass("disabled")
@@ -439,14 +528,23 @@
             if (this.currentIndex > 1) {
                 $(".toolbar .page.previous")
                     .removeClass("disabled")
-                    .attr("href", this.generatePageUrl(this.currentGroup, this.currentIndex - 1));
+                    .attr(
+                        "href",
+                        this.generatePageUrl(
+                            this.currentGroup,
+                            this.currentIndex - 1
+                        )
+                    );
             } else {
                 $(".toolbar .page.previous")
                     .addClass("disabled")
                     .removeAttr("href");
             }
 
-            this.viewer.data({group: this.currentGroup, index: this.currentIndex});
+            this.viewer.data({
+                group: this.currentGroup,
+                index: this.currentIndex
+            });
 
             window.history.replaceState(
                 {
@@ -460,28 +558,28 @@
             this.viewer.trigger("page-changed");
             this.activeView.prefetch();
         },
-        goToNextPage: function () {
+        goToNextPage: function() {
             var step = this.activeView.getPageCount(),
                 delta = this.maxIndex - this.currentIndex;
 
             if (delta > 0) {
                 this.setIndex(this.currentIndex + step);
             } else {
-                 // In case chrome is hidden, display the nav so the user can see they're on the last page:
+                // In case chrome is hidden, display the nav so the user can see they're on the last page:
                 this.viewer.trigger("show-chrome");
             }
         },
-        goToPreviousPage: function () {
+        goToPreviousPage: function() {
             var step = this.activeView.getPageCount();
 
             if (this.currentIndex > 1) {
                 this.setIndex(this.currentIndex - step);
             } else {
-                 // In case chrome is hidden, display the nav so the user can see they're on the first page:
+                // In case chrome is hidden, display the nav so the user can see they're on the first page:
                 this.viewer.trigger("show-chrome");
             }
         },
-        openPageView: function () {
+        openPageView: function() {
             if (this.activeView == this.pageView) {
                 return;
             } else if (this.activeView) {
@@ -492,7 +590,7 @@
             this.pageView.show();
             this.viewer.attr("data-active-view", "page").trigger("show-footer");
         },
-        openGridView: function () {
+        openGridView: function() {
             if (this.activeView == this.gridView) {
                 return;
             } else if (this.activeView) {
@@ -502,7 +600,7 @@
             this.activeView.show();
             this.viewer.attr("data-active-view", "grid").trigger("hide-footer");
         },
-        openSeadragonView: function () {
+        openSeadragonView: function() {
             if (!this.seadragonView || this.activeView == this.seadragonView) {
                 return;
             } else if (this.activeView) {
@@ -511,12 +609,14 @@
 
             this.activeView = this.seadragonView;
             this.activeView.show();
-            this.viewer.attr("data-active-view", "seadragon").trigger("show-footer");
+            this.viewer
+                .attr("data-active-view", "seadragon")
+                .trigger("show-footer");
         },
-        rotate: function (reverse) {
+        rotate: function(reverse) {
             this.setRotation(this.rotation + (reverse ? -90 : 90));
         },
-        setRotation: function (degrees) {
+        setRotation: function(degrees) {
             this.rotation = degrees;
             if (this.activeView && this.activeView.setRotation) {
                 this.activeView.setRotation(this.rotation);
@@ -530,42 +630,50 @@
 
         var $pages = $("#pages"),
             $currentPage = $pages.find(".current img").first(),
-            $nextPage = $('<img>'),
+            $nextPage = $("<img>"),
             previousImages = [new Image(), new Image(), new Image()],
             nextImages = [new Image(), new Image(), new Image()];
 
-        $currentPage.parent().clone().empty().removeClass("current").addClass("next")
+        $currentPage
+            .parent()
+            .clone()
+            .empty()
+            .removeClass("current")
+            .addClass("next")
             .appendTo($pages)
             .append($nextPage);
 
-        this.hide = function () {
+        this.hide = function() {
             $container.hide();
         };
 
-        this.show = function () {
+        this.show = function() {
             $container.show();
             this.update();
         };
 
-        this.setRotation = function (degrees) {
+        this.setRotation = function(degrees) {
             // We set this explicitly here rather
             $pages.css({
-               '-webkit-transform': 'rotate(' + degrees + 'deg)',
-               '-ms-transform':     'rotate(' + degrees + 'deg)',
-               'transform':         'rotate(' + degrees + 'deg)'
+                "-webkit-transform": "rotate(" + degrees + "deg)",
+                "-ms-transform": "rotate(" + degrees + "deg)",
+                transform: "rotate(" + degrees + "deg)"
             });
 
             this.checkViewportConstraints();
         };
 
-        this.getPageCount = function () {
+        this.getPageCount = function() {
             return $pages.find("img:visible").length;
         };
 
         this.update = function() {
             // Cycle the sources to avoid issues with the load event not firing on cache hits:
-            var newSrc = controller.generateImageUrl(controller.currentGroup, controller.currentIndex,
-                                                     config.maxPageEdge);
+            var newSrc = controller.generateImageUrl(
+                controller.currentGroup,
+                controller.currentIndex,
+                config.maxPageEdge
+            );
             if (newSrc != $currentPage.attr("src")) {
                 $pages.find("img").fadeTo(200, 0.3);
                 $currentPage.attr("src", newSrc);
@@ -578,14 +686,20 @@
                       https://bugs.webkit.org/show_bug.cgi?id=28832
                       https://bugzilla.mozilla.org/show_bug.cgi?id=513541
                 */
-            $nextPage.hide()
+            $nextPage
+                .hide()
                 .attr("src", this.config.placeholderSrc)
                 .data("dirty", true);
 
-            if ((controller.maxIndex - controller.currentIndex) > 0) {
-                $nextPage.attr("src", controller.generateImageUrl(controller.currentGroup,
-                                                                  controller.currentIndex + 1,
-                                                                  config.maxPageEdge));
+            if (controller.maxIndex - controller.currentIndex > 0) {
+                $nextPage.attr(
+                    "src",
+                    controller.generateImageUrl(
+                        controller.currentGroup,
+                        controller.currentIndex + 1,
+                        config.maxPageEdge
+                    )
+                );
             } else {
                 $nextPage.hide();
             }
@@ -598,35 +712,44 @@
                 return;
             }
 
-            var lastPage = ((this.controller.maxIndex - this.controller.currentIndex) < 1);
+            var lastPage =
+                this.controller.maxIndex - this.controller.currentIndex < 1;
 
             var overflow = false;
 
             // CSS transforms rotate display but not the DOM element's height/width:
             if (this.controller.rotation % 180 === 0) {
-                overflow = ($nextPage.outerWidth() + $currentPage.outerWidth() + 20 >= $window.width());
+                overflow =
+                    $nextPage.outerWidth() + $currentPage.outerWidth() + 20 >=
+                    $window.width();
             } else {
-                overflow = ($nextPage.outerHeight() + $currentPage.outerHeight() + 20 >= $window.height());
+                overflow =
+                    $nextPage.outerHeight() + $currentPage.outerHeight() + 20 >=
+                    $window.height();
             }
 
             if (lastPage || overflow) {
                 $nextPage.hide();
             } else {
-                $nextPage.show()
+                $nextPage
+                    .show()
                     .stop(true, false)
                     .fadeTo(200, 1.0);
             }
         };
 
-        this.onResize = function () {
+        this.onResize = function() {
             return this.checkViewportConstraints();
         };
 
-        this.prefetch = function () {
+        this.prefetch = function() {
             for (var i = 0; i < 3; i++) {
                 nextImages[i].src = controller.generateImageUrl(
                     controller.currentGroup,
-                    Math.min(controller.maxIndex, controller.currentIndex + 1 + i),
+                    Math.min(
+                        controller.maxIndex,
+                        controller.currentIndex + 1 + i
+                    ),
                     config.maxPageEdge
                 );
             }
@@ -640,18 +763,24 @@
             }
         };
 
-        $currentPage.on("load", $.proxy(function () {
-            $currentPage.stop(true, false).fadeTo(100, 1.0);
-            $window.scrollTop(0);
-            this.checkViewportConstraints();
-        }, this));
+        $currentPage.on(
+            "load",
+            $.proxy(function() {
+                $currentPage.stop(true, false).fadeTo(100, 1.0);
+                $window.scrollTop(0);
+                this.checkViewportConstraints();
+            }, this)
+        );
 
         $nextPage
-            .on("load", $.proxy(function () {
-                $nextPage.data("dirty", false);
-                this.checkViewportConstraints();
-            }, this))
-            .on("error", function () {
+            .on(
+                "load",
+                $.proxy(function() {
+                    $nextPage.data("dirty", false);
+                    this.checkViewportConstraints();
+                }, this)
+            )
+            .on("error", function() {
                 // TODO: Consider trying a reload?
                 $nextPage.data("dirty", false);
             });
@@ -661,17 +790,17 @@
         this.controller = controller;
         this.seadragon = null;
 
-        this.getPageCount = function () {
+        this.getPageCount = function() {
             return 1;
         };
 
-        this.onResize = function () {
+        this.onResize = function() {
             $container.css({
                 height: $window.height()
             });
         };
 
-        this.hide = function () {
+        this.hide = function() {
             $("#toggle-seadragon").text(gettext("Zoom"));
 
             if (this.seadragon) {
@@ -684,7 +813,7 @@
             $window.off("resize", this.onResize);
         };
 
-        this.show = function () {
+        this.show = function() {
             $("#toggle-seadragon").text(gettext("Read"));
 
             if (this.seadragon) {
@@ -701,9 +830,11 @@
             this.update();
         };
 
-        this.update = function () {
-            var dziUrl = this.controller.generateDziUrl(this.controller.currentGroup,
-                                                        this.controller.currentIndex);
+        this.update = function() {
+            var dziUrl = this.controller.generateDziUrl(
+                this.controller.currentGroup,
+                this.controller.currentIndex
+            );
 
             if (!this.seadragon) {
                 this.initializeSeadragon(dziUrl);
@@ -714,28 +845,28 @@
 
         // TODO: find a better way to consolidate this with the page-turner implementation:
 
-        this.zoomIn = $.proxy(function () {
+        this.zoomIn = $.proxy(function() {
             if (!this.seadragon.viewport) {
                 return; // IE8
             }
             this.seadragon.viewport.zoomBy(this.seadragon.zoomPerClick / 1.0);
         }, this);
 
-        this.zoomOut = $.proxy(function () {
+        this.zoomOut = $.proxy(function() {
             if (!this.seadragon.viewport) {
                 return; // IE8
             }
             this.seadragon.viewport.zoomBy(1.0 / this.seadragon.zoomPerClick);
         }, this);
 
-        this.goHome = $.proxy(function () {
+        this.goHome = $.proxy(function() {
             if (!this.seadragon.viewport) {
                 return; // IE8
             }
             this.seadragon.viewport.goHome();
         }, this);
 
-        this.panViewport = $.proxy(function (direction) {
+        this.panViewport = $.proxy(function(direction) {
             if (!this.seadragon.viewport) {
                 return; // IE8
             }
@@ -761,7 +892,7 @@
             this.seadragon.viewport.panBy(delta);
         }, this);
 
-        this.setRotation = $.proxy(function (degrees) {
+        this.setRotation = $.proxy(function(degrees) {
             if (!this.seadragon || !this.seadragon.viewport) {
                 return;
             }
@@ -771,7 +902,7 @@
             this.seadragon.viewport.setRotation(degrees - (degrees % 90));
         });
 
-        this.initializeSeadragon = function (dziUrl) {
+        this.initializeSeadragon = function(dziUrl) {
             var seadragon = new OpenSeadragon({
                 id: $container.attr("id"),
                 prefixUrl: this.controller.config.seadragonPrefixUrl,
@@ -786,34 +917,49 @@
 
             var controlAnchor,
                 controls = [
-                    $("<a>").text(gettext("Zoom In")).addClass("control zoom-in").click(this.zoomIn),
-                    $("<a>").text(gettext("Zoom Out")).addClass("control zoom-out").click(this.zoomOut),
-                    $("<a>").text(gettext("Go Home")).addClass("control home").click(this.goHome)
+                    $("<a>")
+                        .text(gettext("Zoom In"))
+                        .addClass("control zoom-in")
+                        .click(this.zoomIn),
+                    $("<a>")
+                        .text(gettext("Zoom Out"))
+                        .addClass("control zoom-out")
+                        .click(this.zoomOut),
+                    $("<a>")
+                        .text(gettext("Go Home"))
+                        .addClass("control home")
+                        .click(this.goHome)
                 ];
 
             try {
-                controlAnchor = this.controller.config.openSeadragon.controlAnchor;
+                controlAnchor = this.controller.config.openSeadragon
+                    .controlAnchor;
             } catch (e) {
                 controlAnchor = OpenSeadragon.ControlAnchor.BOTTOM_RIGHT;
             }
 
-            for (var i=0; i < controls.length; i++) {
-                seadragon.addControl(controls[i].get(0), {anchor: controlAnchor});
+            for (var i = 0; i < controls.length; i++) {
+                seadragon.addControl(controls[i].get(0), {
+                    anchor: controlAnchor
+                });
             }
 
             // Make UI transitions more obvious by zooming in when the viewer first loads:
-            var initialZoom = $.proxy(function () {
+            var initialZoom = $.proxy(function() {
                 seadragon.removeHandler("open", initialZoom);
                 this.zoomIn();
             }, this);
             seadragon.addHandler("open", initialZoom);
 
-            seadragon.addHandler("open", $.proxy(function () {
-                this.setRotation(this.controller.rotation);
-            }, this));
+            seadragon.addHandler(
+                "open",
+                $.proxy(function() {
+                    this.setRotation(this.controller.rotation);
+                }, this)
+            );
         };
 
-        this.onKeydown = function (evt) {
+        this.onKeydown = function(evt) {
             switch (evt.which) {
                 case 187: // =
                 case 61: // = on Firefox
@@ -828,21 +974,21 @@
                     this.goHome();
                     return false;
                 case 37: // Left Arrow: pan Left
-                    this.panViewport('left');
+                    this.panViewport("left");
                     return false;
                 case 39: // Right Arrow: pan Right
-                    this.panViewport('right');
+                    this.panViewport("right");
                     return false;
                 case 38: // Up Arrow: pan Up
-                    this.panViewport('up');
+                    this.panViewport("up");
                     return false;
                 case 40: // Down Arrow: pan Down
-                    this.panViewport('down');
+                    this.panViewport("down");
                     return false;
             }
         };
 
-        this.prefetch = function () {};
+        this.prefetch = function() {};
     }
 
     function GridView(controller, $container, config) {
@@ -850,7 +996,7 @@
             // Cache for performance in scroll handler:
             container = $container.get(0);
 
-        var gridScrollHandler = $.throttle(50, function () {
+        var gridScrollHandler = $.throttle(50, function() {
             var scrollTop = container.scrollTop,
                 scrollBottom = scrollTop + container.offsetHeight,
                 thumbnails;
@@ -861,29 +1007,39 @@
                 thumbnails = container.children;
             }
 
-            for (var i = thumbnails.length - 1; i >= 0; i--){
+            for (var i = thumbnails.length - 1; i >= 0; i--) {
                 var thumb = thumbnails[i];
 
-                if ((thumb.offsetTop + thumb.offsetHeight) >= scrollTop && thumb.offsetTop <= scrollBottom) {
-                    var idx = thumb.id.replace(/^index-/, '');
-                    thumb.style.backgroundImage = "url(" + thumbnailUrls[idx] + ")";
-                    thumb.className = thumb.className.replace('placeholder', '');
+                if (
+                    thumb.offsetTop + thumb.offsetHeight >= scrollTop &&
+                    thumb.offsetTop <= scrollBottom
+                ) {
+                    var idx = thumb.id.replace(/^index-/, "");
+                    thumb.style.backgroundImage =
+                        "url(" + thumbnailUrls[idx] + ")";
+                    thumb.className = thumb.className.replace(
+                        "placeholder",
+                        ""
+                    );
                 }
             }
         });
 
-        this.show = function () {
+        this.show = function() {
             var container = $container.empty().get(0);
 
-            for (var i=1; i <= controller.maxIndex; i++) {
+            for (var i = 1; i <= controller.maxIndex; i++) {
                 var div = document.createElement("div");
                 div.id = "index-" + i;
                 div.className = "placeholder";
                 div.appendChild(document.createTextNode(i));
-                thumbnailUrls[i] = controller.generateImageUrl(controller.currentGroup,
-                                                               i,
-                                                               config.maxThumbnailEdge);
-                div.style.backgroundImage = "url(" + config.placeholderSrc + ")";
+                thumbnailUrls[i] = controller.generateImageUrl(
+                    controller.currentGroup,
+                    i,
+                    config.maxThumbnailEdge
+                );
+                div.style.backgroundImage =
+                    "url(" + config.placeholderSrc + ")";
                 container.appendChild(div);
             }
 
@@ -891,16 +1047,23 @@
             this.update();
         };
 
-        this.update = function () {
+        this.update = function() {
             var $pages = $container.scrollTop(0).children("div"),
                 // Note switch from page number to zero-based index:
                 $currentPage = $pages.eq(controller.currentIndex - 1);
 
             /* jshint -W101 */
-            $container.scrollTop($currentPage.offset().top - ($window.height() / 2) + ($currentPage.height() / 2));
+            $container.scrollTop(
+                $currentPage.offset().top -
+                    $window.height() / 2 +
+                    $currentPage.height() / 2
+            );
             /* jshint +W101 */
 
-            $pages.not($currentPage).filter(".current").removeClass("current");
+            $pages
+                .not($currentPage)
+                .filter(".current")
+                .removeClass("current");
             $currentPage.addClass("current");
 
             $container.on("scroll", gridScrollHandler);
@@ -908,12 +1071,12 @@
             $container.trigger("scroll");
         };
 
-        this.hide = function () {
+        this.hide = function() {
             $container.off("scroll", gridScrollHandler);
             $container.hide().empty();
         };
 
-        this.onResize = function () {
+        this.onResize = function() {
             gridScrollHandler();
         };
 
@@ -925,7 +1088,7 @@
             $container.scrollTop($container.scrollTop() - $window.height() / 2);
         }
 
-        this.onKeydown = function (evt) {
+        this.onKeydown = function(evt) {
             switch (evt.which) {
                 case 32: // Space bar
                     if (evt.shiftKey) {
@@ -945,9 +1108,9 @@
             }
         };
 
-        this.prefetch = function () {};
+        this.prefetch = function() {};
 
-        $container.on("click", "div", function () {
+        $container.on("click", "div", function() {
             var newPage = this.id.match(/^index-(\d+)/);
             if (newPage) {
                 controller.openPageView();
@@ -955,4 +1118,4 @@
             }
         });
     }
-}(jQuery));
+})(jQuery);
