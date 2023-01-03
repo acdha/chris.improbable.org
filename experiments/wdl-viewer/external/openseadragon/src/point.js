@@ -32,159 +32,147 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function( $ ){
-
-/**
- * A Point is really used as a 2-dimensional vector, equally useful for
- * representing a point on a plane, or the height and width of a plane
- * not requiring any other frame of reference.
- * @class
- * @param {Number} [x] The vector component 'x'. Defaults to the origin at 0.
- * @param {Number} [y] The vector component 'y'. Defaults to the origin at 0.
- * @property {Number} [x] The vector component 'x'.
- * @property {Number} [y] The vector component 'y'.
- */
-$.Point = function( x, y ) {
-    this.x = typeof ( x ) == "number" ? x : 0;
-    this.y = typeof ( y ) == "number" ? y : 0;
-};
-
-$.Point.prototype = {
-
+(function($) {
     /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
+     * A Point is really used as a 2-dimensional vector, equally useful for
+     * representing a point on a plane, or the height and width of a plane
+     * not requiring any other frame of reference.
+     * @class
+     * @param {Number} [x] The vector component 'x'. Defaults to the origin at 0.
+     * @param {Number} [y] The vector component 'y'. Defaults to the origin at 0.
+     * @property {Number} [x] The vector component 'x'.
+     * @property {Number} [y] The vector component 'y'.
      */
-    plus: function( point ) {
-        return new $.Point(
-            this.x + point.x,
-            this.y + point.y
-        );
-    },
+    $.Point = function(x, y) {
+        this.x = typeof x == "number" ? x : 0;
+        this.y = typeof y == "number" ? y : 0;
+    };
 
-    /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
-     */
-    minus: function( point ) {
-        return new $.Point(
-            this.x - point.x,
-            this.y - point.y
-        );
-    },
+    $.Point.prototype = {
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        plus: function(point) {
+            return new $.Point(this.x + point.x, this.y + point.y);
+        },
 
-    /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
-     */
-    times: function( factor ) {
-        return new $.Point(
-            this.x * factor,
-            this.y * factor
-        );
-    },
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        minus: function(point) {
+            return new $.Point(this.x - point.x, this.y - point.y);
+        },
 
-    /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
-     */
-    divide: function( factor ) {
-        return new $.Point(
-            this.x / factor,
-            this.y / factor
-        );
-    },
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        times: function(factor) {
+            return new $.Point(this.x * factor, this.y * factor);
+        },
 
-    /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
-     */
-    negate: function() {
-        return new $.Point( -this.x, -this.y );
-    },
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        divide: function(factor) {
+            return new $.Point(this.x / factor, this.y / factor);
+        },
 
-    /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
-     */
-    distanceTo: function( point ) {
-        return Math.sqrt(
-            Math.pow( this.x - point.x, 2 ) +
-            Math.pow( this.y - point.y, 2 )
-        );
-    },
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        negate: function() {
+            return new $.Point(-this.x, -this.y);
+        },
 
-    /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
-     */
-    apply: function( func ) {
-        return new $.Point( func( this.x ), func( this.y ) );
-    },
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        distanceTo: function(point) {
+            return Math.sqrt(
+                Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2)
+            );
+        },
 
-    /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
-     */
-    equals: function( point ) {
-        return (
-            point instanceof $.Point
-        ) && (
-            this.x === point.x
-        ) && (
-            this.y === point.y
-        );
-    },
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        apply: function(func) {
+            return new $.Point(func(this.x), func(this.y));
+        },
 
-    /**
-     * Rotates the point around the specified pivot
-     * From http://stackoverflow.com/questions/4465931/rotate-rectangle-around-a-point
-     * @function
-     * @param {Number} degress to rotate around the pivot.
-     * @param {OpenSeadragon.Point} pivot Point about which to rotate.
-     * @returns {OpenSeadragon.Point}. A new point representing the point rotated around the specified pivot
-     */
-    rotate: function ( degrees, pivot ) {
-        var angle = degrees * Math.PI / 180.0,
-            x = Math.cos( angle ) * ( this.x - pivot.x ) - Math.sin( angle ) * ( this.y - pivot.y ) + pivot.x,
-            y = Math.sin( angle ) * ( this.x - pivot.x ) + Math.cos( angle ) * ( this.y - pivot.y ) + pivot.y;
-        return new $.Point( x, y );
-    },
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        equals: function(point) {
+            return (
+                point instanceof $.Point &&
+                this.x === point.x &&
+                this.y === point.y
+            );
+        },
 
-    /**
-     * Add another Point to this point and return a new Point.
-     * @function
-     * @param {OpenSeadragon.Point} point The point to add vector components.
-     * @returns {OpenSeadragon.Point} A new point representing the sum of the
-     *  vector components
-     */
-    toString: function() {
-        return "(" + Math.round(this.x) + "," + Math.round(this.y) + ")";
-    }
-};
+        /**
+         * Rotates the point around the specified pivot
+         * From http://stackoverflow.com/questions/4465931/rotate-rectangle-around-a-point
+         * @function
+         * @param {Number} degress to rotate around the pivot.
+         * @param {OpenSeadragon.Point} pivot Point about which to rotate.
+         * @returns {OpenSeadragon.Point}. A new point representing the point rotated around the specified pivot
+         */
+        rotate: function(degrees, pivot) {
+            var angle = (degrees * Math.PI) / 180.0,
+                x =
+                    Math.cos(angle) * (this.x - pivot.x) -
+                    Math.sin(angle) * (this.y - pivot.y) +
+                    pivot.x,
+                y =
+                    Math.sin(angle) * (this.x - pivot.x) +
+                    Math.cos(angle) * (this.y - pivot.y) +
+                    pivot.y;
+            return new $.Point(x, y);
+        },
 
-}( OpenSeadragon ));
+        /**
+         * Add another Point to this point and return a new Point.
+         * @function
+         * @param {OpenSeadragon.Point} point The point to add vector components.
+         * @returns {OpenSeadragon.Point} A new point representing the sum of the
+         *  vector components
+         */
+        toString: function() {
+            return "(" + Math.round(this.x) + "," + Math.round(this.y) + ")";
+        }
+    };
+})(OpenSeadragon);
