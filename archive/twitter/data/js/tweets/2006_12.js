@@ -5,7 +5,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1842403",
@@ -20,8 +20,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -29,7 +29,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1721003",
@@ -44,8 +44,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -53,7 +53,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1612543",
@@ -68,8 +68,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -77,7 +77,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1495243",
@@ -92,8 +92,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -101,7 +101,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1341033",
@@ -116,8 +116,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -125,12 +125,11 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1318753",
-        text:
-            "is considering the implications of his laptop's internal temperature having dropped to 37\u00BA",
+        text: "is considering the implications of his laptop's internal temperature having dropped to 37\u00BA",
         id: 1318753,
         created_at: "Mon Dec 18 17:22:51 +0000 2006",
         user: {
@@ -141,8 +140,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -150,7 +149,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1212843",
@@ -165,8 +164,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -174,12 +173,11 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1203533",
-        text:
-            "is disappointed that Adobe still hasn't discovered that the best installer is none at all",
+        text: "is disappointed that Adobe still hasn't discovered that the best installer is none at all",
         id: 1203533,
         created_at: "Fri Dec 15 22:21:25 +0000 2006",
         user: {
@@ -190,8 +188,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -199,7 +197,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1145713",
@@ -214,8 +212,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -223,7 +221,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1090763",
@@ -238,8 +236,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -247,7 +245,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1035573",
@@ -262,8 +260,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -271,7 +269,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "1018023",
@@ -286,8 +284,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -295,7 +293,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "978883",
@@ -310,8 +308,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -319,7 +317,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "969913",
@@ -334,8 +332,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -343,7 +341,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "966393",
@@ -358,8 +356,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -367,7 +365,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "961123",
@@ -382,8 +380,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -391,12 +389,11 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "914973",
-        text:
-            "is thinking about how to kill a couple of hours before flying back to San Diego",
+        text: "is thinking about how to kill a couple of hours before flying back to San Diego",
         id: 914973,
         created_at: "Sun Dec 10 17:34:41 +0000 2006",
         user: {
@@ -407,8 +404,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -416,7 +413,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "861123",
@@ -431,8 +428,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -440,7 +437,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "860073",
@@ -455,8 +452,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -464,7 +461,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "855663",
@@ -479,8 +476,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -488,7 +485,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "846903",
@@ -503,8 +500,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -512,7 +509,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "842533",
@@ -527,8 +524,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -536,7 +533,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "841203",
@@ -551,8 +548,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -560,7 +557,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "822683",
@@ -575,8 +572,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -584,7 +581,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "821633",
@@ -599,8 +596,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -608,12 +605,11 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "817703",
-        text:
-            "is contemplating nefarious ways to use 50 rolls of strapping tape",
+        text: "is contemplating nefarious ways to use 50 rolls of strapping tape",
         id: 817703,
         created_at: "Fri Dec 08 03:30:04 +0000 2006",
         user: {
@@ -624,8 +620,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -633,7 +629,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "816553",
@@ -648,8 +644,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -657,7 +653,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "812873",
@@ -672,8 +668,8 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "web",
@@ -681,7 +677,7 @@ Grailbird.data.tweets_2006_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "693673",
@@ -696,7 +692,7 @@ Grailbird.data.tweets_2006_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];

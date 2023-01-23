@@ -32,11 +32,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * @class
      */
-    $.ControlDock = function(options) {
+    $.ControlDock = function (options) {
         var layouts = ["topleft", "topright", "bottomright", "bottomleft"],
             layout,
             i;
@@ -51,14 +51,14 @@
                     "-" +
                     Math.floor(Math.random() * 1000000),
                 container: $.makeNeutralElement("form"),
-                controls: []
+                controls: [],
             },
-            options
+            options,
         );
 
         // Disable the form's submit; otherwise button clicks and return keys
         // can trigger it.
-        this.container.onsubmit = function() {
+        this.container.onsubmit = function () {
             return false;
         };
 
@@ -98,7 +98,7 @@
         /**
          * @function
          */
-        addControl: function(element, controlOptions) {
+        addControl: function (element, controlOptions) {
             element = $.getElement(element);
             var div = null;
 
@@ -147,7 +147,7 @@
          * @function
          * @return {OpenSeadragon.ControlDock} Chainable.
          */
-        removeControl: function(element) {
+        removeControl: function (element) {
             element = $.getElement(element);
             var i = getControlIndex(this, element);
 
@@ -163,7 +163,7 @@
          * @function
          * @return {OpenSeadragon.ControlDock} Chainable.
          */
-        clearControls: function() {
+        clearControls: function () {
             while (this.controls.length > 0) {
                 this.controls.pop().destroy();
             }
@@ -175,7 +175,7 @@
          * @function
          * @return {Boolean}
          */
-        areControlsEnabled: function() {
+        areControlsEnabled: function () {
             var i;
 
             for (i = this.controls.length - 1; i >= 0; i--) {
@@ -191,7 +191,7 @@
          * @function
          * @return {OpenSeadragon.ControlDock} Chainable.
          */
-        setControlsEnabled: function(enabled) {
+        setControlsEnabled: function (enabled) {
             var i;
 
             for (i = this.controls.length - 1; i >= 0; i--) {
@@ -199,7 +199,7 @@
             }
 
             return this;
-        }
+        },
     };
 
     ///////////////////////////////////////////////////////////////////////////////

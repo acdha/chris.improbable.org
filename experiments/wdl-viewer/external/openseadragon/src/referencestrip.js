@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     // dictionary from id to private properties
     var THIS = {};
 
@@ -55,7 +55,7 @@
      *          require better abstraction at those points in order to effeciently
      *          reuse those paradigms.
      */
-    $.ReferenceStrip = function(options) {
+    $.ReferenceStrip = function (options) {
         var _this = this,
             viewer = options.viewer,
             viewerSize = $.getElementSize(viewer.element),
@@ -78,7 +78,7 @@
                 sizeRatio: $.DEFAULT_SETTINGS.referenceStripSizeRatio,
                 position: $.DEFAULT_SETTINGS.referenceStripPosition,
                 scroll: $.DEFAULT_SETTINGS.referenceStripScroll,
-                clickTimeThreshold: $.DEFAULT_SETTINGS.clickTimeThreshold
+                clickTimeThreshold: $.DEFAULT_SETTINGS.clickTimeThreshold,
             },
             options,
             {
@@ -89,14 +89,14 @@
                 showNavigator: false,
                 mouseNavEnabled: false,
                 showNavigationControl: false,
-                showSequenceControl: false
-            }
+                showSequenceControl: false,
+            },
         );
 
         $.extend(this, options);
         //Private state properties
         THIS[this.id] = {
-            animating: false
+            animating: false,
         };
 
         this.minPixelRatio = this.viewer.minPixelRatio;
@@ -121,7 +121,7 @@
             scrollHandler: $.delegate(this, onStripScroll),
             enterHandler: $.delegate(this, onStripEnter),
             exitHandler: $.delegate(this, onStripExit),
-            keyHandler: $.delegate(this, onKeyPress)
+            keyHandler: $.delegate(this, onKeyPress),
         }).setTracking(true);
 
         //Controls the position and orientation of the reference strip and sets the
@@ -130,7 +130,7 @@
             this.element.style.width = options.width + "px";
             this.element.style.height = options.height + "px";
             viewer.addControl(this.element, {
-                anchor: $.ControlAnchor.BOTTOM_LEFT
+                anchor: $.ControlAnchor.BOTTOM_LEFT,
             });
         } else {
             if ("horizontal" == options.scroll) {
@@ -145,7 +145,7 @@
                     viewerSize.y * options.sizeRatio + "px";
 
                 viewer.addControl(this.element, {
-                    anchor: $.ControlAnchor.BOTTOM_LEFT
+                    anchor: $.ControlAnchor.BOTTOM_LEFT,
                 });
             } else {
                 this.element.style.height =
@@ -159,7 +159,7 @@
                     viewerSize.x * options.sizeRatio + "px";
 
                 viewer.addControl(this.element, {
-                    anchor: $.ControlAnchor.TOP_LEFT
+                    anchor: $.ControlAnchor.TOP_LEFT,
                 });
             }
         }
@@ -185,14 +185,14 @@
                 element: element,
                 clickTimeThreshold: this.clickTimeThreshold,
                 clickDistThreshold: this.clickDistThreshold,
-                pressHandler: function(tracker) {
+                pressHandler: function (tracker) {
                     tracker.dragging = $.now();
                 },
-                releaseHandler: function(
+                releaseHandler: function (
                     tracker,
                     position,
                     insideElementPress,
-                    insideElementRelease
+                    insideElementRelease,
                 ) {
                     var id = tracker.element.id,
                         page = Number(id.split("-")[2]),
@@ -207,7 +207,7 @@
                         tracker.dragging = null;
                         viewer.goToPage(page);
                     }
-                }
+                },
             }).setTracking(true);
 
             this.element.appendChild(element);
@@ -219,7 +219,7 @@
         loadPanels(
             this,
             this.scroll == "vertical" ? viewerSize.y : viewerSize.y,
-            0
+            0,
         );
         this.setFocus(0);
     };
@@ -229,20 +229,20 @@
         $.EventHandler.prototype,
         $.Viewer.prototype,
         {
-            setFocus: function(page) {
+            setFocus: function (page) {
                 var element = $.getElement(this.element.id + "-" + page),
                     viewerSize = $.getElementSize(this.viewer.canvas),
                     scrollWidth = Number(
-                        this.element.style.width.replace("px", "")
+                        this.element.style.width.replace("px", ""),
                     ),
                     scrollHeight = Number(
-                        this.element.style.height.replace("px", "")
+                        this.element.style.height.replace("px", ""),
                     ),
                     offsetLeft = -Number(
-                        this.element.style.marginLeft.replace("px", "")
+                        this.element.style.marginLeft.replace("px", ""),
                     ),
                     offsetTop = -Number(
-                        this.element.style.marginTop.replace("px", "")
+                        this.element.style.marginTop.replace("px", ""),
                     ),
                     offset;
 
@@ -262,7 +262,7 @@
                         ) {
                             offset = Math.min(
                                 offset,
-                                scrollWidth - viewerSize.x
+                                scrollWidth - viewerSize.x,
                             );
                             this.element.style.marginLeft = -offset + "px";
                             loadPanels(this, viewerSize.x, -offset);
@@ -279,7 +279,7 @@
                         ) {
                             offset = Math.min(
                                 offset,
-                                scrollHeight - viewerSize.y
+                                scrollHeight - viewerSize.y,
                             );
                             this.element.style.marginTop = -offset + "px";
                             loadPanels(this, viewerSize.y, -offset);
@@ -299,14 +299,14 @@
              * @function
              * @name OpenSeadragon.ReferenceStrip.prototype.update
              */
-            update: function() {
+            update: function () {
                 if (THIS[this.id].animating) {
                     $.console.log("image reference strip update");
                     return true;
                 }
                 return false;
-            }
-        }
+            },
+        },
     );
 
     /**
@@ -316,7 +316,7 @@
      */
     function onStripDrag(tracker, position, delta, shift) {
         var offsetLeft = Number(
-                this.element.style.marginLeft.replace("px", "")
+                this.element.style.marginLeft.replace("px", ""),
             ),
             offsetTop = Number(this.element.style.marginTop.replace("px", "")),
             scrollWidth = Number(this.element.style.width.replace("px", "")),
@@ -333,7 +333,7 @@
                         loadPanels(
                             this,
                             viewerSize.x,
-                            offsetLeft + delta.x * 2
+                            offsetLeft + delta.x * 2,
                         );
                     }
                 } else if (-delta.x < 0) {
@@ -344,7 +344,7 @@
                         loadPanels(
                             this,
                             viewerSize.x,
-                            offsetLeft + delta.x * 2
+                            offsetLeft + delta.x * 2,
                         );
                     }
                 }
@@ -376,7 +376,7 @@
      */
     function onStripScroll(tracker, position, scroll, shift) {
         var offsetLeft = Number(
-                this.element.style.marginLeft.replace("px", "")
+                this.element.style.marginLeft.replace("px", ""),
             ),
             offsetTop = Number(this.element.style.marginTop.replace("px", "")),
             scrollWidth = Number(this.element.style.width.replace("px", "")),
@@ -392,7 +392,7 @@
                         loadPanels(
                             this,
                             viewerSize.x,
-                            offsetLeft - scroll * 60
+                            offsetLeft - scroll * 60,
                         );
                     }
                 } else if (scroll < 0) {
@@ -403,7 +403,7 @@
                         loadPanels(
                             this,
                             viewerSize.x,
-                            offsetLeft - scroll * 60
+                            offsetLeft - scroll * 60,
                         );
                     }
                 }
@@ -466,7 +466,7 @@
                     showSequenceControl: false,
                     immediateRender: true,
                     blendTime: 0,
-                    animationTime: 0
+                    animationTime: 0,
                 });
 
                 miniViewer.displayRegion = $.makeNeutralElement("textarea");
@@ -488,7 +488,7 @@
                 style.height = strip.panelHeight - 4 + "px";
 
                 miniViewer.displayRegion.innerTracker = new $.MouseTracker({
-                    element: miniViewer.displayRegion
+                    element: miniViewer.displayRegion,
                 });
 
                 element

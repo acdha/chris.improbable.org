@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     // is any button currently being pressed while mouse events occur
     var IS_BUTTON_DOWN = false,
         // is any tracker currently capturing?
@@ -88,14 +88,14 @@
      *      The distance between mouse click within multiple mouse clicks
      *      will be treated as a single event.
      */
-    $.MouseTracker = function(options) {
+    $.MouseTracker = function (options) {
         var args = arguments;
 
         if (!$.isPlainObject(options)) {
             options = {
                 element: args[0],
                 clickTimeThreshold: args[1],
-                clickDistThreshold: args[2]
+                clickDistThreshold: args[2],
             };
         }
 
@@ -137,55 +137,55 @@
          *      Position of last mouse down
          */
         THIS[this.hash] = {
-            mouseover: function(event) {
+            mouseover: function (event) {
                 onMouseOver(_this, event);
             },
-            mouseout: function(event) {
+            mouseout: function (event) {
                 onMouseOut(_this, event);
             },
-            mousedown: function(event) {
+            mousedown: function (event) {
                 onMouseDown(_this, event);
             },
-            mouseup: function(event) {
+            mouseup: function (event) {
                 onMouseUp(_this, event);
             },
-            click: function(event) {
+            click: function (event) {
                 onMouseClick(_this, event);
             },
-            DOMMouseScroll: function(event) {
+            DOMMouseScroll: function (event) {
                 onMouseWheelSpin(_this, event);
             },
-            mousewheel: function(event) {
+            mousewheel: function (event) {
                 onMouseWheelSpin(_this, event);
             },
-            mouseupie: function(event) {
+            mouseupie: function (event) {
                 onMouseUpIE(_this, event);
             },
-            mousemoveie: function(event) {
+            mousemoveie: function (event) {
                 onMouseMoveIE(_this, event);
             },
-            mouseupwindow: function(event) {
+            mouseupwindow: function (event) {
                 onMouseUpWindow(_this, event);
             },
-            mousemove: function(event) {
+            mousemove: function (event) {
                 onMouseMove(_this, event);
             },
-            touchstart: function(event) {
+            touchstart: function (event) {
                 onTouchStart(_this, event);
             },
-            touchmove: function(event) {
+            touchmove: function (event) {
                 onTouchMove(_this, event);
             },
-            touchend: function(event) {
+            touchend: function (event) {
                 onTouchEnd(_this, event);
             },
-            keypress: function(event) {
+            keypress: function (event) {
                 onKeyPress(_this, event);
             },
-            focus: function(event) {
+            focus: function (event) {
                 onFocus(_this, event);
             },
-            blur: function(event) {
+            blur: function (event) {
                 onBlur(_this, event);
             },
             tracking: false,
@@ -195,7 +195,7 @@
             lastPoint: null,
             lastMouseDownTime: null,
             lastMouseDownPoint: null,
-            lastPinchDelta: 0
+            lastPinchDelta: 0,
         };
     };
 
@@ -204,7 +204,7 @@
          * Clean up any events or objects created by the mouse tracker.
          * @function
          */
-        destroy: function() {
+        destroy: function () {
             stopTracking(this);
             this.element = null;
         },
@@ -215,7 +215,7 @@
          * @function
          * @returns {Boolean} Are we currently tracking events on this element.
          */
-        isTracking: function() {
+        isTracking: function () {
             return THIS[this.hash].tracking;
         },
 
@@ -225,7 +225,7 @@
          * @param {Boolean} track True to start tracking, false to stop tracking.
          * @returns {OpenSeadragon.MouseTracker} Chainable.
          */
-        setTracking: function(track) {
+        setTracking: function (track) {
             if (track) {
                 startTracking(this);
             } else {
@@ -249,7 +249,7 @@
          * @param {Boolean} buttonDownAny
          *      Was the button down anywhere in the screen during the event.
          */
-        enterHandler: function() {},
+        enterHandler: function () {},
 
         /**
          * Implement or assign implmentation to these handlers during or after
@@ -265,7 +265,7 @@
          * @param {Boolean} buttonDownAny
          *      Was the button down anywhere in the screen during the event.
          */
-        exitHandler: function() {},
+        exitHandler: function () {},
 
         /**
          * Implement or assign implmentation to these handlers during or after
@@ -276,7 +276,7 @@
          * @param {OpenSeadragon.Point} position
          *      The poistion of the event on the screen.
          */
-        pressHandler: function() {},
+        pressHandler: function () {},
 
         /**
          * Implement or assign implmentation to these handlers during or after
@@ -293,7 +293,7 @@
          *      Was the mouse still inside the tracked element when the button
          *      was released.
          */
-        releaseHandler: function() {},
+        releaseHandler: function () {},
 
         /**
          * Implement or assign implmentation to these handlers during or after
@@ -308,7 +308,7 @@
          * @param {Boolean} shift
          *      Was the shift key being pressed during this event?
          */
-        scrollHandler: function() {},
+        scrollHandler: function () {},
 
         /**
          * Implement or assign implmentation to these handlers during or after
@@ -324,7 +324,7 @@
          * @param {Boolean} shift
          *      Was the shift key being pressed during this event?
          */
-        clickHandler: function() {},
+        clickHandler: function () {},
 
         /**
          * Implement or assign implmentation to these handlers during or after
@@ -340,7 +340,7 @@
          * @param {Boolean} shift
          *      Was the shift key being pressed during this event?
          */
-        dragHandler: function() {},
+        dragHandler: function () {},
 
         /**
          * Implement or assign implmentation to these handlers during or after
@@ -353,11 +353,11 @@
          * @param {Boolean} shift
          *      Was the shift key being pressed during this event?
          */
-        keyHandler: function() {},
+        keyHandler: function () {},
 
-        focusHandler: function() {},
+        focusHandler: function () {},
 
-        blurHandler: function() {}
+        blurHandler: function () {},
     };
 
     /**
@@ -379,7 +379,7 @@
                 "touchend",
                 "keypress",
                 "focus",
-                "blur"
+                "blur",
             ],
             delegate = THIS[tracker.hash],
             event,
@@ -414,7 +414,7 @@
                 "touchend",
                 "keypress",
                 "focus",
-                "blur"
+                "blur",
             ],
             delegate = THIS[tracker.hash],
             event,
@@ -453,19 +453,19 @@
                     tracker.element,
                     "mouseup",
                     delegate.mouseup,
-                    false
+                    false,
                 );
                 $.addEvent(
                     tracker.element,
                     "mouseup",
                     delegate.mouseupie,
-                    true
+                    true,
                 );
                 $.addEvent(
                     tracker.element,
                     "mousemove",
                     delegate.mousemoveie,
-                    true
+                    true,
                 );
             } else {
                 $.addEvent(window, "mouseup", delegate.mouseupwindow, true);
@@ -488,13 +488,13 @@
                     tracker.element,
                     "mousemove",
                     delegate.mousemoveie,
-                    true
+                    true,
                 );
                 $.removeEvent(
                     tracker.element,
                     "mouseup",
                     delegate.mouseupie,
-                    true
+                    true,
                 );
                 $.addEvent(tracker.element, "mouseup", delegate.mouseup, false);
             } else {
@@ -559,7 +559,7 @@
             propagate = tracker.keyHandler(
                 tracker,
                 event.keyCode ? event.keyCode : event.charCode,
-                event.shiftKey
+                event.shiftKey,
             );
             if (!propagate) {
                 $.cancelEvent(event);
@@ -602,7 +602,7 @@
                 tracker,
                 getMouseRelative(event, tracker.element),
                 delegate.buttonDown,
-                IS_BUTTON_DOWN
+                IS_BUTTON_DOWN,
             );
             if (propagate === false) {
                 $.cancelEvent(event);
@@ -643,7 +643,7 @@
                 tracker,
                 getMouseRelative(event, tracker.element),
                 delegate.buttonDown,
-                IS_BUTTON_DOWN
+                IS_BUTTON_DOWN,
             );
 
             if (propagate === false) {
@@ -675,7 +675,7 @@
         if (tracker.pressHandler) {
             propagate = tracker.pressHandler(
                 tracker,
-                getMouseRelative(event, tracker.element)
+                getMouseRelative(event, tracker.element),
             );
             if (propagate === false) {
                 $.cancelEvent(event);
@@ -730,7 +730,7 @@
                 Math.abs(touchA.x - touchB.x) + Math.abs(touchA.y - touchB.y);
             THIS[tracker.hash].pinchMidpoint = new $.Point(
                 (touchA.x + touchB.x) / 2,
-                (touchA.y + touchB.y) / 2
+                (touchA.y + touchB.y) / 2,
             );
             //$.console.debug("pinch start : "+THIS[ tracker.hash ].lastPinchDelta);
         }
@@ -763,7 +763,7 @@
                 tracker,
                 getMouseRelative(event, tracker.element),
                 insideElementPress,
-                insideElementRelease
+                insideElementRelease,
             );
             if (propagate === false) {
                 $.cancelEvent(event);
@@ -830,7 +830,7 @@
         IS_CAPTURING = false;
         event.srcElement.fireEvent(
             "on" + event.type,
-            document.createEventObject(event)
+            document.createEventObject(event),
         );
 
         $.stopEvent(event);
@@ -901,7 +901,7 @@
                 tracker,
                 getMouseRelative(event, tracker.element),
                 nDelta,
-                event.shiftKey
+                event.shiftKey,
             );
             if (propagate === false) {
                 $.cancelEvent(event);
@@ -935,7 +935,7 @@
                 tracker,
                 getMouseRelative(event, tracker.element),
                 quick,
-                event.shiftKey
+                event.shiftKey,
             );
             if (propagate === false) {
                 $.cancelEvent(event);
@@ -964,7 +964,7 @@
                 tracker,
                 getMouseRelative(event, tracker.element),
                 delta,
-                event.shiftKey
+                event.shiftKey,
             );
             if (propagate === false) {
                 $.cancelEvent(event);
@@ -1006,7 +1006,7 @@
                     pageX: THIS[tracker.hash].pinchMidpoint.x,
                     pageY: THIS[tracker.hash].pinchMidpoint.y,
                     detail:
-                        THIS[tracker.hash].lastPinchDelta > pinchDelta ? 1 : -1
+                        THIS[tracker.hash].lastPinchDelta > pinchDelta ? 1 : -1,
                 });
 
                 THIS[tracker.hash].lastPinchDelta = pinchDelta;
@@ -1085,7 +1085,7 @@
         IS_BUTTON_DOWN = false;
     }
 
-    (function() {
+    (function () {
         if ($.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 9) {
             $.addEvent(document, "mousedown", onGlobalMouseDown, false);
             $.addEvent(document, "mouseup", onGlobalMouseUp, false);

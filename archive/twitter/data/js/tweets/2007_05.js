@@ -1,12 +1,11 @@
 Grailbird.data.tweets_2007_05 = [
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "63023162",
@@ -21,17 +20,16 @@ Grailbird.data.tweets_2007_05 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "62160572",
@@ -46,17 +44,16 @@ Grailbird.data.tweets_2007_05 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "60852532",
@@ -71,17 +68,16 @@ Grailbird.data.tweets_2007_05 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "60834792",
@@ -96,17 +92,16 @@ Grailbird.data.tweets_2007_05 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "60652742",
@@ -121,7 +116,7 @@ Grailbird.data.tweets_2007_05 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];

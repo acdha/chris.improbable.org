@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * A Point is really used as a 2-dimensional vector, equally useful for
      * representing a point on a plane, or the height and width of a plane
@@ -43,7 +43,7 @@
      * @property {Number} [x] The vector component 'x'.
      * @property {Number} [y] The vector component 'y'.
      */
-    $.Point = function(x, y) {
+    $.Point = function (x, y) {
         this.x = typeof x == "number" ? x : 0;
         this.y = typeof y == "number" ? y : 0;
     };
@@ -56,7 +56,7 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        plus: function(point) {
+        plus: function (point) {
             return new $.Point(this.x + point.x, this.y + point.y);
         },
 
@@ -67,7 +67,7 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        minus: function(point) {
+        minus: function (point) {
             return new $.Point(this.x - point.x, this.y - point.y);
         },
 
@@ -78,7 +78,7 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        times: function(factor) {
+        times: function (factor) {
             return new $.Point(this.x * factor, this.y * factor);
         },
 
@@ -89,7 +89,7 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        divide: function(factor) {
+        divide: function (factor) {
             return new $.Point(this.x / factor, this.y / factor);
         },
 
@@ -100,7 +100,7 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        negate: function() {
+        negate: function () {
             return new $.Point(-this.x, -this.y);
         },
 
@@ -111,9 +111,9 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        distanceTo: function(point) {
+        distanceTo: function (point) {
             return Math.sqrt(
-                Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2)
+                Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2),
             );
         },
 
@@ -124,7 +124,7 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        apply: function(func) {
+        apply: function (func) {
             return new $.Point(func(this.x), func(this.y));
         },
 
@@ -135,7 +135,7 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        equals: function(point) {
+        equals: function (point) {
             return (
                 point instanceof $.Point &&
                 this.x === point.x &&
@@ -151,7 +151,7 @@
          * @param {OpenSeadragon.Point} pivot Point about which to rotate.
          * @returns {OpenSeadragon.Point}. A new point representing the point rotated around the specified pivot
          */
-        rotate: function(degrees, pivot) {
+        rotate: function (degrees, pivot) {
             var angle = (degrees * Math.PI) / 180.0,
                 x =
                     Math.cos(angle) * (this.x - pivot.x) -
@@ -171,8 +171,8 @@
          * @returns {OpenSeadragon.Point} A new point representing the sum of the
          *  vector components
          */
-        toString: function() {
+        toString: function () {
             return "(" + Math.round(this.x) + "," + Math.round(this.y) + ")";
-        }
+        },
     };
 })(OpenSeadragon);

@@ -17,21 +17,21 @@
  * limitations under the License.
  * ========================================================== */
 
-!(function($) {
+!(function ($) {
     "use strict"; // jshint ;_;
 
     /* CSS TRANSITION SUPPORT (http://www.modernizr.com/)
      * ======================================================= */
 
-    $(function() {
-        $.support.transition = (function() {
-            var transitionEnd = (function() {
+    $(function () {
+        $.support.transition = (function () {
+            var transitionEnd = (function () {
                 var el = document.createElement("bootstrap"),
                     transEndEventNames = {
                         WebkitTransition: "webkitTransitionEnd",
                         MozTransition: "transitionend",
                         OTransition: "oTransitionEnd otransitionend",
-                        transition: "transitionend"
+                        transition: "transitionend",
                     },
                     name;
 
@@ -44,7 +44,7 @@
 
             return (
                 transitionEnd && {
-                    end: transitionEnd
+                    end: transitionEnd,
                 }
             );
         })();

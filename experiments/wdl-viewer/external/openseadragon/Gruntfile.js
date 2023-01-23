@@ -1,4 +1,4 @@
-module.exports = function(grunt) {
+module.exports = function (grunt) {
     // ----------
     grunt.loadNpmTasks("grunt-contrib-compress");
     grunt.loadNpmTasks("grunt-contrib-concat");
@@ -46,7 +46,7 @@ module.exports = function(grunt) {
             "src/tile.js",
             "src/overlay.js",
             "src/drawer.js",
-            "src/viewport.js"
+            "src/viewport.js",
         ];
 
     // ----------
@@ -59,9 +59,9 @@ module.exports = function(grunt) {
             release: {
                 src: [releaseRoot],
                 options: {
-                    force: true
-                }
-            }
+                    force: true,
+                },
+            },
         },
         concat: {
             options: {
@@ -71,12 +71,12 @@ module.exports = function(grunt) {
                     "//! Git commit: <%= gitInfo %>\n" +
                     "//! http://openseadragon.github.io\n" +
                     "//! License: http://openseadragon.github.io/license/\n\n",
-                process: true
+                process: true,
             },
             dist: {
                 src: ["<banner>"].concat(sources),
-                dest: distribution
-            }
+                dest: distribution,
+            },
         },
         replace: {
             cleanPaths: {
@@ -85,122 +85,119 @@ module.exports = function(grunt) {
                 replacements: [
                     {
                         from: /build\/openseadragon\//g,
-                        to: ""
-                    }
-                ]
-            }
+                        to: "",
+                    },
+                ],
+            },
         },
         uglify: {
             options: {
                 preserveComments: "some",
-                sourceMap: function(filename) {
+                sourceMap: function (filename) {
                     return filename.replace(/\.js$/, ".js.map");
                 },
-                sourceMappingURL: function(filename) {
+                sourceMappingURL: function (filename) {
                     return filename
                         .replace(/\.js$/, ".js.map")
                         .replace("build/openseadragon/", "");
-                }
+                },
             },
             openseadragon: {
                 src: [distribution],
-                dest: minified
-            }
+                dest: minified,
+            },
         },
         compress: {
             zip: {
                 options: {
                     archive: "build/releases/" + packageDirName + ".zip",
-                    level: 9
+                    level: 9,
                 },
                 files: [
                     {
                         expand: true,
                         cwd: "build/",
-                        src: [packageDirName + "/**"]
-                    }
-                ]
+                        src: [packageDirName + "/**"],
+                    },
+                ],
             },
             tar: {
                 options: {
                     archive: "build/releases/" + packageDirName + ".tar.gz",
-                    level: 9
+                    level: 9,
                 },
                 files: [
                     {
                         expand: true,
                         cwd: "build/",
-                        src: [packageDirName + "/**"]
-                    }
-                ]
-            }
+                        src: [packageDirName + "/**"],
+                    },
+                ],
+            },
         },
         qunit: {
             all: {
                 options: {
                     timeout: 10000,
-                    urls: ["http://localhost:8000/test/test.html"]
-                }
-            }
+                    urls: ["http://localhost:8000/test/test.html"],
+                },
+            },
         },
         connect: {
             server: {
                 options: {
                     port: 8000,
-                    base: "."
-                }
-            }
+                    base: ".",
+                },
+            },
         },
         watch: {
             files: ["Gruntfile.js", "src/*.js", "images/*"],
-            tasks: "build"
+            tasks: "build",
         },
         jshint: {
             options: {
-                jshintrc: ".jshintrc"
+                jshintrc: ".jshintrc",
             },
             beforeconcat: sources,
-            afterconcat: [distribution]
+            afterconcat: [distribution],
         },
         "git-describe": {
             build: {
                 options: {
-                    prop: "gitInfo"
-                }
-            }
-        }
+                    prop: "gitInfo",
+                },
+            },
+        },
     });
 
     // ----------
     // Copy:build task.
     // Copies the image files into the appropriate location in the build folder.
-    grunt.registerTask("copy:build", function() {
-        grunt.file.recurse("images", function(
-            abspath,
-            rootdir,
-            subdir,
-            filename
-        ) {
-            grunt.file.copy(
-                abspath,
-                "build/openseadragon/images/" + (subdir || "") + filename
-            );
-        });
+    grunt.registerTask("copy:build", function () {
+        grunt.file.recurse(
+            "images",
+            function (abspath, rootdir, subdir, filename) {
+                grunt.file.copy(
+                    abspath,
+                    "build/openseadragon/images/" + (subdir || "") + filename,
+                );
+            },
+        );
     });
 
     // ----------
     // Copy:package task.
     // Creates a directory tree to be compressed into a package.
-    grunt.registerTask("copy:package", function() {
-        grunt.file.recurse("build/openseadragon", function(
-            abspath,
-            rootdir,
-            subdir,
-            filename
-        ) {
-            var dest = packageDir + (subdir ? subdir + "/" : "/") + filename;
-            grunt.file.copy(abspath, dest);
-        });
+    grunt.registerTask("copy:package", function () {
+        grunt.file.recurse(
+            "build/openseadragon",
+            function (abspath, rootdir, subdir, filename) {
+                var dest =
+                    packageDir + (subdir ? subdir + "/" : "/") + filename;
+                grunt.file.copy(abspath, dest);
+            },
+        );
         grunt.file.copy("changelog.txt", packageDir + "changelog.txt");
         grunt.file.copy("LICENSE.txt", packageDir + "LICENSE.txt");
     });
@@ -208,21 +205,20 @@ module.exports = function(grunt) {
     // ----------
     // Copy:release task.
     // Copies the contents of the build folder into the release folder.
-    grunt.registerTask("copy:release", function() {
-        grunt.file.recurse("build", function(
-            abspath,
-            rootdir,
-            subdir,
-            filename
-        ) {
-            if (subdir === "releases") {
-                return;
-            }
+    grunt.registerTask("copy:release", function () {
+        grunt.file.recurse(
+            "build",
+            function (abspath, rootdir, subdir, filename) {
+                if (subdir === "releases") {
+                    return;
+                }
 
-            var dest = releaseRoot + (subdir ? subdir + "/" : "/") + filename;
+                var dest =
+                    releaseRoot + (subdir ? subdir + "/" : "/") + filename;
 
-            grunt.file.copy(abspath, dest);
-        });
+                grunt.file.copy(abspath, dest);
+            },
+        );
     });
 
     // ----------
@@ -236,7 +232,7 @@ module.exports = function(grunt) {
         "jshint:afterconcat",
         "uglify",
         "replace:cleanPaths",
-        "copy:build"
+        "copy:build",
     ]);
 
     // ----------
@@ -251,7 +247,7 @@ module.exports = function(grunt) {
         "build",
         "copy:package",
         "compress",
-        "clean:package"
+        "clean:package",
     ]);
 
     // ----------

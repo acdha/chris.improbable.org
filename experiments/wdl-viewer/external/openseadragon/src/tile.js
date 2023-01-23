@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     var TILE_CACHE = {};
     /**
      * @class
@@ -67,7 +67,7 @@
      * @property {Boolean} beingDrawn Whether this tile is currently being drawn
      * @property {Number} lastTouchTime Timestamp the tile was last touched.
      */
-    $.Tile = function(level, x, y, bounds, exists, url) {
+    $.Tile = function (level, x, y, bounds, exists, url) {
         this.level = level;
         this.x = x;
         this.y = y;
@@ -99,7 +99,7 @@
          * @function
          * @returns {String}
          */
-        toString: function() {
+        toString: function () {
             return this.level + "/" + this.x + "_" + this.y;
         },
 
@@ -108,11 +108,11 @@
          * @function
          * @param {Element} container
          */
-        drawHTML: function(container) {
+        drawHTML: function (container) {
             if (!this.loaded || !this.image) {
                 $.console.warn(
                     "Attempting to draw tile %s when it's not yet loaded.",
-                    this.toString()
+                    this.toString(),
                 );
                 return;
             }
@@ -145,7 +145,7 @@
          * @function
          * @param {Canvas} context
          */
-        drawCanvas: function(context) {
+        drawCanvas: function (context) {
             var position = this.position,
                 size = this.size,
                 rendered,
@@ -154,7 +154,7 @@
             if (!this.loaded || !(this.image || TILE_CACHE[this.url])) {
                 $.console.warn(
                     "Attempting to draw tile %s when it's not yet loaded.",
-                    this.toString()
+                    this.toString(),
                 );
                 return;
             }
@@ -173,7 +173,7 @@
                     position.x + 1,
                     position.y + 1,
                     size.x - 2,
-                    size.y - 2
+                    size.y - 2,
                 );
             }
 
@@ -201,7 +201,7 @@
                 position.x,
                 position.y,
                 size.x,
-                size.y
+                size.y,
             );
             //rendered.restore();
 
@@ -212,7 +212,7 @@
          * Removes tile from it's contianer.
          * @function
          */
-        unload: function() {
+        unload: function () {
             if (this.element && this.element.parentNode) {
                 this.element.parentNode.removeChild(this.element);
             }
@@ -224,6 +224,6 @@
             this.image = null;
             this.loaded = false;
             this.loading = false;
-        }
+        },
     };
 })(OpenSeadragon);

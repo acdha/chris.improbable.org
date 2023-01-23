@@ -17,16 +17,16 @@
  * limitations under the License.
  * ============================================================ */
 
-!(function($) {
+!(function ($) {
     "use strict"; // jshint ;_;
 
     /* DROPDOWN CLASS DEFINITION
      * ========================= */
 
     var toggle = "[data-toggle=dropdown]",
-        Dropdown = function(element) {
+        Dropdown = function (element) {
             var $el = $(element).on("click.dropdown.data-api", this.toggle);
-            $("html").on("click.dropdown.data-api", function() {
+            $("html").on("click.dropdown.data-api", function () {
                 $el.parent().removeClass("open");
             });
         };
@@ -34,7 +34,7 @@
     Dropdown.prototype = {
         constructor: Dropdown,
 
-        toggle: function(e) {
+        toggle: function (e) {
             var $this = $(this),
                 $parent,
                 isActive;
@@ -55,7 +55,7 @@
             return false;
         },
 
-        keydown: function(e) {
+        keydown: function (e) {
             var $this, $items, $active, $parent, isActive, index;
 
             if (!/(38|40|27)/.test(e.keyCode)) return;
@@ -85,11 +85,11 @@
             if (!~index) index = 0;
 
             $items.eq(index).focus();
-        }
+        },
     };
 
     function clearMenus() {
-        $(toggle).each(function() {
+        $(toggle).each(function () {
             getParent($(this)).removeClass("open");
         });
     }
@@ -115,8 +115,8 @@
     /* DROPDOWN PLUGIN DEFINITION
      * ========================== */
 
-    $.fn.dropdown = function(option) {
-        return this.each(function() {
+    $.fn.dropdown = function (option) {
+        return this.each(function () {
             var $this = $(this),
                 data = $this.data("dropdown");
             if (!data) $this.data("dropdown", (data = new Dropdown(this)));
@@ -134,18 +134,18 @@
         .on(
             "click.dropdown touchstart.dropdown.data-api",
             ".dropdown form",
-            function(e) {
+            function (e) {
                 e.stopPropagation();
-            }
+            },
         )
         .on(
             "click.dropdown.data-api touchstart.dropdown.data-api",
             toggle,
-            Dropdown.prototype.toggle
+            Dropdown.prototype.toggle,
         )
         .on(
             "keydown.dropdown.data-api touchstart.dropdown.data-api",
             toggle + ", [role=menu]",
-            Dropdown.prototype.keydown
+            Dropdown.prototype.keydown,
         );
 })(window.jQuery);

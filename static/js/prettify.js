@@ -1,6 +1,6 @@
 var q = null;
 window.PR_SHOULD_USE_CONTINUATION = !0;
-(function() {
+(function () {
     function L(a) {
         function m(a) {
             var f = a.charCodeAt(0);
@@ -25,7 +25,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                 var f = a
                         .substring(1, a.length - 1)
                         .match(
-                            /\\u[\dA-Fa-f]{4}|\\x[\dA-Fa-f]{2}|\\[0-3][0-7]{0,2}|\\[0-7]{1,2}|\\[\S\s]|[^\\]/g
+                            /\\u[\dA-Fa-f]{4}|\\x[\dA-Fa-f]{2}|\\[0-3][0-7]{0,2}|\\[0-7]{1,2}|\\[\S\s]|[^\\]/g,
                         ),
                     a = [],
                     b = [],
@@ -50,17 +50,17 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                             j > 90 ||
                             b.push([
                                 Math.max(65, j) | 32,
-                                Math.min(d, 90) | 32
+                                Math.min(d, 90) | 32,
                             ]),
                         d < 97 ||
                             j > 122 ||
                             b.push([
                                 Math.max(97, j) & -33,
-                                Math.min(d, 122) & -33
+                                Math.min(d, 122) & -33,
                             ]));
                 }
             }
-            b.sort(function(a, f) {
+            b.sort(function (a, f) {
                 return a[0] - f[0] || f[1] - a[1];
             });
             f = [];
@@ -84,7 +84,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
         function y(a) {
             for (
                 var f = a.source.match(
-                        /\[(?:[^\\\]]|\\[\S\s])*]|\\u[\dA-Fa-f]{4}|\\x[\dA-Fa-f]{2}|\\\d+|\\[^\dux]|\(\?[!:=]|[()^]|[^()[\\^]+/g
+                        /\[(?:[^\\\]]|\\[\S\s])*]|\\u[\dA-Fa-f]{4}|\\x[\dA-Fa-f]{2}|\\\d+|\\[^\dux]|\(\?[!:=]|[()^]|[^()[\\^]+/g,
                     ),
                     b = f.length,
                     d = [],
@@ -119,7 +119,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                         j.length >= 2 && a === "["
                             ? (f[c] = h(j))
                             : a !== "\\" &&
-                              (f[c] = j.replace(/[A-Za-z]/g, function(a) {
+                              (f[c] = j.replace(/[A-Za-z]/g, function (a) {
                                   a = a.charCodeAt(0);
                                   return (
                                       "[" +
@@ -136,8 +136,8 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                 /[a-z]/i.test(
                     g.source.replace(
                         /\\u[\da-f]{4}|\\x[\da-f]{2}|\\[^UXux]/gi,
-                        ""
-                    )
+                        "",
+                    ),
                 )
             ) {
                 s = !0;
@@ -256,7 +256,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
         }
         var h = {},
             y;
-        (function() {
+        (function () {
             for (
                 var e = a.concat(m), l = [], p = {}, d = 0, g = e.length;
                 d < g;
@@ -283,20 +283,20 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                   "str",
                   /^(?:'''(?:[^'\\]|\\[\S\s]|''?(?=[^']))*(?:'''|$)|"""(?:[^"\\]|\\[\S\s]|""?(?=[^"]))*(?:"""|$)|'(?:[^'\\]|\\[\S\s])*(?:'|$)|"(?:[^"\\]|\\[\S\s])*(?:"|$))/,
                   q,
-                  "'\""
+                  "'\"",
               ])
             : a.multiLineStrings
             ? m.push([
                   "str",
                   /^(?:'(?:[^'\\]|\\[\S\s])*(?:'|$)|"(?:[^"\\]|\\[\S\s])*(?:"|$)|`(?:[^\\`]|\\[\S\s])*(?:`|$))/,
                   q,
-                  "'\"`"
+                  "'\"`",
               ])
             : m.push([
                   "str",
                   /^(?:'(?:[^\n\r'\\]|\\.)*(?:'|$)|"(?:[^\n\r"\\]|\\.)*(?:"|$))/,
                   q,
-                  "\"'"
+                  "\"'",
               ]);
         a.verbatimStrings && e.push(["str", /^@"(?:[^"]|"")*(?:"|$)/, q]);
         var h = a.hashComments;
@@ -307,18 +307,18 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                             "com",
                             /^#(?:##(?:[^#]|#(?!##))*(?:###|$)|.*)/,
                             q,
-                            "#"
+                            "#",
                         ])
                       : m.push([
                             "com",
                             /^#(?:(?:define|elif|else|endif|error|ifdef|include|ifndef|line|pragma|undef|warning)\b|[^\n\r]*)/,
                             q,
-                            "#"
+                            "#",
                         ]),
                   e.push([
                       "str",
                       /^<(?:(?:(?:\.\.\/)*|\/?)(?:[\w-]+(?:\/[\w-]+)+)?[\w-]+\.h|[a-z]\w*)>/,
-                      q
+                      q,
                   ]))
                 : m.push(["com", /^#[^\n\r]*/, q, "#"]));
         a.cStyleComments &&
@@ -327,7 +327,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
         a.regexLiterals &&
             e.push([
                 "lang-regex",
-                /^(?:^^\.?|[!+-]|!=|!==|#|%|%=|&|&&|&&=|&=|\(|\*|\*=|\+=|,|-=|->|\/|\/=|:|::|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|[?@[^]|\^=|\^\^|\^\^=|{|\||\|=|\|\||\|\|=|~|break|case|continue|delete|do|else|finally|instanceof|return|throw|try|typeof)\s*(\/(?=[^*/])(?:[^/[\\]|\\[\S\s]|\[(?:[^\\\]]|\\[\S\s])*(?:]|$))+\/)/
+                /^(?:^^\.?|[!+-]|!=|!==|#|%|%=|&|&&|&&=|&=|\(|\*|\*=|\+=|,|-=|->|\/|\/=|:|::|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|[?@[^]|\^=|\^\^|\^\^=|{|\||\|=|\|\||\|\|=|~|break|case|continue|delete|do|else|finally|instanceof|return|throw|try|typeof)\s*(\/(?=[^*/])(?:[^/[\\]|\\[\S\s]|\[(?:[^\\\]]|\\[\S\s])*(?:]|$))+\/)/,
             ]);
         (h = a.types) && e.push(["typ", h]);
         a = ("" + a.keywords).replace(/^ | $/g, "");
@@ -335,7 +335,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
             e.push([
                 "kwd",
                 RegExp("^(?:" + a.replace(/[\s,]+/g, "|") + ")\\b"),
-                q
+                q,
             ]);
         m.push(["pln", /^\s+/, q, " \r\n\t\xa0"]);
         e.push(
@@ -346,10 +346,10 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                 "lit",
                 /^(?:0x[\da-f]+|(?:\d(?:_\d+)*\d*(?:\.\d*)?|\.\d\+)(?:e[+-]?\d+)?)[a-z]*/i,
                 q,
-                "0123456789"
+                "0123456789",
             ],
             ["pln", /^\\[\S\s]?/, q],
-            ["pun", /^.[^\s\w"-$'./@\\`]*/, q]
+            ["pun", /^.[^\s\w"-$'./@\\`]*/, q],
         );
         return x(m, e);
     }
@@ -373,7 +373,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                             (b = b.substring(d.index + d[0].length)) &&
                                 a.parentNode.insertBefore(
                                     s.createTextNode(b),
-                                    a.nextSibling
+                                    a.nextSibling,
                                 );
                             h(a);
                             c || a.parentNode.removeChild(a);
@@ -514,36 +514,37 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
         w = [
             [
                 v,
-                "auto,case,char,const,default,double,enum,extern,float,goto,int,long,register,short,signed,sizeof,static,struct,switch,typedef,union,unsigned,void,volatile"
+                "auto,case,char,const,default,double,enum,extern,float,goto,int,long,register,short,signed,sizeof,static,struct,switch,typedef,union,unsigned,void,volatile",
             ],
-            "catch,class,delete,false,import,new,operator,private,protected,public,this,throw,true,try,typeof"
+            "catch,class,delete,false,import,new,operator,private,protected,public,this,throw,true,try,typeof",
         ],
         F = [
             w,
-            "alignof,align_union,asm,axiom,bool,concept,concept_map,const_cast,constexpr,decltype,dynamic_cast,explicit,export,friend,inline,late_check,mutable,namespace,nullptr,reinterpret_cast,static_assert,static_cast,template,typeid,typename,using,virtual,where"
+            "alignof,align_union,asm,axiom,bool,concept,concept_map,const_cast,constexpr,decltype,dynamic_cast,explicit,export,friend,inline,late_check,mutable,namespace,nullptr,reinterpret_cast,static_assert,static_cast,template,typeid,typename,using,virtual,where",
         ],
         G = [
             w,
-            "abstract,boolean,byte,extends,final,finally,implements,import,instanceof,null,native,package,strictfp,super,synchronized,throws,transient"
+            "abstract,boolean,byte,extends,final,finally,implements,import,instanceof,null,native,package,strictfp,super,synchronized,throws,transient",
         ],
         H = [
             G,
-            "as,base,by,checked,decimal,delegate,descending,dynamic,event,fixed,foreach,from,group,implicit,in,interface,internal,into,is,lock,object,out,override,orderby,params,partial,readonly,ref,sbyte,sealed,stackalloc,string,select,uint,ulong,unchecked,unsafe,ushort,var"
+            "as,base,by,checked,decimal,delegate,descending,dynamic,event,fixed,foreach,from,group,implicit,in,interface,internal,into,is,lock,object,out,override,orderby,params,partial,readonly,ref,sbyte,sealed,stackalloc,string,select,uint,ulong,unchecked,unsafe,ushort,var",
         ],
         w = [
             w,
-            "debugger,eval,export,function,get,null,set,undefined,var,with,Infinity,NaN"
+            "debugger,eval,export,function,get,null,set,undefined,var,with,Infinity,NaN",
         ],
         I = [
             v,
-            "and,as,assert,class,def,del,elif,except,exec,finally,from,global,import,in,is,lambda,nonlocal,not,or,pass,print,raise,try,with,yield,False,True,None"
+            "and,as,assert,class,def,del,elif,except,exec,finally,from,global,import,in,is,lambda,nonlocal,not,or,pass,print,raise,try,with,yield,False,True,None",
         ],
         J = [
             v,
-            "alias,and,begin,case,class,def,defined,elsif,end,ensure,false,in,module,next,nil,not,or,redo,rescue,retry,self,super,then,true,undef,unless,until,when,yield,BEGIN,END"
+            "alias,and,begin,case,class,def,defined,elsif,end,ensure,false,in,module,next,nil,not,or,redo,rescue,retry,self,super,then,true,undef,unless,until,when,yield,BEGIN,END",
         ],
         v = [v, "case,done,elif,esac,eval,fi,function,in,local,set,then,until"],
-        K = /^(DIR|FILE|vector|(de|priority_)?queue|list|stack|(const_)?iterator|(multi)?(set|map)|bitset|u?(int|float)\d*)/,
+        K =
+            /^(DIR|FILE|vector|(de|priority_)?queue|list|stack|(const_)?iterator|(multi)?(set|map)|bitset|u?(int|float)\d*)/,
         N = /\S/,
         O = u({
             keywords: [
@@ -553,12 +554,12 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                 "caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END" +
                     I,
                 J,
-                v
+                v,
             ],
             hashComments: !0,
             cStyleComments: !0,
             multiLineStrings: !0,
-            regexLiterals: !0
+            regexLiterals: !0,
         }),
         A = {};
     k(O, ["default-code"]);
@@ -575,16 +576,16 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                 ["lang-", /^<xmp\b[^>]*>([\S\s]+?)<\/xmp\b[^>]*>/i],
                 ["lang-js", /^<script\b[^>]*>([\S\s]*?)(<\/script\b[^>]*>)/i],
                 ["lang-css", /^<style\b[^>]*>([\S\s]*?)(<\/style\b[^>]*>)/i],
-                ["lang-in.tag", /^(<\/?[a-z][^<>]*>)/i]
-            ]
+                ["lang-in.tag", /^(<\/?[a-z][^<>]*>)/i],
+            ],
         ),
-        ["default-markup", "htm", "html", "mxml", "xhtml", "xml", "xsl"]
+        ["default-markup", "htm", "html", "mxml", "xhtml", "xml", "xsl"],
     );
     k(
         x(
             [
                 ["pln", /^\s+/, q, " \t\r\n"],
-                ["atv", /^(?:"[^"]*"?|'[^']*'?)/, q, "\"'"]
+                ["atv", /^(?:"[^"]*"?|'[^']*'?)/, q, "\"'"],
             ],
             [
                 ["tag", /^^<\/?[a-z](?:[\w-.:]*\w)?|\/?>$/i],
@@ -596,10 +597,10 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                 ["lang-js", /^on\w+\s*=\s*([^\s"'>]+)/i],
                 ["lang-css", /^style\s*=\s*"([^"]+)"/i],
                 ["lang-css", /^style\s*=\s*'([^']+)'/i],
-                ["lang-css", /^style\s*=\s*([^\s"'>]+)/i]
-            ]
+                ["lang-css", /^style\s*=\s*([^\s"'>]+)/i],
+            ],
         ),
-        ["in.tag"]
+        ["in.tag"],
     );
     k(x([], [["atv", /^[\S\s]+/]]), ["uq.val"]);
     k(u({ keywords: F, hashComments: !0, cStyleComments: !0, types: K }), [
@@ -608,7 +609,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
         "cpp",
         "cxx",
         "cyc",
-        "m"
+        "m",
     ]);
     k(u({ keywords: "null,true,false" }), ["json"]);
     k(
@@ -617,24 +618,24 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
             hashComments: !0,
             cStyleComments: !0,
             verbatimStrings: !0,
-            types: K
+            types: K,
         }),
-        ["cs"]
+        ["cs"],
     );
     k(u({ keywords: G, cStyleComments: !0 }), ["java"]);
     k(u({ keywords: v, hashComments: !0, multiLineStrings: !0 }), [
         "bsh",
         "csh",
-        "sh"
+        "sh",
     ]);
     k(
         u({
             keywords: I,
             hashComments: !0,
             multiLineStrings: !0,
-            tripleQuotedStrings: !0
+            tripleQuotedStrings: !0,
         }),
-        ["cv", "py"]
+        ["cv", "py"],
     );
     k(
         u({
@@ -642,18 +643,18 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
                 "caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END",
             hashComments: !0,
             multiLineStrings: !0,
-            regexLiterals: !0
+            regexLiterals: !0,
         }),
-        ["perl", "pl", "pm"]
+        ["perl", "pl", "pm"],
     );
     k(
         u({
             keywords: J,
             hashComments: !0,
             multiLineStrings: !0,
-            regexLiterals: !0
+            regexLiterals: !0,
         }),
-        ["rb"]
+        ["rb"],
     );
     k(u({ keywords: w, cStyleComments: !0, regexLiterals: !0 }), ["js"]);
     k(
@@ -664,19 +665,19 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
             cStyleComments: !0,
             multilineStrings: !0,
             tripleQuotedStrings: !0,
-            regexLiterals: !0
+            regexLiterals: !0,
         }),
-        ["coffee"]
+        ["coffee"],
     );
     k(x([], [["str", /^[\S\s]+/]]), ["regex"]);
-    window.prettyPrintOne = function(a, m, e) {
+    window.prettyPrintOne = function (a, m, e) {
         var h = document.createElement("PRE");
         h.innerHTML = a;
         e && D(h, e);
         E({ g: m, i: e, h: h });
         return h.innerHTML;
     };
-    window.prettyPrint = function(a) {
+    window.prettyPrint = function (a) {
         function m() {
             for (
                 var e = window.PR_SHOULD_USE_CONTINUATION
@@ -741,7 +742,7 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
             var e = [
                     document.getElementsByTagName("pre"),
                     document.getElementsByTagName("code"),
-                    document.getElementsByTagName("xmp")
+                    document.getElementsByTagName("xmp"),
                 ],
                 h = [],
                 k = 0;
@@ -753,9 +754,9 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
             l = Date;
         l.now ||
             (l = {
-                now: function() {
+                now: function () {
                     return +new Date();
-                }
+                },
             });
         var p = 0,
             d,
@@ -778,6 +779,6 @@ window.PR_SHOULD_USE_CONTINUATION = !0;
         PR_SOURCE: "src",
         PR_STRING: "str",
         PR_TAG: "tag",
-        PR_TYPE: "typ"
+        PR_TYPE: "typ",
     };
 })();

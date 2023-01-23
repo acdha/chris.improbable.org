@@ -18,20 +18,20 @@
  * limitations under the License.
  * ========================================================== */
 
-!(function($) {
+!(function ($) {
     "use strict";
 
     /* TOOLTIP PUBLIC CLASS DEFINITION
      * =============================== */
 
-    var Tooltip = function(element, options) {
+    var Tooltip = function (element, options) {
         this.init("tooltip", element, options);
     };
 
     Tooltip.prototype = {
         constructor: Tooltip,
 
-        init: function(type, element, options) {
+        init: function (type, element, options) {
             var eventIn, eventOut;
 
             this.type = type;
@@ -47,42 +47,42 @@
                 this.$element.on(
                     eventIn,
                     this.options.selector,
-                    $.proxy(this.enter, this)
+                    $.proxy(this.enter, this),
                 );
                 this.$element.on(
                     eventOut,
                     this.options.selector,
-                    $.proxy(this.leave, this)
+                    $.proxy(this.leave, this),
                 );
             }
 
             this.options.selector
                 ? (this._options = $.extend({}, this.options, {
                       trigger: "manual",
-                      selector: ""
+                      selector: "",
                   }))
                 : this.fixTitle();
         },
 
-        getOptions: function(options) {
+        getOptions: function (options) {
             options = $.extend(
                 {},
                 $.fn[this.type].defaults,
                 options,
-                this.$element.data()
+                this.$element.data(),
             );
 
             if (options.delay && typeof options.delay == "number") {
                 options.delay = {
                     show: options.delay,
-                    hide: options.delay
+                    hide: options.delay,
                 };
             }
 
             return options;
         },
 
-        enter: function(e) {
+        enter: function (e) {
             var self = $(e.currentTarget)
                 [this.type](this._options)
                 .data(this.type);
@@ -91,7 +91,7 @@
                 self.show();
             } else {
                 self.hoverState = "in";
-                setTimeout(function() {
+                setTimeout(function () {
                     if (self.hoverState == "in") {
                         self.show();
                     }
@@ -99,7 +99,7 @@
             }
         },
 
-        leave: function(e) {
+        leave: function (e) {
             var self = $(e.currentTarget)
                 [this.type](this._options)
                 .data(this.type);
@@ -108,7 +108,7 @@
                 self.hide();
             } else {
                 self.hoverState = "out";
-                setTimeout(function() {
+                setTimeout(function () {
                     if (self.hoverState == "out") {
                         self.hide();
                     }
@@ -116,7 +116,7 @@
             }
         },
 
-        show: function() {
+        show: function () {
             var $tip,
                 inside,
                 pos,
@@ -139,7 +139,7 @@
                         ? this.options.placement.call(
                               this,
                               $tip[0],
-                              this.$element[0]
+                              this.$element[0],
                           )
                         : this.options.placement;
 
@@ -159,13 +159,13 @@
                     case "bottom":
                         tp = {
                             top: -bodyTop + pos.top + pos.height,
-                            left: pos.left + pos.width / 2 - actualWidth / 2
+                            left: pos.left + pos.width / 2 - actualWidth / 2,
                         };
                         break;
                     case "top":
                         tp = {
                             top: -bodyTop + pos.top - actualHeight,
-                            left: pos.left + pos.width / 2 - actualWidth / 2
+                            left: pos.left + pos.width / 2 - actualWidth / 2,
                         };
                         break;
                     case "left":
@@ -175,7 +175,7 @@
                                 pos.top +
                                 pos.height / 2 -
                                 actualHeight / 2,
-                            left: pos.left - actualWidth
+                            left: pos.left - actualWidth,
                         };
                         break;
                     case "right":
@@ -185,35 +185,33 @@
                                 pos.top +
                                 pos.height / 2 -
                                 actualHeight / 2,
-                            left: pos.left + pos.width
+                            left: pos.left + pos.width,
                         };
                         break;
                 }
 
-                $tip.css(tp)
-                    .addClass(placement)
-                    .addClass("in");
+                $tip.css(tp).addClass(placement).addClass("in");
             }
         },
 
-        setContent: function() {
+        setContent: function () {
             var $tip = this.tip();
             $tip.find(".tooltip-inner").html(this.getTitle());
             $tip.removeClass("fade in top bottom left right");
         },
 
-        hide: function() {
+        hide: function () {
             var that = this,
                 $tip = this.tip();
 
             $tip.removeClass("in");
 
             function removeWithAnimation() {
-                var timeout = setTimeout(function() {
+                var timeout = setTimeout(function () {
                     $tip.off($.support.transition.end).remove();
                 }, 500);
 
-                $tip.one($.support.transition.end, function() {
+                $tip.one($.support.transition.end, function () {
                     clearTimeout(timeout);
                     $tip.remove();
                 });
@@ -224,7 +222,7 @@
                 : $tip.remove();
         },
 
-        fixTitle: function() {
+        fixTitle: function () {
             var $e = this.$element;
             if (
                 $e.attr("title") ||
@@ -232,27 +230,27 @@
             ) {
                 $e.attr(
                     "data-original-title",
-                    $e.attr("title") || ""
+                    $e.attr("title") || "",
                 ).removeAttr("title");
             }
         },
 
-        hasContent: function() {
+        hasContent: function () {
             return this.getTitle();
         },
 
-        getPosition: function(inside) {
+        getPosition: function (inside) {
             return $.extend(
                 {},
                 inside ? { top: 0, left: 0 } : this.$element.offset(),
                 {
                     width: this.$element[0].offsetWidth,
-                    height: this.$element[0].offsetHeight
-                }
+                    height: this.$element[0].offsetHeight,
+                },
             );
         },
 
-        getTitle: function() {
+        getTitle: function () {
             var title,
                 $e = this.$element,
                 o = this.options;
@@ -266,11 +264,11 @@
             return title;
         },
 
-        tip: function() {
+        tip: function () {
             return (this.$tip = this.$tip || $(this.options.template));
         },
 
-        validate: function() {
+        validate: function () {
             if (!this.$element[0].parentNode) {
                 this.hide();
                 this.$element = null;
@@ -278,28 +276,28 @@
             }
         },
 
-        enable: function() {
+        enable: function () {
             this.enabled = true;
         },
 
-        disable: function() {
+        disable: function () {
             this.enabled = false;
         },
 
-        toggleEnabled: function() {
+        toggleEnabled: function () {
             this.enabled = !this.enabled;
         },
 
-        toggle: function() {
+        toggle: function () {
             this[this.tip().hasClass("in") ? "hide" : "show"]();
-        }
+        },
     };
 
     /* TOOLTIP PLUGIN DEFINITION
      * ========================= */
 
-    $.fn.tooltip = function(option) {
-        return this.each(function() {
+    $.fn.tooltip = function (option) {
+        return this.each(function () {
             var $this = $(this),
                 data = $this.data("tooltip"),
                 options = typeof option == "object" && option;
@@ -319,6 +317,6 @@
         trigger: "hover",
         title: "",
         template:
-            '<div class="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner"></div></div>'
+            '<div class="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner"></div></div>',
     };
 })(window.jQuery);

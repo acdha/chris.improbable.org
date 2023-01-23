@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * A display rectanlge is very similar to the OpenSeadragon.Rect but adds two
      * fields, 'minLevel' and 'maxLevel' which denote the supported zoom levels
@@ -48,7 +48,7 @@
      * @property {Number} minLevel The lowest zoom level supported.
      * @property {Number} maxLevel The highest zoom level supported.
      */
-    $.DisplayRect = function(x, y, width, height, minLevel, maxLevel) {
+    $.DisplayRect = function (x, y, width, height, minLevel, maxLevel) {
         $.Rect.apply(this, [x, y, width, height]);
 
         this.minLevel = minLevel;

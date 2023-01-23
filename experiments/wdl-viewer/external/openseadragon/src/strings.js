@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     //TODO: I guess this is where the i18n needs to be reimplemented.  I'll look
     //      into existing patterns for i18n in javascript but i think that mimicking
     //      pythons gettext might be a reasonable approach.
@@ -46,7 +46,7 @@
                 "It looks like a security restriction stopped us from " +
                 "loading this Deep Zoom Image.",
             Status: "This space unintentionally left blank ({0} {1}).",
-            "Open-Failed": "Unable to open {0}: {1}"
+            "Open-Failed": "Unable to open {0}: {1}",
         },
 
         Tooltips: {
@@ -55,8 +55,8 @@
             ZoomIn: "Zoom in",
             ZoomOut: "Zoom out",
             NextPage: "Next page",
-            PreviousPage: "Previous page"
-        }
+            PreviousPage: "Previous page",
+        },
     };
 
     $.extend($, {
@@ -65,7 +65,7 @@
          * @name OpenSeadragon.getString
          * @param {String} property
          */
-        getString: function(prop) {
+        getString: function (prop) {
             var props = prop.split("."),
                 string = null,
                 args = arguments,
@@ -83,7 +83,7 @@
                 string = ""; // FIXME: this breaks gettext()-style convention, which would return source
             }
 
-            return string.replace(/\{\d+\}/g, function(capture) {
+            return string.replace(/\{\d+\}/g, function (capture) {
                 var i = parseInt(capture.match(/\d+/), 10) + 1;
                 return i < args.length ? args[i] : "";
             });
@@ -95,7 +95,7 @@
          * @param {String} property
          * @param {*} value
          */
-        setString: function(prop, value) {
+        setString: function (prop, value) {
             var props = prop.split("."),
                 container = I18N,
                 i;
@@ -108,6 +108,6 @@
             }
 
             container[props[i]] = value;
-        }
+        },
     });
 })(OpenSeadragon);

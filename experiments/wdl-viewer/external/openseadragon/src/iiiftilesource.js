@@ -38,7 +38,7 @@
  * https://gist.github.com/jpstroop/4624253
  */
 
-(function($) {
+(function ($) {
     /**
      * A client implementation of the International Image Interoperability
      * Format: Image API Draft 0.2 - Please read more about the specification
@@ -48,7 +48,7 @@
      * @extends OpenSeadragon.TileSource
      * @see http://library.stanford.edu/iiif/image-api/
      */
-    $.IIIFTileSource = function(options) {
+    $.IIIFTileSource = function (options) {
         $.extend(true, this, options);
 
         if (!(this.height && this.width && this.identifier && this.tilesUrl)) {
@@ -75,7 +75,7 @@
             }
             if (mf < 0) {
                 options.maxLevel = Number(
-                    Math.ceil(Math.log(Math.max(this.width, this.height), 2))
+                    Math.ceil(Math.log(Math.max(this.width, this.height), 2)),
                 );
             } else {
                 options.maxLevel = mf;
@@ -94,7 +94,7 @@
          * @param {Object|Array} data
          * @param {String} optional - url
          */
-        supports: function(data, url) {
+        supports: function (data, url) {
             return (
                 (data.ns &&
                     "http://library.stanford.edu/iiif/image-api/ns/" ==
@@ -124,7 +124,7 @@
          * @return {Object} options - A dictionary of keyword arguments sufficient
          *      to configure this tile source via it's constructor.
          */
-        configure: function(data, url) {
+        configure: function (data, url) {
             var service, options, host;
 
             if (!$.isPlainObject(data)) {
@@ -157,7 +157,7 @@
          * @param {Number} y
          * @throws {Error}
          */
-        getTileUrl: function(level, x, y) {
+        getTileUrl: function (level, x, y) {
             //# constants
             var IIIF_ROTATION = "0",
                 IIIF_QUALITY = "native.jpg",
@@ -187,17 +187,17 @@
                 iiif_tile_y = y * iiif_tile_size_height;
                 iiif_tile_w = Math.min(
                     iiif_tile_size_width,
-                    this.width - iiif_tile_x
+                    this.width - iiif_tile_x,
                 );
                 iiif_tile_h = Math.min(
                     iiif_tile_size_height,
-                    this.height - iiif_tile_y
+                    this.height - iiif_tile_y,
                 );
                 iiif_region = [
                     iiif_tile_x,
                     iiif_tile_y,
                     iiif_tile_w,
-                    iiif_tile_h
+                    iiif_tile_h,
                 ].join(",");
             }
 
@@ -207,9 +207,9 @@
                 iiif_region,
                 iiif_size,
                 IIIF_ROTATION,
-                IIIF_QUALITY
+                IIIF_QUALITY,
             ].join("/");
-        }
+        },
     });
 
     /**
@@ -252,7 +252,7 @@
         if (rootName == "info") {
             try {
                 configuration = {
-                    ns: root.namespaceURI
+                    ns: root.namespaceURI,
                 };
 
                 parseXML(root, configuration);

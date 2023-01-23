@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     // dictionary from hash to private properties
     var THIS = {},
         // We keep a list of viewers so we can 'wake-up' each viewer on
@@ -65,7 +65,7 @@
      *  can access zoom, pan, etc.
      *
      **/
-    $.Viewer = function(options) {
+    $.Viewer = function (options) {
         var args = arguments,
             _this = this,
             i;
@@ -79,7 +79,7 @@
                 prefixUrl: args.length > 2 ? args[2] : undefined,
                 controls: args.length > 3 ? args[3] : undefined,
                 overlays: args.length > 4 ? args[4] : undefined,
-                overlayControls: args.length > 5 ? args[5] : undefined
+                overlayControls: args.length > 5 ? args[5] : undefined,
             };
         }
 
@@ -142,10 +142,10 @@
                 buttons: null,
 
                 //TODO: this is defunct so safely remove it
-                profiler: null
+                profiler: null,
             },
             $.DEFAULT_SETTINGS,
-            options
+            options,
         );
 
         //Private state properties
@@ -165,7 +165,7 @@
             sequenced: false,
             sequence: 0,
             fullPage: false,
-            onfullscreenchange: null
+            onfullscreenchange: null,
         };
 
         this._updateRequestId = null;
@@ -173,11 +173,11 @@
         //Inherit some behaviors and properties
         $.EventHandler.call(this);
 
-        this.addHandler("open-failed", function(source, args) {
+        this.addHandler("open-failed", function (source, args) {
             var msg = $.getString(
                 "Errors.Open-Failed",
                 args.source,
-                args.message
+                args.message,
             );
             _this._showMessage(msg);
         });
@@ -217,7 +217,7 @@
         this.keyboardCommandArea = $.makeNeutralElement("textarea");
 
         this.canvas.className = "openseadragon-canvas";
-        (function(style) {
+        (function (style) {
             style.width = "100%";
             style.height = "100%";
             style.overflow = "hidden";
@@ -228,7 +228,7 @@
 
         //the container is created through applying the ControlDock constructor above
         this.container.className = "openseadragon-container";
-        (function(style) {
+        (function (style) {
             style.width = "100%";
             style.height = "100%";
             style.position = "relative";
@@ -239,7 +239,7 @@
         })(this.container.style);
 
         this.keyboardCommandArea.className = "keyboard-command-area";
-        (function(style) {
+        (function (style) {
             style.width = "100%";
             style.height = "100%";
             style.overflow = "hidden";
@@ -252,7 +252,7 @@
         this.container.insertBefore(this.canvas, this.container.firstChild);
         this.container.insertBefore(
             this.keyboardCommandArea,
-            this.container.firstChild
+            this.container.firstChild,
         );
         this.element.appendChild(this.container);
 
@@ -267,12 +267,12 @@
         this.keyboardCommandArea.innerTracker = new $.MouseTracker({
             _this: this,
             element: this.keyboardCommandArea,
-            focusHandler: function() {
+            focusHandler: function () {
                 var point = $.getElementPosition(this.element);
                 window.scrollTo(0, point.y);
             },
 
-            keyHandler: function(tracker, keyCode, shiftKey) {
+            keyHandler: function (tracker, keyCode, shiftKey) {
                 switch (keyCode) {
                     case 61: //=|+
                         _this.viewport.zoomBy(1.1);
@@ -320,7 +320,7 @@
                         //console.log( 'navigator keycode %s', keyCode );
                         return true;
                 }
-            }
+            },
         }).setTracking(true); // default state
 
         this.innerTracker = new $.MouseTracker({
@@ -330,7 +330,7 @@
             clickHandler: $.delegate(this, onCanvasClick),
             dragHandler: $.delegate(this, onCanvasDrag),
             releaseHandler: $.delegate(this, onCanvasRelease),
-            scrollHandler: $.delegate(this, onCanvasScroll)
+            scrollHandler: $.delegate(this, onCanvasScroll),
         }).setTracking(this.mouseNavEnabled ? true : false); // default state
 
         this.outerTracker = new $.MouseTracker({
@@ -339,7 +339,7 @@
             clickDistThreshold: this.clickDistThreshold,
             enterHandler: $.delegate(this, onContainerEnter),
             exitHandler: $.delegate(this, onContainerExit),
-            releaseHandler: $.delegate(this, onContainerRelease)
+            releaseHandler: $.delegate(this, onContainerRelease),
         }).setTracking(this.mouseNavEnabled ? true : false); // always tracking
 
         if (this.toolbar) {
@@ -351,11 +351,11 @@
 
         for (i = 0; i < this.customControls.length; i++) {
             this.addControl(this.customControls[i].id, {
-                anchor: this.customControls[i].anchor
+                anchor: this.customControls[i].anchor,
             });
         }
 
-        $.requestAnimationFrame(function() {
+        $.requestAnimationFrame(function () {
             beginControlsAutoHide(_this);
         }); // initial fade out
     };
@@ -370,7 +370,7 @@
              * @name OpenSeadragon.Viewer.prototype.isOpen
              * @return {Boolean}
              */
-            isOpen: function() {
+            isOpen: function () {
                 return !!this.source;
             },
 
@@ -384,7 +384,7 @@
              *
              * @deprecated - use 'open' instead.
              */
-            openDzi: function(dzi) {
+            openDzi: function (dzi) {
                 return this.open(dzi);
             },
 
@@ -398,7 +398,7 @@
              *
              * @deprecated - use 'open' instead.
              */
-            openTileSource: function(tileSource) {
+            openTileSource: function (tileSource) {
                 return this.open(tileSource);
             },
 
@@ -422,7 +422,7 @@
              * @param {String|Object|Function}
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            open: function(tileSource) {
+            open: function (tileSource) {
                 var _this = this,
                     customTileSource,
                     readySource,
@@ -441,20 +441,20 @@
                     }
                 }
 
-                setTimeout(function() {
+                setTimeout(function () {
                     if ($.type(tileSource) == "string") {
                         //If its still a string it means it must be a url at this point
-                        tileSource = new $.TileSource(tileSource, function(
-                            readySource
+                        tileSource = new $.TileSource(tileSource, function (
+                            readySource,
                         ) {
                             openTileSource(_this, readySource);
                         });
-                        tileSource.addHandler("open-failed", function(
-                            name,
-                            args
-                        ) {
-                            _this.raiseEvent("open-failed", args);
-                        });
+                        tileSource.addHandler(
+                            "open-failed",
+                            function (name, args) {
+                                _this.raiseEvent("open-failed", args);
+                            },
+                        );
                     } else if (
                         $.isPlainObject(tileSource) ||
                         tileSource.nodeType
@@ -468,18 +468,18 @@
                             //inline configuration
                             $TileSource = $.TileSource.determineType(
                                 _this,
-                                tileSource
+                                tileSource,
                             );
                             if (!$TileSource) {
                                 _this.raiseEvent("open-failed", {
                                     message: "Unable to load TileSource",
-                                    source: tileSource
+                                    source: tileSource,
                                 });
                                 return;
                             }
                             options = $TileSource.prototype.configure.apply(
                                 _this,
-                                [tileSource]
+                                [tileSource],
                             );
                             readySource = new $TileSource(options);
                             openTileSource(_this, readySource);
@@ -498,7 +498,7 @@
              * @name OpenSeadragon.Viewer.prototype.close
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            close: function() {
+            close: function () {
                 if (this._updateRequestId !== null) {
                     $.cancelAnimationFrame(this._updateRequestId);
                     this._updateRequestId = null;
@@ -535,7 +535,7 @@
              * @function
              * @name OpenSeadragon.Viewer.prototype.destroy
              */
-            destroy: function() {
+            destroy: function () {
                 this.close();
 
                 this.removeAllHandlers();
@@ -574,7 +574,7 @@
              * @name OpenSeadragon.Viewer.prototype.isMouseNavEnabled
              * @return {Boolean}
              */
-            isMouseNavEnabled: function() {
+            isMouseNavEnabled: function () {
                 return this.innerTracker.isTracking();
             },
 
@@ -583,11 +583,11 @@
              * @name OpenSeadragon.Viewer.prototype.setMouseNavEnabled
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            setMouseNavEnabled: function(enabled) {
+            setMouseNavEnabled: function (enabled) {
                 this.innerTracker.setTracking(enabled);
                 this.raiseEvent("mouse-enabled", {
                     enabled: enabled,
-                    viewer: this
+                    viewer: this,
                 });
                 return this;
             },
@@ -597,7 +597,7 @@
              * @name OpenSeadragon.Viewer.prototype.areControlsEnabled
              * @return {Boolean}
              */
-            areControlsEnabled: function() {
+            areControlsEnabled: function () {
                 var enabled = this.controls.length,
                     i;
                 for (i = 0; i < this.controls.length; i++) {
@@ -614,7 +614,7 @@
              * @param {Boolean} true to show, false to hide.
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            setControlsEnabled: function(enabled) {
+            setControlsEnabled: function (enabled) {
                 if (enabled) {
                     abortControlsAutoHide(this);
                 } else {
@@ -622,7 +622,7 @@
                 }
                 this.raiseEvent("controls-enabled", {
                     enabled: enabled,
-                    viewer: this
+                    viewer: this,
                 });
                 return this;
             },
@@ -632,7 +632,7 @@
              * @name OpenSeadragon.Viewer.prototype.isFullPage
              * @return {Boolean}
              */
-            isFullPage: function() {
+            isFullPage: function () {
                 return THIS[this.hash].fullPage;
             },
 
@@ -644,7 +644,7 @@
              *      If true, enter full page mode.  If false, exit full page mode.
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            setFullPage: function(fullPage) {
+            setFullPage: function (fullPage) {
                 var body = document.body,
                     bodyStyle = body.style,
                     docStyle = document.documentElement.style,
@@ -682,7 +682,7 @@
                     THIS[this.hash].prevElementParent = this.element.parentNode;
                     THIS[this.hash].prevNextSibling = this.element.nextSibling;
                     THIS[this.hash].prevElementSize = $.getElementSize(
-                        this.element
+                        this.element,
                     );
                     nodes = body.childNodes.length;
                     for (i = 0; i < nodes; i++) {
@@ -695,8 +695,10 @@
                     if (this.toolbar && this.toolbar.element) {
                         //save a reference to the parent so we can put it back
                         //in the long run we need a better strategy
-                        this.toolbar.parentNode = this.toolbar.element.parentNode;
-                        this.toolbar.nextSibling = this.toolbar.element.nextSibling;
+                        this.toolbar.parentNode =
+                            this.toolbar.element.parentNode;
+                        this.toolbar.nextSibling =
+                            this.toolbar.element.nextSibling;
                         body.appendChild(this.toolbar.element);
 
                         //Make sure the user has some ability to style the toolbar based
@@ -708,7 +710,7 @@
                     body.appendChild(this.element);
 
                     if ($.supportsFullScreen) {
-                        THIS[this.hash].onfullscreenchange = function() {
+                        THIS[this.hash].onfullscreenchange = function () {
                             /*
                         fullscreenchange events don't include the new fullscreen status so we need to
                         retrieve the current status from the fullscreen API. See:
@@ -729,7 +731,7 @@
                         // Note that the API is still vendor-prefixed in browsers implementing it
                         document.addEventListener(
                             $.fullScreenEventName,
-                            THIS[this.hash].onfullscreenchange
+                            THIS[this.hash].onfullscreenchange,
                         );
                         this.element.style.height = "100%";
                         this.element.style.width = "100%";
@@ -753,7 +755,7 @@
                     if ($.supportsFullScreen) {
                         document.removeEventListener(
                             $.fullScreenEventName,
-                            THIS[this.hash].onfullscreenchange
+                            THIS[this.hash].onfullscreenchange,
                         );
                         $.cancelFullScreen(document);
                     }
@@ -776,7 +778,7 @@
                     $.removeClass(this.element, "fullpage");
                     THIS[this.hash].prevElementParent.insertBefore(
                         this.element,
-                        THIS[this.hash].prevNextSibling
+                        THIS[this.hash].prevNextSibling,
                     );
 
                     //If we've got a toolbar, we need to enable the user to use css to
@@ -790,7 +792,7 @@
                         //this.toolbar.element.style.position = 'relative';
                         this.toolbar.parentNode.insertBefore(
                             this.toolbar.element,
-                            this.toolbar.nextSibling
+                            this.toolbar.nextSibling,
                         );
                         delete this.toolbar.parentNode;
                         delete this.toolbar.nextSibling;
@@ -810,7 +812,7 @@
                 }
                 this.raiseEvent("fullpage", {
                     fullpage: fullPage,
-                    viewer: this
+                    viewer: this,
                 });
 
                 if (this.viewport) {
@@ -821,17 +823,17 @@
                     if (fullPage) {
                         THIS[this.hash].fsBoundsDelta = new $.Point(
                             newBounds.width / oldBounds.width,
-                            newBounds.height / oldBounds.height
+                            newBounds.height / oldBounds.height,
                         );
                     } else {
                         this.viewport.update();
                         this.viewport.zoomBy(
                             Math.max(
                                 THIS[this.hash].fsBoundsDelta.x,
-                                THIS[this.hash].fsBoundsDelta.y
+                                THIS[this.hash].fsBoundsDelta.y,
                             ),
                             null,
-                            true
+                            true,
                         );
                         //Ensures that if multiple viewers are on a page, the viewers that
                         //were hidden during fullpage are 'reopened'
@@ -857,7 +859,7 @@
              * @name OpenSeadragon.Viewer.prototype.isVisible
              * @return {Boolean}
              */
-            isVisible: function() {
+            isVisible: function () {
                 return this.container.style.visibility != "hidden";
             },
 
@@ -866,7 +868,7 @@
              * @name OpenSeadragon.Viewer.prototype.setVisible
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            setVisible: function(visible) {
+            setVisible: function (visible) {
                 this.container.style.visibility = visible ? "" : "hidden";
                 this.raiseEvent("visible", { visible: visible, viewer: this });
                 return this;
@@ -877,7 +879,7 @@
              * @name OpenSeadragon.Viewer.prototype.bindSequenceControls
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            bindSequenceControls: function() {
+            bindSequenceControls: function () {
                 //////////////////////////////////////////////////////////////////////////
                 // Image Sequence Controls
                 //////////////////////////////////////////////////////////////////////////
@@ -904,23 +906,23 @@
                         tooltip: $.getString("Tooltips.PreviousPage"),
                         srcRest: resolveUrl(
                             this.prefixUrl,
-                            navImages.previous.REST
+                            navImages.previous.REST,
                         ),
                         srcGroup: resolveUrl(
                             this.prefixUrl,
-                            navImages.previous.GROUP
+                            navImages.previous.GROUP,
                         ),
                         srcHover: resolveUrl(
                             this.prefixUrl,
-                            navImages.previous.HOVER
+                            navImages.previous.HOVER,
                         ),
                         srcDown: resolveUrl(
                             this.prefixUrl,
-                            navImages.previous.DOWN
+                            navImages.previous.DOWN,
                         ),
                         onRelease: onPreviousHandler,
                         onFocus: onFocusHandler,
-                        onBlur: onBlurHandler
+                        onBlur: onBlurHandler,
                     });
 
                     this.nextButton = new $.Button({
@@ -932,23 +934,23 @@
                         tooltip: $.getString("Tooltips.NextPage"),
                         srcRest: resolveUrl(
                             this.prefixUrl,
-                            navImages.next.REST
+                            navImages.next.REST,
                         ),
                         srcGroup: resolveUrl(
                             this.prefixUrl,
-                            navImages.next.GROUP
+                            navImages.next.GROUP,
                         ),
                         srcHover: resolveUrl(
                             this.prefixUrl,
-                            navImages.next.HOVER
+                            navImages.next.HOVER,
                         ),
                         srcDown: resolveUrl(
                             this.prefixUrl,
-                            navImages.next.DOWN
+                            navImages.next.DOWN,
                         ),
                         onRelease: onNextHandler,
                         onFocus: onFocusHandler,
-                        onBlur: onBlurHandler
+                        onBlur: onBlurHandler,
                     });
 
                     if (!this.navPrevNextWrap) {
@@ -959,18 +961,18 @@
                         this.paging = new $.ButtonGroup({
                             buttons: [this.previousButton, this.nextButton],
                             clickTimeThreshold: this.clickTimeThreshold,
-                            clickDistThreshold: this.clickDistThreshold
+                            clickDistThreshold: this.clickDistThreshold,
                         });
 
                         this.pagingControl = this.paging.element;
 
                         if (this.toolbar) {
                             this.toolbar.addControl(this.pagingControl, {
-                                anchor: $.ControlAnchor.BOTTOM_RIGHT
+                                anchor: $.ControlAnchor.BOTTOM_RIGHT,
                             });
                         } else {
                             this.addControl(this.pagingControl, {
-                                anchor: $.ControlAnchor.TOP_LEFT
+                                anchor: $.ControlAnchor.TOP_LEFT,
                             });
                         }
                     }
@@ -983,7 +985,7 @@
              * @name OpenSeadragon.Viewer.prototype.bindStandardControls
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            bindStandardControls: function() {
+            bindStandardControls: function () {
                 //////////////////////////////////////////////////////////////////////////
                 // Navigation Controls
                 //////////////////////////////////////////////////////////////////////////
@@ -1022,19 +1024,19 @@
                             tooltip: $.getString("Tooltips.ZoomIn"),
                             srcRest: resolveUrl(
                                 this.prefixUrl,
-                                navImages.zoomIn.REST
+                                navImages.zoomIn.REST,
                             ),
                             srcGroup: resolveUrl(
                                 this.prefixUrl,
-                                navImages.zoomIn.GROUP
+                                navImages.zoomIn.GROUP,
                             ),
                             srcHover: resolveUrl(
                                 this.prefixUrl,
-                                navImages.zoomIn.HOVER
+                                navImages.zoomIn.HOVER,
                             ),
                             srcDown: resolveUrl(
                                 this.prefixUrl,
-                                navImages.zoomIn.DOWN
+                                navImages.zoomIn.DOWN,
                             ),
                             onPress: beginZoomingInHandler,
                             onRelease: endZoomingHandler,
@@ -1042,8 +1044,8 @@
                             onEnter: beginZoomingInHandler,
                             onExit: endZoomingHandler,
                             onFocus: onFocusHandler,
-                            onBlur: onBlurHandler
-                        }))
+                            onBlur: onBlurHandler,
+                        })),
                     );
 
                     buttons.push(
@@ -1056,19 +1058,19 @@
                             tooltip: $.getString("Tooltips.ZoomOut"),
                             srcRest: resolveUrl(
                                 this.prefixUrl,
-                                navImages.zoomOut.REST
+                                navImages.zoomOut.REST,
                             ),
                             srcGroup: resolveUrl(
                                 this.prefixUrl,
-                                navImages.zoomOut.GROUP
+                                navImages.zoomOut.GROUP,
                             ),
                             srcHover: resolveUrl(
                                 this.prefixUrl,
-                                navImages.zoomOut.HOVER
+                                navImages.zoomOut.HOVER,
                             ),
                             srcDown: resolveUrl(
                                 this.prefixUrl,
-                                navImages.zoomOut.DOWN
+                                navImages.zoomOut.DOWN,
                             ),
                             onPress: beginZoomingOutHandler,
                             onRelease: endZoomingHandler,
@@ -1076,8 +1078,8 @@
                             onEnter: beginZoomingOutHandler,
                             onExit: endZoomingHandler,
                             onFocus: onFocusHandler,
-                            onBlur: onBlurHandler
-                        }))
+                            onBlur: onBlurHandler,
+                        })),
                     );
 
                     buttons.push(
@@ -1090,24 +1092,24 @@
                             tooltip: $.getString("Tooltips.Home"),
                             srcRest: resolveUrl(
                                 this.prefixUrl,
-                                navImages.home.REST
+                                navImages.home.REST,
                             ),
                             srcGroup: resolveUrl(
                                 this.prefixUrl,
-                                navImages.home.GROUP
+                                navImages.home.GROUP,
                             ),
                             srcHover: resolveUrl(
                                 this.prefixUrl,
-                                navImages.home.HOVER
+                                navImages.home.HOVER,
                             ),
                             srcDown: resolveUrl(
                                 this.prefixUrl,
-                                navImages.home.DOWN
+                                navImages.home.DOWN,
                             ),
                             onRelease: onHomeHandler,
                             onFocus: onFocusHandler,
-                            onBlur: onBlurHandler
-                        }))
+                            onBlur: onBlurHandler,
+                        })),
                     );
 
                     buttons.push(
@@ -1120,31 +1122,31 @@
                             tooltip: $.getString("Tooltips.FullPage"),
                             srcRest: resolveUrl(
                                 this.prefixUrl,
-                                navImages.fullpage.REST
+                                navImages.fullpage.REST,
                             ),
                             srcGroup: resolveUrl(
                                 this.prefixUrl,
-                                navImages.fullpage.GROUP
+                                navImages.fullpage.GROUP,
                             ),
                             srcHover: resolveUrl(
                                 this.prefixUrl,
-                                navImages.fullpage.HOVER
+                                navImages.fullpage.HOVER,
                             ),
                             srcDown: resolveUrl(
                                 this.prefixUrl,
-                                navImages.fullpage.DOWN
+                                navImages.fullpage.DOWN,
                             ),
                             onRelease: onFullPageHandler,
                             onFocus: onFocusHandler,
-                            onBlur: onBlurHandler
-                        }))
+                            onBlur: onBlurHandler,
+                        })),
                     );
 
                     if (useGroup) {
                         this.buttons = new $.ButtonGroup({
                             buttons: buttons,
                             clickTimeThreshold: this.clickTimeThreshold,
-                            clickDistThreshold: this.clickDistThreshold
+                            clickDistThreshold: this.clickDistThreshold,
                         });
 
                         this.navControl = this.buttons.element;
@@ -1152,11 +1154,11 @@
 
                         if (this.toolbar) {
                             this.toolbar.addControl(this.navControl, {
-                                anchor: $.ControlAnchor.TOP_LEFT
+                                anchor: $.ControlAnchor.TOP_LEFT,
                             });
                         } else {
                             this.addControl(this.navControl, {
-                                anchor: $.ControlAnchor.TOP_LEFT
+                                anchor: $.ControlAnchor.TOP_LEFT,
                             });
                         }
                     }
@@ -1169,7 +1171,7 @@
              * @name OpenSeadragon.Viewer.prototype.goToPage
              * @return {OpenSeadragon.Viewer} Chainable.
              */
-            goToPage: function(page) {
+            goToPage: function (page) {
                 //page is a 1 based index so normalize now
                 //page = page;
                 this.raiseEvent("page", { page: page, viewer: this });
@@ -1204,7 +1206,7 @@
                 if ($.isFunction(this.onPageChange)) {
                     this.onPageChange({
                         page: page,
-                        viewer: this
+                        viewer: this,
                     });
                 }
                 if (this.referenceStrip) {
@@ -1219,7 +1221,7 @@
              * @private
              * @param {String} text message
              */
-            _showMessage: function(message) {
+            _showMessage: function (message) {
                 this._hideMessage();
 
                 var div = $.makeNeutralElement("div");
@@ -1237,14 +1239,14 @@
              * @function
              * @private
              */
-            _hideMessage: function() {
+            _hideMessage: function () {
                 var div = this.messageDiv;
                 if (div) {
                     div.parentNode.removeChild(div);
                     delete this.messageDiv;
                 }
-            }
-        }
+            },
+        },
     );
 
     /**
@@ -1259,7 +1261,7 @@
 
         return new $.Point(
             oElement.clientWidth === 0 ? 1 : oElement.clientWidth,
-            oElement.clientHeight === 0 ? 1 : oElement.clientHeight
+            oElement.clientHeight === 0 ? 1 : oElement.clientHeight,
         );
     }
 
@@ -1285,7 +1287,7 @@
                 layout: _this.collectionLayout,
                 tileSize: _this.collectionTileSize,
                 tileSources: _this.tileSources,
-                tileMargin: _this.collectionTileMargin
+                tileMargin: _this.collectionTileMargin,
             });
             _this.viewport = _this.viewport
                 ? _this.viewport
@@ -1299,7 +1301,7 @@
                       showNavigator: false,
                       minZoomImageRatio: 1,
                       maxZoomPixelRatio: 1,
-                      viewer: _this //,
+                      viewer: _this, //,
                       //TODO: figure out how to support these in a way that makes sense
                       //minZoomLevel:           this.minZoomLevel,
                       //maxZoomLevel:           this.maxZoomLevel
@@ -1323,7 +1325,7 @@
                       defaultZoomLevel: _this.defaultZoomLevel,
                       minZoomLevel: _this.minZoomLevel,
                       maxZoomLevel: _this.maxZoomLevel,
-                      viewer: _this
+                      viewer: _this,
                   });
         }
 
@@ -1350,7 +1352,7 @@
             minPixelRatio: _this.collectionMode ? 0 : _this.minPixelRatio,
             timeout: _this.timeout,
             debugMode: _this.debugMode,
-            debugGridColor: _this.debugGridColor
+            debugGridColor: _this.debugGridColor,
         });
 
         //Instantiate a navigator if configured
@@ -1370,7 +1372,7 @@
                     tileHost: _this.tileHost,
                     prefixUrl: _this.prefixUrl,
                     overlays: _this.overlays,
-                    viewer: _this
+                    viewer: _this,
                 });
             }
         }
@@ -1388,7 +1390,7 @@
                 tileHost: _this.tileHost,
                 prefixUrl: _this.prefixUrl,
                 overlays: _this.overlays,
-                viewer: _this
+                viewer: _this,
             });
         }
 
@@ -1407,7 +1409,7 @@
                 _this.drawer.addOverlay(
                     overlay.id,
                     new $.Point(overlay.point.X, overlay.point.Y),
-                    $.OverlayPlacement.TOP_LEFT
+                    $.OverlayPlacement.TOP_LEFT,
                 );
             } else {
                 _this.drawer.addOverlay(
@@ -1416,9 +1418,9 @@
                         overlay.rect.Point.X,
                         overlay.rect.Point.Y,
                         overlay.rect.Width,
-                        overlay.rect.Height
+                        overlay.rect.Height,
                     ),
-                    overlay.placement
+                    overlay.placement,
                 );
             }
         }
@@ -1433,14 +1435,14 @@
     // Schedulers provide the general engine for animation
     ///////////////////////////////////////////////////////////////////////////////
     function scheduleUpdate(viewer, updateFunc) {
-        return $.requestAnimationFrame(function() {
+        return $.requestAnimationFrame(function () {
             updateFunc(viewer);
         });
     }
 
     //provides a sequence in the fade animation
     function scheduleControlsFade(viewer) {
-        $.requestAnimationFrame(function() {
+        $.requestAnimationFrame(function () {
             updateControlsFade(viewer);
         });
     }
@@ -1453,7 +1455,7 @@
         viewer.controlsShouldFade = true;
         viewer.controlsFadeBeginTime = $.now() + viewer.controlsFadeDelay;
 
-        window.setTimeout(function() {
+        window.setTimeout(function () {
             scheduleControlsFade(viewer);
         }, viewer.controlsFadeDelay);
     }
@@ -1510,7 +1512,7 @@
             factor = shift ? 1.0 / zoomPerClick : zoomPerClick;
             this.viewport.zoomBy(
                 factor,
-                this.viewport.pointFromPixel(position, true)
+                this.viewport.pointFromPixel(position, true),
             );
             this.viewport.applyConstraints();
         }
@@ -1518,7 +1520,7 @@
             tracker: tracker,
             position: position,
             quick: quick,
-            shift: shift
+            shift: shift,
         });
     }
 
@@ -1531,7 +1533,7 @@
                 delta.y = 0;
             }
             this.viewport.panBy(
-                this.viewport.deltaPointsFromPixels(delta.negate())
+                this.viewport.deltaPointsFromPixels(delta.negate()),
             );
             if (this.constrainDuringPan) {
                 this.viewport.applyConstraints();
@@ -1541,7 +1543,7 @@
             tracker: tracker,
             position: position,
             delta: delta,
-            shift: shift
+            shift: shift,
         });
     }
 
@@ -1549,7 +1551,7 @@
         tracker,
         position,
         insideElementPress,
-        insideElementRelease
+        insideElementRelease,
     ) {
         if (insideElementPress && this.viewport) {
             this.viewport.applyConstraints();
@@ -1558,7 +1560,7 @@
             tracker: tracker,
             position: position,
             insideElementPress: insideElementPress,
-            insideElementRelease: insideElementRelease
+            insideElementRelease: insideElementRelease,
         });
     }
 
@@ -1568,7 +1570,7 @@
             factor = Math.pow(this.zoomPerScroll, scroll);
             this.viewport.zoomBy(
                 factor,
-                this.viewport.pointFromPixel(position, true)
+                this.viewport.pointFromPixel(position, true),
             );
             this.viewport.applyConstraints();
         }
@@ -1576,7 +1578,7 @@
             tracker: tracker,
             position: position,
             scroll: scroll,
-            shift: shift
+            shift: shift,
         });
         //cancels event
         return false;
@@ -1586,7 +1588,7 @@
         tracker,
         position,
         buttonDownElement,
-        buttonDownAny
+        buttonDownAny,
     ) {
         if (!buttonDownElement) {
             THIS[this.hash].mouseInside = false;
@@ -1598,7 +1600,7 @@
             tracker: tracker,
             position: position,
             buttonDownElement: buttonDownElement,
-            buttonDownAny: buttonDownAny
+            buttonDownAny: buttonDownAny,
         });
     }
 
@@ -1606,7 +1608,7 @@
         tracker,
         position,
         insideElementPress,
-        insideElementRelease
+        insideElementRelease,
     ) {
         if (!insideElementRelease) {
             THIS[this.hash].mouseInside = false;
@@ -1618,7 +1620,7 @@
             tracker: tracker,
             position: position,
             insideElementPress: insideElementPress,
-            insideElementRelease: insideElementRelease
+            insideElementRelease: insideElementRelease,
         });
     }
 
@@ -1626,7 +1628,7 @@
         tracker,
         position,
         buttonDownElement,
-        buttonDownAny
+        buttonDownAny,
     ) {
         THIS[this.hash].mouseInside = true;
         abortControlsAutoHide(this);
@@ -1634,7 +1636,7 @@
             tracker: tracker,
             position: position,
             buttonDownElement: buttonDownElement,
-            buttonDownAny: buttonDownAny
+            buttonDownAny: buttonDownAny,
         });
     }
 
@@ -1751,7 +1753,7 @@
             deltaTime = currentTime - THIS[this.hash].lastZoomTime;
             adjustedFactor = Math.pow(
                 THIS[this.hash].zoomFactor,
-                deltaTime / 1000
+                deltaTime / 1000,
             );
 
             this.viewport.zoomBy(adjustedFactor);

@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * A utility class useful for developers to establish baseline performance
      * metrics of rendering routines.
@@ -48,7 +48,7 @@
      * @property {Number} avgIdleTime
      * @property {Number} maxIdleTime
      */
-    $.Profiler = function() {
+    $.Profiler = function () {
         this.midUpdate = false;
         this.numUpdates = 0;
 
@@ -68,7 +68,7 @@
         /**
          * @function
          */
-        beginUpdate: function() {
+        beginUpdate: function () {
             if (this.midUpdate) {
                 this.endUpdate();
             }
@@ -97,7 +97,7 @@
         /**
          * @function
          */
-        endUpdate: function() {
+        endUpdate: function () {
             if (!this.midUpdate) {
                 return;
             }
@@ -123,7 +123,7 @@
         /**
          * @function
          */
-        clearProfile: function() {
+        clearProfile: function () {
             this.midUpdate = false;
             this.numUpdates = 0;
 
@@ -137,6 +137,6 @@
             this.minIdleTime = Infinity;
             this.avgIdleTime = 0;
             this.maxIdleTime = 0;
-        }
+        },
     };
 })(OpenSeadragon);

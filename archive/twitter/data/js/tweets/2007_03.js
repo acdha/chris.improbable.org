@@ -1,12 +1,11 @@
 Grailbird.data.tweets_2007_03 = [
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "14637501",
@@ -21,17 +20,16 @@ Grailbird.data.tweets_2007_03 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "13953251",
@@ -46,22 +44,20 @@ Grailbird.data.tweets_2007_03 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "13953101",
-        text:
-            "is done coaxing FastCGI and mod_rewrite into peaceful coexistence",
+        text: "is done coaxing FastCGI and mod_rewrite into peaceful coexistence",
         id: 13953101,
         created_at: "Wed Mar 28 00:27:26 +0000 2007",
         user: {
@@ -72,17 +68,16 @@ Grailbird.data.tweets_2007_03 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "13731041",
@@ -97,17 +92,16 @@ Grailbird.data.tweets_2007_03 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "13406691",
@@ -122,17 +116,16 @@ Grailbird.data.tweets_2007_03 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "10115671",
@@ -147,17 +140,16 @@ Grailbird.data.tweets_2007_03 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "7441161",
@@ -172,22 +164,20 @@ Grailbird.data.tweets_2007_03 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "7130091",
-        text:
-            "is why we went to the trouble of making DST updates so complicated in the first place",
+        text: "is why we went to the trouble of making DST updates so complicated in the first place",
         id: 7130091,
         created_at: "Mon Mar 12 21:11:13 +0000 2007",
         user: {
@@ -198,7 +188,7 @@ Grailbird.data.tweets_2007_03 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];
