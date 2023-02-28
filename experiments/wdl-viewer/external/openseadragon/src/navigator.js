@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * The Navigator provides a small view of the current image as fixed
      * while representing the viewport as a moving box serving as a frame
@@ -46,7 +46,7 @@
      * @param {Object} options
      * @param {String} options.viewerId
      */
-    $.Navigator = function(options) {
+    $.Navigator = function (options) {
         var viewer = options.viewer,
             viewerSize = $.getElementSize(viewer.element),
             unneededElement;
@@ -59,7 +59,7 @@
             options.controlOptions = {
                 anchor: $.ControlAnchor.TOP_RIGHT,
                 attachToViewer: true,
-                autoFade: true
+                autoFade: true,
             };
 
             if (options.position) {
@@ -79,7 +79,7 @@
             options.controlOptions = {
                 anchor: $.ControlAnchor.NONE,
                 attachToViewer: false,
-                autoFade: false
+                autoFade: false,
             };
         }
         this.element.id = options.id;
@@ -88,7 +88,7 @@
         options = $.extend(
             true,
             {
-                sizeRatio: $.DEFAULT_SETTINGS.navigatorSizeRatio
+                sizeRatio: $.DEFAULT_SETTINGS.navigatorSizeRatio,
             },
             options,
             {
@@ -101,25 +101,24 @@
                 showSequenceControl: false,
                 immediateRender: true,
                 blendTime: 0,
-                animationTime: 0
-            }
+                animationTime: 0,
+            },
         );
 
         options.minPixelRatio = this.minPixelRatio = viewer.minPixelRatio;
 
-        this.viewerSizeInPoints = viewer.viewport.deltaPointsFromPixels(
-            viewerSize
-        );
+        this.viewerSizeInPoints =
+            viewer.viewport.deltaPointsFromPixels(viewerSize);
         this.borderWidth = 2;
         //At some browser magnification levels the display regions lines up correctly, but at some there appears to
         //be a one pixel gap.
         this.fudge = new $.Point(1, 1);
         this.totalBorderWidths = new $.Point(
             this.borderWidth * 2,
-            this.borderWidth * 2
+            this.borderWidth * 2,
         ).minus(this.fudge);
 
-        (function(style, borderWidth) {
+        (function (style, borderWidth) {
             style.margin = "0px";
             style.border = borderWidth + "px solid #555";
             style.padding = "0px";
@@ -132,7 +131,7 @@
         this.displayRegion.id = this.element.id + "-displayregion";
         this.displayRegion.className = "displayregion";
 
-        (function(style, borderWidth) {
+        (function (style, borderWidth) {
             style.position = "relative";
             style.top = "0px";
             style.left = "0px";
@@ -162,11 +161,11 @@
             dragHandler: $.delegate(this, onCanvasDrag),
             clickHandler: $.delegate(this, onCanvasClick),
             releaseHandler: $.delegate(this, onCanvasRelease),
-            scrollHandler: function() {
+            scrollHandler: function () {
                 //dont scroll the page up and down if the user is scrolling
                 //in the navigator
                 return false;
-            }
+            },
         }).setTracking(true);
 
         /*this.displayRegion.outerTracker = new $.MouseTracker({
@@ -208,7 +207,7 @@
              * @function
              * @name OpenSeadragon.Navigator.prototype.update
              */
-            update: function(viewport) {
+            update: function (viewport) {
                 var bounds, topleft, bottomright;
 
                 if (viewport && this.viewport) {
@@ -219,7 +218,7 @@
                         .minus(this.totalBorderWidths);
 
                     //update style for navigator-box
-                    (function(style) {
+                    (function (style) {
                         style.top = topleft.y + "px";
                         style.left = topleft.x + "px";
 
@@ -232,9 +231,9 @@
                 }
             },
 
-            open: function(source) {
+            open: function (source) {
                 var containerSize = this.viewer.viewport.containerSize.times(
-                    this.sizeRatio
+                    this.sizeRatio,
                 );
                 if (
                     source.tileSize > containerSize.x ||
@@ -247,8 +246,8 @@
                     this.minPixelRatio = this.viewer.minPixelRatio;
                 }
                 return $.Viewer.prototype.open.apply(this, [source]);
-            }
-        }
+            },
+        },
     );
 
     /**
@@ -266,7 +265,7 @@
                     viewerPosition.x - dimensions.x / 2,
                     viewerPosition.y - dimensions.y / 2,
                     dimensions.x,
-                    dimensions.y
+                    dimensions.y,
                 );
                 if (
                     this.viewer.source.aspectRatio >
@@ -304,7 +303,7 @@
                 delta.y = 0;
             }
             this.viewer.viewport.panBy(
-                this.viewport.deltaPointsFromPixels(delta)
+                this.viewport.deltaPointsFromPixels(delta),
             );
         }
     }
@@ -318,7 +317,7 @@
         tracker,
         position,
         insideElementPress,
-        insideElementRelease
+        insideElementRelease,
     ) {
         if (insideElementPress && this.viewer.viewport) {
             this.viewer.viewport.applyConstraints();

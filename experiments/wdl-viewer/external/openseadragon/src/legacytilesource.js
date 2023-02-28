@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * The LegacyTileSource allows simple, traditional image pyramids to be loaded
      * into an OpenSeadragon Viewer.  Basically, this translates to the historically
@@ -55,13 +55,13 @@
      * @property {Number} maxLevel
      * @property {Array}  levels
      */
-    $.LegacyTileSource = function(levels) {
+    $.LegacyTileSource = function (levels) {
         var options, width, height;
 
         if ($.isArray(levels)) {
             options = {
                 type: "legacy-image-pyramid",
-                levels: levels
+                levels: levels,
             };
         }
 
@@ -76,7 +76,7 @@
             tileSize: Math.max(height, width),
             tileOverlap: 0,
             minLevel: 0,
-            maxLevel: options.levels.length - 1
+            maxLevel: options.levels.length - 1,
         });
 
         $.TileSource.apply(this, [options]);
@@ -93,7 +93,7 @@
          * @param {Object|Array} data
          * @param {String} optional - url
          */
-        supports: function(data, url) {
+        supports: function (data, url) {
             return (
                 (data.type && "legacy-image-pyramid" == data.type) ||
                 (data.documentElement &&
@@ -111,7 +111,7 @@
          * @return {Object} options - A dictionary of keyword arguments sufficient
          *      to configure this tile sources constructor.
          */
-        configure: function(configuration, dataUrl) {
+        configure: function (configuration, dataUrl) {
             var options;
 
             if (!$.isPlainObject(configuration)) {
@@ -128,7 +128,7 @@
          * @name OpenSeadragon.LegacyTileSource.prototype.getLevelScale
          * @param {Number} level
          */
-        getLevelScale: function(level) {
+        getLevelScale: function (level) {
             var levelScale = NaN;
             if (level >= this.minLevel && level <= this.maxLevel) {
                 levelScale =
@@ -142,7 +142,7 @@
          * @name OpenSeadragon.LegacyTileSource.prototype.getNumTiles
          * @param {Number} level
          */
-        getNumTiles: function(level) {
+        getNumTiles: function (level) {
             var scale = this.getLevelScale(level);
             if (scale) {
                 return new $.Point(1, 1);
@@ -157,7 +157,7 @@
          * @param {Number} level
          * @param {OpenSeadragon.Point} point
          */
-        getTileAtPoint: function(level, point) {
+        getTileAtPoint: function (level, point) {
             return new $.Point(0, 0);
         },
 
@@ -173,13 +173,13 @@
          * @param {Number} y
          * @throws {Error}
          */
-        getTileUrl: function(level, x, y) {
+        getTileUrl: function (level, x, y) {
             var url = null;
             if (level >= this.minLevel && level <= this.maxLevel) {
                 url = this.levels[level].url;
             }
             return url;
-        }
+        },
     });
 
     /**
@@ -209,12 +209,12 @@
                 filtered.push({
                     url: file.url,
                     width: Number(file.width),
-                    height: Number(file.height)
+                    height: Number(file.height),
                 });
             }
         }
 
-        return filtered.sort(function(a, b) {
+        return filtered.sort(function (a, b) {
             return a.height - b.height;
         });
     }
@@ -240,7 +240,7 @@
             try {
                 conf = {
                     type: root.getAttribute("type"),
-                    levels: []
+                    levels: [],
                 };
 
                 levels = root.getElementsByTagName("level");
@@ -250,7 +250,7 @@
                     conf.levels.push({
                         url: level.getAttribute("url"),
                         width: parseInt(level.getAttribute("width"), 10),
-                        height: parseInt(level.getAttribute("height"), 10)
+                        height: parseInt(level.getAttribute("height"), 10),
                     });
                 }
 
@@ -259,12 +259,12 @@
                 throw e instanceof Error
                     ? e
                     : new Error(
-                          "Unknown error parsing Legacy Image Pyramid XML."
+                          "Unknown error parsing Legacy Image Pyramid XML.",
                       );
             }
         } else if (rootName == "collection") {
             throw new Error(
-                "Legacy Image Pyramid Collections not yet supported."
+                "Legacy Image Pyramid Collections not yet supported.",
             );
         } else if (rootName == "error") {
             throw new Error("Error: " + xmlDoc);

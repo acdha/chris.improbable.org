@@ -5,7 +5,7 @@ Grailbird.data.tweets_2007_07 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "170495882",
@@ -20,7 +20,7 @@ Grailbird.data.tweets_2007_07 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];

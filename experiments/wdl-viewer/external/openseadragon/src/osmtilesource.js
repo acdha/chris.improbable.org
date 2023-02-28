@@ -39,7 +39,7 @@
  * see <https://github.com/openseadragon/openseadragon/issues/58>.
  */
 
-(function($) {
+(function ($) {
     /**
      * A tilesource implementation for OpenStreetMap.
      *
@@ -63,7 +63,13 @@
      * @param {Number} tileOverlap
      * @param {String} tilesUrl
      */
-    $.OsmTileSource = function(width, height, tileSize, tileOverlap, tilesUrl) {
+    $.OsmTileSource = function (
+        width,
+        height,
+        tileSize,
+        tileOverlap,
+        tilesUrl,
+    ) {
         var options;
 
         if ($.isPlainObject(width)) {
@@ -74,7 +80,7 @@
                 height: arguments[1],
                 tileSize: arguments[2],
                 tileOverlap: arguments[3],
-                tilesUrl: arguments[4]
+                tilesUrl: arguments[4],
             };
         }
         //apply default setting for standard public OpenStreatMaps service
@@ -105,7 +111,7 @@
          * @param {Object|Array} data
          * @param {String} optional - url
          */
-        supports: function(data, url) {
+        supports: function (data, url) {
             return data.type && "openstreetmaps" == data.type;
         },
 
@@ -118,7 +124,7 @@
          * @return {Object} options - A dictionary of keyword arguments sufficient
          *      to configure this tile sources constructor.
          */
-        configure: function(data, url) {
+        configure: function (data, url) {
             return data;
         },
 
@@ -129,8 +135,8 @@
          * @param {Number} x
          * @param {Number} y
          */
-        getTileUrl: function(level, x, y) {
+        getTileUrl: function (level, x, y) {
             return this.tilesUrl + (level - 8) + "/" + x + "/" + y + ".png";
-        }
+        },
     });
 })(OpenSeadragon);

@@ -32,12 +32,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * @class
      * @extends OpenSeadragon.TileSource
      */
-    $.TileSourceCollection = function(tileSize, tileSources, rows, layout) {
+    $.TileSourceCollection = function (tileSize, tileSources, rows, layout) {
         var options;
 
         if ($.isPlainObject(tileSize)) {
@@ -47,7 +47,7 @@
                 tileSize: arguments[0],
                 tileSources: arguments[1],
                 rows: arguments[2],
-                layout: arguments[3]
+                layout: arguments[3],
             };
         }
 
@@ -96,9 +96,9 @@
          * @param {Number} x
          * @param {Number} y
          */
-        getTileBounds: function(level, x, y) {
+        getTileBounds: function (level, x, y) {
             var dimensionsScaled = this.dimensions.times(
-                    this.getLevelScale(level)
+                    this.getLevelScale(level),
                 ),
                 px = this.tileSize * x - this.tileOverlap,
                 py = this.tileSize * y - this.tileOverlap,
@@ -117,7 +117,7 @@
          * @function
          * @name OpenSeadragon.TileSourceCollection.prototype.configure
          */
-        configure: function(data, url) {
+        configure: function (data, url) {
             return;
         },
 
@@ -128,9 +128,9 @@
          * @param {Number} x
          * @param {Number} y
          */
-        getTileUrl: function(level, x, y) {
+        getTileUrl: function (level, x, y) {
             //$.console.log([  level, '/', x, '_', y ].join( '' ));
             return null;
-        }
+        },
     });
 })(OpenSeadragon);

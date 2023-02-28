@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * For use by classes which want to support custom, non-browser events.
      * TODO: This is an aweful name!  This thing represents an "event source",
@@ -43,7 +43,7 @@
      *       matches.
      * @class
      */
-    $.EventHandler = function() {
+    $.EventHandler = function () {
         this.events = {};
     };
 
@@ -54,7 +54,7 @@
          * @param {String} eventName - Name of event to register.
          * @param {Function} handler - Function to call when event is triggered.
          */
-        addHandler: function(eventName, handler) {
+        addHandler: function (eventName, handler) {
             var events = this.events[eventName];
             if (!events) {
                 this.events[eventName] = events = [];
@@ -70,7 +70,7 @@
          * @param {String} eventName - Name of event for which the handler is to be removed.
          * @param {Function} handler - Function to be removed.
          */
-        removeHandler: function(eventName, handler) {
+        removeHandler: function (eventName, handler) {
             var events = this.events[eventName],
                 handlers = [],
                 i;
@@ -93,7 +93,7 @@
          * @function
          * @param {String} eventName - Name of event for which all handlers are to be removed.
          */
-        removeAllHandlers: function(eventName) {
+        removeAllHandlers: function (eventName) {
             if (eventName) {
                 this.events[eventName] = [];
             } else {
@@ -108,14 +108,14 @@
          * @function
          * @param {String} eventName - Name of event to get handlers for.
          */
-        getHandler: function(eventName) {
+        getHandler: function (eventName) {
             var events = this.events[eventName];
             if (!events || !events.length) {
                 return null;
             }
             events =
                 events.length === 1 ? [events[0]] : Array.apply(null, events);
-            return function(source, args) {
+            return function (source, args) {
                 var i,
                     length = events.length;
                 for (i = 0; i < length; i++) {
@@ -132,7 +132,7 @@
          * @param {String} eventName - Name of event to register.
          * @param {Function} handler - Function to call when event is triggered.
          */
-        raiseEvent: function(eventName, eventArgs) {
+        raiseEvent: function (eventName, eventArgs) {
             //uncomment if you want to get a log of all events
             //$.console.log( eventName );
             var handler = this.getHandler(eventName);
@@ -144,6 +144,6 @@
 
                 handler(this, eventArgs);
             }
-        }
+        },
     };
 })(OpenSeadragon);

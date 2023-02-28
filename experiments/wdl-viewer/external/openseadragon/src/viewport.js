@@ -32,11 +32,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * @class
      */
-    $.Viewport = function(options) {
+    $.Viewport = function (options) {
         //backward compatibility for positional args while prefering more
         //idiomatic javascript options object as the only argument
         var args = arguments;
@@ -44,7 +44,7 @@
             options = {
                 containerSize: args[0],
                 contentSize: args[1],
-                config: args[2]
+                config: args[2],
             };
         }
 
@@ -79,25 +79,25 @@
                 defaultZoomLevel: $.DEFAULT_SETTINGS.defaultZoomLevel,
                 minZoomLevel: $.DEFAULT_SETTINGS.minZoomLevel,
                 maxZoomLevel: $.DEFAULT_SETTINGS.maxZoomLevel,
-                degrees: $.DEFAULT_SETTINGS.degrees
+                degrees: $.DEFAULT_SETTINGS.degrees,
             },
-            options
+            options,
         );
 
         this.centerSpringX = new $.Spring({
             initial: 0,
             springStiffness: this.springStiffness,
-            animationTime: this.animationTime
+            animationTime: this.animationTime,
         });
         this.centerSpringY = new $.Spring({
             initial: 0,
             springStiffness: this.springStiffness,
-            animationTime: this.animationTime
+            animationTime: this.animationTime,
         });
         this.zoomSpring = new $.Spring({
             initial: 1,
             springStiffness: this.springStiffness,
-            animationTime: this.animationTime
+            animationTime: this.animationTime,
         });
 
         this.resetContentSize(this.contentSize);
@@ -110,7 +110,7 @@
          * @function
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        resetContentSize: function(contentSize) {
+        resetContentSize: function (contentSize) {
             this.contentSize = contentSize;
             this.contentAspectX = this.contentSize.x / this.contentSize.y;
             this.contentAspectY = this.contentSize.y / this.contentSize.x;
@@ -119,7 +119,7 @@
                 0,
                 0,
                 this.contentAspectY,
-                this.contentAspectY
+                this.contentAspectY,
             );
 
             this.homeBounds = new $.Rect(0, 0, 1, this.contentAspectY);
@@ -127,7 +127,7 @@
             if (this.viewer) {
                 this.viewer.raiseEvent("reset-size", {
                     contentSize: contentSize,
-                    viewer: this.viewer
+                    viewer: this.viewer,
                 });
             }
 
@@ -137,7 +137,7 @@
         /**
          * @function
          */
-        getHomeZoom: function() {
+        getHomeZoom: function () {
             var aspectFactor = this.contentAspectX / this.getAspectRatio();
 
             if (this.defaultZoomLevel) {
@@ -150,7 +150,7 @@
         /**
          * @function
          */
-        getHomeBounds: function() {
+        getHomeBounds: function () {
             var center = this.homeBounds.getCenter(),
                 width = 1.0 / this.getHomeZoom(),
                 height = width / this.getAspectRatio();
@@ -159,7 +159,7 @@
                 center.x - width / 2.0,
                 center.y - height / 2.0,
                 width,
-                height
+                height,
             );
         },
 
@@ -167,11 +167,11 @@
          * @function
          * @param {Boolean} immediately
          */
-        goHome: function(immediately) {
+        goHome: function (immediately) {
             if (this.viewer) {
                 this.viewer.raiseEvent("home", {
                     immediately: immediately,
-                    viewer: this.viewer
+                    viewer: this.viewer,
                 });
             }
             return this.fitBounds(this.getHomeBounds(), immediately);
@@ -180,7 +180,7 @@
         /**
          * @function
          */
-        getMinZoom: function() {
+        getMinZoom: function () {
             var homeZoom = this.getHomeZoom(),
                 zoom = this.minZoomLevel
                     ? this.minZoomLevel
@@ -192,7 +192,7 @@
         /**
          * @function
          */
-        getMaxZoom: function() {
+        getMaxZoom: function () {
             var zoom = this.maxZoomLevel
                 ? this.maxZoomLevel
                 : (this.contentSize.x * this.maxZoomPixelRatio) /
@@ -204,14 +204,14 @@
         /**
          * @function
          */
-        getAspectRatio: function() {
+        getAspectRatio: function () {
             return this.containerSize.x / this.containerSize.y;
         },
 
         /**
          * @function
          */
-        getContainerSize: function() {
+        getContainerSize: function () {
             return new $.Point(this.containerSize.x, this.containerSize.y);
         },
 
@@ -219,7 +219,7 @@
          * @function
          * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
          */
-        getBounds: function(current) {
+        getBounds: function (current) {
             var center = this.getCenter(current),
                 width = 1.0 / this.getZoom(current),
                 height = width / this.getAspectRatio();
@@ -228,7 +228,7 @@
                 center.x - width / 2.0,
                 center.y - height / 2.0,
                 width,
-                height
+                height,
             );
         },
 
@@ -236,14 +236,14 @@
          * @function
          * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
          */
-        getCenter: function(current) {
+        getCenter: function (current) {
             var centerCurrent = new $.Point(
                     this.centerSpringX.current.value,
-                    this.centerSpringY.current.value
+                    this.centerSpringY.current.value,
                 ),
                 centerTarget = new $.Point(
                     this.centerSpringX.target.value,
-                    this.centerSpringY.target.value
+                    this.centerSpringY.target.value,
                 ),
                 oldZoomPixel,
                 zoom,
@@ -269,7 +269,7 @@
                 centerCurrent.x - width / 2.0,
                 centerCurrent.y - height / 2.0,
                 width,
-                height
+                height,
             );
 
             newZoomPixel = this.zoomPoint
@@ -277,7 +277,7 @@
                 .times(this.containerSize.x / bounds.width);
             deltaZoomPixels = newZoomPixel.minus(oldZoomPixel);
             deltaZoomPoints = deltaZoomPixels.divide(
-                this.containerSize.x * zoom
+                this.containerSize.x * zoom,
             );
 
             return centerTarget.plus(deltaZoomPoints);
@@ -287,7 +287,7 @@
          * @function
          * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
          */
-        getZoom: function(current) {
+        getZoom: function (current) {
             if (current) {
                 return this.zoomSpring.current.value;
             } else {
@@ -299,11 +299,11 @@
          * @function
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        applyConstraints: function(immediately) {
+        applyConstraints: function (immediately) {
             var actualZoom = this.getZoom(),
                 constrainedZoom = Math.max(
                     Math.min(actualZoom, this.getMaxZoom()),
-                    this.getMinZoom()
+                    this.getMinZoom(),
                 ),
                 bounds,
                 horizontalThreshold,
@@ -370,7 +370,7 @@
             if (this.viewer) {
                 this.viewer.raiseEvent("constrain", {
                     immediately: immediately,
-                    viewer: this.viewer
+                    viewer: this.viewer,
                 });
             }
 
@@ -381,7 +381,7 @@
          * @function
          * @param {Boolean} immediately
          */
-        ensureVisible: function(immediately) {
+        ensureVisible: function (immediately) {
             return this.applyConstraints(immediately);
         },
 
@@ -391,14 +391,14 @@
          * @param {Boolean} immediately
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        fitBounds: function(bounds, immediately) {
+        fitBounds: function (bounds, immediately) {
             var aspect = this.getAspectRatio(),
                 center = bounds.getCenter(),
                 newBounds = new $.Rect(
                     bounds.x,
                     bounds.y,
                     bounds.width,
-                    bounds.height
+                    bounds.height,
                 ),
                 oldBounds,
                 oldZoom,
@@ -429,11 +429,11 @@
                 .minus(
                     newBounds
                         .getTopLeft()
-                        .times(this.containerSize.x / newBounds.width)
+                        .times(this.containerSize.x / newBounds.width),
                 )
                 .divide(
                     this.containerSize.x / oldBounds.width -
-                        this.containerSize.x / newBounds.width
+                        this.containerSize.x / newBounds.width,
                 );
 
             return this.zoomTo(newZoom, referencePoint, immediately);
@@ -444,7 +444,7 @@
          * @param {Boolean} immediately
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        fitVertically: function(immediately) {
+        fitVertically: function (immediately) {
             var center = this.getCenter();
 
             if (this.wrapHorizontal) {
@@ -469,7 +469,7 @@
          * @param {Boolean} immediately
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        fitHorizontally: function(immediately) {
+        fitHorizontally: function (immediately) {
             var center = this.getCenter();
 
             if (this.wrapHorizontal) {
@@ -495,10 +495,10 @@
          * @param {Boolean} immediately
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        panBy: function(delta, immediately) {
+        panBy: function (delta, immediately) {
             var center = new $.Point(
                 this.centerSpringX.target.value,
-                this.centerSpringY.target.value
+                this.centerSpringY.target.value,
             );
             delta = delta.rotate(-this.degrees, new $.Point(0, 0));
             return this.panTo(center.plus(delta), immediately);
@@ -510,7 +510,7 @@
          * @param {Boolean} immediately
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        panTo: function(center, immediately) {
+        panTo: function (center, immediately) {
             if (immediately) {
                 this.centerSpringX.resetTo(center.x);
                 this.centerSpringY.resetTo(center.y);
@@ -523,7 +523,7 @@
                 this.viewer.raiseEvent("pan", {
                     center: center,
                     immediately: immediately,
-                    viewer: this.viewer
+                    viewer: this.viewer,
                 });
             }
 
@@ -534,20 +534,20 @@
          * @function
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        zoomBy: function(factor, refPoint, immediately) {
+        zoomBy: function (factor, refPoint, immediately) {
             if (refPoint) {
                 refPoint = refPoint.rotate(
                     -this.degrees,
                     new $.Point(
                         this.centerSpringX.target.value,
-                        this.centerSpringY.target.value
-                    )
+                        this.centerSpringY.target.value,
+                    ),
                 );
             }
             return this.zoomTo(
                 this.zoomSpring.target.value * factor,
                 refPoint,
-                immediately
+                immediately,
             );
         },
 
@@ -555,7 +555,7 @@
          * @function
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        zoomTo: function(zoom, refPoint, immediately) {
+        zoomTo: function (zoom, refPoint, immediately) {
             this.zoomPoint = refPoint instanceof $.Point ? refPoint : null;
 
             if (immediately) {
@@ -569,7 +569,7 @@
                     zoom: zoom,
                     refPoint: refPoint,
                     immediately: immediately,
-                    viewer: this.viewer
+                    viewer: this.viewer,
                 });
             }
 
@@ -585,7 +585,7 @@
          * @name OpenSeadragon.Viewport.prototype.setRotation
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        setRotation: function(degrees) {
+        setRotation: function (degrees) {
             if (!(this.viewer && this.viewer.drawer.canRotate())) {
                 return this;
             }
@@ -593,7 +593,7 @@
             degrees = (degrees + 360) % 360;
             if (degrees % 90 !== 0) {
                 throw new Error(
-                    "Currently only 0, 90, 180, and 270 degrees are supported."
+                    "Currently only 0, 90, 180, and 270 degrees are supported.",
                 );
             }
             this.degrees = degrees;
@@ -608,7 +608,7 @@
          * @name OpenSeadragon.Viewport.prototype.setRotation
          * @return {Number} The current rotation in degrees.
          */
-        getRotation: function() {
+        getRotation: function () {
             return this.degrees;
         },
 
@@ -616,14 +616,14 @@
          * @function
          * @return {OpenSeadragon.Viewport} Chainable.
          */
-        resize: function(newContainerSize, maintain) {
+        resize: function (newContainerSize, maintain) {
             var oldBounds = this.getBounds(),
                 newBounds = oldBounds,
                 widthDeltaFactor = newContainerSize.x / this.containerSize.x;
 
             this.containerSize = new $.Point(
                 newContainerSize.x,
-                newContainerSize.y
+                newContainerSize.y,
             );
 
             if (maintain) {
@@ -635,7 +635,7 @@
                 this.viewer.raiseEvent("resize", {
                     newContainerSize: newContainerSize,
                     maintain: maintain,
-                    viewer: this.viewer
+                    viewer: this.viewer,
                 });
             }
 
@@ -645,7 +645,7 @@
         /**
          * @function
          */
-        update: function() {
+        update: function () {
             var oldCenterX = this.centerSpringX.current.value,
                 oldCenterY = this.centerSpringY.current.value,
                 oldZoom = this.zoomSpring.current.value,
@@ -665,7 +665,7 @@
                 deltaZoomPixels = newZoomPixel.minus(oldZoomPixel);
                 deltaZoomPoints = this.deltaPointsFromPixels(
                     deltaZoomPixels,
-                    true
+                    true,
                 );
 
                 this.centerSpringX.shiftBy(deltaZoomPoints.x);
@@ -688,9 +688,9 @@
          * @function
          * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
          */
-        deltaPixelsFromPoints: function(deltaPoints, current) {
+        deltaPixelsFromPoints: function (deltaPoints, current) {
             return deltaPoints.times(
-                this.containerSize.x * this.getZoom(current)
+                this.containerSize.x * this.getZoom(current),
             );
         },
 
@@ -698,9 +698,9 @@
          * @function
          * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
          */
-        deltaPointsFromPixels: function(deltaPixels, current) {
+        deltaPointsFromPixels: function (deltaPixels, current) {
             return deltaPixels.divide(
-                this.containerSize.x * this.getZoom(current)
+                this.containerSize.x * this.getZoom(current),
             );
         },
 
@@ -708,7 +708,7 @@
          * @function
          * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
          */
-        pixelFromPoint: function(point, current) {
+        pixelFromPoint: function (point, current) {
             var bounds = this.getBounds(current);
             return point
                 .minus(bounds.getTopLeft())
@@ -719,7 +719,7 @@
          * @function
          * @param {Boolean} current - Pass true for the current location; defaults to false (target location).
          */
-        pointFromPixel: function(pixel, current) {
+        pointFromPixel: function (pixel, current) {
             var bounds = this.getBounds(current);
             return pixel
                 .divide(this.containerSize.x / bounds.width)
@@ -730,10 +730,10 @@
          * Translates from Seajax viewer coordinate
          * system to image coordinate system
          */
-        viewportToImageCoordinates: function(viewerX, viewerY) {
+        viewportToImageCoordinates: function (viewerX, viewerY) {
             return new $.Point(
                 viewerX * this.contentSize.x,
-                viewerY * this.contentSize.y * this.contentAspectX
+                viewerY * this.contentSize.y * this.contentAspectX,
             );
         },
 
@@ -741,10 +741,10 @@
          * Translates from image coordinate system to
          * Seajax viewer coordinate system
          */
-        imageToViewportCoordinates: function(imageX, imageY) {
+        imageToViewportCoordinates: function (imageX, imageY) {
             return new $.Point(
                 imageX / this.contentSize.x,
-                imageY / this.contentSize.y / this.contentAspectX
+                imageY / this.contentSize.y / this.contentAspectX,
             );
         },
 
@@ -753,11 +753,11 @@
          * the image in pixel coordinates to OpenSeadragon viewport
          * rectangle coordinates.
          */
-        imageToViewportRectangle: function(
+        imageToViewportRectangle: function (
             imageX,
             imageY,
             pixelWidth,
-            pixelHeight
+            pixelHeight,
         ) {
             var coordA, coordB, rect;
             if (arguments.length == 1) {
@@ -767,12 +767,12 @@
                     rect.x,
                     rect.y,
                     rect.width,
-                    rect.height
+                    rect.height,
                 );
             }
             coordA = this.imageToViewportCoordinates(imageX, imageY);
             coordB = this.imageToViewportCoordinates(pixelWidth, pixelHeight);
             return new $.Rect(coordA.x, coordA.y, coordB.x, coordB.y);
-        }
+        },
     };
 })(OpenSeadragon);

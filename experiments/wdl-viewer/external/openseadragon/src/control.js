@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * An enumeration of supported locations where controls can be anchored,
      * including NONE, TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, and BOTTOM_LEFT.
@@ -44,7 +44,7 @@
         TOP_LEFT: 1,
         TOP_RIGHT: 2,
         BOTTOM_RIGHT: 3,
-        BOTTOM_LEFT: 4
+        BOTTOM_LEFT: 4,
     };
 
     /**
@@ -71,13 +71,13 @@
      * @property {Element} wrapper - a neutral element surrounding the control
      *  element.
      */
-    $.Control = function(element, options, container) {
+    $.Control = function (element, options, container) {
         var parent = element.parentNode;
         if (typeof options === "number") {
             $.console.error(
                 "Passing an anchor directly into the OpenSeadragon.Control constructor is deprecated; " +
                     "please use an options object instead.  " +
-                    "Support for this deprecated variant is scheduled for removal in December 2013"
+                    "Support for this deprecated variant is scheduled for removal in December 2013",
             );
             options = { anchor: options };
         }
@@ -106,7 +106,7 @@
             ) {
                 this.container.insertBefore(
                     this.wrapper,
-                    this.container.firstChild
+                    this.container.firstChild,
                 );
             } else {
                 this.container.appendChild(this.wrapper);
@@ -121,7 +121,7 @@
          * Removes the control from the container.
          * @function
          */
-        destroy: function() {
+        destroy: function () {
             this.wrapper.removeChild(this.element);
             this.container.removeChild(this.wrapper);
         },
@@ -131,7 +131,7 @@
          * @function
          * @return {Boolean} true if currenly visible, false otherwise.
          */
-        isVisible: function() {
+        isVisible: function () {
             return this.wrapper.style.display != "none";
         },
 
@@ -140,7 +140,7 @@
          * @function
          * @param {Boolean} visible - true to make visible, false to hide.
          */
-        setVisible: function(visible) {
+        setVisible: function (visible) {
             this.wrapper.style.display = visible ? "inline-block" : "none";
         },
 
@@ -149,12 +149,12 @@
          * @function
          * @param {Number} opactiy - a value between 1 and 0 inclusively.
          */
-        setOpacity: function(opacity) {
+        setOpacity: function (opacity) {
             if (this.element[$.SIGNAL] && $.Browser.vendor == $.BROWSERS.IE) {
                 $.setElementOpacity(this.element, opacity, true);
             } else {
                 $.setElementOpacity(this.wrapper, opacity, true);
             }
-        }
+        },
     };
 })(OpenSeadragon);

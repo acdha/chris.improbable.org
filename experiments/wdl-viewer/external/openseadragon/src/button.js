@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * An enumeration of button states including, REST, GROUP, HOVER, and DOWN
      * @static
@@ -41,7 +41,7 @@
         REST: 0,
         GROUP: 1,
         HOVER: 2,
-        DOWN: 3
+        DOWN: 3,
     };
 
     /**
@@ -78,7 +78,7 @@
     this.fadeBeginTime  = null;
     this.shouldFade     = false;
  */
-    $.Button = function(options) {
+    $.Button = function (options) {
         var _this = this;
 
         $.EventHandler.call(this);
@@ -104,9 +104,9 @@
                 onEnter: null,
                 onExit: null,
                 onFocus: null,
-                onBlur: null
+                onBlur: null,
             },
-            options
+            options,
         );
 
         this.element = options.element || $.makeNeutralElement("button");
@@ -125,14 +125,20 @@
             this.element.appendChild(this.imgHover);
             this.element.appendChild(this.imgDown);
 
-            this.imgGroup.style.position = this.imgHover.style.position = this.imgDown.style.position =
-                "absolute";
+            this.imgGroup.style.position =
+                this.imgHover.style.position =
+                this.imgDown.style.position =
+                    "absolute";
 
-            this.imgGroup.style.top = this.imgHover.style.top = this.imgDown.style.top =
-                "0px";
+            this.imgGroup.style.top =
+                this.imgHover.style.top =
+                this.imgDown.style.top =
+                    "0px";
 
-            this.imgGroup.style.left = this.imgHover.style.left = this.imgDown.style.left =
-                "0px";
+            this.imgGroup.style.left =
+                this.imgHover.style.left =
+                this.imgDown.style.left =
+                    "0px";
 
             this.imgHover.style.visibility = this.imgDown.style.visibility =
                 "hidden";
@@ -141,8 +147,10 @@
                 $.Browser.vendor == $.BROWSERS.FIREFOX &&
                 $.Browser.version < 3
             ) {
-                this.imgGroup.style.top = this.imgHover.style.top = this.imgDown.style.top =
-                    "";
+                this.imgGroup.style.top =
+                    this.imgHover.style.top =
+                    this.imgDown.style.top =
+                        "";
             }
         }
 
@@ -168,11 +176,11 @@
             clickTimeThreshold: this.clickTimeThreshold,
             clickDistThreshold: this.clickDistThreshold,
 
-            enterHandler: function(
+            enterHandler: function (
                 tracker,
                 position,
                 buttonDownElement,
-                buttonDownAny
+                buttonDownAny,
             ) {
                 if (buttonDownElement) {
                     inTo(_this, $.ButtonState.DOWN);
@@ -182,26 +190,26 @@
                 }
             },
 
-            focusHandler: function(
+            focusHandler: function (
                 tracker,
                 position,
                 buttonDownElement,
-                buttonDownAny
+                buttonDownAny,
             ) {
                 this.enterHandler(
                     tracker,
                     position,
                     buttonDownElement,
-                    buttonDownAny
+                    buttonDownAny,
                 );
                 _this.raiseEvent("onFocus", _this);
             },
 
-            exitHandler: function(
+            exitHandler: function (
                 tracker,
                 position,
                 buttonDownElement,
-                buttonDownAny
+                buttonDownAny,
             ) {
                 outTo(_this, $.ButtonState.GROUP);
                 if (buttonDownElement) {
@@ -209,31 +217,31 @@
                 }
             },
 
-            blurHandler: function(
+            blurHandler: function (
                 tracker,
                 position,
                 buttonDownElement,
-                buttonDownAny
+                buttonDownAny,
             ) {
                 this.exitHandler(
                     tracker,
                     position,
                     buttonDownElement,
-                    buttonDownAny
+                    buttonDownAny,
                 );
                 _this.raiseEvent("onBlur", _this);
             },
 
-            pressHandler: function(tracker, position) {
+            pressHandler: function (tracker, position) {
                 inTo(_this, $.ButtonState.DOWN);
                 _this.raiseEvent("onPress", _this);
             },
 
-            releaseHandler: function(
+            releaseHandler: function (
                 tracker,
                 position,
                 insideElementPress,
-                insideElementRelease
+                insideElementRelease,
             ) {
                 if (insideElementPress && insideElementRelease) {
                     outTo(_this, $.ButtonState.HOVER);
@@ -245,13 +253,13 @@
                 }
             },
 
-            clickHandler: function(tracker, position, quick, shift) {
+            clickHandler: function (tracker, position, quick, shift) {
                 if (quick) {
                     _this.raiseEvent("onClick", _this);
                 }
             },
 
-            keyHandler: function(tracker, key) {
+            keyHandler: function (tracker, key) {
                 //console.log( "%s : handling key %s!", _this.tooltip, key);
                 if (13 === key) {
                     _this.raiseEvent("onClick", _this);
@@ -259,7 +267,7 @@
                     return false;
                 }
                 return true;
-            }
+            },
         }).setTracking(true);
 
         outTo(this, $.ButtonState.REST);
@@ -272,7 +280,7 @@
          * @function
          * @name OpenSeadragon.Button.prototype.notifyGroupEnter
          */
-        notifyGroupEnter: function() {
+        notifyGroupEnter: function () {
             inTo(this, $.ButtonState.GROUP);
         },
 
@@ -282,25 +290,25 @@
          * @function
          * @name OpenSeadragon.Button.prototype.notifyGroupExit
          */
-        notifyGroupExit: function() {
+        notifyGroupExit: function () {
             outTo(this, $.ButtonState.REST);
         },
 
-        disable: function() {
+        disable: function () {
             this.notifyGroupExit();
             this.element.disabled = true;
             $.setElementOpacity(this.element, 0.2, true);
         },
 
-        enable: function() {
+        enable: function () {
             this.element.disabled = false;
             $.setElementOpacity(this.element, 1.0, true);
             this.notifyGroupEnter();
-        }
+        },
     });
 
     function scheduleFade(button) {
-        $.requestAnimationFrame(function() {
+        $.requestAnimationFrame(function () {
             updateFade(button);
         });
     }
@@ -328,7 +336,7 @@
     function beginFading(button) {
         button.shouldFade = true;
         button.fadeBeginTime = $.now() + button.fadeDelay;
-        window.setTimeout(function() {
+        window.setTimeout(function () {
             scheduleFade(button);
         }, button.fadeDelay);
     }

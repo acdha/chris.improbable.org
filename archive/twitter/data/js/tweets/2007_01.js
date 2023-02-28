@@ -5,7 +5,7 @@ Grailbird.data.tweets_2007_01 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "4261263",
@@ -20,8 +20,8 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "web",
@@ -29,7 +29,7 @@ Grailbird.data.tweets_2007_01 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "3478613",
@@ -44,17 +44,16 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "3410513",
@@ -69,17 +68,16 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "3405253",
@@ -94,17 +92,16 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "3396043",
@@ -119,17 +116,16 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "3395983",
@@ -144,8 +140,8 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -153,7 +149,7 @@ Grailbird.data.tweets_2007_01 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "3373833",
@@ -168,8 +164,8 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -177,12 +173,11 @@ Grailbird.data.tweets_2007_01 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "3217703",
-        text:
-            'is seeing what a "Donate Livestock" charity really looks like: http://www.jazzviolin.com/china/',
+        text: 'is seeing what a "Donate Livestock" charity really looks like: http://www.jazzviolin.com/china/',
         id: 3217703,
         created_at: "Thu Jan 18 06:08:51 +0000 2007",
         user: {
@@ -193,8 +188,8 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -202,12 +197,11 @@ Grailbird.data.tweets_2007_01 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "3201063",
-        text:
-            "is wondering when we'll get funny shirts to go with our banana republic.",
+        text: "is wondering when we'll get funny shirts to go with our banana republic.",
         id: 3201063,
         created_at: "Thu Jan 18 01:50:52 +0000 2007",
         user: {
@@ -218,8 +212,8 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -227,7 +221,7 @@ Grailbird.data.tweets_2007_01 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "2508653",
@@ -242,8 +236,8 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -251,12 +245,11 @@ Grailbird.data.tweets_2007_01 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "2417723",
-        text:
-            "is using VMWare Fusion to remember what the computing ghetto felt like",
+        text: "is using VMWare Fusion to remember what the computing ghetto felt like",
         id: 2417723,
         created_at: "Tue Jan 09 02:11:36 +0000 2007",
         user: {
@@ -267,8 +260,8 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -276,7 +269,7 @@ Grailbird.data.tweets_2007_01 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "2416303",
@@ -291,7 +284,7 @@ Grailbird.data.tweets_2007_01 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];

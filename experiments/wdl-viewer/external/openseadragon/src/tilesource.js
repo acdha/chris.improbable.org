@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * The TileSource contains the most basic implementation required to create a
      * smooth transition between layer in an image pyramid. It has only a single key
@@ -81,13 +81,13 @@
      * @property {Number} maxLevel
      *      The maximum pyramid level this tile source supports or should attempt to load.
      */
-    $.TileSource = function(
+    $.TileSource = function (
         width,
         height,
         tileSize,
         tileOverlap,
         minLevel,
-        maxLevel
+        maxLevel,
     ) {
         var callback = null,
             args = arguments,
@@ -103,7 +103,7 @@
                 tileSize: args[2],
                 tileOverlap: args[3],
                 minLevel: args[4],
-                maxLevel: args[5]
+                maxLevel: args[5],
             };
         }
 
@@ -122,12 +122,12 @@
         for (i = 0; i < arguments.length; i++) {
             if ($.isFunction(arguments[i])) {
                 callback = arguments[i];
-                this.addHandler("ready", function(
-                    placeHolderSource,
-                    readySource
-                ) {
-                    callback(readySource);
-                });
+                this.addHandler(
+                    "ready",
+                    function (placeHolderSource, readySource) {
+                        callback(readySource);
+                    },
+                );
                 //only one callback per constructor
                 break;
             }
@@ -164,7 +164,7 @@
                     : options.width && options.height
                     ? Math.ceil(
                           Math.log(Math.max(options.width, options.height)) /
-                              Math.log(2)
+                              Math.log(2),
                       )
                     : 0;
             if (callback && $.isFunction(callback)) {
@@ -178,7 +178,7 @@
          * @function
          * @param {Number} level
          */
-        getLevelScale: function(level) {
+        getLevelScale: function (level) {
             // see https://github.com/openseadragon/openseadragon/issues/22
             // we use the tilesources implementation of getLevelScale to generate
             // a memoized re-implementation
@@ -187,7 +187,7 @@
             for (i = 0; i <= this.maxLevel; i++) {
                 levelScaleCache[i] = 1 / Math.pow(2, this.maxLevel - i);
             }
-            this.getLevelScale = function(_level) {
+            this.getLevelScale = function (_level) {
                 return levelScaleCache[_level];
             };
             return this.getLevelScale(level);
@@ -197,7 +197,7 @@
          * @function
          * @param {Number} level
          */
-        getNumTiles: function(level) {
+        getNumTiles: function (level) {
             var scale = this.getLevelScale(level),
                 x = Math.ceil((scale * this.dimensions.x) / this.tileSize),
                 y = Math.ceil((scale * this.dimensions.y) / this.tileSize);
@@ -209,9 +209,9 @@
          * @function
          * @param {Number} level
          */
-        getPixelRatio: function(level) {
+        getPixelRatio: function (level) {
             var imageSizeScaled = this.dimensions.times(
-                    this.getLevelScale(level)
+                    this.getLevelScale(level),
                 ),
                 rx = 1.0 / imageSizeScaled.x,
                 ry = 1.0 / imageSizeScaled.y;
@@ -223,10 +223,10 @@
          * @function
          * @param {Number} level
          */
-        getClosestLevel: function(rect) {
+        getClosestLevel: function (rect) {
             var i,
                 tilesPerSide = Math.floor(
-                    Math.max(rect.x, rect.y) / this.tileSize
+                    Math.max(rect.x, rect.y) / this.tileSize,
                 ),
                 tiles;
             for (i = this.minLevel; i < this.maxLevel; i++) {
@@ -243,7 +243,7 @@
          * @param {Number} level
          * @param {OpenSeadragon.Point} point
          */
-        getTileAtPoint: function(level, point) {
+        getTileAtPoint: function (level, point) {
             var pixel = point
                     .times(this.dimensions.x)
                     .times(this.getLevelScale(level)),
@@ -259,9 +259,9 @@
          * @param {Number} x
          * @param {Number} y
          */
-        getTileBounds: function(level, x, y) {
+        getTileBounds: function (level, x, y) {
             var dimensionsScaled = this.dimensions.times(
-                    this.getLevelScale(level)
+                    this.getLevelScale(level),
                 ),
                 px = x === 0 ? 0 : this.tileSize * x - this.tileOverlap,
                 py = y === 0 ? 0 : this.tileSize * y - this.tileOverlap,
@@ -282,7 +282,7 @@
          * @param {String} url
          * @throws {Error}
          */
-        getImageInfo: function(url) {
+        getImageInfo: function (url) {
             var _this = this,
                 callbackName,
                 callback,
@@ -301,19 +301,19 @@
                 }
             }
 
-            callback = function(data) {
+            callback = function (data) {
                 var $TileSource = $.TileSource.determineType(_this, data, url);
                 if (!$TileSource) {
                     _this.raiseEvent("open-failed", {
                         message: "Unable to load TileSource",
-                        source: url
+                        source: url,
                     });
                     return;
                 }
 
                 options = $TileSource.prototype.configure.apply(_this, [
                     data,
-                    url
+                    url,
                 ]);
                 readySource = new $TileSource(options);
                 _this.ready = true;
@@ -324,33 +324,30 @@
                 //TODO: Its not very flexible to require tile sources to end jsonp
                 //      request for info  with a url that ends with '.js' but for
                 //      now it's the only way I see to distinguish uniformly.
-                callbackName = url
-                    .split("/")
-                    .pop()
-                    .replace(".js", "");
+                callbackName = url.split("/").pop().replace(".js", "");
                 $.jsonp({
                     url: url,
                     async: false,
                     callbackName: callbackName,
-                    callback: callback
+                    callback: callback,
                 });
             } else {
                 // request info via xhr asyncronously.
                 $.makeAjaxRequest(
                     url,
-                    function(xhr) {
+                    function (xhr) {
                         var data = processResponse(xhr);
                         callback(data);
                     },
-                    function(xhr) {
+                    function (xhr) {
                         _this.raiseEvent("open-failed", {
                             message:
                                 "HTTP " +
                                 xhr.status +
                                 " attempting to load TileSource",
-                            source: url
+                            source: url,
                         });
-                    }
+                    },
                 );
             }
         },
@@ -369,7 +366,7 @@
          *      from if any.
          * @return {Boolean}
          */
-        supports: function(data, url) {
+        supports: function (data, url) {
             return false;
         },
 
@@ -388,7 +385,7 @@
          *      to configure this tile sources constructor.
          * @throws {Error}
          */
-        configure: function(data, url) {
+        configure: function (data, url) {
             throw new Error("Method not implemented.");
         },
 
@@ -405,7 +402,7 @@
          * @param {Number} y
          * @throws {Error}
          */
-        getTileUrl: function(level, x, y) {
+        getTileUrl: function (level, x, y) {
             throw new Error("Method not implemented.");
         },
 
@@ -415,7 +412,7 @@
          * @param {Number} x
          * @param {Number} y
          */
-        tileExists: function(level, x, y) {
+        tileExists: function (level, x, y) {
             var numTiles = this.getNumTiles(level);
             return (
                 level >= this.minLevel &&
@@ -425,7 +422,7 @@
                 x < numTiles.x &&
                 y < numTiles.y
             );
-        }
+        },
     };
 
     $.extend(true, $.TileSource.prototype, $.EventHandler.prototype);
@@ -480,7 +477,7 @@
      * @param {String} url - the url where the tile source configuration object was
      *      loaded from, if any.
      */
-    $.TileSource.determineType = function(tileSource, data, url) {
+    $.TileSource.determineType = function (tileSource, data, url) {
         var property;
         for (property in OpenSeadragon) {
             if (
@@ -490,7 +487,7 @@
                 OpenSeadragon[property].prototype.supports.call(
                     tileSource,
                     data,
-                    url
+                    url,
                 )
             ) {
                 return OpenSeadragon[property];

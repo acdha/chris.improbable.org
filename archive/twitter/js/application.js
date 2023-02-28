@@ -1,9 +1,9 @@
-var Grailbird = function(type, date, data) {
+var Grailbird = function (type, date, data) {
     Grailbird.data = Grailbird.data || {};
     Grailbird.data[type + "_" + date] = data;
 };
 
-(function(exports) {
+(function (exports) {
     "use strict";
 
     var User = {},
@@ -14,46 +14,46 @@ var Grailbird = function(type, date, data) {
     //
     var templates = {
         empty_month: Hogan.compile(
-            '<li class="without-tweets" title="" rel="tooltip" data-placement="bottom" data-date="" data-count="0"><span class="value">{{this_month}}</span></li>'
+            '<li class="without-tweets" title="" rel="tooltip" data-placement="bottom" data-date="" data-count="0"><span class="value">{{this_month}}</span></li>',
         ),
         month_bar: Hogan.compile(
-            '<li><a href="#" class="with-tweets" title="{{str_title}}: {{str_count}}" rel="tooltip" data-placement="bottom" data-idx="{{data_idx}}" data-date="{{str_title}}" data-count="{{this_count}}"><span class="bar" style="height: {{this_height}}%;"></span><span class="value">{{this_month}}</span></a></li>'
+            '<li><a href="#" class="with-tweets" title="{{str_title}}: {{str_count}}" rel="tooltip" data-placement="bottom" data-idx="{{data_idx}}" data-date="{{str_title}}" data-count="{{this_count}}"><span class="bar" style="height: {{this_height}}%;"></span><span class="value">{{this_month}}</span></a></li>',
         ),
         header_str: Hogan.compile(
-            '{{title_str}} <span class="count">{{tweet_count}}</span>'
+            '{{title_str}} <span class="count">{{tweet_count}}</span>',
         ),
         user_header: Hogan.compile(
-            '<li><h1 class="brand ltr-screen-name">@{{screen_name}}</h1></li>'
+            '<li><h1 class="brand ltr-screen-name">@{{screen_name}}</h1></li>',
         ),
         user_nav: Hogan.compile(
-            '<a href="#" class="icon-sprite icon-user dropdown-toggle" data-toggle="dropdown"></a><ul class="dropdown-menu"><li><a href="#user-info" data-toggle="modal"><i class="icon-user"></i>View account details</a></li><li class="divider"></li><li><a href="https://twitter.com/{{screen_name}}" target="_blank"><i class="icon-share-alt"></i>View profile on Twitter</a></li></ul>'
+            '<a href="#" class="icon-sprite icon-user dropdown-toggle" data-toggle="dropdown"></a><ul class="dropdown-menu"><li><a href="#user-info" data-toggle="modal"><i class="icon-user"></i>View account details</a></li><li class="divider"></li><li><a href="https://twitter.com/{{screen_name}}" target="_blank"><i class="icon-share-alt"></i>View profile on Twitter</a></li></ul>',
         ),
         modal_header: Hogan.compile(
-            '<h3>Account details <span class="download-date muted">as of {{created_at_relative}}</span></h3>'
+            '<h3>Account details <span class="download-date muted">as of {{created_at_relative}}</span></h3>',
         ),
         modal_user_details: Hogan.compile(
-            '<h3>{{full_name}}</h3><h4 class="muted ltr-screen-name">@{{screen_name}}</h4><div class="stats muted">{{#bio}}<p>{{bio}}</p>{{/bio}}<p>{{#location}}<a href="https://maps.google.com/?q={{location}}">{{location}}</a>{{/location}}{{#url}}{{#location}} &middot; {{/location}}<a href="{{url}}" title="{{#expanded_url}}{{expanded_url}}{{/expanded_url}}{{^expanded_url}}{{url}}{{/expanded_url}}">{{#display_url}}{{display_url}}{{/display_url}}{{^display_url}}{{url}}{{/display_url}}</a>{{/url}}</p></div>'
+            '<h3>{{full_name}}</h3><h4 class="muted ltr-screen-name">@{{screen_name}}</h4><div class="stats muted">{{#bio}}<p>{{bio}}</p>{{/bio}}<p>{{#location}}<a href="https://maps.google.com/?q={{location}}">{{location}}</a>{{/location}}{{#url}}{{#location}} &middot; {{/location}}<a href="{{url}}" title="{{#expanded_url}}{{expanded_url}}{{/expanded_url}}{{^expanded_url}}{{url}}{{/expanded_url}}">{{#display_url}}{{display_url}}{{/display_url}}{{^display_url}}{{url}}{{/display_url}}</a>{{/url}}</p></div>',
         ),
         modal_payload_details: Hogan.compile(
-            '<p>{{tweets}} <span class="footer-label muted">Tweets</span></p>'
+            '<p>{{tweets}} <span class="footer-label muted">Tweets</span></p>',
         ),
         modal_account_details: Hogan.compile(
-            '<p>#{{id}} <span class="footer-label muted">User ID</span></p><p class="truncated">{{created_at_relative}} <span class="footer-label muted">Joined</span></p>'
+            '<p>#{{id}} <span class="footer-label muted">User ID</span></p><p class="truncated">{{created_at_relative}} <span class="footer-label muted">Joined</span></p>',
         ),
         nav_tab: Hogan.compile(
-            '<li class="{{sectionClass}}"><a href="#">{{sectionName}}</a></li>'
+            '<li class="{{sectionClass}}"><a href="#">{{sectionName}}</a></li>',
         ),
         searching_for: Hogan.compile("Searching for {{{query}}} ..."),
         query_results_one: Hogan.compile("1 result matches {{{query}}}"),
         query_results_many: Hogan.compile(
-            "{{count}} results match {{{query}}}"
+            "{{count}} results match {{{query}}}",
         ),
         singular_tweet_count: Hogan.compile("{{count}} Tweet"),
-        plural_tweet_count: Hogan.compile("{{count}} Tweets")
+        plural_tweet_count: Hogan.compile("{{count}} Tweets"),
     };
     //
 
-    exports.init = function() {
+    exports.init = function () {
         Grailbird.localizeStrings();
         var doc = $(document),
             header = $(".tweets-header");
@@ -66,7 +66,7 @@ var Grailbird = function(type, date, data) {
         // since twt is an imported library, we're going to mess with how it formats dates here, so that the changes aren't
         // overwritten. hopefully in the future it will use cldr properly and we can remove this.
         // we want it to look like it does on twitter.com: 10:15 AM - Mar 7, 2013, properly localized and in local time
-        twt.formattedDate = function(str) {
+        twt.formattedDate = function (str) {
             var d = twt.parseDate(str);
             var fmt = new TwitterCldr.DateTimeFormatter();
             var date, time;
@@ -78,7 +78,7 @@ var Grailbird = function(type, date, data) {
             return [time, date].join(" - ");
         };
 
-        twt.timeAgo = function(d, relative) {
+        twt.timeAgo = function (d, relative) {
             var fmt;
             var then = twt.parseDate(d),
                 rightNow = new Date();
@@ -106,7 +106,7 @@ var Grailbird = function(type, date, data) {
                 return fmt.format(diff_seconds, {
                     direction: "none",
                     type: "short",
-                    unit: unit
+                    unit: unit,
                 });
             } else if (diff_minutes < 60 * 24 * 365) {
                 // tweeted more than a month ago, but less than a year so show the month and day: "Mar 10"
@@ -131,7 +131,7 @@ var Grailbird = function(type, date, data) {
         User.setState(Tweets);
         Tweets.init();
 
-        $(".brand").click(function(e) {
+        $(".brand").click(function (e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(".row .contents, .sidebar").removeClass("container-messages");
@@ -143,18 +143,16 @@ var Grailbird = function(type, date, data) {
 
         $(".tweets-header .nav-arrow")
             .tooltip()
-            .click(function() {
+            .click(function () {
                 Tweets.displayTweets(Number($(this).attr("data-idx")));
                 $(this).tooltip("show");
             });
 
         $(".navbar-search")
-            .submit(function(e) {
+            .submit(function (e) {
                 e.preventDefault();
 
-                var searchInput = $(this)
-                        .find(".search-query")
-                        .val(),
+                var searchInput = $(this).find(".search-query").val(),
                     searchString = searchInput.trim();
 
                 if (!Grailbird.isValidSearchStr(searchString)) {
@@ -163,18 +161,16 @@ var Grailbird = function(type, date, data) {
                 }
 
                 $(".navbar-search").trigger("dismissTooltip");
-                $(".nav-arrow-left, .nav-arrow-right")
-                    .tooltip("hide")
-                    .hide();
-                $(".container .tweets").fadeOut(0, function() {
+                $(".nav-arrow-left, .nav-arrow-right").tooltip("hide").hide();
+                $(".container .tweets").fadeOut(0, function () {
                     $(".months .with-tweets, .histogram").removeClass("active");
                     $(".container").addClass("searching in-progress");
                     $(".tweets-header-title")
                         .empty()
                         .text(
                             templates.searching_for.render({
-                                query: searchInput
-                            })
+                                query: searchInput,
+                            }),
                         );
                     $(this).empty();
                     $(this).fadeIn(100);
@@ -182,40 +178,40 @@ var Grailbird = function(type, date, data) {
                 });
             })
             .tooltip()
-            .bind("dismissTooltip", function(e) {
+            .bind("dismissTooltip", function (e) {
                 e.preventDefault();
                 $(this).tooltip("hide");
             })
-            .bind("invalidSearch", function(e) {
+            .bind("invalidSearch", function (e) {
                 e.preventDefault();
                 $(this)
                     .attr(
                         "data-original-title",
-                        "Your query must be at least two characters."
+                        "Your query must be at least two characters.",
                     )
                     .tooltip("show");
             });
 
-        $(".navbar-search .search-query").blur(function(e) {
+        $(".navbar-search .search-query").blur(function (e) {
             $(".navbar-search").trigger("dismissTooltip");
         });
 
         $(".sidebar-nav .search-mask, .tweets-header .nav-clear")
             .tooltip()
             .click(
-                jQuery.proxy(function(e) {
+                jQuery.proxy(function (e) {
                     e.preventDefault();
                     User.getState().resetSearch();
-                }, Grailbird)
+                }, Grailbird),
             );
 
         $(".icon-compose").tooltip();
-        $(".icon-compose a").click(function(e) {
+        $(".icon-compose a").click(function (e) {
             e.preventDefault();
             twt.popup($(this).attr("href"));
         });
 
-        $(document).keyup(function(e) {
+        $(document).keyup(function (e) {
             if ($(".container.searching").length === 0) {
                 // nav left if possible on keyup of left arrow
                 if (e.keyCode === 37) {
@@ -237,13 +233,11 @@ var Grailbird = function(type, date, data) {
             }
             // set focus and highlight search contents on keyup of /
             if (e.keyCode === 191) {
-                $(".navbar-search .search-query:not(:focus)")
-                    .focus()
-                    .select();
+                $(".navbar-search .search-query:not(:focus)").focus().select();
             }
         });
 
-        $(window).scroll(function() {
+        $(window).scroll(function () {
             var pos = doc.scrollTop();
             if (pos > 0) {
                 header.addClass("raised");
@@ -253,7 +247,7 @@ var Grailbird = function(type, date, data) {
         });
     };
 
-    exports.extend = function(obj) {
+    exports.extend = function (obj) {
         var args = Array.prototype.slice.call(arguments, 1),
             i = 0,
             l = args.length,
@@ -271,17 +265,17 @@ var Grailbird = function(type, date, data) {
         return obj;
     };
 
-    (function(exports) {
+    (function (exports) {
         exports.base = {
-            init: function() {
+            init: function () {
                 $(".navbar-search .search-query").attr(
                     "placeholder",
-                    "Search all Tweets"
+                    "Search all Tweets",
                 );
                 this.buildNavigation();
                 this.displayTweets(0);
             },
-            buildNavigation: function() {
+            buildNavigation: function () {
                 // Note: Every DOM element constructed in this function must be removed and reinitialized as this
                 // is called every time you click on a section nav element. If the DOM elements aren't flushed and
                 // recreated, any click handlers bound to them will be bound to them again
@@ -303,21 +297,24 @@ var Grailbird = function(type, date, data) {
                         "September",
                         "October",
                         "November",
-                        "December"
+                        "December",
                     ],
                     self = this,
                     $year_chart = $(
-                        '<div class="histogram"><h3></h3><ol class="months unstyled"></ol></div>'
+                        '<div class="histogram"><h3></h3><ol class="months unstyled"></ol></div>',
                     ),
                     $year_chart_clone,
                     month_bar = [],
                     year_curr;
 
                 $(".content-nav").empty();
-                var month_count_max = _.max(this.status_index, function(month) {
-                        return month["tweet_count"];
-                    }),
-                    renderYear = function() {
+                var month_count_max = _.max(
+                        this.status_index,
+                        function (month) {
+                            return month["tweet_count"];
+                        },
+                    ),
+                    renderYear = function () {
                         if ($year_chart_clone) {
                             month_bar = month_bar.reverse();
                             if (month_bar.length < 12) {
@@ -325,7 +322,7 @@ var Grailbird = function(type, date, data) {
                                     if (
                                         !month_bar[m] ||
                                         month_bar[m].match(
-                                            /class="value">(\d+)<\/span>/
+                                            /class="value">(\d+)<\/span>/,
                                         )[1] !=
                                             m + 1
                                     ) {
@@ -333,8 +330,8 @@ var Grailbird = function(type, date, data) {
                                             m,
                                             0,
                                             templates.empty_month.render({
-                                                this_month: m + 1
-                                            })
+                                                this_month: m + 1,
+                                            }),
                                         );
                                     }
                                 }
@@ -350,20 +347,20 @@ var Grailbird = function(type, date, data) {
                     temp_date.setUTCFullYear(
                         status_file.year,
                         status_file.month - 1,
-                        15
+                        15,
                     );
                     var title_str = date_formatter.format(temp_date, {
                         format: "additional",
-                        type: "yMMMM"
+                        type: "yMMMM",
                     });
                     count = number_formatter.format(status_file.tweet_count);
                     var count_str =
                         status_file.tweet_count > 1
                             ? templates.plural_tweet_count.render({
-                                  count: count
+                                  count: count,
                               })
                             : templates.singular_tweet_count.render({
-                                  count: count
+                                  count: count,
                               });
                     var month_index = {
                         this_year: status_file.year,
@@ -375,7 +372,7 @@ var Grailbird = function(type, date, data) {
                             100,
                         str_title: title_str,
                         str_count: count_str,
-                        data_idx: i
+                        data_idx: i,
                     };
 
                     status_file.title_str = title_str;
@@ -398,18 +395,18 @@ var Grailbird = function(type, date, data) {
 
                 $(".months .with-tweets")
                     .tooltip()
-                    .click(function() {
+                    .click(function () {
                         self.displayTweets(Number($(this).attr("data-idx")));
                     });
             },
 
-            displayTweets: function(tweet_index_id) {
+            displayTweets: function (tweet_index_id) {
                 Grailbird.current_index = tweet_index_id;
 
                 var timeline_options = {
                     border: false,
                     showMedia: true,
-                    popupWebIntents: true
+                    popupWebIntents: true,
                 };
                 var number_formatter = new TwitterCldr.DecimalFormatter();
 
@@ -420,25 +417,25 @@ var Grailbird = function(type, date, data) {
                     tweet_month = this.status_index[tweet_index_id],
                     tweet_array_name = tweet_month["var_name"],
                     month_count = number_formatter.format(
-                        tweet_month.tweet_count
+                        tweet_month.tweet_count,
                     ),
                     title = templates.header_str.render({
                         title_str: tweet_month["title_str"],
                         tweet_count:
                             tweet_month.tweet_count > 1
                                 ? templates.plural_tweet_count.render({
-                                      count: month_count
+                                      count: month_count,
                                   })
                                 : templates.singular_tweet_count.render({
-                                      count: month_count
-                                  })
+                                      count: month_count,
+                                  }),
                     }),
-                    showTweets = function() {
+                    showTweets = function () {
                         var header_title = $(".tweets-header-title");
                         header_title.fadeOut(100);
                         $(".container .contents .tweets").fadeOut(
                             100,
-                            function() {
+                            function () {
                                 header_title
                                     .empty()
                                     .html(title)
@@ -449,11 +446,11 @@ var Grailbird = function(type, date, data) {
 
                                 twt.timeline(
                                     Grailbird.data[tweet_array_name],
-                                    timeline_options
+                                    timeline_options,
                                 ).renderTo(".tweets");
                                 header_title.fadeIn(100);
                                 $(this).fadeIn(100);
-                            }
+                            },
                         );
                     };
 
@@ -483,9 +480,8 @@ var Grailbird = function(type, date, data) {
                     $(".tweets-header .nav-arrow-left")
                         .attr({
                             "data-idx": prev_month,
-                            "data-original-title": this.status_index[
-                                prev_month
-                            ]["title_str"]
+                            "data-original-title":
+                                this.status_index[prev_month]["title_str"],
                         })
                         .show();
                 }
@@ -494,9 +490,8 @@ var Grailbird = function(type, date, data) {
                     $(".tweets-header .nav-arrow-right")
                         .attr({
                             "data-idx": next_month,
-                            "data-original-title": this.status_index[
-                                next_month
-                            ]["title_str"]
+                            "data-original-title":
+                                this.status_index[next_month]["title_str"],
                         })
                         .show();
                 }
@@ -507,19 +502,19 @@ var Grailbird = function(type, date, data) {
                     showTweets();
                 }
             },
-            pluralize: function(value) {
+            pluralize: function (value) {
                 return Number(value) === 1
                     ? this.str_singular
                     : this.str_plural;
             },
-            search: function(searchString) {
+            search: function (searchString) {
                 var statusArr = this.status_index,
                     statusIndex = this.status_index.length,
                     statusIndexEntry,
                     result = [],
                     searchRegex = new RegExp(
                         escapeRegexCharacters(searchString),
-                        "im"
+                        "im",
                     ),
                     escapedStr = escapeRegexCharacters(escapeURL(searchString)),
                     escapedSearchRegex = new RegExp(escapedStr, "im"),
@@ -531,20 +526,20 @@ var Grailbird = function(type, date, data) {
                     if (!Grailbird.data[statusIndexEntry.var_name]) {
                         Grailbird.loadScript(
                             statusIndexEntry,
-                            (function(sie) {
-                                return function() {
-                                    searchFunc(sie["var_name"]);
-                                };
-                            })(statusIndexEntry)
-                        );
-                    } else {
-                        window.setTimeout(
-                            (function(sie) {
-                                return function() {
+                            (function (sie) {
+                                return function () {
                                     searchFunc(sie["var_name"]);
                                 };
                             })(statusIndexEntry),
-                            1
+                        );
+                    } else {
+                        window.setTimeout(
+                            (function (sie) {
+                                return function () {
+                                    searchFunc(sie["var_name"]);
+                                };
+                            })(statusIndexEntry),
+                            1,
                         );
                     }
                 }
@@ -556,7 +551,7 @@ var Grailbird = function(type, date, data) {
                 function escapeRegexCharacters(text) {
                     return text.replace(
                         /[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g,
-                        "\\$&"
+                        "\\$&",
                     );
                 }
 
@@ -569,7 +564,7 @@ var Grailbird = function(type, date, data) {
                 function searchFunc(statusArrName) {
                     var filteredResults = _.filter(
                         Grailbird.data[statusArrName],
-                        function(tweet) {
+                        function (tweet) {
                             var searchMatch = false;
                             if (!!unescapeHtml(tweet.text).match(searchRegex)) {
                                 searchMatch = true;
@@ -577,10 +572,10 @@ var Grailbird = function(type, date, data) {
                                 !!(
                                     tweet.user &&
                                     (tweet.user.screen_name.match(
-                                        searchRegex
+                                        searchRegex,
                                     ) ||
                                         ("@" + tweet.user.screen_name).match(
-                                            searchRegex
+                                            searchRegex,
                                         ) ||
                                         tweet.user.name.match(searchRegex))
                                 )
@@ -590,7 +585,7 @@ var Grailbird = function(type, date, data) {
                                 !!(
                                     tweet.retweeted_status &&
                                     unescapeHtml(
-                                        tweet.retweeted_status.text
+                                        tweet.retweeted_status.text,
                                     ).match(searchRegex)
                                 )
                             ) {
@@ -598,70 +593,72 @@ var Grailbird = function(type, date, data) {
                             } else if (
                                 !!(
                                     tweet.retweeted_status &&
-                                    (tweet.retweeted_status.user &&
-                                        tweet.retweeted_status.user.name.match(
-                                            searchRegex
-                                        ))
+                                    tweet.retweeted_status.user &&
+                                    tweet.retweeted_status.user.name.match(
+                                        searchRegex,
+                                    )
                                 )
                             ) {
                                 searchMatch = true;
                             } else if (
                                 !!(
                                     tweet.retweeted_status &&
-                                    (tweet.retweeted_status.user &&
-                                        tweet.retweeted_status.user.screen_name.match(
-                                            searchRegex
-                                        ))
+                                    tweet.retweeted_status.user &&
+                                    tweet.retweeted_status.user.screen_name.match(
+                                        searchRegex,
+                                    )
                                 )
                             ) {
                                 searchMatch = true;
                             } else if (
                                 !!(
                                     tweet.retweeted_status &&
-                                    (tweet.retweeted_status_user &&
-                                        (
-                                            "@" +
-                                            tweet.retweeted_status.user
-                                                .screen_name
-                                        ).match(searchRegex))
+                                    tweet.retweeted_status_user &&
+                                    (
+                                        "@" +
+                                        tweet.retweeted_status.user.screen_name
+                                    ).match(searchRegex)
                                 )
                             ) {
                                 searchMatch = true;
                             } else if (!!tweet.entities) {
-                                _.each(tweet.entities.urls || [], function(u) {
+                                _.each(tweet.entities.urls || [], function (u) {
                                     if (
                                         (u.display_url &&
                                             u.display_url.match(
-                                                escapedSearchRegex
+                                                escapedSearchRegex,
                                             )) ||
                                         (u.expanded_url &&
                                             u.expanded_url.match(
-                                                escapedSearchRegex
+                                                escapedSearchRegex,
                                             ))
                                     ) {
                                         searchMatch = true;
                                         return;
                                     }
                                 });
-                                _.each(tweet.entities.media || [], function(u) {
-                                    if (
-                                        (u.display_url &&
-                                            u.display_url.match(
-                                                escapedSearchRegex
-                                            )) ||
-                                        (u.expanded_url &&
-                                            u.expanded_url.match(
-                                                escapedSearchRegex
-                                            ))
-                                    ) {
-                                        searchMatch = true;
-                                    }
-                                });
+                                _.each(
+                                    tweet.entities.media || [],
+                                    function (u) {
+                                        if (
+                                            (u.display_url &&
+                                                u.display_url.match(
+                                                    escapedSearchRegex,
+                                                )) ||
+                                            (u.expanded_url &&
+                                                u.expanded_url.match(
+                                                    escapedSearchRegex,
+                                                ))
+                                        ) {
+                                            searchMatch = true;
+                                        }
+                                    },
+                                );
                             }
                             return searchMatch;
-                        }
+                        },
                     );
-                    _.each(filteredResults, function(t) {
+                    _.each(filteredResults, function (t) {
                         result.push(t);
                     });
                     showResults();
@@ -670,20 +667,20 @@ var Grailbird = function(type, date, data) {
                 function showResults() {
                     readyCount++;
                     if (readyCount == statusArr.length) {
-                        var sortedResult = _.sortBy(result, function(x) {
+                        var sortedResult = _.sortBy(result, function (x) {
                             return Date.parse(x.created_at) * -1;
                         });
                         var header_title =
                             result.length === 1
                                 ? templates.query_results_one.render({
-                                      query: searchString
+                                      query: searchString,
                                   })
                                 : templates.query_results_many.render({
                                       query: searchString,
-                                      count: result.length
+                                      count: result.length,
                                   });
 
-                        $(".container .tweets").fadeOut(100, function() {
+                        $(".container .tweets").fadeOut(100, function () {
                             $(".container").removeClass("in-progress");
                             $(".tweets-header-title")
                                 .empty()
@@ -695,134 +692,129 @@ var Grailbird = function(type, date, data) {
                             twt.timeline(sortedResult, {
                                 border: false,
                                 showMedia: true,
-                                popupWebIntents: false
+                                popupWebIntents: false,
                             }).renderTo(".tweets");
 
                             _.each(
                                 $(".e-content .p-name, .h-card .screen-name"),
-                                function(tweet) {
+                                function (tweet) {
                                     _.each(
-                                        $(tweet)
-                                            .find("*")
-                                            .andSelf(),
-                                        function(e) {
+                                        $(tweet).find("*").andSelf(),
+                                        function (e) {
                                             $(e).highlight(
                                                 escapeRegexCharacters(
-                                                    searchString
+                                                    searchString,
                                                 ),
-                                                "found"
+                                                "found",
                                             );
-                                        }
+                                        },
                                     );
-                                }
+                                },
                             );
                             $(this).fadeIn(100);
                         });
                     }
                 }
             },
-            resetSearch: function() {
+            resetSearch: function () {
                 $(".container").removeClass("searching");
                 Tweets.displayTweets(Grailbird.current_index);
-            }
+            },
         };
     })(mixins);
 
-    (function(exports) {
-        var Tweets = function() {
+    (function (exports) {
+        var Tweets = function () {
             this.str_singular = "Tweet";
             this.str_plural = "Tweets";
             this.status_index = tweet_index;
         };
 
         Tweets.prototype = Grailbird.extend({}, mixins.base);
-        exports.tweets = function() {
+        exports.tweets = function () {
             return new Tweets();
         };
     })(Grailbird);
 
-    (function(exports) {
-        var User = function() {
+    (function (exports) {
+        var User = function () {
             var active_display;
         };
 
-        User.prototype.init = function() {
+        User.prototype.init = function () {
             user_details.created_at_relative = twt.formattedDate(
-                user_details.created_at
+                user_details.created_at,
             );
             payload_details.created_at_relative = twt.formattedDate(
-                payload_details.created_at
+                payload_details.created_at,
             );
 
             user_details.id = Grailbird.insertCommas(user_details.id);
 
             payload_details.tweets = Grailbird.insertCommas(
-                payload_details.tweets
+                payload_details.tweets,
             );
 
             $("#primary-nav").append(
-                templates.user_header.render(user_details)
+                templates.user_header.render(user_details),
             );
             $("#util-nav .dropdown").append(
-                templates.user_nav.render(user_details)
+                templates.user_nav.render(user_details),
             );
 
             $(".modal-header").append(
-                templates.modal_header.render(payload_details)
+                templates.modal_header.render(payload_details),
             );
             $(".modal-body .user-details").append(
-                templates.modal_user_details.render(user_details)
+                templates.modal_user_details.render(user_details),
             );
             $(".modal-footer .stats")
                 .append(templates.modal_payload_details.render(payload_details))
                 .append(templates.modal_account_details.render(user_details));
         };
 
-        User.prototype.setState = function(obj) {
+        User.prototype.setState = function (obj) {
             this.active_display = obj;
         };
-        User.prototype.getState = function() {
+        User.prototype.getState = function () {
             return this.active_display;
         };
-        User.prototype.search = function(searchString) {
+        User.prototype.search = function (searchString) {
             this.active_display.search(searchString);
         };
-        exports.user = function() {
+        exports.user = function () {
             return new User();
         };
 
-        exports.localizeStrings = function() {
+        exports.localizeStrings = function () {
             $("html").attr("lang", payload_details["lang"]);
             document.title = "Your Twitter archive";
             $("#footer-text").append(
-                "This is an offline archive of your Tweets from Twitter. Use the months above to navigate the archive."
+                "This is an offline archive of your Tweets from Twitter. Use the months above to navigate the archive.",
             );
             var compose_new_tweet = "Compose new Tweet";
             $("#compose-tweet").append(compose_new_tweet);
             $("#compose-tweet-a").attr("title", compose_new_tweet);
             $("#compose-tweet-li").attr(
                 "data-original-title",
-                compose_new_tweet
+                compose_new_tweet,
             );
         };
     })(Grailbird);
 
-    exports.createNavTab = function(title, sectionObj) {
+    exports.createNavTab = function (title, sectionObj) {
         var selector = "nav-" + title.toLowerCase();
 
         $("#primary-nav").append(
             templates.nav_tab.render({
                 sectionClass: selector,
-                sectionName: title
-            })
+                sectionName: title,
+            }),
         );
 
         var sectionTab = $("." + selector);
-        sectionTab.click(function(e) {
-            $(this)
-                .addClass("active")
-                .siblings()
-                .removeClass("active");
+        sectionTab.click(function (e) {
+            $(this).addClass("active").siblings().removeClass("active");
             $(".row .contents, .sidebar").removeClass("container-messages");
             User.setState(sectionObj);
             sectionObj.init();
@@ -830,20 +822,20 @@ var Grailbird = function(type, date, data) {
         return sectionTab;
     };
 
-    exports.isValidSearchStr = function(searchString) {
+    exports.isValidSearchStr = function (searchString) {
         return searchString.length > 1;
     };
 
-    exports.loadScript = function(tweet_month, callback) {
+    exports.loadScript = function (tweet_month, callback) {
         var newScript = document.createElement("script"),
-            loadCallback = function() {
+            loadCallback = function () {
                 tweet_month.loaded = true;
                 callback && callback();
             };
 
         newScript.src = tweet_month["file_name"];
         newScript.charset = "utf-8";
-        newScript.onreadystatechange = function() {
+        newScript.onreadystatechange = function () {
             if (this.readyState == "complete" || this.readyState == "loaded") {
                 loadCallback();
             }
@@ -862,46 +854,45 @@ var Grailbird = function(type, date, data) {
     };
 })(Grailbird);
 
-jQuery.fn.highlight = function(str, class_name) {
+jQuery.fn.highlight = function (str, class_name) {
     // change the mustache tag delimiters so that it will leave the runtime variables alone
     //
     var regex = new RegExp(str, "gi"),
         search_highlight = Hogan.compile(
-            '<span class="{{class_name}}">{{{match}}}</span>'
+            '<span class="{{class_name}}">{{{match}}}</span>',
         );
     //
 
-    return this.each(function() {
+    return this.each(function () {
         $(this)
             .contents()
-            .filter(function() {
+            .filter(function () {
                 return (
                     (this.nodeType == 3 && regex.test(this.nodeValue)) ||
-                    $(this)
-                        .text()
-                        .toLowerCase() === str.toLowerCase()
+                    $(this).text().toLowerCase() === str.toLowerCase()
                 );
             })
-            .replaceWith(function() {
+            .replaceWith(function () {
                 if (this.nodeValue === null) {
                     return search_highlight.render({
                         class_name: class_name,
-                        match: $(this).html()
+                        match: $(this).html(),
                     });
                 } else {
-                    return (this.nodeValue || "").replace(regex, function(
-                        match
-                    ) {
-                        return search_highlight.render({
-                            class_name: class_name,
-                            match: match
-                        });
-                    });
+                    return (this.nodeValue || "").replace(
+                        regex,
+                        function (match) {
+                            return search_highlight.render({
+                                class_name: class_name,
+                                match: match,
+                            });
+                        },
+                    );
                 }
             });
     });
 };
 
-$(document).ready(function() {
+$(document).ready(function () {
     Grailbird.init();
 });

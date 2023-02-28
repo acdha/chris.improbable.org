@@ -64,16 +64,16 @@
  * from the browser.
  * @name $.supportsFullScreen
  */
-(function($) {
+(function ($) {
     var fullScreenApi = {
             supportsFullScreen: false,
-            isFullScreen: function() {
+            isFullScreen: function () {
                 return false;
             },
-            requestFullScreen: function() {},
-            cancelFullScreen: function() {},
+            requestFullScreen: function () {},
+            cancelFullScreen: function () {},
             fullScreenEventName: "",
-            prefix: ""
+            prefix: "",
         },
         browserPrefixes = "webkit moz o ms khtml".split(" ");
 
@@ -101,7 +101,7 @@
         fullScreenApi.fullScreenEventName =
             fullScreenApi.prefix + "fullscreenchange";
 
-        fullScreenApi.isFullScreen = function() {
+        fullScreenApi.isFullScreen = function () {
             switch (this.prefix) {
                 case "":
                     return document.fullScreen;
@@ -111,12 +111,12 @@
                     return document[this.prefix + "FullScreen"];
             }
         };
-        fullScreenApi.requestFullScreen = function(element) {
+        fullScreenApi.requestFullScreen = function (element) {
             return this.prefix === ""
                 ? element.requestFullScreen()
                 : element[this.prefix + "RequestFullScreen"]();
         };
-        fullScreenApi.cancelFullScreen = function() {
+        fullScreenApi.cancelFullScreen = function () {
             return this.prefix === ""
                 ? document.cancelFullScreen()
                 : document[this.prefix + "CancelFullScreen"]();
@@ -124,7 +124,7 @@
     } else if (typeof window.ActiveXObject !== "undefined") {
         // Older IE.  Support based on:
         // http://stackoverflow.com/questions/1125084/how-to-make-in-javascript-full-screen-windows-stretching-all-over-the-screen/7525760
-        fullScreenApi.requestFullScreen = function() {
+        fullScreenApi.requestFullScreen = function () {
             /* global ActiveXObject:true */
             var wscript = new ActiveXObject("WScript.Shell");
             if (wscript !== null) {

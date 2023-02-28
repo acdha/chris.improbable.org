@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * @class
      * @extends OpenSeadragon.TileSource
@@ -48,7 +48,7 @@
      * @property {String} fileFormat
      * @property {OpenSeadragon.DisplayRect[]} displayRects
      */
-    $.DziTileSource = function(
+    $.DziTileSource = function (
         width,
         height,
         tileSize,
@@ -57,7 +57,7 @@
         fileFormat,
         displayRects,
         minLevel,
-        maxLevel
+        maxLevel,
     ) {
         var i, rect, level, options;
 
@@ -73,7 +73,7 @@
                 fileFormat: arguments[5],
                 displayRects: arguments[6],
                 minLevel: arguments[7],
-                maxLevel: arguments[8]
+                maxLevel: arguments[8],
             };
         }
 
@@ -106,7 +106,7 @@
          * @param {Object|Array} data
          * @param {String} optional - url
          */
-        supports: function(data, url) {
+        supports: function (data, url) {
             var ns;
             if (data.Image) {
                 ns = data.Image.xmlns;
@@ -132,7 +132,7 @@
          * @return {Object} options - A dictionary of keyword arguments sufficient
          *      to configure this tile sources constructor.
          */
-        configure: function(data, url) {
+        configure: function (data, url) {
             var options;
 
             if (!$.isPlainObject(data)) {
@@ -144,7 +144,7 @@
             if (url && !options.tilesUrl) {
                 options.tilesUrl = url.replace(
                     /([^\/]+)\.(dzi|xml|js)$/,
-                    "$1_files/"
+                    "$1_files/",
                 );
             }
 
@@ -158,7 +158,7 @@
          * @param {Number} x
          * @param {Number} y
          */
-        getTileUrl: function(level, x, y) {
+        getTileUrl: function (level, x, y) {
             return [
                 this.tilesUrl,
                 level,
@@ -167,7 +167,7 @@
                 "_",
                 y,
                 ".",
-                this.fileFormat
+                this.fileFormat,
             ].join("");
         },
 
@@ -178,7 +178,7 @@
          * @param {Number} x
          * @param {Number} y
          */
-        tileExists: function(level, x, y) {
+        tileExists: function (level, x, y) {
             var rects = this._levelRects[level],
                 rect,
                 scale,
@@ -216,7 +216,7 @@
             }
 
             return false;
-        }
+        },
     });
 
     /**
@@ -253,19 +253,19 @@
                         Size: {
                             Height: parseInt(
                                 sizeNode.getAttribute("Height"),
-                                10
+                                10,
                             ),
-                            Width: parseInt(sizeNode.getAttribute("Width"), 10)
-                        }
-                    }
+                            Width: parseInt(sizeNode.getAttribute("Width"), 10),
+                        },
+                    },
                 };
 
                 if (!$.imageFormatSupported(configuration.Image.Format)) {
                     throw new Error(
                         $.getString(
                             "Errors.ImageFormat",
-                            configuration.Image.Format.toUpperCase()
-                        )
+                            configuration.Image.Format.toUpperCase(),
+                        ),
                     );
                 }
 
@@ -281,17 +281,17 @@
                             Width: parseInt(rectNode.getAttribute("Width"), 10),
                             Height: parseInt(
                                 rectNode.getAttribute("Height"),
-                                10
+                                10,
                             ),
                             MinLevel: parseInt(
                                 dispRectNode.getAttribute("MinLevel"),
-                                10
+                                10,
                             ),
                             MaxLevel: parseInt(
                                 dispRectNode.getAttribute("MaxLevel"),
-                                10
-                            )
-                        }
+                                10,
+                            ),
+                        },
                     });
                 }
 
@@ -356,8 +356,8 @@
                     parseInt(rectData.Width, 10),
                     parseInt(rectData.Height, 10),
                     parseInt(rectData.MinLevel, 10),
-                    parseInt(rectData.MaxLevel, 10)
-                )
+                    parseInt(rectData.MaxLevel, 10),
+                ),
             );
         }
 
@@ -372,9 +372,9 @@
                 maxLevel: null /* maxLevel */,
                 tilesUrl: tilesUrl /* tilesUrl */,
                 fileFormat: fileFormat /* fileFormat */,
-                displayRects: displayRects /* displayRects */
+                displayRects: displayRects /* displayRects */,
             },
-            configuration
+            configuration,
         );
     }
 })(OpenSeadragon);

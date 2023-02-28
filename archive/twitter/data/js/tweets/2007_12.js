@@ -5,12 +5,11 @@ Grailbird.data.tweets_2007_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "512688902",
-        text:
-            "Banks are still a phisher's best friend\u2026  &lt;http://tinyurl.com/2e8zjg&gt;",
+        text: "Banks are still a phisher's best friend\u2026  &lt;http://tinyurl.com/2e8zjg&gt;",
         id: 512688902,
         created_at: "Wed Dec 19 00:52:11 +0000 2007",
         user: {
@@ -21,8 +20,8 @@ Grailbird.data.tweets_2007_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -30,12 +29,11 @@ Grailbird.data.tweets_2007_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "482170692",
-        text:
-            "is heading back down to Vancouver for the last good sushi of the year\u2026",
+        text: "is heading back down to Vancouver for the last good sushi of the year\u2026",
         id: 482170692,
         created_at: "Sat Dec 08 23:46:17 +0000 2007",
         user: {
@@ -46,8 +44,8 @@ Grailbird.data.tweets_2007_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -55,7 +53,7 @@ Grailbird.data.tweets_2007_12 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "461031352",
@@ -70,7 +68,7 @@ Grailbird.data.tweets_2007_12 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];

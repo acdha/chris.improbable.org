@@ -5,7 +5,7 @@ Grailbird.data.tweets_2007_04 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "35069092",
@@ -20,22 +20,20 @@ Grailbird.data.tweets_2007_04 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "34666912",
-        text:
-            "is shocked at how enterprisey VirtualInfrastructure is. No wonder the virtualization job market is booming...",
+        text: "is shocked at how enterprisey VirtualInfrastructure is. No wonder the virtualization job market is booming...",
         id: 34666912,
         created_at: "Sat Apr 21 00:47:37 +0000 2007",
         user: {
@@ -46,8 +44,8 @@ Grailbird.data.tweets_2007_04 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -55,7 +53,7 @@ Grailbird.data.tweets_2007_04 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "26294571",
@@ -70,8 +68,8 @@ Grailbird.data.tweets_2007_04 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -79,7 +77,7 @@ Grailbird.data.tweets_2007_04 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "19397611",
@@ -94,7 +92,7 @@ Grailbird.data.tweets_2007_04 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];

@@ -39,7 +39,7 @@
  * see <https://github.com/openseadragon/openseadragon/issues/58>.
  */
 
-(function($) {
+(function ($) {
     /**
      * A tilesource implementation for Tiled Map Services (TMS).
      * TMS tile scheme ( [ as supported by OpenLayers ] is described here
@@ -54,7 +54,13 @@
      * @param {Number} tileOverlap
      * @param {String} tilesUrl
      */
-    $.TmsTileSource = function(width, height, tileSize, tileOverlap, tilesUrl) {
+    $.TmsTileSource = function (
+        width,
+        height,
+        tileSize,
+        tileOverlap,
+        tilesUrl,
+    ) {
         var options;
 
         if ($.isPlainObject(width)) {
@@ -65,7 +71,7 @@
                 height: arguments[1],
                 tileSize: arguments[2],
                 tileOverlap: arguments[3],
-                tilesUrl: arguments[4]
+                tilesUrl: arguments[4],
             };
         }
         // TMS has integer multiples of 256 for width/height and adds buffer
@@ -97,7 +103,7 @@
          * @param {Object|Array} data
          * @param {String} optional - url
          */
-        supports: function(data, url) {
+        supports: function (data, url) {
             return data.type && "tiledmapservice" == data.type;
         },
 
@@ -110,7 +116,7 @@
          * @return {Object} options - A dictionary of keyword arguments sufficient
          *      to configure this tile sources constructor.
          */
-        configure: function(data, url) {
+        configure: function (data, url) {
             return data;
         },
 
@@ -121,13 +127,13 @@
          * @param {Number} x
          * @param {Number} y
          */
-        getTileUrl: function(level, x, y) {
+        getTileUrl: function (level, x, y) {
             // Convert from Deep Zoom definition to TMS zoom definition
             var yTiles = this.getNumTiles(level).y - 1;
 
             return (
                 this.tilesUrl + level + "/" + x + "/" + (yTiles - y) + ".png"
             );
-        }
+        },
     });
 })(OpenSeadragon);

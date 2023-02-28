@@ -265,11 +265,11 @@
  */
 window.OpenSeadragon =
     window.OpenSeadragon ||
-    function(options) {
+    function (options) {
         return new OpenSeadragon.Viewer(options);
     };
 
-(function($) {
+(function ($) {
     /**
      * Taken from jquery 1.6.1
      * [[Class]] -> type pairs
@@ -283,7 +283,7 @@ window.OpenSeadragon =
             "[object Array]": "array",
             "[object Date]": "date",
             "[object RegExp]": "regexp",
-            "[object Object]": "object"
+            "[object Object]": "object",
         },
         // Save a reference to some core methods
         toString = Object.prototype.toString,
@@ -295,7 +295,7 @@ window.OpenSeadragon =
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isFunction = function(obj) {
+    $.isFunction = function (obj) {
         return $.type(obj) === "function";
     };
 
@@ -307,7 +307,7 @@ window.OpenSeadragon =
      */
     $.isArray =
         Array.isArray ||
-        function(obj) {
+        function (obj) {
             return $.type(obj) === "array";
         };
 
@@ -318,7 +318,7 @@ window.OpenSeadragon =
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isWindow = function(obj) {
+    $.isWindow = function (obj) {
         return obj && typeof obj === "object" && "setInterval" in obj;
     };
 
@@ -328,7 +328,7 @@ window.OpenSeadragon =
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.type = function(obj) {
+    $.type = function (obj) {
         return obj === null || obj === undefined
             ? String(obj)
             : class2type[toString.call(obj)] || "object";
@@ -340,7 +340,7 @@ window.OpenSeadragon =
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isPlainObject = function(obj) {
+    $.isPlainObject = function (obj) {
         // Must be an Object.
         // Because of IE, we also have to check the presence of the constructor property.
         // Make sure that DOM nodes and window objects don't pass through, as well
@@ -378,7 +378,7 @@ window.OpenSeadragon =
      * @function
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.isEmptyObject = function(obj) {
+    $.isEmptyObject = function (obj) {
         for (var name in obj) {
             return false;
         }
@@ -398,12 +398,12 @@ window.OpenSeadragon =
  *  Some static methods have also been refactored from the original OpenSeadragon
  *  project.
  */
-(function($) {
+(function ($) {
     /**
      * Taken from jQuery 1.6.1
      * @see <a href='http://www.jquery.com/'>jQuery</a>
      */
-    $.extend = function() {
+    $.extend = function () {
         var options,
             name,
             src,
@@ -570,44 +570,44 @@ window.OpenSeadragon =
                     REST: "zoomin_rest.png",
                     GROUP: "zoomin_grouphover.png",
                     HOVER: "zoomin_hover.png",
-                    DOWN: "zoomin_pressed.png"
+                    DOWN: "zoomin_pressed.png",
                 },
                 zoomOut: {
                     REST: "zoomout_rest.png",
                     GROUP: "zoomout_grouphover.png",
                     HOVER: "zoomout_hover.png",
-                    DOWN: "zoomout_pressed.png"
+                    DOWN: "zoomout_pressed.png",
                 },
                 home: {
                     REST: "home_rest.png",
                     GROUP: "home_grouphover.png",
                     HOVER: "home_hover.png",
-                    DOWN: "home_pressed.png"
+                    DOWN: "home_pressed.png",
                 },
                 fullpage: {
                     REST: "fullpage_rest.png",
                     GROUP: "fullpage_grouphover.png",
                     HOVER: "fullpage_hover.png",
-                    DOWN: "fullpage_pressed.png"
+                    DOWN: "fullpage_pressed.png",
                 },
                 previous: {
                     REST: "previous_rest.png",
                     GROUP: "previous_grouphover.png",
                     HOVER: "previous_hover.png",
-                    DOWN: "previous_pressed.png"
+                    DOWN: "previous_pressed.png",
                 },
                 next: {
                     REST: "next_rest.png",
                     GROUP: "next_grouphover.png",
                     HOVER: "next_hover.png",
-                    DOWN: "next_pressed.png"
-                }
+                    DOWN: "next_pressed.png",
+                },
             },
             navPrevNextWrap: false,
 
             //DEVELOPER SETTINGS
             debugMode: false,
-            debugGridColor: "#437AB2"
+            debugGridColor: "#437AB2",
         },
 
         /**
@@ -625,8 +625,8 @@ window.OpenSeadragon =
          * @param {Object} object
          * @param {Function} method
          */
-        delegate: function(object, method) {
-            return function() {
+        delegate: function (object, method) {
+            return function () {
                 var args = arguments;
                 if (args === undefined) {
                     args = [];
@@ -647,7 +647,7 @@ window.OpenSeadragon =
             FIREFOX: 2,
             SAFARI: 3,
             CHROME: 4,
-            OPERA: 5
+            OPERA: 5,
         },
 
         /**
@@ -657,7 +657,7 @@ window.OpenSeadragon =
          * @param {String|Element} element Accepts an id or element.
          * @returns {Element} The element with the given id, null, or the element itself.
          */
-        getElement: function(element) {
+        getElement: function (element) {
             if (typeof element == "string") {
                 element = document.getElementById(element);
             }
@@ -671,7 +671,7 @@ window.OpenSeadragon =
          * @param {Element|String} element - the elemenet we want the position for.
          * @returns {Point} - the position of the upper left corner of the element.
          */
-        getElementPosition: function(element) {
+        getElementPosition: function (element) {
             var result = new $.Point(),
                 isFixed,
                 offsetParent;
@@ -703,7 +703,7 @@ window.OpenSeadragon =
          * @param {Element|String} element
          * @returns {Point}
          */
-        getElementSize: function(element) {
+        getElementSize: function (element) {
             element = $.getElement(element);
 
             return new $.Point(element.clientWidth, element.clientHeight);
@@ -717,11 +717,11 @@ window.OpenSeadragon =
          * @returns {CSSStyle}
          */
         getElementStyle: document.documentElement.currentStyle
-            ? function(element) {
+            ? function (element) {
                   element = $.getElement(element);
                   return element.currentStyle;
               }
-            : function(element) {
+            : function (element) {
                   element = $.getElement(element);
                   return window.getComputedStyle(element, "");
               },
@@ -735,13 +735,13 @@ window.OpenSeadragon =
          * @param {Event} [event]
          * @returns {Event}
          */
-        getEvent: function(event) {
+        getEvent: function (event) {
             if (event) {
-                $.getEvent = function(event) {
+                $.getEvent = function (event) {
                     return event;
                 };
             } else {
-                $.getEvent = function() {
+                $.getEvent = function () {
                     return window.event;
                 };
             }
@@ -755,9 +755,9 @@ window.OpenSeadragon =
          * @param {Event} [event]
          * @returns {Point}
          */
-        getMousePosition: function(event) {
+        getMousePosition: function (event) {
             if (typeof event.pageX == "number") {
-                $.getMousePosition = function(event) {
+                $.getMousePosition = function (event) {
                     var result = new $.Point();
 
                     event = $.getEvent(event);
@@ -767,7 +767,7 @@ window.OpenSeadragon =
                     return result;
                 };
             } else if (typeof event.clientX == "number") {
-                $.getMousePosition = function(event) {
+                $.getMousePosition = function (event) {
                     var result = new $.Point();
 
                     event = $.getEvent(event);
@@ -784,7 +784,7 @@ window.OpenSeadragon =
                 };
             } else {
                 throw new Error(
-                    "Unknown event mouse position, no known technique."
+                    "Unknown event mouse position, no known technique.",
                 );
             }
 
@@ -797,30 +797,30 @@ window.OpenSeadragon =
          * @name OpenSeadragon.getPageScroll
          * @returns {Point}
          */
-        getPageScroll: function() {
+        getPageScroll: function () {
             var docElement = document.documentElement || {},
                 body = document.body || {};
 
             if (typeof window.pageXOffset == "number") {
-                $.getPageScroll = function() {
+                $.getPageScroll = function () {
                     return new $.Point(window.pageXOffset, window.pageYOffset);
                 };
             } else if (body.scrollLeft || body.scrollTop) {
-                $.getPageScroll = function() {
+                $.getPageScroll = function () {
                     return new $.Point(
                         document.body.scrollLeft,
-                        document.body.scrollTop
+                        document.body.scrollTop,
                     );
                 };
             } else if (docElement.scrollLeft || docElement.scrollTop) {
-                $.getPageScroll = function() {
+                $.getPageScroll = function () {
                     return new $.Point(
                         document.documentElement.scrollLeft,
-                        document.documentElement.scrollTop
+                        document.documentElement.scrollTop,
                     );
                 };
             } else {
-                $.getPageScroll = function() {
+                $.getPageScroll = function () {
                     return new $.Point(0, 0);
                 };
             }
@@ -834,26 +834,26 @@ window.OpenSeadragon =
          * @name OpenSeadragon.getWindowSize
          * @returns {Point}
          */
-        getWindowSize: function() {
+        getWindowSize: function () {
             var docElement = document.documentElement || {},
                 body = document.body || {};
 
             if (typeof window.innerWidth == "number") {
-                $.getWindowSize = function() {
+                $.getWindowSize = function () {
                     return new $.Point(window.innerWidth, window.innerHeight);
                 };
             } else if (docElement.clientWidth || docElement.clientHeight) {
-                $.getWindowSize = function() {
+                $.getWindowSize = function () {
                     return new $.Point(
                         document.documentElement.clientWidth,
-                        document.documentElement.clientHeight
+                        document.documentElement.clientHeight,
                     );
                 };
             } else if (body.clientWidth || body.clientHeight) {
-                $.getWindowSize = function() {
+                $.getWindowSize = function () {
                     return new $.Point(
                         document.body.clientWidth,
-                        document.body.clientHeight
+                        document.body.clientHeight,
                     );
                 };
             } else {
@@ -871,7 +871,7 @@ window.OpenSeadragon =
          * @param {Element|String} element
          * @returns {Element} outermost wrapper element
          */
-        makeCenteredNode: function(element) {
+        makeCenteredNode: function (element) {
             // Convert a possible ID to an actual HTMLElement
             element = $.getElement(element);
 
@@ -883,24 +883,24 @@ window.OpenSeadragon =
             var wrappers = [
                 $.makeNeutralElement("div"),
                 $.makeNeutralElement("div"),
-                $.makeNeutralElement("div")
+                $.makeNeutralElement("div"),
             ];
 
             // It feels like we should be able to pass style dicts to makeNeutralElement:
             $.extend(wrappers[0].style, {
                 display: "table",
                 height: "100%",
-                width: "100%"
+                width: "100%",
             });
 
             $.extend(wrappers[1].style, {
-                display: "table-row"
+                display: "table-row",
             });
 
             $.extend(wrappers[2].style, {
                 display: "table-cell",
                 verticalAlign: "middle",
-                textAlign: "center"
+                textAlign: "center",
             });
 
             wrappers[0].appendChild(wrappers[1]);
@@ -918,7 +918,7 @@ window.OpenSeadragon =
          * @param {String} tagName
          * @returns {Element}
          */
-        makeNeutralElement: function(tagName) {
+        makeNeutralElement: function (tagName) {
             var element = document.createElement(tagName),
                 style = element.style;
 
@@ -936,11 +936,11 @@ window.OpenSeadragon =
          * @name $.now
          * @function
          */
-        now: function() {
+        now: function () {
             if (Date.now) {
                 $.now = Date.now;
             } else {
-                $.now = function() {
+                $.now = function () {
                     return new Date().getTime();
                 };
             }
@@ -957,8 +957,8 @@ window.OpenSeadragon =
          * @param {String} src
          * @returns {Element}
          */
-        makeTransparentImage: function(src) {
-            $.makeTransparentImage = function(src) {
+        makeTransparentImage: function (src) {
+            $.makeTransparentImage = function (src) {
                 var img = $.makeNeutralElement("img");
 
                 img.src = src;
@@ -967,14 +967,14 @@ window.OpenSeadragon =
             };
 
             if ($.Browser.vendor == $.BROWSERS.IE && $.Browser.version < 7) {
-                $.makeTransparentImage = function(src) {
+                $.makeTransparentImage = function (src) {
                     var img = $.makeNeutralElement("img"),
                         element = null;
 
                     element = $.makeNeutralElement("span");
                     element.style.display = "inline-block";
 
-                    img.onload = function() {
+                    img.onload = function () {
                         element.style.width =
                             element.style.width || img.width + "px";
                         element.style.height =
@@ -1005,7 +1005,7 @@ window.OpenSeadragon =
          * @param {Number} opacity
          * @param {Boolean} [usesAlpha]
          */
-        setElementOpacity: function(element, opacity, usesAlpha) {
+        setElementOpacity: function (element, opacity, usesAlpha) {
             var ieOpacity, ieFilter;
 
             element = $.getElement(element);
@@ -1034,14 +1034,14 @@ window.OpenSeadragon =
          * @param {Element|String} element
          * @param {String} className
          */
-        addClass: function(element, className) {
+        addClass: function (element, className) {
             element = $.getElement(element);
 
             if (!element.className) {
                 element.className = className;
             } else if (
                 (" " + element.className + " ").indexOf(
-                    " " + className + " "
+                    " " + className + " ",
                 ) === -1
             ) {
                 element.className += " " + className;
@@ -1055,7 +1055,7 @@ window.OpenSeadragon =
          * @param {Element|String} element
          * @param {String} className
          */
-        removeClass: function(element, className) {
+        removeClass: function (element, className) {
             var oldClasses,
                 newClasses = [],
                 i;
@@ -1080,18 +1080,28 @@ window.OpenSeadragon =
          * @param {Boolean} [useCapture]
          * @throws {Error}
          */
-        addEvent: function(element, eventName, handler, useCapture) {
+        addEvent: function (element, eventName, handler, useCapture) {
             element = $.getElement(element);
 
             //TODO: Why do this if/else on every method call instead of just
             //      defining this function once based on the same logic
             if (element.addEventListener) {
-                $.addEvent = function(element, eventName, handler, useCapture) {
+                $.addEvent = function (
+                    element,
+                    eventName,
+                    handler,
+                    useCapture,
+                ) {
                     element = $.getElement(element);
                     element.addEventListener(eventName, handler, useCapture);
                 };
             } else if (element.attachEvent) {
-                $.addEvent = function(element, eventName, handler, useCapture) {
+                $.addEvent = function (
+                    element,
+                    eventName,
+                    handler,
+                    useCapture,
+                ) {
                     element = $.getElement(element);
                     element.attachEvent("on" + eventName, handler);
                     if (useCapture && element.setCapture) {
@@ -1100,7 +1110,7 @@ window.OpenSeadragon =
                 };
             } else {
                 throw new Error(
-                    "Unable to attach event handler, no known technique."
+                    "Unable to attach event handler, no known technique.",
                 );
             }
 
@@ -1118,27 +1128,27 @@ window.OpenSeadragon =
          * @param {Boolean} [useCapture]
          * @throws {Error}
          */
-        removeEvent: function(element, eventName, handler, useCapture) {
+        removeEvent: function (element, eventName, handler, useCapture) {
             element = $.getElement(element);
 
             //TODO: Why do this if/else on every method call instead of just
             //      defining this function once based on the same logic
             if (element.removeEventListener) {
-                $.removeEvent = function(
+                $.removeEvent = function (
                     element,
                     eventName,
                     handler,
-                    useCapture
+                    useCapture,
                 ) {
                     element = $.getElement(element);
                     element.removeEventListener(eventName, handler, useCapture);
                 };
             } else if (element.detachEvent) {
-                $.removeEvent = function(
+                $.removeEvent = function (
                     element,
                     eventName,
                     handler,
-                    useCapture
+                    useCapture,
                 ) {
                     element = $.getElement(element);
                     element.detachEvent("on" + eventName, handler);
@@ -1148,7 +1158,7 @@ window.OpenSeadragon =
                 };
             } else {
                 throw new Error(
-                    "Unable to detach event handler, no known technique."
+                    "Unable to detach event handler, no known technique.",
                 );
             }
             return $.removeEvent(element, eventName, handler, useCapture);
@@ -1161,16 +1171,16 @@ window.OpenSeadragon =
          * @name OpenSeadragon.cancelEvent
          * @param {Event} [event]
          */
-        cancelEvent: function(event) {
+        cancelEvent: function (event) {
             event = $.getEvent(event);
 
             if (event.preventDefault) {
-                $.cancelEvent = function(event) {
+                $.cancelEvent = function (event) {
                     // W3C for preventing default
                     event.preventDefault();
                 };
             } else {
-                $.cancelEvent = function(event) {
+                $.cancelEvent = function (event) {
                     event = $.getEvent(event);
                     // legacy for preventing default
                     event.cancel = true;
@@ -1187,17 +1197,17 @@ window.OpenSeadragon =
          * @name OpenSeadragon.stopEvent
          * @param {Event} [event]
          */
-        stopEvent: function(event) {
+        stopEvent: function (event) {
             event = $.getEvent(event);
 
             if (event.stopPropagation) {
                 // W3C for stopping propagation
-                $.stopEvent = function(event) {
+                $.stopEvent = function (event) {
                     event.stopPropagation();
                 };
             } else {
                 // IE for stopping propagation
-                $.stopEvent = function(event) {
+                $.stopEvent = function (event) {
                     event = $.getEvent(event);
                     event.cancelBubble = true;
                 };
@@ -1221,7 +1231,7 @@ window.OpenSeadragon =
          *  created callback
          * @returns {Function}
          */
-        createCallback: function(object, method) {
+        createCallback: function (object, method) {
             //TODO: This pattern is painful to use and debug.  It's much cleaner
             //      to use pinning plus anonymous functions.  Get rid of this
             //      pattern!
@@ -1231,7 +1241,7 @@ window.OpenSeadragon =
                 initialArgs.push(arguments[i]);
             }
 
-            return function() {
+            return function () {
                 var args = initialArgs.concat([]),
                     i;
                 for (i = 0; i < arguments.length; i++) {
@@ -1249,16 +1259,16 @@ window.OpenSeadragon =
          * @param {String} key
          * @returns {String} The value of the url parameter or null if no param matches.
          */
-        getUrlParameter: function(key) {
+        getUrlParameter: function (key) {
             var value = URLPARAMS[key];
             return value ? value : null;
         },
 
-        createAjaxRequest: function() {
+        createAjaxRequest: function () {
             var request;
 
             if (window.XMLHttpRequest) {
-                $.createAjaxRequest = function() {
+                $.createAjaxRequest = function () {
                     return new XMLHttpRequest();
                 };
                 request = new XMLHttpRequest();
@@ -1268,7 +1278,7 @@ window.OpenSeadragon =
                 for (var i = 0; i < ACTIVEX.length; i++) {
                     try {
                         request = new ActiveXObject(ACTIVEX[i]);
-                        $.createAjaxRequest = function() {
+                        $.createAjaxRequest = function () {
                             return new ActiveXObject(ACTIVEX[i]);
                         };
                         break;
@@ -1294,17 +1304,17 @@ window.OpenSeadragon =
          * @param {Function} onError - a function to call on when an error occurs
          * @throws {Error}
          */
-        makeAjaxRequest: function(url, onSuccess, onError) {
+        makeAjaxRequest: function (url, onSuccess, onError) {
             var request = $.createAjaxRequest();
 
             if (!$.isFunction(onSuccess)) {
                 throw new Error("makeAjaxRequest requires a success callback");
             }
 
-            request.onreadystatechange = function() {
+            request.onreadystatechange = function () {
                 // 4 = DONE (https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#Properties)
                 if (request.readyState == 4) {
-                    request.onreadystatechange = function() {};
+                    request.onreadystatechange = function () {};
 
                     if (request.status == 200) {
                         onSuccess(request);
@@ -1312,7 +1322,7 @@ window.OpenSeadragon =
                         $.console.log(
                             "AJAX request returned %s: %s",
                             request.status,
-                            url
+                            url,
                         );
 
                         if ($.isFunction(onError)) {
@@ -1329,10 +1339,10 @@ window.OpenSeadragon =
                 $.console.log(
                     "%s while making AJAX request: %s",
                     e.name,
-                    e.message
+                    e.message,
                 );
 
-                request.onreadystatechange = function() {};
+                request.onreadystatechange = function () {};
 
                 if ($.isFunction(onError)) {
                     onError(request, e);
@@ -1352,7 +1362,7 @@ window.OpenSeadragon =
          * @param {String} [options.callbackName=] The name of the callback to
          *      request the jsonp provider with.
          */
-        jsonp: function(options) {
+        jsonp: function (options) {
             var script,
                 url = options.url,
                 head =
@@ -1375,7 +1385,7 @@ window.OpenSeadragon =
                 jsonpCallback;
 
             // Install callback
-            window[jsonpCallback] = function(response) {
+            window[jsonpCallback] = function (response) {
                 if (!previous) {
                     try {
                         delete window[jsonpCallback];
@@ -1404,7 +1414,7 @@ window.OpenSeadragon =
             script.src = url;
 
             // Attach handlers for all browsers
-            script.onload = script.onreadystatechange = function(_, isAbort) {
+            script.onload = script.onreadystatechange = function (_, isAbort) {
                 if (
                     isAbort ||
                     !script.readyState ||
@@ -1433,7 +1443,7 @@ window.OpenSeadragon =
          * @name OpenSeadragon.createFromDZI
          * @deprecated - use OpenSeadragon.Viewer.prototype.open
          */
-        createFromDZI: function() {
+        createFromDZI: function () {
             throw "OpenSeadragon.createFromDZI is deprecated, use Viewer.open.";
         },
 
@@ -1444,12 +1454,12 @@ window.OpenSeadragon =
          * @param {String} string
          * @returns {Document}
          */
-        parseXml: function(string) {
+        parseXml: function (string) {
             //TODO: yet another example where we can determine the correct
             //      implementation once at start-up instead of everytime we use
             //      the function. DONE.
             if (window.ActiveXObject) {
-                $.parseXml = function(string) {
+                $.parseXml = function (string) {
                     var xmlDoc = null;
 
                     xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
@@ -1458,7 +1468,7 @@ window.OpenSeadragon =
                     return xmlDoc;
                 };
             } else if (window.DOMParser) {
-                $.parseXml = function(string) {
+                $.parseXml = function (string) {
                     var xmlDoc = null,
                         parser;
 
@@ -1481,10 +1491,10 @@ window.OpenSeadragon =
          * @param {String} [extension]
          * @returns {Boolean}
          */
-        imageFormatSupported: function(extension) {
+        imageFormatSupported: function (extension) {
             extension = extension ? extension : "";
             return !!FILEFORMATS[extension.toLowerCase()];
-        }
+        },
     });
 
     /**
@@ -1498,7 +1508,7 @@ window.OpenSeadragon =
     $.Browser = {
         vendor: $.BROWSERS.UNKNOWN,
         version: 0,
-        alpha: true
+        alpha: true,
     };
 
     var ACTIVEX = ["Msxml2.XMLHTTP", "Msxml3.XMLHTTP", "Microsoft.XMLHTTP"],
@@ -1508,11 +1518,11 @@ window.OpenSeadragon =
             jpg: true,
             png: true,
             tif: false,
-            wdp: false
+            wdp: false,
         },
         URLPARAMS = {};
 
-    (function() {
+    (function () {
         //A small auto-executing routine to determine the browser vendor,
         //version and supporting feature sets.
         var app = navigator.appName,
@@ -1530,8 +1540,8 @@ window.OpenSeadragon =
                     $.Browser.version = parseFloat(
                         ua.substring(
                             ua.indexOf("MSIE") + 5,
-                            ua.indexOf(";", ua.indexOf("MSIE"))
-                        )
+                            ua.indexOf(";", ua.indexOf("MSIE")),
+                        ),
                     );
                 }
                 break;
@@ -1540,7 +1550,7 @@ window.OpenSeadragon =
                     if (ua.indexOf("Firefox") >= 0) {
                         $.Browser.vendor = $.BROWSERS.FIREFOX;
                         $.Browser.version = parseFloat(
-                            ua.substring(ua.indexOf("Firefox") + 8)
+                            ua.substring(ua.indexOf("Firefox") + 8),
                         );
                     } else if (ua.indexOf("Safari") >= 0) {
                         $.Browser.vendor =
@@ -1552,8 +1562,8 @@ window.OpenSeadragon =
                                 ua
                                     .substring(0, ua.indexOf("Safari"))
                                     .lastIndexOf("/") + 1,
-                                ua.indexOf("Safari")
-                            )
+                                ua.indexOf("Safari"),
+                            ),
                         );
                     }
                 }
@@ -1577,7 +1587,7 @@ window.OpenSeadragon =
 
             if (sep > 0) {
                 URLPARAMS[part.substring(0, sep)] = decodeURIComponent(
-                    part.substring(sep + 1)
+                    part.substring(sep + 1),
                 );
             }
         }
@@ -1605,7 +1615,7 @@ window.OpenSeadragon =
      * @static
      * @private
      */
-    var nullfunction = function(msg) {
+    var nullfunction = function (msg) {
         //document.location.hash = msg;
     };
 
@@ -1614,13 +1624,13 @@ window.OpenSeadragon =
         debug: nullfunction,
         info: nullfunction,
         warn: nullfunction,
-        error: nullfunction
+        error: nullfunction,
     };
 
     // Adding support for HTML5's requestAnimationFrame as suggested by acdha.
     // Implementation taken from matt synder's post here:
     // http://mattsnider.com/cross-browser-and-legacy-supported-requestframeanimation/
-    (function(w) {
+    (function (w) {
         // most browsers have an implementation
         var requestAnimationFrame =
             w.requestAnimationFrame ||
@@ -1638,10 +1648,10 @@ window.OpenSeadragon =
         if (requestAnimationFrame && cancelAnimationFrame) {
             // We can't assign these window methods directly to $ because they
             // expect their "this" to be "window", so we call them in wrappers.
-            $.requestAnimationFrame = function() {
+            $.requestAnimationFrame = function () {
                 return requestAnimationFrame.apply(w, arguments);
             };
-            $.cancelAnimationFrame = function() {
+            $.cancelAnimationFrame = function () {
                 return cancelAnimationFrame.apply(w, arguments);
             };
         } else {
@@ -1651,11 +1661,11 @@ window.OpenSeadragon =
                 iIntervalId;
 
             // create a mock requestAnimationFrame function
-            $.requestAnimationFrame = function(callback) {
+            $.requestAnimationFrame = function (callback) {
                 aAnimQueue.push([++iRequestId, callback]);
 
                 if (!iIntervalId) {
-                    iIntervalId = setInterval(function() {
+                    iIntervalId = setInterval(function () {
                         if (aAnimQueue.length) {
                             var time = $.now();
                             // Process all of the currently outstanding frame
@@ -1681,7 +1691,7 @@ window.OpenSeadragon =
             };
 
             // create a mock cancelAnimationFrame function
-            $.cancelAnimationFrame = function(requestId) {
+            $.cancelAnimationFrame = function (requestId) {
                 // find the request ID and remove it
                 var i, j;
                 for (i = 0, j = aAnimQueue.length; i < j; i += 1) {
@@ -1806,7 +1816,7 @@ window.OpenSeadragon =
 
         if (!$.imageFormatSupported(fileFormat)) {
             throw new Error(
-                $.getString("Errors.ImageFormat", fileFormat.toUpperCase())
+                $.getString("Errors.ImageFormat", fileFormat.toUpperCase()),
             );
         }
 
@@ -1821,8 +1831,8 @@ window.OpenSeadragon =
                     parseInt(rectNode.getAttribute("Width"), 10),
                     parseInt(rectNode.getAttribute("Height"), 10),
                     0, // ignore MinLevel attribute, bug in Deep Zoom Composer
-                    parseInt(dispRectNode.getAttribute("MaxLevel"), 10)
-                )
+                    parseInt(dispRectNode.getAttribute("MaxLevel"), 10),
+                ),
             );
         }
         return new $.DziTileSource(
@@ -1832,7 +1842,7 @@ window.OpenSeadragon =
             tileOverlap,
             tilesUrl,
             fileFormat,
-            dispRects
+            dispRects,
         );
     }
 
@@ -1858,7 +1868,7 @@ window.OpenSeadragon =
 
         if (!$.imageFormatSupported(fileFormat)) {
             throw new Error(
-                $.getString("Errors.ImageFormat", fileFormat.toUpperCase())
+                $.getString("Errors.ImageFormat", fileFormat.toUpperCase()),
             );
         }
 
@@ -1872,8 +1882,8 @@ window.OpenSeadragon =
                     parseInt(rectData.Width, 10),
                     parseInt(rectData.Height, 10),
                     0, // ignore MinLevel attribute, bug in Deep Zoom Composer
-                    parseInt(rectData.MaxLevel, 10)
-                )
+                    parseInt(rectData.MaxLevel, 10),
+                ),
             );
         }
         return new $.DziTileSource(
@@ -1883,7 +1893,7 @@ window.OpenSeadragon =
             tileOverlap,
             tilesUrl,
             fileFormat,
-            dispRects
+            dispRects,
         );
     }
 
@@ -1895,7 +1905,7 @@ window.OpenSeadragon =
      * @throws {Error}
      * @deprecated
      */
-    $._processDZIError = function(errorNode) {
+    $._processDZIError = function (errorNode) {
         var messageNode = errorNode.getElementsByTagName("Message")[0],
             message = messageNode.firstChild.nodeValue;
 

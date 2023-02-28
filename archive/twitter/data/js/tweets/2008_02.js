@@ -1,7 +1,6 @@
 Grailbird.data.tweets_2008_02 = [
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [
                 {
@@ -9,12 +8,12 @@ Grailbird.data.tweets_2008_02 = [
                     screen_name: "jtinsky",
                     indices: [0, 8],
                     id_str: "13805862",
-                    id: 13805862
-                }
+                    id: 13805862,
+                },
             ],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         in_reply_to_status_id_str: "764599248",
         geo: {},
@@ -34,22 +33,20 @@ Grailbird.data.tweets_2008_02 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "764470986",
-        text:
-            "thinking it's time to brave the cold long enough to get some espresso",
+        text: "thinking it's time to brave the cold long enough to get some espresso",
         id: 764470986,
         created_at: "Thu Feb 28 14:31:45 +0000 2008",
         user: {
@@ -60,22 +57,20 @@ Grailbird.data.tweets_2008_02 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "749950532",
-        text:
-            "wondering how exactly we managed to miss forecast ice, snow, thunderstorms and end up with no more than a little drizzle",
+        text: "wondering how exactly we managed to miss forecast ice, snow, thunderstorms and end up with no more than a little drizzle",
         id: 749950532,
         created_at: "Sun Feb 24 02:09:57 +0000 2008",
         user: {
@@ -86,17 +81,16 @@ Grailbird.data.tweets_2008_02 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
-        source:
-            '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
+        source: '<a href="http://twitterrific.com" rel="nofollow">Twitterrific</a>',
         entities: {
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "749942222",
@@ -111,7 +105,7 @@ Grailbird.data.tweets_2008_02 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];

@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * A Rectangle really represents a 2x2 matrix where each row represents a
      * 2 dimensional vector component, the first is (x,y) and the second is
@@ -49,7 +49,7 @@
      * @property {Number} width The vector component 'width'.
      * @property {Number} height The vector component 'height'.
      */
-    $.Rect = function(x, y, width, height) {
+    $.Rect = function (x, y, width, height) {
         this.x = typeof x == "number" ? x : 0;
         this.y = typeof y == "number" ? y : 0;
         this.width = typeof width == "number" ? width : 0;
@@ -62,7 +62,7 @@
          * @function
          * @returns {Number} The ratio of width to height.
          */
-        getAspectRatio: function() {
+        getAspectRatio: function () {
             return this.width / this.height;
         },
 
@@ -73,7 +73,7 @@
          * @returns {OpenSeadragon.Point} The coordinate of the upper-left corner of
          *  the rectangle.
          */
-        getTopLeft: function() {
+        getTopLeft: function () {
             return new $.Point(this.x, this.y);
         },
 
@@ -84,7 +84,7 @@
          * @returns {OpenSeadragon.Point} The coordinate of the bottom-right corner of
          *  the rectangle.
          */
-        getBottomRight: function() {
+        getBottomRight: function () {
             return new $.Point(this.x + this.width, this.y + this.height);
         },
 
@@ -95,7 +95,7 @@
          * @returns {OpenSeadragon.Point} The coordinate of the top-right corner of
          *  the rectangle.
          */
-        getTopRight: function() {
+        getTopRight: function () {
             return new $.Point(this.x + this.width, this.y);
         },
 
@@ -106,7 +106,7 @@
          * @returns {OpenSeadragon.Point} The coordinate of the bottom-left corner of
          *  the rectangle.
          */
-        getBottomLeft: function() {
+        getBottomLeft: function () {
             return new $.Point(this.x, this.y + this.height);
         },
 
@@ -116,10 +116,10 @@
          * @returns {OpenSeadragon.Point} The center of the rectangle as represented
          *  as represented by a 2-dimensional vector (x,y)
          */
-        getCenter: function() {
+        getCenter: function () {
             return new $.Point(
                 this.x + this.width / 2.0,
-                this.y + this.height / 2.0
+                this.y + this.height / 2.0,
             );
         },
 
@@ -129,7 +129,7 @@
          * @returns {OpenSeadragon.Point} The 2 dimensional vector representing the
          *  the width and height of the rectangle.
          */
-        getSize: function() {
+        getSize: function () {
             return new $.Point(this.width, this.height);
         },
 
@@ -139,7 +139,7 @@
          * @param {OpenSeadragon.Rect} rectangle The Rectangle to compare to.
          * @return {Boolean} 'true' if all components are equal, otherwise 'false'.
          */
-        equals: function(other) {
+        equals: function (other) {
             return (
                 other instanceof $.Rect &&
                 this.x === other.x &&
@@ -158,7 +158,7 @@
          * Defaults to the center of the rectangle.
          * @return {OpenSeadragon.Rect}
          */
-        rotate: function(degrees, pivot) {
+        rotate: function (degrees, pivot) {
             // TODO support arbitrary rotation
             var width = this.width,
                 height = this.height,
@@ -167,7 +167,7 @@
             degrees = (degrees + 360) % 360;
             if (degrees % 90 !== 0) {
                 throw new Error(
-                    "Currently only 0, 90, 180, and 270 degrees are supported."
+                    "Currently only 0, 90, 180, and 270 degrees are supported.",
                 );
             }
 
@@ -207,7 +207,7 @@
          * @function
          * @returns {String} A string representation of the rectangle.
          */
-        toString: function() {
+        toString: function () {
             return (
                 "[" +
                 Math.round(this.x * 100) +
@@ -219,6 +219,6 @@
                 Math.round(this.height * 100) +
                 "]"
             );
-        }
+        },
     };
 })(OpenSeadragon);

@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * Manages events on groups of buttons.
      * @class
@@ -54,7 +54,7 @@
      * @property {OpenSeadragon.MouseTracker} tracker - Tracks mouse events accross
      *  the group of buttons.
      **/
-    $.ButtonGroup = function(options) {
+    $.ButtonGroup = function (options) {
         $.extend(
             true,
             this,
@@ -62,9 +62,9 @@
                 buttons: [],
                 clickTimeThreshold: $.DEFAULT_SETTINGS.clickTimeThreshold,
                 clickDistThreshold: $.DEFAULT_SETTINGS.clickDistThreshold,
-                labelText: ""
+                labelText: "",
             },
-            options
+            options,
         );
 
         // copy the botton elements
@@ -89,13 +89,13 @@
             element: this.element,
             clickTimeThreshold: this.clickTimeThreshold,
             clickDistThreshold: this.clickDistThreshold,
-            enterHandler: function() {
+            enterHandler: function () {
                 var i;
                 for (i = 0; i < _this.buttons.length; i++) {
                     _this.buttons[i].notifyGroupEnter();
                 }
             },
-            exitHandler: function() {
+            exitHandler: function () {
                 var i,
                     buttonDownElement =
                         arguments.length > 2 ? arguments[2] : null;
@@ -105,7 +105,7 @@
                     }
                 }
             },
-            releaseHandler: function() {
+            releaseHandler: function () {
                 var i,
                     insideElementRelease =
                         arguments.length > 3 ? arguments[3] : null;
@@ -114,7 +114,7 @@
                         _this.buttons[i].notifyGroupExit();
                     }
                 }
-            }
+            },
         }).setTracking(true);
     };
 
@@ -125,7 +125,7 @@
          * @function
          * @name OpenSeadragon.ButtonGroup.prototype.emulateEnter
          */
-        emulateEnter: function() {
+        emulateEnter: function () {
             this.tracker.enterHandler();
         },
 
@@ -135,8 +135,8 @@
          * @function
          * @name OpenSeadragon.ButtonGroup.prototype.emulateExit
          */
-        emulateExit: function() {
+        emulateExit: function () {
             this.tracker.exitHandler();
-        }
+        },
     };
 })(OpenSeadragon);

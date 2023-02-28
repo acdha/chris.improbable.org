@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     /**
      * An enumeration of positions that an overlay may be assigned relative
      * to the viewport including CENTER, TOP_LEFT (default), TOP, TOP_RIGHT,
@@ -48,14 +48,14 @@
         BOTTOM_RIGHT: 5,
         BOTTOM: 6,
         BOTTOM_LEFT: 7,
-        LEFT: 8
+        LEFT: 8,
     };
 
     /**
      * An Overlay provides a
      * @class
      */
-    $.Overlay = function(element, location, placement) {
+    $.Overlay = function (element, location, placement) {
         var options;
         if ($.isPlainObject(element)) {
             options = element;
@@ -63,7 +63,7 @@
             options = {
                 element: element,
                 location: location,
-                placement: placement
+                placement: placement,
             };
         }
 
@@ -73,12 +73,12 @@
             options.location.x,
             options.location.y,
             options.location.width,
-            options.location.height
+            options.location.height,
         );
         this.position = new $.Point(options.location.x, options.location.y);
         this.size = new $.Point(
             options.location.width,
-            options.location.height
+            options.location.height,
         );
         this.style = options.element.style;
         // rects are always top-left
@@ -95,7 +95,7 @@
          * @param {OpenSeadragon.OverlayPlacement} position
          * @param {OpenSeadragon.Point} size
          */
-        adjust: function(position, size) {
+        adjust: function (position, size) {
             switch (this.placement) {
                 case $.OverlayPlacement.TOP_LEFT:
                     break;
@@ -134,7 +134,7 @@
         /**
          * @function
          */
-        destroy: function() {
+        destroy: function () {
             var element = this.element,
                 style = this.style;
 
@@ -169,13 +169,13 @@
          * @function
          * @param {Element} container
          */
-        drawHTML: function(container, viewport) {
+        drawHTML: function (container, viewport) {
             var element = this.element,
                 style = this.style,
                 scales = this.scales,
                 drawerCenter = new $.Point(
                     viewport.viewer.drawer.canvas.width / 2,
-                    viewport.viewer.drawer.canvas.height / 2
+                    viewport.viewer.drawer.canvas.height / 2,
                 ),
                 degrees = viewport.degrees,
                 position,
@@ -240,19 +240,19 @@
          * @param {OpenSeadragon.Point|OpenSeadragon.Rect} location
          * @param {OpenSeadragon.OverlayPlacement} position
          */
-        update: function(location, placement) {
+        update: function (location, placement) {
             this.scales = location instanceof $.Rect;
             this.bounds = new $.Rect(
                 location.x,
                 location.y,
                 location.width,
-                location.height
+                location.height,
             );
             // rects are always top-left
             this.placement =
                 location instanceof $.Point
                     ? placement
                     : $.OverlayPlacement.TOP_LEFT;
-        }
+        },
     };
 })(OpenSeadragon);

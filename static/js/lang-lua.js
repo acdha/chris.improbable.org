@@ -6,8 +6,8 @@ PR.registerLangHandler(
                 "str",
                 /^(?:"(?:[^"\\]|\\[\S\s])*(?:"|$)|'(?:[^'\\]|\\[\S\s])*(?:'|$))/,
                 null,
-                "\"'"
-            ]
+                "\"'",
+            ],
         ],
         [
             ["com", /^--(?:\[(=*)\[[\S\s]*?(?:]\1]|$)|[^\n\r]*)/],
@@ -15,15 +15,15 @@ PR.registerLangHandler(
             [
                 "kwd",
                 /^(?:and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\b/,
-                null
+                null,
             ],
             [
                 "lit",
-                /^[+-]?(?:0x[\da-f]+|(?:\.\d+|\d+(?:\.\d*)?)(?:e[+-]?\d+)?)/i
+                /^[+-]?(?:0x[\da-f]+|(?:\.\d+|\d+(?:\.\d*)?)(?:e[+-]?\d+)?)/i,
             ],
             ["pln", /^[_a-z]\w*/i],
-            ["pun", /^[^\w\t\n\r \xa0][^\w\t\n\r "'+=\xa0-]*/]
-        ]
+            ["pun", /^[^\w\t\n\r \xa0][^\w\t\n\r "'+=\xa0-]*/],
+        ],
     ),
-    ["lua"]
+    ["lua"],
 );

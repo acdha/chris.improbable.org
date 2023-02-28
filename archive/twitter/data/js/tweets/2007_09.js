@@ -5,7 +5,7 @@ Grailbird.data.tweets_2007_09 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "295504832",
@@ -20,8 +20,8 @@ Grailbird.data.tweets_2007_09 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
+            verified: false,
+        },
     },
     {
         source: "im",
@@ -29,7 +29,7 @@ Grailbird.data.tweets_2007_09 = [
             user_mentions: [],
             media: [],
             hashtags: [],
-            urls: []
+            urls: [],
         },
         geo: {},
         id_str: "250490762",
@@ -44,7 +44,7 @@ Grailbird.data.tweets_2007_09 = [
             profile_image_url_https:
                 "https://si0.twimg.com/profile_images/294200957/cycling_normal.jpg",
             id: 43603,
-            verified: false
-        }
-    }
+            verified: false,
+        },
+    },
 ];

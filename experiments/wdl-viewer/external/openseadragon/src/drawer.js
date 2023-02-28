@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function($) {
+(function ($) {
     var DEVICE_SCREEN = $.getWindowSize(),
         BROWSER = $.Browser.vendor,
         BROWSER_VERSION = $.Browser.version,
@@ -69,7 +69,7 @@
      * @property {Boolean} updateAgain - Does the drawer need to update the viewort again?
      * @property {Element} element - DEPRECATED Alias for container.
      */
-    $.Drawer = function(options) {
+    $.Drawer = function (options) {
         //backward compatibility for positional args while prefering more
         //idiomatic javascript options object as the only argument
         var args = arguments,
@@ -79,7 +79,7 @@
             options = {
                 source: args[0],
                 viewport: args[1],
-                element: args[2]
+                element: args[2],
             };
         }
 
@@ -113,9 +113,9 @@
                 alwaysBlend: $.DEFAULT_SETTINGS.alwaysBlend,
                 minPixelRatio: $.DEFAULT_SETTINGS.minPixelRatio,
                 debugMode: $.DEFAULT_SETTINGS.debugMode,
-                timeout: $.DEFAULT_SETTINGS.timeout
+                timeout: $.DEFAULT_SETTINGS.timeout,
             },
-            options
+            options,
         );
 
         this.container = $.getElement(this.element);
@@ -143,7 +143,7 @@
             if ($.isPlainObject(this.overlays[i])) {
                 this.overlays[i] = addOverlayFromConfiguration(
                     this,
-                    this.overlays[i]
+                    this.overlays[i],
                 );
             } else if ($.isFunction(this.overlays[i])) {
                 //TODO
@@ -170,7 +170,7 @@
          *      needs to be drawn. It it the responsibility of the callback to do any drawing/positioning.
          *      It is passed position, size and element.
          */
-        addOverlay: function(element, location, placement, onDraw) {
+        addOverlay: function (element, location, placement, onDraw) {
             var options;
             if ($.isPlainObject(element)) {
                 options = element;
@@ -179,7 +179,7 @@
                     element: element,
                     location: location,
                     placement: placement,
-                    onDraw: onDraw
+                    onDraw: onDraw,
                 };
             }
 
@@ -195,8 +195,8 @@
                     element: element,
                     location: options.location,
                     placement: options.placement,
-                    onDraw: options.onDraw
-                })
+                    onDraw: options.onDraw,
+                }),
             );
             this.updateAgain = true;
             if (this.viewer) {
@@ -204,7 +204,7 @@
                     viewer: this.viewer,
                     element: element,
                     location: options.location,
-                    placement: options.placement
+                    placement: options.placement,
                 });
             }
             return this;
@@ -221,7 +221,7 @@
          *      to.
          * @return {OpenSeadragon.Drawer} Chainable.
          */
-        updateOverlay: function(element, location, placement) {
+        updateOverlay: function (element, location, placement) {
             var i;
 
             element = $.getElement(element);
@@ -236,7 +236,7 @@
                     viewer: this.viewer,
                     element: element,
                     location: location,
-                    placement: placement
+                    placement: placement,
                 });
             }
             return this;
@@ -250,7 +250,7 @@
          *      element id which represent the ovelay content to be removed.
          * @return {OpenSeadragon.Drawer} Chainable.
          */
-        removeOverlay: function(element) {
+        removeOverlay: function (element) {
             var i;
 
             element = $.getElement(element);
@@ -264,7 +264,7 @@
             if (this.viewer) {
                 this.viewer.raiseEvent("remove-overlay", {
                     viewer: this.viewer,
-                    element: element
+                    element: element,
                 });
             }
             return this;
@@ -276,14 +276,14 @@
          * @method
          * @return {OpenSeadragon.Drawer} Chainable.
          */
-        clearOverlays: function() {
+        clearOverlays: function () {
             while (this.overlays.length > 0) {
                 this.overlays.pop().destroy();
                 this.updateAgain = true;
             }
             if (this.viewer) {
                 this.viewer.raiseEvent("clear-overlay", {
-                    viewer: this.viewer
+                    viewer: this.viewer,
                 });
             }
             return this;
@@ -296,7 +296,7 @@
          * @returns {Boolean} - Whether the Drawer is scheduled for an update at the
          *      soonest possible opportunity.
          */
-        needsUpdate: function() {
+        needsUpdate: function () {
             return this.updateAgain;
         },
 
@@ -306,7 +306,7 @@
          * @returns {Number} - The total number of tiles that have been loaded by
          *      this Drawer.
          */
-        numTilesLoaded: function() {
+        numTilesLoaded: function () {
             return this.tilesLoaded.length;
         },
 
@@ -316,7 +316,7 @@
          * @method
          * @return {OpenSeadragon.Drawer} Chainable.
          */
-        reset: function() {
+        reset: function () {
             clearTiles(this);
             this.lastResetTime = $.now();
             this.updateAgain = true;
@@ -328,7 +328,7 @@
          * @method
          * @return {OpenSeadragon.Drawer} Chainable.
          */
-        update: function() {
+        update: function () {
             //this.profiler.beginUpdate();
             this.midUpdate = true;
             updateViewport(this);
@@ -354,7 +354,7 @@
          * @return {Boolean} loading - Whether the request was submitted or ignored
          *      based on OpenSeadragon.DEFAULT_SETTINGS.imageLoaderLimit.
          */
-        loadImage: function(src, callback) {
+        loadImage: function (src, callback) {
             var _this = this,
                 loading = false,
                 image,
@@ -369,7 +369,7 @@
 
                 image = new Image();
 
-                complete = function(imagesrc, resultingImage) {
+                complete = function (imagesrc, resultingImage) {
                     _this.downloading--;
                     if (typeof callback == "function") {
                         try {
@@ -380,21 +380,21 @@
                                 e.name,
                                 src,
                                 e.message,
-                                e
+                                e,
                             );
                         }
                     }
                 };
 
-                image.onload = function() {
+                image.onload = function () {
                     finishLoadingImage(image, complete, true, jobid);
                 };
 
-                image.onabort = image.onerror = function() {
+                image.onabort = image.onerror = function () {
                     finishLoadingImage(image, complete, false, jobid);
                 };
 
-                jobid = window.setTimeout(function() {
+                jobid = window.setTimeout(function () {
                     finishLoadingImage(image, complete, false, jobid);
                 }, this.timeout);
 
@@ -405,9 +405,9 @@
             return loading;
         },
 
-        canRotate: function() {
+        canRotate: function () {
             return USE_CANVAS;
-        }
+        },
     };
 
     /**
@@ -422,11 +422,11 @@
                           overlay.x || overlay.px,
                           overlay.y || overlay.py,
                           overlay.width,
-                          overlay.height
+                          overlay.height,
                       )
                     : new $.Point(
                           overlay.x || overlay.px,
-                          overlay.y || overlay.py
+                          overlay.y || overlay.py,
                       ),
             id = overlay.id
                 ? overlay.id
@@ -441,7 +441,7 @@
         element.id = id;
         $.addClass(
             element,
-            overlay.className ? overlay.className : "openseadragon-overlay"
+            overlay.className ? overlay.className : "openseadragon-overlay",
         );
 
         if (overlay.px !== undefined) {
@@ -455,13 +455,13 @@
                 element: element,
                 location: drawer.viewport.pointFromPixel(rect),
                 placement: $.OverlayPlacement[overlay.placement.toUpperCase()],
-                onDraw: overlay.onDraw
+                onDraw: overlay.onDraw,
             });
         } else {
             return new $.Overlay({
                 element: element,
                 location: rect,
-                onDraw: overlay.onDraw
+                onDraw: overlay.onDraw,
             });
         }
     }
@@ -478,7 +478,7 @@
 
         if (drawer.viewer) {
             drawer.viewer.raiseEvent("update-viewport", {
-                viewer: drawer.viewer
+                viewer: drawer.viewer,
             });
         }
 
@@ -493,20 +493,20 @@
             viewportBR = viewportBounds.getBottomRight(),
             zeroRatioC = drawer.viewport.deltaPixelsFromPoints(
                 drawer.source.getPixelRatio(0),
-                true
+                true,
             ).x,
             lowestLevel = Math.max(
                 drawer.source.minLevel,
-                Math.floor(Math.log(drawer.minZoomImageRatio) / Math.log(2))
+                Math.floor(Math.log(drawer.minZoomImageRatio) / Math.log(2)),
             ),
             highestLevel = Math.min(
                 Math.abs(drawer.source.maxLevel),
                 Math.abs(
                     Math.floor(
                         Math.log(zeroRatioC / drawer.minPixelRatio) /
-                            Math.log(2)
-                    )
-                )
+                            Math.log(2),
+                    ),
+                ),
             ),
             degrees = drawer.viewport.degrees,
             renderPixelRatioC,
@@ -573,7 +573,7 @@
             //Avoid calculations for draw if we have already drawn this
             renderPixelRatioC = drawer.viewport.deltaPixelsFromPoints(
                 drawer.source.getPixelRatio(level),
-                true
+                true,
             ).x;
 
             if (
@@ -589,19 +589,19 @@
             //Perform calculations for draw if we haven't drawn this
             renderPixelRatioT = drawer.viewport.deltaPixelsFromPoints(
                 drawer.source.getPixelRatio(level),
-                false
+                false,
             ).x;
 
             zeroRatioT = drawer.viewport.deltaPixelsFromPoints(
                 drawer.source.getPixelRatio(
                     Math.max(
                         drawer.source.getClosestLevel(
-                            drawer.viewport.containerSize
+                            drawer.viewport.containerSize,
                         ) - 1,
-                        0
-                    )
+                        0,
+                    ),
                 ),
-                false
+                false,
             ).x;
 
             optimalRatio = drawer.immediateRender ? 1 : zeroRatioT;
@@ -622,7 +622,7 @@
                 viewportTL,
                 viewportBR,
                 currentTime,
-                best
+                best,
             );
 
             //TODO
@@ -653,7 +653,7 @@
         viewportTL,
         viewportBR,
         currentTime,
-        best
+        best,
     ) {
         var x,
             y,
@@ -661,7 +661,7 @@
             tileBR,
             numberOfTiles,
             viewportCenter = drawer.viewport.pixelFromPoint(
-                drawer.viewport.getCenter()
+                drawer.viewport.getCenter(),
             );
 
         if (drawer.viewer) {
@@ -674,7 +674,7 @@
                 topleft: viewportTL,
                 bottomright: viewportBR,
                 currenttime: currentTime,
-                best: best
+                best: best,
             });
         }
 
@@ -706,7 +706,7 @@
                     viewportCenter,
                     numberOfTiles,
                     currentTime,
-                    best
+                    best,
                 );
             }
         }
@@ -726,7 +726,7 @@
         viewportCenter,
         numberOfTiles,
         currentTime,
-        best
+        best,
     ) {
         var tile = getTile(
                 x,
@@ -736,14 +736,14 @@
                 drawer.tilesMatrix,
                 currentTime,
                 numberOfTiles,
-                drawer.normHeight
+                drawer.normHeight,
             ),
             drawTile = drawLevel;
 
         if (drawer.viewer) {
             drawer.viewer.raiseEvent("update-tile", {
                 viewer: drawer.viewer,
-                tile: tile
+                tile: tile,
             });
         }
 
@@ -770,7 +770,7 @@
             drawer.source.tileOverlap,
             drawer.viewport,
             viewportCenter,
-            levelVisibility
+            levelVisibility,
         );
 
         if (tile.loaded) {
@@ -781,7 +781,7 @@
                 y,
                 level,
                 levelOpacity,
-                currentTime
+                currentTime,
             );
 
             if (needsUpdate) {
@@ -805,7 +805,7 @@
         tilesMatrix,
         time,
         numTiles,
-        normHeight
+        normHeight,
     ) {
         var xMod, yMod, bounds, exists, url, tile;
 
@@ -832,7 +832,7 @@
                 y,
                 bounds,
                 exists,
-                url
+                url,
             );
         }
 
@@ -847,7 +847,7 @@
             drawer.midUpdate = false;
             onTileLoad(drawer, tile, time);
         } else {
-            tile.loading = drawer.loadImage(tile.url, function(image) {
+            tile.loading = drawer.loadImage(tile.url, function (image) {
                 onTileLoad(drawer, tile, time, image);
             });
         }
@@ -880,7 +880,7 @@
             $.console.log(
                 "Ignoring tile %s loaded before reset: %s",
                 tile,
-                tile.url
+                tile.url,
             );
             return;
         }
@@ -936,7 +936,7 @@
         overlap,
         viewport,
         viewportCenter,
-        levelVisibility
+        levelVisibility,
     ) {
         var boundsTL = tile.bounds.getTopLeft(),
             boundsSize = tile.bounds.getSize(),
@@ -1063,7 +1063,7 @@
         if (!coverage[level]) {
             $.console.warn(
                 "Setting coverage for a tile before its level's coverage has been reset: %s",
-                level
+                level,
             );
             return;
         }
@@ -1133,7 +1133,7 @@
         if (jobid) {
             window.clearTimeout(jobid);
         }
-        $.requestAnimationFrame(function() {
+        $.requestAnimationFrame(function () {
             callback(image.src, successful ? image : null);
         });
     }
@@ -1149,11 +1149,11 @@
     function drawOverlay(viewport, overlay, container) {
         overlay.position = viewport.pixelFromPoint(
             overlay.bounds.getTopLeft(),
-            true
+            true,
         );
         overlay.size = viewport.deltaPixelsFromPoints(
             overlay.bounds.getSize(),
-            true
+            true,
         );
         overlay.drawHTML(container, viewport);
     }
@@ -1192,16 +1192,15 @@
 
                     //$.console.log("Rendering collection tile %s | %s | %s", tile.y, tile.y, position);
                     if (tileSource) {
-                        drawer.collectionOverlays[
-                            tileKey
-                        ] = viewer = new $.Viewer({
-                            element: $.makeNeutralElement("div"),
-                            mouseNavEnabled: false,
-                            showNavigator: false,
-                            showSequenceControl: false,
-                            showNavigationControl: false,
-                            tileSources: [tileSource]
-                        });
+                        drawer.collectionOverlays[tileKey] = viewer =
+                            new $.Viewer({
+                                element: $.makeNeutralElement("div"),
+                                mouseNavEnabled: false,
+                                showNavigator: false,
+                                showSequenceControl: false,
+                                showNavigationControl: false,
+                                tileSources: [tileSource],
+                            });
 
                         //TODO: IE seems to barf on this, not sure if its just the border
                         //      but we probably need to clear this up with a better
@@ -1235,13 +1234,13 @@
                             tile,
                             drawer.canvas,
                             drawer.context,
-                            drawer.viewport.degrees
+                            drawer.viewport.degrees,
                         );
                         tile.drawCanvas(drawer.context);
                         restoreRotationChanges(
                             tile,
                             drawer.canvas,
-                            drawer.context
+                            drawer.context,
                         );
                     } else {
                         tile.drawCanvas(drawer.context);
@@ -1264,7 +1263,7 @@
             if (drawer.viewer) {
                 drawer.viewer.raiseEvent("tile-drawn", {
                     viewer: drawer.viewer,
-                    tile: tile
+                    tile: tile,
                 });
             }
         }
@@ -1307,49 +1306,49 @@
                 tile.position.x,
                 tile.position.y,
                 tile.size.x,
-                tile.size.y
+                tile.size.y,
             );
             if (tile.x === 0 && tile.y === 0) {
                 drawer.context.fillText(
                     "Zoom: " + drawer.viewport.getZoom(),
                     tile.position.x,
-                    tile.position.y - 30
+                    tile.position.y - 30,
                 );
                 drawer.context.fillText(
                     "Pan: " + drawer.viewport.getBounds().toString(),
                     tile.position.x,
-                    tile.position.y - 20
+                    tile.position.y - 20,
                 );
             }
             drawer.context.fillText(
                 "Level: " + tile.level,
                 tile.position.x + 10,
-                tile.position.y + 20
+                tile.position.y + 20,
             );
             drawer.context.fillText(
                 "Column: " + tile.x,
                 tile.position.x + 10,
-                tile.position.y + 30
+                tile.position.y + 30,
             );
             drawer.context.fillText(
                 "Row: " + tile.y,
                 tile.position.x + 10,
-                tile.position.y + 40
+                tile.position.y + 40,
             );
             drawer.context.fillText(
                 "Order: " + i + " of " + count,
                 tile.position.x + 10,
-                tile.position.y + 50
+                tile.position.y + 50,
             );
             drawer.context.fillText(
                 "Size: " + tile.size.toString(),
                 tile.position.x + 10,
-                tile.position.y + 60
+                tile.position.y + 60,
             );
             drawer.context.fillText(
                 "Position: " + tile.position.toString(),
                 tile.position.x + 10,
-                tile.position.y + 70
+                tile.position.y + 70,
             );
             drawer.context.restore();
         }
