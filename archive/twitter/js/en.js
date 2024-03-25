@@ -5465,8 +5465,8 @@
                                 this.types[i] === "LRO"
                                     ? "L"
                                     : this.types[i] === "RLO"
-                                    ? "R"
-                                    : -1;
+                                      ? "R"
+                                      : -1;
                         }
                         break;
                     case "PDF":
@@ -5869,14 +5869,14 @@
                         output === this.levels.length - 1
                             ? this.base_embedding
                             : this.levels[output + 1] != null
-                            ? this.levels[output + 1]
-                            : 0;
+                              ? this.levels[output + 1]
+                              : 0;
                     left_level =
                         input === 0
                             ? this.base_embedding
                             : this.levels[input] != null
-                            ? this.levels[input]
-                            : 0;
+                              ? this.levels[input]
+                              : 0;
                     this.levels[output] = TwitterCldr.Utilities.max([
                         left_level,
                         right_level,

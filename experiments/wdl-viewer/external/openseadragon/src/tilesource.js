@@ -162,11 +162,11 @@
                 undefined !== options.maxLevel && null !== options.maxLevel
                     ? options.maxLevel
                     : options.width && options.height
-                    ? Math.ceil(
-                          Math.log(Math.max(options.width, options.height)) /
-                              Math.log(2),
-                      )
-                    : 0;
+                      ? Math.ceil(
+                            Math.log(Math.max(options.width, options.height)) /
+                                Math.log(2),
+                        )
+                      : 0;
             if (callback && $.isFunction(callback)) {
                 callback(this);
             }
