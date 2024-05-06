@@ -58,11 +58,11 @@
             return e == null
                 ? r
                 : p && e.map === p
-                ? e.map(t, n)
-                : (N(e, function (e, i, s) {
-                      r[r.length] = t.call(n, e, i, s);
-                  }),
-                  r);
+                  ? e.map(t, n)
+                  : (N(e, function (e, i, s) {
+                        r[r.length] = t.call(n, e, i, s);
+                    }),
+                    r);
         }),
         (T.reduce =
             T.foldl =
@@ -128,11 +128,11 @@
                 return e == null
                     ? r
                     : m && e.filter === m
-                    ? e.filter(t, n)
-                    : (N(e, function (e, i, s) {
-                          t.call(n, e, i, s) && (r[r.length] = e);
-                      }),
-                      r);
+                      ? e.filter(t, n)
+                      : (N(e, function (e, i, s) {
+                            t.call(n, e, i, s) && (r[r.length] = e);
+                        }),
+                        r);
             }),
         (T.reject = function (e, t, n) {
             var r = [];
@@ -150,11 +150,11 @@
                 return e == null
                     ? i
                     : g && e.every === g
-                    ? e.every(t, r)
-                    : (N(e, function (e, s, o) {
-                          if (!(i = i && t.call(r, e, s, o))) return n;
-                      }),
-                      !!i);
+                      ? e.every(t, r)
+                      : (N(e, function (e, s, o) {
+                            if (!(i = i && t.call(r, e, s, o))) return n;
+                        }),
+                        !!i);
             });
     var C =
         (T.some =
@@ -165,11 +165,11 @@
                 return e == null
                     ? i
                     : y && e.some === y
-                    ? e.some(t, r)
-                    : (N(e, function (e, s, o) {
-                          if (i || (i = t.call(r, e, s, o))) return n;
-                      }),
-                      !!i);
+                      ? e.some(t, r)
+                      : (N(e, function (e, s, o) {
+                            if (i || (i = t.call(r, e, s, o))) return n;
+                        }),
+                        !!i);
             });
     (T.contains = T.include =
         function (e, t) {
@@ -177,11 +177,11 @@
             return e == null
                 ? n
                 : b && e.indexOf === b
-                ? e.indexOf(t) != -1
-                : ((n = C(e, function (e) {
-                      return e === t;
-                  })),
-                  n);
+                  ? e.indexOf(t) != -1
+                  : ((n = C(e, function (e) {
+                        return e === t;
+                    })),
+                    n);
         }),
         (T.invoke = function (e, t) {
             var n = u.call(arguments, 2);
@@ -808,10 +808,10 @@
                 (s += n
                     ? "'+\n((__t=(" + n + "))==null?'':_.escape(__t))+\n'"
                     : r
-                    ? "'+\n((__t=(" + r + "))==null?'':__t)+\n'"
-                    : o
-                    ? "';\n" + o + "\n__p+='"
-                    : ""),
+                      ? "'+\n((__t=(" + r + "))==null?'':__t)+\n'"
+                      : o
+                        ? "';\n" + o + "\n__p+='"
+                        : ""),
                 (i = u + t.length);
         }),
             (s += "';\n"),
